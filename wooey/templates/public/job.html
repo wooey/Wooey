@@ -1,0 +1,68 @@
+
+{% extends "layout.html" %}
+{% block content %}
+
+    <h1>{% if script.nicename %}{{ script.display_name }}{% else %}{{ script.name }}{% endif %}
+        <small>(Job ID {{ job.id }})</small>
+
+        {% if job.status == 'W' %}<span class="label info">Waiting</span>
+        {% elif job.status == 'R' %}<span class="label info">Running</span>
+        {% elif job.status == 'C' %}<span class="label success">Complete</span>
+        {% elif job.status == 'X' %}<span class="label alert">Error</span>{% endif %}
+
+    </h1>
+
+    <p>{{ script.description }}</p>
+
+    <!-- Build the UI
+    {u'optional': [{u'type': u'CheckBox', u'data': {u'display_name': u'accumulate', u'commands': [u'--sum'], u'nargs': u'', u'help': u'sum the integers (default: find the max)', u'choices': []}}], u'program': {u'path': u'/Users/mxf793/repos/wooey/scripts/mock_argparse_example.py', u'epilog': None, u'name': u'mock_argparse_example', u'description': u'Process some integers.'}, u'parser': {u'prefix_chars': u'-', u'argument_default': None}, u'required': [{u'type': u'FileChooser', u'data': {u'display_name': u'integers', u'commands': [], u'nargs': u'+', u'help': u'an integer for the accumulator', u'choices': []}}]}
+
+    'FileChooser',
+    'MultiFileChooser',
+    'FileSaver',
+    'DirChooser',
+    'DateChooser',
+    'TextField',
+    'Dropdown',
+    'Counter',
+    'RadioGroup',
+    'CheckBox'
+
+    -->
+
+
+
+
+<div class="row">
+{% include "public/job-form.html" %}
+    <div class="large-7 columns">
+
+
+<ul class="tabs" data-tab role="tablist">
+      <li class="tab-title active" role="presentational" ><a href="#output-console" role="tab" tabindex="0" aria-selected="true" controls="output-console">Console</a></li>
+    {% for section in display.keys() %}
+      <li class="tab-title" role="presentational" ><a href="#output-{{ section.replace(' ','-') }}" role="tab" tabindex="0" aria-selected="" controls="output-{{ section.replace(' ','-') }}">{{section}}</a></li>
+    {% endfor %}
+</ul>
+
+    <div class="tabs-content">
+    <section role="tabpanel" aria-hidden="false" class="content active console" id="output-console">
+        <div class="row">
+            <div class="large-12 columns console-body">{{ console }}</div>
+        </div>
+    </section>
+    {% for section, src in display.items() %}
+    <section role="tabpanel" aria-hidden="false" class="content" id="output-{{ section.replace(' ','-') }}">
+        <div class="row">
+            <div class="large-12 columns console-body">{{ src|safe }}</div>
+        </div>
+    </section>
+    {% endfor %}
+
+    </div>
+
+</div>
+
+</div>
+{% endblock %}
+

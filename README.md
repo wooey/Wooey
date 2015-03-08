@@ -77,7 +77,9 @@ In another shell, start the temporary dev 'daemon' (which is nothing of the sort
     python manage.py start_daemon
 
 This looks for jobs in the queue and executes them in a separate process. It's not clever, and it's ugly, but it
-achieves what is needed for a proof of concept.
+achieves what is needed for a proof of concept. In order to actually run scripts you currently need to be a logged-in
+user, so create an account on the website and get started. By default all logged in users can see the admin panel at
+present but this will change in future.
 
 ## Examples
 

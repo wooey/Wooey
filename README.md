@@ -76,17 +76,24 @@ In another shell, you can start the temporary dev 'daemon' (which is nothing of 
 
     python manage.py start_daemon
 
+## Examples
 
-Deployment
-----------
+Once you have run `python manage.py build_scripts` and `python manage.py find_scripts` management commands you'll
+get the scripts listed in the web UI. Now you can try them out:
+
+1. Example data is provided in `/data` which you can use with the included `bar.py` script. Select to upload with the
+file selector, and enter `Glucose|Fructose` in the 'name of metabolite' field. You'll see 4 plots output from the source data.
+2. Using the `plot_some_numbers.py` script enter a list of integers separated by spaces, you'll get two plots based on these numbers.
+3. Using the `mock_argparse_example.py` script, enter a list of integers separated by spaces,you'll get the max (or sum, if you select this) output in the console.
+
+## Deployment
 
 In your production environment, make sure the ``WOOEY_ENV`` environment variable is set to ``"prod"``.
 
 
-Shell
------
+## Shell
 
-To open the interactive shell, run ::
+To open the interactive shell, run:
 
     python manage.py shell
 
@@ -99,7 +106,7 @@ during development, i.e. delete `dev.db` (SQLite) and then from the shell enter:
 Running Tests
 -------------
 
-To run all tests, run ::
+To run all tests, run:
 
     python manage.py test
 
@@ -108,12 +115,10 @@ Migrations
 ----------
 
 Whenever a database migration needs to be made. Run the following commmands:
-::
 
     python manage.py db migrate
 
 This will generate a new migration script. Then run:
-::
 
     python manage.py db upgrade
 

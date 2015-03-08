@@ -72,9 +72,12 @@ also run:
 
 This will build (create JSON for Python scripts using argparse) and then add them to the database.
 
-In another shell, you can start the temporary dev 'daemon' (which is nothing of the sort, yet) using:
+In another shell, start the temporary dev 'daemon' (which is nothing of the sort, yet) using:
 
     python manage.py start_daemon
+
+This looks for jobs in the queue and executes them in a separate process. It's not clever, and it's ugly, but it
+achieves what is needed for a proof of concept.
 
 ## Examples
 

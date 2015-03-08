@@ -1,0 +1,70 @@
+<div class="large-5 columns">
+
+<ul class="tabs settings-panel-tabs" data-tab role="tablist">
+    {% for section in ['required','optional'] %}
+      <li class="tab-title {% if loop.first %}active{% endif %} radius" role="presentational" ><a href="#settings-{{section}}" role="tab" tabindex="0" aria-selected="{% if loop.first %}true{% else %}false{% endif %}" controls="settings-{{section}}">{{section}}</a></li>
+    {% endfor %}
+</ul>
+
+<form method="post" enctype="multipart/form-data" action="{{ url_for('public.create_job', script_id=script.id) }}">
+<div class="tabs-content settings-panel">
+
+
+   {% for section in ['required','optional'] %}
+    <section role="tabpanel" aria-hidden="false" class="content {% if loop.first %}active{% endif %}" id="settings-{{section}}">
+
+    {% for w in metadata[section] %}
+      <div class="row">
+        <div class="large-12 columns">
+
+            {% if w['widget'] == 'FileChooser' %}
+                <label for="{{ w['data']['display_name'] }}">{{ w['data']['help'] }}
+                    <input type="file" name="{{ w['data']['display_name'] }}" id="{{ w['data']['display_name'] }}">
+                </label>
+            {% elif w['widget'] == 'CheckBox' %}
+                <div class="row">
+                    <div class="large-1 columns">
+                        <input type="checkbox" placeholder="{{ w['data']['default'] }}" id="{{ w['data']['display_name'] }}" name="{{ w['data']['display_name'] }}">
+                    </div>
+                    <div class="large-11 columns">
+                        <label for="{{ w['data']['display_name'] }}">{{ w['data']['help'] }}</label>
+                    </div>
+                </div>
+            {% elif w['widget'] == 'TextField' %}
+                <label for="{{ w['data']['display_name'] }}">{{ w['data']['help'] }}
+                    <input type="text" placeholder="{{ w['data']['default'] }}" id="{{ w['data']['display_name'] }}" name="{{ w['data']['display_name'] }}">
+                </label>
+            {% elif w['widget'] == 'Dropdown' %}
+                <label for="{{ w['data']['display_name'] }}">{{ w['data']['help'] }}
+                    <select type="text" placeholder="{{ w['data']['default'] }}" id="{{ w['data']['display_name'] }}" name="{{ w['data']['display_name'] }}">
+
+                        {% for choice in w['data']['choices'] %}
+                            <option value="{{ choice }}">{{ choice }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            {% else %}
+            {% endif %}
+
+
+
+            </div>
+          </div>
+        {% endfor %}
+
+    </section>
+   {% endfor%}
+    </div>
+
+<div class="row">
+    <div class="large-9 columns">
+        <input type="button" class="button alert right small" value="Cancel" onclick="window.history.back()">
+    </div><div class="large-3 columns">
+        <input type="submit" class="button success right small" value="Run">
+    </div>
+
+</div>
+
+
+    </form>
+</div>

@@ -1,0 +1,10 @@
+# Everything the developer needs in addition to the production requirements
+-r prod.txt
+
+# Testing
+pytest>=2.6.3
+webtest
+factory-boy==2.4.1
+
+# Management script
+Flask-Script

@@ -1,0 +1,56 @@
+{
+    "program": {
+        "path": "/Users/mxf793/repos/wooey/scripts/mock_argparse_example.py", 
+        "epilog": null, 
+        "name": "mock_argparse_example", 
+        "description": "Process some integers."
+    }, 
+    "parser": {
+        "prefix_chars": "-", 
+        "argument_default": null
+    }, 
+    "required": [
+        {
+            "data": {
+                "commands": [], 
+                "display_name": "integers", 
+                "help": "an integer for the accumulator", 
+                "default": null, 
+                "nargs": "+", 
+                "choices": []
+            }, 
+            "widget": "TextField", 
+            "type": "int"
+        }
+    ], 
+    "optional": [
+        {
+            "data": {
+                "commands": [
+                    "--womp"
+                ], 
+                "display_name": "womp", 
+                "help": "subtract value", 
+                "default": 0, 
+                "nargs": "", 
+                "choices": []
+            }, 
+            "widget": "TextField", 
+            "type": "int"
+        }, 
+        {
+            "data": {
+                "commands": [
+                    "--sum"
+                ], 
+                "display_name": "accumulate", 
+                "help": "sum the integers (default: find the max)", 
+                "default": "max", 
+                "nargs": "", 
+                "choices": []
+            }, 
+            "widget": "CheckBox", 
+            "type": "NoneType"
+        }
+    ]
+}

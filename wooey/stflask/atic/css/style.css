@@ -1,0 +1,61 @@
+/* =============================================================================
+   App specific CSS file.
+   ========================================================================== */
+
+
+
+.form-with-annotation {
+  margin-bottom: 0px !important;
+}
+
+
+.form-annotation small {
+  color: #bbb;
+
+}
+
+footer {
+  background: white;
+  padding: 20px;
+  height: 100px;
+}
+
+body {
+  height: auto !important;
+}
+
+
+
+
+.tab-title > a {
+    padding: 8px 16px !important;
+}
+
+.tab-title.active > a {
+}
+
+.settings-panel {
+    background-color: #f5f5f5 !important;
+    padding: 0.8em;
+}
+
+.settings-panel-tabs .tab-title > a {
+    background-color: #ddd !important;
+}
+
+.settings-panel-tabs .tab-title.active > a {
+    background-color: #f5f5f5 !important;
+}
+
+.console {
+    overflow:scroll;
+    background-color: #333;
+    color: #0f0;
+    font-family: "Courier New", Courier, monospace;
+}
+
+.console .console-body {
+    margin:1em;
+    white-space: pre;
+    font-size: 0.9rem;
+}

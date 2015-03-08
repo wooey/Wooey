@@ -1,0 +1,27 @@
+{
+    "program": {
+        "path": "/Users/mxf793/repos/wooey/scripts/plot_some_numbers.py", 
+        "epilog": null, 
+        "name": "plot_some_numbers", 
+        "description": "Plot some numbers."
+    }, 
+    "parser": {
+        "prefix_chars": "-", 
+        "argument_default": null
+    }, 
+    "required": [
+        {
+            "data": {
+                "commands": [], 
+                "display_name": "integers", 
+                "help": "a space separated list of numbers to plot", 
+                "default": null, 
+                "nargs": "+", 
+                "choices": []
+            }, 
+            "widget": "TextField", 
+            "type": "int"
+        }
+    ], 
+    "optional": []
+}

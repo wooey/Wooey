@@ -1,0 +1,36 @@
+
+{% extends "layout.html" %}
+{% block content %}
+<!-- Main jumbotron for a primary marketing message or call to action -->
+<div class="jumbotron">
+  <h1>Welcome to Wooey</h1>
+  <p>Perform data analysis, system administration, or anything you like, via a web-based interface to command-line scripts.</p>
+</div><!-- /.jumbotron -->
+
+<div class="row">
+
+<table width="100%">
+  <thead>
+    <tr>
+      <th width="200">Script</th>
+        <th></th>
+    </tr>
+  </thead>
+  <tbody>
+
+        {% for script in scripts %}
+    <tr>
+        <td><a href="{{ url_for('public.create_job', script_id=script.id) }}" class="list-group-item{% if not script.is_active %} disabled{% endif %}">
+            {% if script.nicename %}{{ script.display_name }}{% else %}{{ script.name }}{% endif %}</a></td>
+        <td>{{ script.description }}</td>
+        </tr>
+        {% endfor %}
+</tbody></table>
+
+</div>
+
+
+
+
+{% endblock %}
+

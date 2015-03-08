@@ -1,0 +1,26 @@
+
+{% extends "layout.html" %}
+{% block content %}
+
+    <h1>Available Scripts</h1>
+<table width="100%">
+    <thead>
+    <tr>
+        <th>Script</th>
+        <th></th>
+        <th><i class="fa fa-play" title="Enabled?"></i></th>
+    </tr>
+  </thead>
+  <tbody>
+
+  {% for script in scripts %}
+    <tr>
+        <td><a href="{{ url_for('public.create_job', script_id=script.id) }}" class="list-group-item{% if not script.is_active %} disabled{% endif %}">
+            {% if script.nicename %}{{ script.display_name }}{% else %}{{ script.name }}{% endif %}</a></td>
+        <td>{{ script.description }}</td>
+        <td>{% if script.is_active %}<i class="fa fa-check"></i>{% endif %}</td>
+        </tr>
+        {% endfor %}
+</tbody></table>
+{% endblock %}
+

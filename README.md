@@ -5,19 +5,35 @@ Automated web UIs for Python scripts
 
 ## About
 
-Wooey is a simple web interface (built on Flask) to run command line Python scripts. Think of it as an easy solution
-to routine data analysis, file processing, or anything else. Get your scripts up on the web.
+Wooey is a simple web interface (built on Flask) to run command line Python scripts. Think of it as an easy way to get
+your scripts up on the web for routine data analysis, file processing, or anything else.
+
+The name deirved from [Gooey](https://github.com/chriskiehl/Gooey) a GUI-from-command-line tool for Python scripts. In fact
+the ArgumentParser to JSON conversion is almost a direct copy from this project at present.
+
+The front page of a wooey install presents a list of installed scripts:
 
 ![Welcome](welcome_to_wooey.png)
 
-![mock_argparse example script](mock_argparse_example.png)
+Each script has it's own UI form based on the config parameters defined in the ArgumentParser:
+
+![bar_config example script](bar_config.png)
+
+Documentation can be specified either manually via the JSON, or my providing a
+[Markdown](http://en.wikipedia.org/wiki/Markdown)-format file alongside the script or config file.
 
 ![plot_some_numbers script with docs](plot_some_numbers_with_documentation.png)
 
+Logged-in users get a nice listing of their previous jobs:
+
 ![User job listing](user_job_list.png)
+
+The output from successful jobs is available via an inline viewer (images only presently, .csv support via Pandas to follow):
 
 ![Job with success 1](job_success_1.png)
 ![Job with success 2](job_success_2.png)
+
+Errors are output to the inline console:
 
 ![Job with error console](job_with_error.png)
 

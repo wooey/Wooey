@@ -8,8 +8,29 @@ Automated web UIs for Python scripts
 Wooey is a simple web interface (built on Flask) to run command line Python scripts. Think of it as an easy way to get
 your scripts up on the web for routine data analysis, file processing, or anything else.
 
-The name deirved from [Gooey](https://github.com/chriskiehl/Gooey) a GUI-from-command-line tool for Python scripts. In fact
-the ArgumentParser to JSON conversion is almost a direct copy from this project at present.
+Impressed by what [Gooey](https://github.com/chriskiehl/Gooey) can do, turning ArgumentParser-based command-line scripts
+into WxWidgets-based GUIs, I thought
+I'd see if I could do the same for the web. I'm still not sure if the result is beautiful or horrific. Wooey
+(see what I did there?) is build on a the same, if slightly modified, back-end conversion of ArgumentParser
+instances to JSON definitions. These definitions are used to construct a web-based UI with type-dependent widgets.
+Submitted configurations are parsed, using the JSON definition, to command line arguments that are then submitted to a job queue.
+
+Jobs in the queue are automatically run and the results made available in the job view, with smart handling of outputs
+such as images (CSV, etc. to be supported via pandas, possibly some kind of plugin system) into a tabbed output viewer.
+Support for downloading of zipped output files is to follow.
+
+The use case for myself was as a simple platform to allow running of routine data-processing and analysis scripts
+within a research group, but I'm sure there are other possibilities. However, I wouldn't recommend putting this
+on the public web just yet (pre-alpha warning). It's somewhat comparable to things like Shiny for R, except multi-user
+out of the box. Support for multiple command-line formats is on my todo.
+
+Enjoy and please fork.
+
+Built on Flask, using cookiecutter-flask then modified to use the Foundation framework. This is *My First Flask App!*
+so please feel free to critique & give pointers. Thanks.
+
+
+## Walkthrough
 
 The front page of a wooey install presents a list of installed scripts:
 
@@ -108,16 +129,14 @@ during development, i.e. delete `dev.db` (SQLite) and then from the shell enter:
     db.create_all()
 
 
-Running Tests
--------------
+## Running Tests
 
 To run all tests, run:
 
     python manage.py test
 
 
-Migrations
-----------
+## Migrations
 
 Whenever a database migration needs to be made. Run the following commmands:
 
@@ -130,3 +149,14 @@ This will generate a new migration script. Then run:
 To apply the migration.
 
 For a full migration command reference, run ``python manage.py db --help``.
+
+## FAQ
+
+### Isn't this terribly insecure?
+
+That largely depends on what you're scripts do. Wooey will perform some standard form-type checking and validation
+before passing to your script. The input is then re-parsed (from the command-line) via ArgumentParser into variables
+for your script. In that sense, it's as secure as an open command line.
+
+
+

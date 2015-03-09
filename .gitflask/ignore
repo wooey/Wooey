@@ -49,3 +49,5 @@ env*
 
 .idea
 dev.db
+
+migrations

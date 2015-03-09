@@ -75,24 +75,24 @@ Then run the following commands to bootstrap your environment.
     git clone https://github.com/mfitzp/wooey
     cd wooey
     pip install -r requirements/dev.txt
-    python manage.py server
 
-You will see a pretty welcome screen.
-
-Once you have installed your DBMS, run the following to create your app's database tables and perform the initial migration:
+At this state you can either install a DBMS or use SQLite as a developer setup.
+Either way, run the following to create your app's database tables and perform the initial migration:
 
     python manage.py db init
     python manage.py db migrate
     python manage.py db upgrade
-    python manage.py server
 
-The server will start up. But you will see it is empty! To add the example scripts to the database and allow you to test
+To add the example scripts to the database and allow you to test
 also run:
 
     python manage.py build_scripts
     python manage.py find_scripts
 
-This will build (create JSON for Python scripts using argparse) and then add them to the database.
+This will build (create JSON for Python scripts using argparse) and then add them to the database. You can now start up
+the server using:
+
+    python manage.py server
 
 In another shell, start the temporary dev 'daemon' (which is nothing of the sort, yet) using:
 

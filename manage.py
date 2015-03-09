@@ -14,8 +14,8 @@ from wooey.user.models import User
 from wooey.settings import DevConfig, ProdConfig
 from wooey.database import db
 
-from wooey.lib.utils import find_files
-from wooey.lib.python import collect_argparses
+from wooey.backend.utils import find_files
+from wooey.backend.python import collect_argparses
 
 from wooey.public.models import Script, Job, STATUS_WAITING, STATUS_COMPLETE, STATUS_ERROR, STATUS_RUNNING
 

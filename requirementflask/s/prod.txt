@@ -37,4 +37,4 @@ Flask-Cache>=0.13.1
 Flask-DebugToolbar==0.9.1
 
 # Admin
-Flask-Admin=1.1.0
+Flask-Admin==1.1.0

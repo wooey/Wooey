@@ -10,8 +10,9 @@ your scripts up on the web for routine data analysis, file processing, or anythi
 
 Impressed by what [Gooey](https://github.com/chriskiehl/Gooey) can do, turning ArgumentParser-based command-line scripts
 into WxWidgets-based GUIs, I thought
-I'd see if I could do the same for the web. I'm still not sure if the result is beautiful or horrific. Wooey
-(see what I did there?) is build on a the same, if slightly modified, back-end conversion of ArgumentParser
+I'd see if I could do the same for the web. I'm still not sure if the result is beautiful or horrific.
+
+Wooey (see what I did there?) is built on the same, but slightly modified, back-end conversion of ArgumentParser
 instances to JSON definitions. These definitions are used to construct a web-based UI with type-dependent widgets.
 Submitted configurations are parsed, using the JSON definition, to command line arguments that are then submitted to a job queue.
 

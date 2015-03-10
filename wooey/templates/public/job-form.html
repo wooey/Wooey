@@ -2,7 +2,7 @@
 
 <ul class="tabs settings-panel-tabs" data-tab role="tablist">
     {% for section in ['required','optional'] %}
-      <li class="tab-title {% if loop.first %}active{% endif %} radius" role="presentational" ><a href="#settings-{{section}}" role="tab" tabindex="0" aria-selected="{% if loop.first %}true{% else %}false{% endif %}" controls="settings-{{section}}">{{section}}</a></li>
+      <li class="tab-title {% if loop.first %}active{% endif %}" role="presentational" ><a href="#settings-{{section}}" role="tab" tabindex="0" aria-selected="{% if loop.first %}true{% else %}false{% endif %}" controls="settings-{{section}}">{{section}}</a></li>
     {% endfor %}
 </ul>
 
@@ -69,8 +69,8 @@
 
 <div class="row">
     <div class="large-12 columns"><div class="right">
-        <input type="button" class="button alert" value="Cancel" onclick="window.history.back()">
-        <input type="submit" class="button success" value="Run">
+        <input type="button" class="button alert radius" value="Cancel" onclick="window.history.back()">
+        <input type="submit" class="button success radius" value="Run">
     </div></div>
 </div>
 

@@ -27,10 +27,10 @@
         <td>{{ job.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
         <td>
 
-        {% if job.status == 'W' %}<span class="label info">Waiting</span>
-        {% elif job.status == 'R' %}<span class="label info">Running</span>
-        {% elif job.status == 'C' %}<span class="label success">Complete</span>
-        {% elif job.status == 'X' %}<span class="label alert">Error</span>{% endif %}
+        {% if job.status == 'W' %}<span class="label info radius">Waiting</span>
+        {% elif job.status == 'R' %}<span class="label info radius">Running</span>
+        {% elif job.status == 'C' %}<span class="label success radius">Complete</span>
+        {% elif job.status == 'X' %}<span class="label alert radius">Error</span>{% endif %}
 
         </td>
         </tr>

@@ -44,7 +44,7 @@
 {% endwith %}
 
 <header>{% block header %}{% endblock %}</header>
-<div class="{% block content_class %}row{% endblock content_class %}">
+<div class="{% block content_class %}row{% endblock content_class %} full-width">
 
   <div role="main">
     {% with messages = get_flashed_messages(with_categories=true) %}

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 '''Public section, including homepage and signup.'''
 from flask import (Blueprint, request, render_template, flash, url_for,
-                    redirect, session)
+                    redirect, session, abort, send_from_directory)
 from flask.ext.login import login_user, login_required, logout_user, current_user
 
 from wooey.extensions import login_manager
@@ -19,6 +19,8 @@ import json
 import os
 import base64
 import mistune
+
+import zipfile, tarfile
 
 from .models import Script, Job
 
@@ -179,15 +181,18 @@ def job(job_id):
     except IOError:
         console = ""
 
-    excluded = ['STDOUT']
+    excluded = []
 
-    # Filter files for files and not excluded (STDOUT)
-    files = [f for f in os.listdir(job.path) if os.path.isfile(os.path.join(job.path, f)) and f not in excluded]
+    # Filter files for files and not excluded above list
+    # FIXME: The exclude list should come from config
+    # FIXME: Add excluded list of *extensions* for download
+    cwd = os.path.join(job.path, 'output')  # Excution path of the job
+    files = [f for f in os.listdir(cwd) if os.path.isfile(os.path.join(cwd, f)) and f not in excluded]
 
     display = {}
     for filename in files:
 
-        fullpath = os.path.join(job.path, filename)
+        fullpath = os.path.join(cwd, filename)
         name, ext = os.path.splitext(filename)
         src = None
 
@@ -199,3 +204,40 @@ def job(job_id):
             display[name] = src
 
     return render_template("public/job.html", script=script, job=job, metadata=script.load_config(), console=console, display=display)
+
+
+def make_zipdir(zipf, path):
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            fn = os.path.join(root, file)
+            zipf.write(fn, os.path.relpath(fn, path))
+
+@blueprint.route("/jobs/<int:job_id>/download<format>")
+def download_job_output(job_id, format):
+    if format not in ['.zip', '.tgz', '.tar.gz']:
+        abort(404)
+
+    job = Job.query.get(job_id)
+
+    fn = secure_filename("%s_%d%s" % (job.script.name, job.id, format))
+    path_fn = os.path.join(job.path, fn )
+
+    # Check for existence of pre-zipped files
+    if not os.path.exists(path_fn):
+
+        # Target folder to zip
+        folder = os.path.join(job.path, 'output')
+
+        if format == '.zip':
+            with zipfile.ZipFile(path_fn, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                make_zipdir(zipf, folder)
+
+        elif format in ['.tar.gz', '.tgz']:
+
+            with tarfile.open(path_fn, "w:gz") as tarzf:
+                tarzf.add(folder, arcname="")
+
+    # Return the download
+    return send_from_directory(job.path, fn, as_attachment=True)
+
+

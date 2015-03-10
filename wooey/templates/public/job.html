@@ -61,6 +61,21 @@
 
     </div>
 
+<div class="row">
+    <div class="large-12 columns">
+        <a href="{{ url_for('public.download_job_output', job_id=job.id, format='.zip') }}" class="button split right"><i class="fa fa-download"></i> Download <span data-dropdown="drop"></span></a><br>
+        <ul id="drop" class="f-dropdown" data-dropdown-content>
+            <li><a href="{{ url_for('public.download_job_output', job_id=job.id, format='.zip') }}"><i class="fa fa-download"></i> .zip</a></li>
+            <li><a href="{{ url_for('public.download_job_output', job_id=job.id, format='.tar.gz') }}"><i class="fa fa-download"></i> .tar.gz</a></li>
+        </ul>
+
+
+
+
+    </div>
+
+</div>
+
 </div>
 
 </div>

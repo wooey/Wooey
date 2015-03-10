@@ -72,6 +72,8 @@ class Job(SurrogatePK, Model):
 
     status = Column(db.Enum(STATUS_WAITING, STATUS_RUNNING, STATUS_COMPLETE, STATUS_ERROR), nullable=False, default=STATUS_WAITING)
 
+    pid = Column(db.Integer, unique=False, nullable=True)
+
     config = Column(db.String(), nullable=True)
 
     @property

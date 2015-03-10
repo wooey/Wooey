@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
+import errno
 import sys
 import subprocess
 import json
@@ -108,6 +109,15 @@ def read_all_so_far(proc, out=''):
     return out
 
 
+def mkdirs(path):
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
+
+
 @manager.command
 def start_daemon():
     '''
@@ -144,9 +154,9 @@ def start_daemon():
         for k, v in pids.items():
 
             # Check process status and flush to file
-            v['pid'].poll()
+            v['process'].poll()
 
-            if v['pid'].returncode is None:  # Still running
+            if v['process'].returncode is None:  # Still running
                 pass
             else:
                 try:
@@ -154,7 +164,7 @@ def start_daemon():
                 except IOError:
                     pass
 
-                if v['pid'].returncode == 0:  # Complete
+                if v['process'].returncode == 0:  # Complete
                     job = Job.query.get(k)
                     job.status = STATUS_COMPLETE
 
@@ -187,14 +197,28 @@ def start_daemon():
                 print(' '.join(args))
 
                 out = open(os.path.join(job.path, 'STDOUT'), 'w')
+                cwd = os.path.join(job.path, 'output')
+                try:
+                    # Create folder, accepting it already exists (re-run of previous job is OK)
+                    mkdirs(cwd)
+                except:
+                    # Anything goes wrong here we stop
+                    job.status = STATUS_ERROR
+                    db.session.commit()
+                    continue # Next job
+
                 # Run the command and store the object for future use
+                process = subprocess.Popen(args, cwd=cwd, stdout=out, stderr=subprocess.STDOUT)
+
                 pids[job.id] = {
-                    'pid': subprocess.Popen(args, cwd=job.path, stdout=out, stderr=subprocess.STDOUT),
+                    'process': process,
                     'out': out,
-                    }
+                }
 
                 # Update the job status
                 job.status = STATUS_RUNNING
+                job.pid = process.pid
+
                 db.session.commit()
 
         print(pids)

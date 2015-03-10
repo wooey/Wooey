@@ -59,3 +59,8 @@ body {
     white-space: pre;
     font-size: 0.9rem;
 }
+
+.row.full-width {
+  width: 90%;
+  max-width: 90%;
+}

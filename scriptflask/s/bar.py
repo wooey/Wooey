@@ -23,7 +23,7 @@ parser.add_argument("-m", "--metabolite", dest="metabolite", default='',
                   help="name of metabolite to plot graph for")
 
 parser.add_argument("-f", "--file", dest="file", type=argparse.FileType('rU'), required=True,
-                  help="csv file containing dumped data from plsmulti", metavar="FILE")
+                  help="csv file containing source data", metavar="FILE")
 
 parser.add_argument("-b", "--batch", action="store_true", dest="batch_mode", default=False,
                   help="Batch mode (process all metabolite matches with same parameters)")
@@ -43,10 +43,7 @@ parser.add_argument("-s", "--search", dest="search", default=None,
 parser.add_argument("-t", dest="tests", default=None,
                   help="CLASS,CLASS combinations to statisically test (space-separated)")
 
-parser.add_argument("-d", "--display", action="store_true", dest="display", default=False,
-                  help="Display graphs to screen")
-
-parser.add_argument("--statistic", dest="statistic", default=None, choices=['tind', 'trel'],
+parser.add_argument("--statistic", dest="statistic", default=None, choices={'tind':'Independent-samples T-test', 'trel':'Related-samples T-test'},
                   help="Statistical test: tind (t-independent), trel (t-related)")
 
 parser.add_argument("--xlabel", dest="xlabel", default='',
@@ -266,6 +263,4 @@ if args.multiplot:
     print "Save as 'bar%s-%s.%s'" % (filesuff, '-'.join(metabolites), args.format)
     plt.savefig('bar%s-%s.%s' % (filesuff, '-'.join(metabolites), args.format), dpi=args.dpi, transparent=False)
 
-if args.display:
-    plt.show()
 plt.close()

@@ -38,9 +38,20 @@
                 <label for="{{ w['data']['display_name'] }}">{{ w['data']['help'] }}
                     <select type="text" placeholder="{{ w['data']['default'] }}" id="{{ w['data']['display_name'] }}" name="{{ w['data']['display_name'] }}">
 
-                        {% for choice in w['data']['choices'] %}
-                            <option value="{{ choice }}">{{ choice }}</option>
-                        {% endfor %}
+                        {% if w['data']['choices'] is mapping %}
+
+                            {% for choice, label in w['data']['choices'].items() %}
+                                <option value="{{ choice }}">{{ label }}</option>
+                            {% endfor %}
+
+                        {% else %}
+
+                            {% for choice in w['data']['choices'] %}
+                                <option value="{{ choice }}">{{ choice }}</option>
+                            {% endfor %}
+
+                        {% endif %}
+
                     </select>
                 </label>
             {% else %}

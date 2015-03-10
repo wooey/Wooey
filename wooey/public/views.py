@@ -181,29 +181,41 @@ def job(job_id):
     except IOError:
         console = ""
 
-    excluded = []
-
-    # Filter files for files and not excluded above list
-    # FIXME: The exclude list should come from config
-    # FIXME: Add excluded list of *extensions* for download
-    cwd = os.path.join(job.path, 'output')  # Excution path of the job
-    files = [f for f in os.listdir(cwd) if os.path.isfile(os.path.join(cwd, f)) and f not in excluded]
 
     display = {}
-    for filename in files:
+    has_output = False
 
-        fullpath = os.path.join(cwd, filename)
-        name, ext = os.path.splitext(filename)
-        src = None
+    cwd = os.path.join(job.path, 'output')  # Excution path of the job
+    if os.path.isdir(cwd):  # Execution has begun/finished
 
-        if ext in ['.png', '.jpg', '.jpeg', '.tif', '.tiff']:
-            with open(fullpath, 'r') as f:
-                src = '<img src="data:image/' + ext + ';base64,' + base64.b64encode(f.read()) + '">'
+        excluded = []
 
-        if src:
-            display[name] = src
+        # Filter files for files and not excluded above list
+        # FIXME: The exclude list should come from config
+        # FIXME: Add excluded list of *extensions* for download
+        files = [f for f in os.listdir(cwd) if os.path.isfile(os.path.join(cwd, f)) and f not in excluded]
 
-    return render_template("public/job.html", script=script, job=job, metadata=script.load_config(), console=console, display=display)
+        for filename in files:
+
+            fullpath = os.path.join(cwd, filename)
+            name, ext = os.path.splitext(filename)
+            src = None
+
+            if ext in ['.png', '.jpg', '.jpeg', '.tif', '.tiff']:
+                with open(fullpath, 'r') as f:
+                    src = '<img src="data:image/' + ext + ';base64,' + base64.b64encode(f.read()) + '">'
+
+            elif ext in ['.svg']:
+                with open(fullpath, 'r') as f:
+                    src = f.read()
+
+
+            if src:
+                display[name] = src
+
+        has_output = len(files) > 0
+
+    return render_template("public/job.html", script=script, job=job, metadata=script.load_config(), console=console, display=display, has_output=has_output)
 
 
 def make_zipdir(zipf, path):

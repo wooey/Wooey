@@ -23,7 +23,7 @@ parser.add_argument("-m", "--metabolite", dest="metabolite", default='',
                   help="name of metabolite to plot graph for")
 
 parser.add_argument("-f", "--file", dest="file", type=argparse.FileType('rU'), required=True,
-                  help="csv file containing dumped data from plsmulti", metavar="FILE")
+                  help="csv file containing source data", metavar="FILE")
 
 parser.add_argument("-b", "--batch", action="store_true", dest="batch_mode", default=False,
                   help="batch mode, process all metabolite matches with same parameters")
@@ -45,9 +45,6 @@ parser.add_argument("-s", "--search", dest="search", default=None,
 
 parser.add_argument("--styles", dest="styles", default=None,
                   help="style pattern to use to assign colors/markers/lines to lines; (3),(regex),(groups)")
-
-parser.add_argument("-d", "--display", action="store_true", dest="display", default=False,
-                  help="display resulting graphs to screen")
 
 parser.add_argument("--xlabel", dest="xlabel", default='',
                   help="x axis label for graph")
@@ -380,6 +377,4 @@ if args.multiplot:
     print "Save as 'long%s-%s-%s.%s'" % (filesuff, '-'.join(metabolites), common_classname, args.format)
     plt.savefig('long%s-%s-%s.%s' % (filesuff, '-'.join(metabolites), common_classname, args.format), dpi=args.dpi, transparent=False)
 
-if args.display:
-    plt.show()
 plt.close()

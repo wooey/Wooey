@@ -175,8 +175,8 @@ def job(job_id):
     script = job.script
 
     try:
-        with open(os.path.join(job.path, 'STDOUT'), 'r') as f:
-            console = f.read()
+        with open(os.path.join(job.path, 'STDOUT'), 'rU') as f:
+            console = f.read().decode('utf8')
 
     except IOError:
         console = ""
@@ -207,7 +207,7 @@ def job(job_id):
 
             elif ext in ['.svg']:
                 with open(fullpath, 'r') as f:
-                    src = f.read()
+                    src = f.read().decode('utf8')
 
 
             if src:

@@ -92,6 +92,20 @@ body {
 
 
 .row.full-width {
-  width: 90%;
-  max-width: 90%;
+  width: 95%;
+  max-width: 95%;
 }
+
+.offset-top {
+    margin-top: 1rem;
+}
+
+.no-margin-bottom {
+    margin-bottom: 0 !important;
+}
+
+.label i {
+    width:14px; line-height:14px;
+}
+
+.title-area h1 a {font-weight:bold !important;}

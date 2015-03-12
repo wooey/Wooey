@@ -1,18 +1,34 @@
 
 {% extends "layout.html" %}
 {% block content %}
+<div class="row">
+     <div class="large-9 columns">
+        <h1 class="no-margin-bottom">{% if script.nicename %}{{ script.display_name }}{% else %}{{ script.name }}{% endif %}
+            <span style="vertical-align:10%;">
+            <span class="label secondary radius">Job #{{ job.id }}</span>
+            {% if job.status == 'W' %}<span class="label info radius"><i class="fa fa-clock-o"></i> Waiting</span>
+            {% elif job.status == 'R' %}<span class="label info radius"><i class="fa fa-spinner fa-pulse"></i> Running</span>
+            {% elif job.status == 'C' %}<span class="label success radius"><i class="fa fa-check"></i> Complete</span>
+            {% elif job.status == 'X' %}<span class="label alert radius"><i class="fa fa-warning"></i> Error</span>{% endif %}
+                </span>
+        </h1>
+        <p>{{ script.description }}</p>
+     </div>
+    <div class="large-3 columns">
+        {% if has_output %}
+            <a href="{{ url_for('public.download_job_output', job_id=job.id, format='.zip') }}" class="button split right radius offset-top"><i class="fa fa-download"></i> Download <span data-dropdown="drop"></span></a>
+            <ul id="drop" class="f-dropdown" data-dropdown-content>
+                <li><a href="{{ url_for('public.download_job_output', job_id=job.id, format='.zip') }}"><i class="fa fa-download"></i> .zip</a></li>
+                <li><a href="{{ url_for('public.download_job_output', job_id=job.id, format='.tar.gz') }}"><i class="fa fa-download"></i> .tar.gz</a></li>
+            </ul>
+        {% else %}
+            <span class="button right secondary disabled radius offset-top"><i class="fa fa-warning"></i> No download</span>
+        {% endif %}
 
-    <h1>{% if script.nicename %}{{ script.display_name }}{% else %}{{ script.name }}{% endif %}
-        <small>(Job ID {{ job.id }})</small>
+    </div>
+</div>
 
-        {% if job.status == 'W' %}<span class="label info radius">Waiting</span>
-        {% elif job.status == 'R' %}<span class="label info radius">Running</span>
-        {% elif job.status == 'C' %}<span class="label success radius">Complete</span>
-        {% elif job.status == 'X' %}<span class="label alert radius">Error</span>{% endif %}
 
-    </h1>
-
-    <p>{{ script.description }}</p>
 
     <!-- Build the UI
     {u'optional': [{u'type': u'CheckBox', u'data': {u'display_name': u'accumulate', u'commands': [u'--sum'], u'nargs': u'', u'help': u'sum the integers (default: find the max)', u'choices': []}}], u'program': {u'path': u'/Users/mxf793/repos/wooey/scripts/mock_argparse_example.py', u'epilog': None, u'name': u'mock_argparse_example', u'description': u'Process some integers.'}, u'parser': {u'prefix_chars': u'-', u'argument_default': None}, u'required': [{u'type': u'FileChooser', u'data': {u'display_name': u'integers', u'commands': [], u'nargs': u'+', u'help': u'an integer for the accumulator', u'choices': []}}]}
@@ -35,7 +51,7 @@
 
 <div class="row">
 {% include "public/job-form.html" %}
-    <div class="large-7 columns">
+    <div class="large-8 columns">
 
 
 <ul class="tabs" data-tab role="tablist">
@@ -61,19 +77,6 @@
 
     </div>
 
-<div class="row">
-    <div class="large-12 columns">
-        {% if has_output %}
-            <a href="{{ url_for('public.download_job_output', job_id=job.id, format='.zip') }}" class="button split right radius"><i class="fa fa-download"></i> Download <span data-dropdown="drop"></span></a><br>
-            <ul id="drop" class="f-dropdown" data-dropdown-content>
-                <li><a href="{{ url_for('public.download_job_output', job_id=job.id, format='.zip') }}"><i class="fa fa-download"></i> .zip</a></li>
-                <li><a href="{{ url_for('public.download_job_output', job_id=job.id, format='.tar.gz') }}"><i class="fa fa-download"></i> .tar.gz</a></li>
-            </ul>
-        {% else %}
-            <span class="button right secondary disabled radius"><i class="fa fa-warning"></i> No download</span><br>
-        {% endif %}
-    </div>
-</div>
 </div>
 </div>
 {% endblock %}

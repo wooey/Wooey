@@ -2,7 +2,7 @@
 {% extends "layout.html" %}
 {% block content %}
 
-    <h1>{% if script.nicename %}{{ script.display_name }}{% else %}{{ script.name }}{% endif %}</h1>
+    <h1 class="no-margin-bottom">{% if script.nicename %}{{ script.display_name }}{% else %}{{ script.name }}{% endif %}</h1>
 
     <p>{{ script.description }}</p>
 
@@ -27,7 +27,7 @@
 
 <div class="row">
 {% include "public/job-form.html" %}
-<div class="large-7 columns">
+<div class="large-8 columns">
     {% if documentation %}
         {{ documentation|safe }}
     {% else %}

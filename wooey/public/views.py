@@ -151,7 +151,9 @@ def create_job(script_id):
                         args.append(fname)
 
         # Create the job
-        job = Job(script=script, user=current_user, path=tempdir, config=json.dumps({'args': args}))
+        # FIXME: Priority should be calculated from the higest value of the script and the user
+        # e.g. a user with priority 10 running a priority 1 script, will get a priority 10 job
+        job = Job(script=script, user=current_user, path=tempdir, config=json.dumps({'args': args}), priority=script.priority)
         db.session.commit()
 
         return redirect(url_for('public.job', job_id=job.id))

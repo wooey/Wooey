@@ -22,6 +22,15 @@ from wooey.public.models import Script, Job, STATUS_WAITING, STATUS_COMPLETE, ST
 
 import select
 
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+
+# FIXME: Settings (move to the settings file)
+MAX_RUNNING_JOBS = 1
+
+
+
 if os.environ.get("WOOEY_ENV") == 'prod':
     app = create_app(ProdConfig)
 else:
@@ -146,10 +155,6 @@ def start_daemon():
         jobs_running = Job.query.filter(Job.status == STATUS_RUNNING)
         no_of_running_jobs = jobs_running.count()
 
-        for job in jobs_running:
-            print(job)
-
-
         # Check each vs. running subprocesses to see if still active (if not, update database with new status)
         for k, v in pids.items():
 
@@ -165,10 +170,12 @@ def start_daemon():
                     pass
 
                 if v['process'].returncode == 0:  # Complete
+                    logging.info("Job %d completed successfully." % job.id)
                     job = Job.query.get(k)
                     job.status = STATUS_COMPLETE
 
                 else:  # Error
+                    logging.error("Job %d exited with an error status." % job.id)
                     job = Job.query.get(k)
                     job.status = STATUS_ERROR
 
@@ -178,9 +185,15 @@ def start_daemon():
 
 
         # If number of running jobs < MAX_RUNNING_JOBS start some more
-        if no_of_running_jobs < 5:
+        if no_of_running_jobs < MAX_RUNNING_JOBS:
+
+            # Get the waiting jobs (STATUS_WAITING) ordered by the age-in-minutes/priority DESC
+            # Jobs with a priority of `1` will sort above equally-old jobs with a higher priority value
+            # A job that is priority `2` will sort equal with a job half it's age
             jobs_to_run = Job.query.filter(Job.status == STATUS_WAITING).order_by(Job.created_at.desc())
-            for job in jobs_to_run:
+
+
+            for job in jobs_to_run[:MAX_RUNNING_JOBS]:
 
                 # Get the config settings from the database (dict of values via JSON)
                 if job.config:
@@ -194,7 +207,6 @@ def start_daemon():
                 # Add the executable to the beginning of the sequence
                 args.insert(0, job.script.exec_path)
 
-                print(' '.join(args))
 
                 out = open(os.path.join(job.path, 'STDOUT'), 'w')
                 cwd = os.path.join(job.path, 'output')
@@ -206,6 +218,8 @@ def start_daemon():
                     job.status = STATUS_ERROR
                     db.session.commit()
                     continue # Next job
+
+                logging.info("Starting job %d." % job.id)
 
                 # Run the command and store the object for future use
                 process = subprocess.Popen(args, cwd=cwd, stdout=out, stderr=subprocess.STDOUT)
@@ -221,8 +235,7 @@ def start_daemon():
 
                 db.session.commit()
 
-        print(pids)
-        time.sleep(5)
+        time.sleep(1)
 
 
 

@@ -11,6 +11,9 @@ from wooey.database import (
     SurrogatePK,
 )
 
+from sqlalchemy.ext.hybrid import hybrid_property
+
+
 STATUS_WAITING = "W"
 STATUS_RUNNING = "R"
 STATUS_COMPLETE = "C"
@@ -31,6 +34,9 @@ class Script(SurrogatePK, Model):
     updated_at = Column(db.DateTime, nullable=False, default=dt.datetime.utcnow, onupdate=db.func.now())
 
     description = Column(db.String(255), nullable=True)
+
+    # Default priority for this script to run. The lesser of this vs. the user priority is the job priority
+    priority = Column(db.Integer, unique=False, nullable=False, default=1)
 
     is_active = Column(db.Boolean(), default=True)
 
@@ -72,9 +78,16 @@ class Job(SurrogatePK, Model):
 
     status = Column(db.Enum(STATUS_WAITING, STATUS_RUNNING, STATUS_COMPLETE, STATUS_ERROR), nullable=False, default=STATUS_WAITING)
 
+    # Calculated priority for this job (the lesser of the script priority and the user priority)
+    priority = Column(db.Integer, unique=False, nullable=False, default=1)
+
     pid = Column(db.Integer, unique=False, nullable=True)
 
     config = Column(db.String(), nullable=True)
+
+    @hybrid_property
+    def priority_score(self):
+        return float( (dt.datetime.utcnow-self.created_at).minutes ) / self.priority
 
     @property
     def is_waiting(self):

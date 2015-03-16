@@ -3,13 +3,16 @@
 
 {% block content_class %}row full-width{% endblock content_class %}
 
+{% block subtitle %}/ <a href="{{ url_for('public.create_job', script_id=script.id) }}" class="subtitle">{{ script.name }} </a>{% endblock %}
+
 {% block content %}
 <div class="row header full-width">
-    <div class="large-9 columns"><h1 class="no-margin-bottom">{% if script.nicename %}{{ script.display_name }}{% else %}{{ script.name }}{% endif %}</h1>
-    <p>{{ script.description }}</p>
+    <div class="large-9 columns"><!--<h1 class="no-margin-bottom">{% if script.nicename %}{{ script.display_name }}{% else %}{{ script.name }}{% endif %}</h1> -->
+    <p>{% if script.description %}{{ script.description }}{% else %}&nbsp;{% endif %}</p>
 {% if job %}
     <p class="metadata">
-    Job #{{ job.id }} submitted by {{ job.user.username }} on {{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') }} @ Priority {{ job.priority }}
+    Current job <a href="{{ url_for('public.job', job_id=job.id) }}">#{{ job.id }}</a> submitted by <span class="primary">{{ job.user.username }}</span> on {{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+    &bull; Priority <span class="primary">{{ job.priority }}</span>
     {% if job.created_at != job.updated_at %}&bull; Updated {{ job.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}{% endif %}
 
     {% if job.status == 'W' %}<span class="label info radius"><i class="fa fa-clock-o"></i> Waiting</span>
@@ -22,13 +25,13 @@
     {% if job %}
         <div class="large-3 columns">
         {% if has_output %}
-            <a href="{{ url_for('public.download_job_output', job_id=job.id, format='.zip') }}" class="button split right radius"><i class="fa fa-download"></i> Download <span data-dropdown="drop"></span></a>
+            <a href="{{ url_for('public.download_job_output', job_id=job.id, format='.zip') }}" class="button small split right radius"><i class="fa fa-download"></i> Download <span data-dropdown="drop"></span></a>
             <ul id="drop" class="f-dropdown" data-dropdown-content>
                 <li><a href="{{ url_for('public.download_job_output', job_id=job.id, format='.zip') }}"><i class="fa fa-download"></i> .zip</a></li>
                 <li><a href="{{ url_for('public.download_job_output', job_id=job.id, format='.tar.gz') }}"><i class="fa fa-download"></i> .tar.gz</a></li>
             </ul>
         {% else %}
-            <span class="button right secondary disabled radius"><i class="fa fa-warning"></i> No download</span>
+            <span class="button small right secondary disabled radius"><i class="fa fa-warning"></i> No download</span>
         {% endif %}
         </div>
     {% endif %}

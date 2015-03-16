@@ -13,6 +13,8 @@ from wooey.database import db
 
 from werkzeug import secure_filename
 
+from collections import defaultdict
+
 import tempfile
 
 import json
@@ -185,7 +187,7 @@ def job(job_id):
         console = ""
 
 
-    display = {}
+    display = defaultdict(list)
     has_output = False
 
     cwd = os.path.join(job.path, 'output')  # Excution path of the job
@@ -210,14 +212,24 @@ def job(job_id):
             if ext in ['.png', '.jpg', '.jpeg', '.tif', '.tiff']:
                 with open(fullpath, 'r') as f:
                     src = '<img src="data:image/' + ext + ';base64,' + base64.b64encode(f.read()) + '">'
+                    size = f.tell()
+
+                display['Images'].append({
+                    'name': name,
+                    'src': src,
+                    'metadata': ["%dkB" % (size/1024), 'image/%s' % ext[1:]]
+                    })
 
             elif ext in ['.svg']:
                 with open(fullpath, 'r') as f:
                     src = f.read().decode('utf8')
+                    size = f.tell()
 
-
-            if src:
-                display[name] = src
+                display['Images'].append({
+                    'name': name,
+                    'src': src,
+                    'metadata': ["%dkB" % (size/1024), 'image/%s' % ext[1:]]
+                    })
 
         has_output = len(files) > 0
 

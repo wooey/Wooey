@@ -43,7 +43,7 @@
 {% if job %}
       <li class="tab-title console-tab active" role="presentational" ><a href="#console" role="tab" tabindex="0" aria-selected="" controls="console"><i class="fa fa-terminal"></i> Console</a></li>
     {% for section, oo in display.items() %}
-      <li class="tab-title" role="presentational" ><a href="#section-{{section}}" role="tab" tabindex="0" aria-selected="" controls="output">{{ section }} <span class="label round">{{ oo|length }} </span></a></li>
+      <li class="tab-title" role="presentational" ><a href="#section-{{section}}" role="tab" tabindex="0" aria-selected="" controls="section-{{section}}">{{ section }} <span class="label round">{{ oo|length }} </span></a></li>
     {% endfor %}
 {% endif %}
 </ul>
@@ -64,28 +64,25 @@
 
     {% if job %}
 
-        <section role="tabpanel" aria-hidden="{% if not job %}true{% endif %}" class="content console full-height {% if job %}active{% endif %}" id="console">
+        <section role="tabpanel" aria-hidden="false" class="content console full-height active" id="console">
             <div class="row console full-height">
                 <div class="large-12 columns console-body">{{ console }}</div>
             </div>
         </section>
 
         {% for section, oo in display.items() %}
-        <section role="tabpanel" aria-hidden="true" class="content" id="section-{{ section }}">
-
+        <section role="tabpanel" aria-hidden="true" class="content full-height" id="section-{{ section }}">
             {% for o in oo %}
                 <div class="row output-metadata radius">
-                    <p><strong>{{ o.name }}</strong><br />
+                    <p>{% if o.icon %}<i class="fa fa-{{ o.icon }}"></i> {% endif %}<strong>{{ o.name }}</strong><br />
                     <small>{% for m in o.metadata %} {{m}} {% if not loop.last %}&bull; {% endif %}{% endfor %}</small>
                     </p>
 
                     {{ o.src|safe }}
-
                  </div>
             {% endfor %}
-
-
-        {% endfor %}  </section>
+        </section>
+        {% endfor %}
 
     {% endif %}
 

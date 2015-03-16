@@ -217,6 +217,7 @@ def job(job_id):
                 display['Images'].append({
                     'name': name,
                     'src': src,
+                    'icon': 'file-image-o',
                     'metadata': ["%dkB" % (size/1024), 'image/%s' % ext[1:]]
                     })
 
@@ -228,8 +229,20 @@ def job(job_id):
                 display['Images'].append({
                     'name': name,
                     'src': src,
+                    'icon': 'file-image-o',
                     'metadata': ["%dkB" % (size/1024), 'image/%s' % ext[1:]]
                     })
+
+            else:  # Miscellaneous files
+                size = os.path.getsize(fullpath)
+                display['Other'].append({
+                    'name': name,
+                    'src': "",
+                    'icon': 'file-o',
+                    'metadata': ["%dkB" % (size/1024), ext[1:].upper()]
+                    })
+
+
 
         has_output = len(files) > 0
 

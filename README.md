@@ -156,8 +156,9 @@ For a full migration command reference, run ``python manage.py db --help``.
 ### Isn't this terribly insecure?
 
 That largely depends on what you're scripts do. Wooey will perform some standard form-type checking and validation
-before passing to your script. The input is then re-parsed (from the command-line) via ArgumentParser into variables
-for your script. In that sense, it's as secure as an open command line.
-
+before passing to your script. The input is then re-parsed (for Python scripts) via ArgumentParser before being
+passed into variables in your script. Scripts are also run without invoking a shell (`exec(shell=False)`) which eliminates
+shell-interpretation risks. However, if you script does something incredibly silly like taking text input and using it
+as a path, you're probably going to regret it.
 
 

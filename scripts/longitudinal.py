@@ -101,7 +101,7 @@ multiax = None
 ymaxf = 0
 
 for metabolite in metabolites[:]:
-    print "Processing %s" % metabolite
+    print("Processing %s" % metabolite)
     quants = allquants[metabolite]
 
     if args.search:
@@ -110,9 +110,9 @@ for metabolite in metabolites[:]:
             match = re.search(args.search, label)
             if not match:
                 del quants[label]
-        print "Filter matching classes '%s' with '%s' gives '%s'" % (', '.join(okeys), args.search, ', '.join(quants.keys()))
+        print("Filter matching classes '%s' with '%s' gives '%s'" % (', '.join(okeys), args.search, ', '.join(quants.keys())))
         if len(quants.keys()) == 0:
-            print "Nothing left!; deleting metabolite"
+            print("Nothing left!; deleting metabolite")
             metabolites.remove(metabolite)
             continue
     # Apply regex to class string for each variable;
@@ -137,7 +137,7 @@ for metabolite in metabolites[:]:
             classtrans[(classlabel, timepoint)] = label  # Store translation for lookup
 
     if len(timepoints) == 0:
-        print "No matching classes found for longitude regex, try again"
+        print("No matching classes found for longitude regex, try again")
         exit()
 
     ind = list()
@@ -146,8 +146,8 @@ for metabolite in metabolites[:]:
     # Remove axis timepoint duplicates and sort
     timepoints = list(timepoints)
     timepoints.sort(key=float)
-    print "Axis longitude completed: " + ", ".join(str(x) for x in timepoints)
-    print "Re-classification: " + ", ".join(classes)
+    print("Axis longitude completed: " + ", ".join(str(x) for x in timepoints))
+    print("Re-classification: " + ", ".join(classes))
 
 
     # If set run styles setting against the class list and build a lookup table of variants

@@ -11,6 +11,9 @@ from argparse import (
     ArgumentParser)
 import argparse
 import itertools
+import sys
+
+PY3 = sys.version_info.major > 2
 
 VALID_WIDGETS = (
     'FileChooser',
@@ -19,10 +22,14 @@ VALID_WIDGETS = (
     'DirChooser',
     'DateChooser',
     'TextField',
-    'Dropdown',
+
+    'SelectOne',
+    'SelectMany',
+
     'Counter',
     'RadioGroup',
-    'CheckBox'
+    'CheckBox',
+    'RangeField',
 )
 
 
@@ -88,9 +95,20 @@ def get_optionals_with_choices(actions):
                         if action.choices
                         and action.required == False]
 
-    return [as_json(action, widget=widget or 'Dropdown')
-            for action, widget in filtered_actions]
+    jsons = []
+    for action, widget in filtered_actions:
+        if PY3 and isinstance(action.choices, range):
+            widget = 'RangeField'
+            action.choices = (action.choices.start, action.choices.stop, action.choices.step)
+        elif action.nargs == "+":
+            # FIXME: We can be smarter here; other possibilities for multiple selections
+            widget = 'SelectMany'
+        else:
+            widget = 'SelectOne'
 
+        jsons.append(as_json(action, widget=widget))
+
+    return jsons
 
 def get_optionals_without_choices(actions):
     """
@@ -199,14 +217,14 @@ def as_json(action, widget):
         defaultval = action.default.__name__
 
     return {
+        'name': action.dest,
         'type': typestr,
+
+        'help': action.help,
+        'nargs': action.nargs or '',
+        'commands': action.option_strings,
+        'choices': action.choices or [],
+        'default': defaultval,
+
         'widget': widget,
-        'data': {
-            'display_name': action.dest,
-            'help': action.help,
-            'nargs': action.nargs or '',
-            'commands': action.option_strings,
-            'choices': action.choices or [],
-            'default': defaultval,
-            }
     }

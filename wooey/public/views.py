@@ -109,7 +109,7 @@ def create_job(script_id):
             documentation = mistune.markdown(documentation)
 
         # Render the script view
-        return render_template("public/create-job.html", script=script, metadata=script.load_config(), documentation=documentation)
+        return render_template("public/job.html", script=script, metadata=script.load_config(), documentation=documentation)
 
     elif request.method == 'POST':
         # Handle the form submission to generate the arguments for the script
@@ -121,30 +121,31 @@ def create_job(script_id):
         for l in ['required', 'optional']:
             for a in metadata[l]:
                 # Positional arguments
-                name = a['data']['display_name']
+                name = a['name']
 
                 if (name in request.form and request.form[name]) or \
                    (name in request.files and request.files[name]):
 
                     # Add the command switch if defined
-                    if a['data']['commands']:
-                        args.append(a['data']['commands'][0])
+                    if a['commands']:
+                        args.append(a['commands'][0])
 
                     if name in request.form:
 
                         # Required arguments are positional; so plot it into place
                         # FIXME: Probably a better check to do here, might require additional data from the parser
-                        # FIXME: Also need to handle FILE objects, etc.
                         if a['widget'] not in ["CheckBox"]:
-                            if a['data']['nargs'] == '+' or a['data']['nargs'] == '*':
+                            if a['nargs'] == '+' or a['nargs'] == '*':
                                 args.extend(request.form[name].split(" "))
                             else:
                                 args.append(request.form[name])
 
                     elif name in request.files:
-                        # Process file upload. We need to copy to a temporary file and
-                        # replace the value in the dictionary (or keep in the same folder, for easier cleanup?)
-                        # Will then need a way to identify uploaded vs. output files
+
+                        EXCLUDED_FILES_FOR_UPLOAD = []
+                        EXCLUDED_EXTENSIONS_FOR_UPLOAD = []
+
+                        # Process file upload. We need to copy to a temporary file and update the dictionary
                         file = request.files[name]
                         fname = os.path.join(tempdir, secure_filename(file.filename))
                         file.save(fname)
@@ -190,12 +191,15 @@ def job(job_id):
     cwd = os.path.join(job.path, 'output')  # Excution path of the job
     if os.path.isdir(cwd):  # Execution has begun/finished
 
-        excluded = []
+        EXCLUDED_FILES_FOR_DOWNLOAD = []
+        EXCLUDED_EXTENSIONS_FOR_DOWNLOAD = []
 
         # Filter files for files and not excluded above list
         # FIXME: The exclude list should come from config
         # FIXME: Add excluded list of *extensions* for download
-        files = [f for f in os.listdir(cwd) if os.path.isfile(os.path.join(cwd, f)) and f not in excluded]
+        files = [f for f in os.listdir(cwd) if os.path.isfile(os.path.join(cwd, f))
+                 and os.path.splitext(f)[1] not in EXCLUDED_EXTENSIONS_FOR_DOWNLOAD
+                 and f not in EXCLUDED_FILES_FOR_DOWNLOAD]
 
         for filename in files:
 
@@ -217,7 +221,12 @@ def job(job_id):
 
         has_output = len(files) > 0
 
-    return render_template("public/job.html", script=script, job=job, metadata=script.load_config(), console=console, display=display, has_output=has_output)
+    documentation = script.load_docs()
+    if documentation:
+        documentation = mistune.markdown(documentation)
+
+
+    return render_template("public/job.html", script=script, job=job, metadata=script.load_config(), console=console, display=display, has_output=has_output, documentation=documentation)
 
 
 def make_zipdir(zipf, path):

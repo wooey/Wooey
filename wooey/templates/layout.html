@@ -44,9 +44,8 @@
 {% endwith %}
 
 <header>{% block header %}{% endblock %}</header>
-<div class="{% block content_class %}row{% endblock content_class %} full-width">
 
-  <div role="main">
+<div class="row full-width">
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     <div class="row">
@@ -61,11 +60,13 @@
     </div><!-- end row -->
         {% endif %}
     {% endwith %}
+</div><!-- end container -->
 
+
+  <div class="{% block content_class %}row{% endblock content_class %}">
     {% block content %}{% endblock %}
   </div>
 
-</div><!-- end container -->
 
 {% include "footer.html" %}
 

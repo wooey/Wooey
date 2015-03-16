@@ -1,79 +1,81 @@
 
 {% extends "layout.html" %}
+
+{% block content_class %}row full-width{% endblock content_class %}
+
 {% block content %}
-<div class="row">
-     <div class="large-9 columns">
-        <h1 class="no-margin-bottom">{% if script.nicename %}{{ script.display_name }}{% else %}{{ script.name }}{% endif %}
-            <span style="vertical-align:10%;">
-            <span class="label secondary radius">Job #{{ job.id }}</span>
-            {% if job.status == 'W' %}<span class="label info radius"><i class="fa fa-clock-o"></i> Waiting</span>
-            {% elif job.status == 'R' %}<span class="label info radius"><i class="fa fa-spinner fa-pulse"></i> Running</span>
-            {% elif job.status == 'C' %}<span class="label success radius"><i class="fa fa-check"></i> Complete</span>
-            {% elif job.status == 'X' %}<span class="label alert radius"><i class="fa fa-warning"></i> Error</span>{% endif %}
-                </span>
-        </h1>
-        <p>{{ script.description }}</p>
-     </div>
-    <div class="large-3 columns">
+<div class="row header">
+    <div class="large-9 columns"><h1 class="no-margin-bottom">{% if script.nicename %}{{ script.display_name }}{% else %}{{ script.name }}{% endif %}</h1>
+    <p>{{ script.description }}</p>
+{% if job %}
+    <p class="metadata">
+    Job #{{ job.id }} submitted by {{ job.user.username }} on {{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') }} @ Priority {{ job.priority }}
+    {% if job.created_at != job.updated_at %}&bull; Updated {{ job.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}{% endif %}
+
+    {% if job.status == 'W' %}<span class="label info radius"><i class="fa fa-clock-o"></i> Waiting</span>
+    {% elif job.status == 'R' %}<span class="label info radius"><i class="fa fa-spinner fa-pulse"></i> Running</span>
+    {% elif job.status == 'C' %}<span class="label success radius"><i class="fa fa-check"></i> Complete</span>
+    {% elif job.status == 'X' %}<span class="label alert radius"><i class="fa fa-warning"></i> Error</span>{% endif %}
+    </p>
+{% endif %}
+    </div>
+    {% if job %}
+        <div class="large-3 columns">
         {% if has_output %}
-            <a href="{{ url_for('public.download_job_output', job_id=job.id, format='.zip') }}" class="button split right radius offset-top"><i class="fa fa-download"></i> Download <span data-dropdown="drop"></span></a>
+            <a href="{{ url_for('public.download_job_output', job_id=job.id, format='.zip') }}" class="button split right radius"><i class="fa fa-download"></i> Download <span data-dropdown="drop"></span></a>
             <ul id="drop" class="f-dropdown" data-dropdown-content>
                 <li><a href="{{ url_for('public.download_job_output', job_id=job.id, format='.zip') }}"><i class="fa fa-download"></i> .zip</a></li>
                 <li><a href="{{ url_for('public.download_job_output', job_id=job.id, format='.tar.gz') }}"><i class="fa fa-download"></i> .tar.gz</a></li>
             </ul>
         {% else %}
-            <span class="button right secondary disabled radius offset-top"><i class="fa fa-warning"></i> No download</span>
+            <span class="button right secondary disabled radius"><i class="fa fa-warning"></i> No download</span>
         {% endif %}
-
-    </div>
+        </div>
+    {% endif %}
 </div>
 
-
-
-    <!-- Build the UI
-    {u'optional': [{u'type': u'CheckBox', u'data': {u'display_name': u'accumulate', u'commands': [u'--sum'], u'nargs': u'', u'help': u'sum the integers (default: find the max)', u'choices': []}}], u'program': {u'path': u'/Users/mxf793/repos/wooey/scripts/mock_argparse_example.py', u'epilog': None, u'name': u'mock_argparse_example', u'description': u'Process some integers.'}, u'parser': {u'prefix_chars': u'-', u'argument_default': None}, u'required': [{u'type': u'FileChooser', u'data': {u'display_name': u'integers', u'commands': [], u'nargs': u'+', u'help': u'an integer for the accumulator', u'choices': []}}]}
-
-    'FileChooser',
-    'MultiFileChooser',
-    'FileSaver',
-    'DirChooser',
-    'DateChooser',
-    'TextField',
-    'Dropdown',
-    'Counter',
-    'RadioGroup',
-    'CheckBox'
-
-    -->
-
-
-
-
-<div class="row">
+<div class="row full-height script-body">
 {% include "public/job-form.html" %}
-    <div class="large-8 columns">
-
+    <div class="large-8 columns full-height">
 
 <ul class="tabs" data-tab role="tablist">
-      <li class="tab-title active console-tab" role="presentational" ><a href="#output-console" role="tab" tabindex="0" aria-selected="true" controls="output-console">Console</a></li>
+      <li class="tab-title {% if not job %}active{% endif %}" role="presentational"><a href="#help-about" role="tab" tabindex="0" controls="help-about"><i class="fa fa-question-circle"></i> </a></li>
+{% if job %}
+      <li class="tab-title active console-tab" role="presentational"><a href="#output-console" role="tab" tabindex="0" aria-selected="true" controls="output-console"><i class="fa fa-terminal"></i> </a></li>
     {% for section in display.keys() %}
       <li class="tab-title" role="presentational" ><a href="#output-{{ section.replace(' ','-') }}" role="tab" tabindex="0" aria-selected="" controls="output-{{ section.replace(' ','-') }}">{{section}}</a></li>
     {% endfor %}
+{% endif %}
 </ul>
 
     <div class="tabs-content">
-    <section role="tabpanel" aria-hidden="false" class="content active console" id="output-console">
+
+    <section role="tabpanel" aria-hidden="{% if job %}true{% endif %}" class="content {% if not job %}active{% endif %}" id="help-about">
         <div class="row">
-            <div class="large-12 columns console-body">{{ console }}</div>
+            <div class="large-12 columns pad-edges">
+                {% if documentation %}
+                    {{ documentation|safe }}
+                {% else %}
+                    <p>There is no documentation for this script.</p>
+                {% endif %}
+            </div>
         </div>
     </section>
-    {% for section, src in display.items() %}
-    <section role="tabpanel" aria-hidden="false" class="content" id="output-{{ section.replace(' ','-') }}">
-        <div class="row">
-            <div class="large-12 columns console-body">{{ src|safe }}</div>
-        </div>
-    </section>
-    {% endfor %}
+
+    {% if job %}
+        <section role="tabpanel" aria-hidden="false" class="content active console" id="output-console">
+            <div class="row">
+                <div class="large-12 columns console-body">{{ console }}</div>
+            </div>
+        </section>
+        {% for section, src in display.items() %}
+        <section role="tabpanel" aria-hidden="true" class="content" id="output-{{ section.replace(' ','-') }}">
+            <div class="row">
+                <div class="large-12 columns console-body">{{ src|safe }}</div>
+            </div>
+        </section>
+        {% endfor %}
+    {% endif %}
 
     </div>
 

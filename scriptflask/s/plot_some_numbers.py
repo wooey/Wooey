@@ -9,6 +9,9 @@ def main():
     parser.add_argument('integers', metavar='N', type=int, nargs='+',
                      help='a space separated list of numbers to plot')
 
+    parser.add_argument('--random', type=int, choices=range(0, 10, 1),
+                     help='a random number between these values will be added to the result')
+
     args = parser.parse_args()
 
     import matplotlib.pyplot as plt

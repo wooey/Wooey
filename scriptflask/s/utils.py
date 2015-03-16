@@ -27,23 +27,23 @@ def read_metabolite_datafile( fp, options ):
     hrow = reader.next()
     try:
         metabolite_column = hrow.index( options.metabolite )
-        print "'%s' found" % (options.metabolite)
+        print("'%s' found" % (options.metabolite))
         metabolites = [ options.metabolite ]
     except:
         all_metabolites = hrow[2:]
         metabolites = filter(lambda x:re.match('(.*)' + options.metabolite + '(.*)', x), all_metabolites)
         if len(metabolites) ==0:
-            print "Metabolite not found, try again. Pick from one of:"
-            print ', '.join( sorted(all_metabolites) )  
+            print("Metabolite not found, try again. Pick from one of:")
+            print(', '.join( sorted(all_metabolites) )  )
             exit()
         elif len(metabolites) > 1:
-            print "Searched '%s' and found multiple matches:" % (options.metabolite)
-            print ', '.join( sorted(metabolites) )
+            print("Searched '%s' and found multiple matches:" % (options.metabolite))
+            print(', '.join( sorted(metabolites) ))
             if not options.batch_mode:
-                print "To process all the above together use batch mode -b"
+                print("To process all the above together use batch mode -b")
                 exit()
         elif len(metabolites) ==1:
-            print "Searched '%s' and found match in '%s'" % (options.metabolite, metabolites[0])
+            print("Searched '%s' and found match in '%s'" % (options.metabolite, metabolites[0]))
     
     
     # Build quants table for metabolite classes
@@ -84,10 +84,10 @@ import numpy
 def smooth(x,window_len=11,window='hanning'):
  
     if x.ndim != 1:
-        raise ValueError, "smooth only accepts 1 dimension arrays."
+        raise ValueError("smooth only accepts 1 dimension arrays.")
 
     if x.size < window_len:
-        raise ValueError, "Input vector needs to be bigger than window size."
+        raise ValueError("Input vector needs to be bigger than window size.")
 
 
     if window_len<3:
@@ -95,7 +95,7 @@ def smooth(x,window_len=11,window='hanning'):
 
 
     if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
-        raise ValueError, "Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'"
+        raise ValueError("Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
 
 
     s=numpy.r_[x[window_len-1:0:-1],x,x[-1:-window_len:-1]]

@@ -1,16 +1,11 @@
 #!/usr/bin/env python
 
-from numpy.random import uniform, seed
 from collections import OrderedDict
-from matplotlib.mlab import griddata
-from matplotlib import ticker
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
 import re
 import os
-import random
-import csv
 
 import argparse
 from collections import defaultdict
@@ -86,7 +81,7 @@ multiax = None
 ymaxf = 0
 
 for metabolite in metabolites[:]:
-    print "Processing %s" % metabolite
+    print("Processing %s" % metabolite)
     quants = allquants[metabolite]
 
     if args.search:
@@ -95,9 +90,9 @@ for metabolite in metabolites[:]:
             match = re.search(args.search, label)
             if not match:
                 del quants[label]
-        print "Filter matching classes '%s' with '%s' gives '%s'" % (', '.join(okeys), args.search, ', '.join(quants.keys()))
+        print("Filter matching classes '%s' with '%s' gives '%s'" % (', '.join(okeys), args.search, ', '.join(quants.keys())))
         if len(quants.keys()) == 0:
-            print "Nothing left!; deleting metabolite"
+            print("Nothing left!; deleting metabolite")
             metabolites.remove(metabolite)
             continue
 
@@ -112,9 +107,9 @@ for metabolite in metabolites[:]:
             #else:
             #    axisgroups['non-matched'].append(label)
         if len(axisgroups) == 0:
-            print "No matching classes found for axisgroup regex, try again"
+            print("No matching classes found for axisgroup regex, try again")
             exit()
-        print "Axis groupings completed: " + ", ".join(axisgroups)
+        print("Axis groupings completed: " + ", ".join(axisgroups))
 
     else:
         # No groups, create dummy for 'all'
@@ -238,7 +233,7 @@ for metabolite in metabolites[:]:
 
             plt.text(bxstart + (bxend - float(bxstart)) / 2, ymax + (ymax * 0.01), utils.sigstars(p), size=16, ha='center', va='bottom')
             ax.add_patch(c)
-            print "Stats (%s): %s vs %s; p=%s" % (args.statistic, classt[0], classt[1], p)
+            print("Stats (%s): %s vs %s; p=%s" % (args.statistic, classt[0], classt[1], p))
 
         # Final nudge up over last bar
         ymax = ymax + ((ymax - ymin) * 0.1)
@@ -254,13 +249,13 @@ for metabolite in metabolites[:]:
         # Adjust plot on multiplot
         plt.ylim(ymin, ymaxf)
         ymaxf = 0
-        print "Save as 'bar%s-%s.%s'" % (filesuff, metabolite, args.format)
+        print("Save as 'bar%s-%s.%s'" % (filesuff, metabolite, args.format))
         plt.savefig('bar%s-%s.%s' % (filesuff, metabolite, args.format), dpi=args.dpi, transparent=False)
 
 if args.multiplot:
     # Adjust plot on multiplot
     plt.ylim(ymin, ymaxf)
-    print "Save as 'bar%s-%s.%s'" % (filesuff, '-'.join(metabolites), args.format)
+    print("Save as 'bar%s-%s.%s'" % (filesuff, '-'.join(metabolites), args.format))
     plt.savefig('bar%s-%s.%s' % (filesuff, '-'.join(metabolites), args.format), dpi=args.dpi, transparent=False)
 
 plt.close()

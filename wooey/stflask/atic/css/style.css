@@ -2,6 +2,9 @@
    App specific CSS file.
    ========================================================================== */
 
+.row {
+  max-width: 1280px
+}
 
 
 .form-with-annotation {
@@ -23,8 +26,6 @@ footer {
 body {
   height: auto !important;
 }
-
-
 
 .tab-title > a {
     padding: 6px 12px !important;
@@ -48,8 +49,6 @@ body {
     border-bottom:1px solid #fff;
 }
 
-
-
 .settings-panel {
     background-color: #f5f5f5 !important;
     padding: 0.8em;
@@ -67,8 +66,6 @@ body {
 
 .settings-panel { border:1px solid #ccc; }
 
-
-
 .console {
     overflow:scroll;
     background-color: #333;
@@ -82,7 +79,6 @@ body {
     font-size: 0.9rem;
 }
 
-
 .tabs .tab-title.console-tab.active > a {
     background-color: #333 !important;
     color: #0f0;
@@ -91,21 +87,63 @@ body {
 }
 
 
-.row.full-width {
-  width: 95%;
-  max-width: 95%;
-}
-
-.offset-top {
-    margin-top: 1rem;
-}
 
 .no-margin-bottom {
     margin-bottom: 0 !important;
 }
 
-.label i {
-    width:14px; line-height:14px;
+.title-area h1 a {font-weight:bold !important;}
+
+.row .header {
+    abackground-color: #555;
 }
 
-.title-area h1 a {font-weight:bold !important;}
+.row .header h1 {
+    margin-top: 15px;
+    line-height: 1em;
+}
+
+.row .header .button {
+    margin-top: 15px;
+    margin-bottom: -15px;
+}
+
+.row .header p {
+    color:#555;
+    margin:0px;
+ }
+
+ .row .header .metadata {
+    margin-top: 0px;
+    font-size:0.7em;
+    color:#888;
+
+ }
+
+.row.script-body {
+    margin-top: 1rem;
+}
+
+
+.pad-edges {
+    padding-left:2rem;
+    padding-right:2rem;
+}
+
+.no-pad-edges {
+    padding-left: 0;
+    padding-right: 0;
+}
+.tabs .tab-title a {
+    font-size: 0.8rem;
+}
+
+.tabs {
+    abackground-color: #555;
+}
+
+.full-height, .full-height * {
+    height: 100%;
+    max-height:100%;
+    min-height:100%;
+}

@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 
 from . import argparse_to_json
 from . import source_parser
@@ -19,14 +20,26 @@ def collect_argparses(files, write_out_json=True):
         if not has_argparse(source):
             continue  # Skip files without argparses
 
+        logging.info("Processing file %s." % filepath)
+
         run_cmd = 'python {}'.format(filepath)
 
-        ast_source = source_parser.parse_source_file(filepath)
-        python_code = source_parser.convert_to_python(list(ast_source))
+        try:
+            ast_source = source_parser.parse_source_file(filepath)
+            python_code = source_parser.convert_to_python(list(ast_source))
+        except Exception as e:  # Catch all exceptions and report, but continue
+            logging.error("Compilation of script %s failed with: %s" % (filepath, e))
+            continue  # Next script
 
         globals = {}
         # Now execute the code to get the argparse object
-        exec('\n'.join(python_code), globals)
+        try:
+            exec('\n'.join(python_code), globals)
+
+        except Exception as e:  # Catch all exceptions and report, but continue
+            logging.error("Execution of script %s failed with: %s" % (filepath, e))
+            continue  # Next script
+
         parsers = [p for k, p in globals.items() if isinstance(p, ArgumentParser)]
 
         if parsers:

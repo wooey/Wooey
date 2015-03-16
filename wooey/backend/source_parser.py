@@ -55,7 +55,6 @@ def parse_source_file(file_name):
         specific_imports,
         argparse_assignments,
         add_arg_assignments
-    # parse_args_assignment
     )
     return ast_argparse_source
 
@@ -76,7 +75,7 @@ def get_nodes_by_containing_attr(nodes, attr):
 def walk_tree(node):
     yield node
     d = node.__dict__
-    for key, value in d.iteritems():
+    for key, value in d.items():
         if isinstance(value, list):
             for val in value:
                 for _ in walk_tree(val):

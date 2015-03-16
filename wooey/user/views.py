@@ -9,5 +9,4 @@ blueprint = Blueprint("user", __name__, url_prefix='/users',
 @blueprint.route("/")
 @login_required
 def members():
-
     return render_template("users/members.html", user=current_user)

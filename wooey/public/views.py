@@ -33,7 +33,6 @@ blueprint = Blueprint('public', __name__, static_folder="../static")
 def load_user(id):
     return User.get_by_id(int(id))
 
-
 @blueprint.route("/", methods=["GET", "POST"])
 def home():
     form = LoginForm(request.form)
@@ -289,3 +288,7 @@ def download_job_output(job_id, format):
     return send_from_directory(job.path, fn, as_attachment=True)
 
 
+@blueprint.route("/queue/")
+def queue():
+    jobs = Job.query.order_by(Job.created_at.desc())
+    return render_template("public/queue.html", jobs=jobs)

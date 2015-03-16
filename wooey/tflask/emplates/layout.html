@@ -45,25 +45,23 @@
 
 <header>{% block header %}{% endblock %}</header>
 
-<div class="row full-width">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div class="row">
-      <div class="large-12 columns">
-        {% for category, message in messages %}
-        <div class="alert-box {{ category }}">
-          <a class="close" title="Close" href="#" data-dismiss="alert">&times;</a>
-         {{message}}
-        </div><!-- end .alert -->
-        {% endfor %}
-      </div><!-- end col-md -->
-    </div><!-- end row -->
-        {% endif %}
-    {% endwith %}
-</div><!-- end container -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="row">
+  <div class="large-12 columns">
+    {% for category, message in messages %}
+    <div class="alert-box {{ category }}">
+      <a class="close" title="Close" href="#" data-dismiss="alert">&times;</a>
+     {{message}}
+    </div><!-- end .alert -->
+    {% endfor %}
+  </div><!-- end col-md -->
+</div><!-- end row -->
+    {% endif %}
+{% endwith %}
 
 
-  <div class="{% block content_class %}row{% endblock content_class %}">
+  <div class="{% block content_class %}row{% endblock content_class %} full-height-minus-top-bar">
     {% block content %}{% endblock %}
   </div>
 

@@ -41,3 +41,4 @@ Flask-Admin==1.1.0
 
 # Other
 mistune==0.5
+alembic==0.7.4

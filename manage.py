@@ -147,99 +147,111 @@ def start_daemon():
     Job.query.filter(Job.status == STATUS_RUNNING).update({Job.status: STATUS_ERROR})
     db.session.commit()
 
+    try:
+        while True:
+            # Query the database for running jobs
 
+            jobs_running = Job.query.filter(Job.status == STATUS_RUNNING)
+            no_of_running_jobs = jobs_running.count()
 
-    while True:
-        # Query the database for running jobs
+            # Check each vs. running subprocesses to see if still active (if not, update database with new status)
+            for k, v in pids.items():
 
-        jobs_running = Job.query.filter(Job.status == STATUS_RUNNING)
-        no_of_running_jobs = jobs_running.count()
+                # Check process status and flush to file
+                v['process'].poll()
 
-        # Check each vs. running subprocesses to see if still active (if not, update database with new status)
-        for k, v in pids.items():
-
-            # Check process status and flush to file
-            v['process'].poll()
-
-            if v['process'].returncode is None:  # Still running
-                pass
-            else:
-                try:
-                    v['out'].close()
-                except IOError:
+                if v['process'].returncode is None:  # Still running
                     pass
-
-                if v['process'].returncode == 0:  # Complete
-                    logging.info("Job %d completed successfully." % job.id)
-                    job = Job.query.get(k)
-                    job.status = STATUS_COMPLETE
-
-                else:  # Error
-                    logging.error("Job %d exited with an error status." % job.id)
-                    job = Job.query.get(k)
-                    job.status = STATUS_ERROR
-
-                # Delete the process object
-                del pids[k]
-                db.session.commit()
-
-
-        # If number of running jobs < MAX_RUNNING_JOBS start some more
-        if no_of_running_jobs < MAX_RUNNING_JOBS:
-
-            # Get the waiting jobs (STATUS_WAITING) ordered by the age-in-minutes/priority DESC
-            # Jobs with a priority of `1` will sort above equally-old jobs with a higher priority value
-            # A job that is priority `2` will sort equal with a job half it's age
-            jobs_to_run = Job.query.filter(Job.status == STATUS_WAITING).order_by(Job.created_at.desc())
-
-
-            for job in jobs_to_run[:MAX_RUNNING_JOBS]:
-
-                # Get the config settings from the database (dict of values via JSON)
-                if job.config:
-                    config = json.loads(job.config)
                 else:
-                    config = {}
+                    try:
+                        v['out'].close()
+                    except IOError:
+                        pass
 
-                # Get args from the config dict (stored in job)
-                args = config['args']
+                    if v['process'].returncode == 0:  # Complete
+                        logging.info("Job %d completed successfully." % job.id)
+                        job = Job.query.get(k)
+                        job.status = STATUS_COMPLETE
 
-                # Add the executable to the beginning of the sequence
-                args.insert(0, job.script.exec_path)
+                    else:  # Error
+                        logging.error("Job %d exited with an error status." % job.id)
+                        job = Job.query.get(k)
+                        job.status = STATUS_ERROR
 
-
-                out = open(os.path.join(job.path, 'STDOUT'), 'w')
-                cwd = os.path.join(job.path, 'output')
-                try:
-                    # Create folder, accepting it already exists (re-run of previous job is OK)
-                    mkdirs(cwd)
-                except:
-                    # Anything goes wrong here we stop
-                    job.status = STATUS_ERROR
+                    # Delete the process object
+                    del pids[k]
                     db.session.commit()
-                    continue # Next job
-
-                logging.info("Starting job %d." % job.id)
-
-                # Run the command and store the object for future use
-                process = subprocess.Popen(args, cwd=cwd, stdout=out, stderr=subprocess.STDOUT)
-
-                pids[job.id] = {
-                    'process': process,
-                    'out': out,
-                }
-
-                # Update the job status
-                job.status = STATUS_RUNNING
-                job.pid = process.pid
-
-                db.session.commit()
-
-        time.sleep(1)
 
 
+            # If number of running jobs < MAX_RUNNING_JOBS start some more
+            if no_of_running_jobs < MAX_RUNNING_JOBS:
+
+                # Get the waiting jobs (STATUS_WAITING) ordered by the age-in-minutes/priority DESC
+                # Jobs with a priority of `1` will sort above equally-old jobs with a higher priority value
+                # A job that is priority `2` will sort equal with a job half it's age
+                jobs_to_run = Job.query.filter(Job.status == STATUS_WAITING).order_by(Job.created_at.desc())
 
 
+                for job in jobs_to_run[:MAX_RUNNING_JOBS]:
+
+                    # Get the config settings from the database (dict of values via JSON)
+                    if job.config:
+                        config = json.loads(job.config)
+                    else:
+                        config = {}
+
+                    # Get args from the config dict (stored in job)
+                    args = config['args']
+
+                    # Add the executable to the beginning of the sequence
+                    args.insert(0, job.script.exec_path)
+
+
+                    out = open(os.path.join(job.path, 'STDOUT'), 'w')
+                    cwd = os.path.join(job.path, 'output')
+                    try:
+                        # Create folder, accepting it already exists (re-run of previous job is OK)
+                        mkdirs(cwd)
+                    except:
+                        # Anything goes wrong here we stop
+                        job.status = STATUS_ERROR
+                        db.session.commit()
+                        continue # Next job
+
+                    logging.info("Starting job %d." % job.id)
+
+                    # Run the command and store the object for future use
+                    process = subprocess.Popen(args, cwd=cwd, stdout=out, stderr=subprocess.STDOUT)
+
+                    pids[job.id] = {
+                        'process': process,
+                        'out': out,
+                    }
+
+                    # Update the job status
+                    job.status = STATUS_RUNNING
+                    job.pid = process.pid
+
+                    db.session.commit()
+
+            time.sleep(1)
+
+    except KeyboardInterrupt:
+        pass
+
+    # Shutdown nicely
+    logging.info("Shutting down...")
+    # Set all running jobs to error (will die when we close)
+    Job.query.filter(Job.status == STATUS_RUNNING).update({Job.status: STATUS_ERROR})
+    db.session.commit()
+
+    # Check each vs. running subprocesses to see if still active (if not, update database with new status)
+    for k, v in pids.items():
+        v['process'].kill()  # Kill the running process
+        v['out'].close()  # Close the output file
+        del pids[k]  # Delete the object
+
+    logging.info("Done.")
 
 
 if __name__ == '__main__':

@@ -18,8 +18,9 @@ class Config(object):
 class ProdConfig(Config):
     """Production configuration."""
     ENV = 'prod'
-    DEBUG = False
-    SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/example'  # TODO: Change me
+    DEBUG = True
+    # Database URL for Heroku deployment is in DATABASE_URL env variable
+    SQLALCHEMY_DATABASE_URI = os_env.get('DATABASE_URL', None)
     DEBUG_TB_ENABLED = False  # Disable Debug toolbar
 
 

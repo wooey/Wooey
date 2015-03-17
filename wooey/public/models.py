@@ -76,7 +76,7 @@ class Job(SurrogatePK, Model):
     created_at = Column(db.DateTime, nullable=False, default=dt.datetime.utcnow)
     updated_at = Column(db.DateTime, nullable=False, default=dt.datetime.utcnow, onupdate=db.func.now())
 
-    status = Column(db.Enum(STATUS_WAITING, STATUS_RUNNING, STATUS_COMPLETE, STATUS_ERROR), nullable=False, default=STATUS_WAITING)
+    status = Column(db.Enum(STATUS_WAITING, STATUS_RUNNING, STATUS_COMPLETE, STATUS_ERROR, name='status'), nullable=False, default=STATUS_WAITING)
 
     # Calculated priority for this job (the lesser of the script priority and the user priority)
     priority = Column(db.Integer, unique=False, nullable=False, default=1)

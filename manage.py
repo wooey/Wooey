@@ -20,6 +20,7 @@ from wooey.backend.python import collect_argparses
 
 from wooey.public.models import Script, Job, STATUS_WAITING, STATUS_COMPLETE, STATUS_ERROR, STATUS_RUNNING
 
+
 import select
 
 import logging

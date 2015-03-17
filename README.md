@@ -8,6 +8,8 @@ Automated web UIs for Python scripts
 Wooey is a simple web interface (built on Flask) to run command line Python scripts. Think of it as an easy way to get
 your scripts up on the web for routine data analysis, file processing, or anything else.
 
+![Script output view](large-view-output.png)
+
 Impressed by what [Gooey](https://github.com/chriskiehl/Gooey) can do, turning ArgumentParser-based command-line scripts
 into WxWidgets-based GUIs, I thought
 I'd see if I could do the same for the web. I'm still not sure if the result is beautiful or horrific.
@@ -24,6 +26,11 @@ The use case for myself was as a simple platform to allow running of routine dat
 within a research group, but I'm sure there are other possibilities. However, I wouldn't recommend putting this
 on the public web just yet (pre-alpha warning). It's somewhat comparable to things like Shiny for R, except multi-user
 out of the box. Support for multiple command-line formats is on my todo.
+
+The interface is built on Foundation from Zurb, giving a responsive interface that works great on mobile devices:
+
+![Mobile config view](mobile-view-config.png)
+
 
 Enjoy and please fork.
 

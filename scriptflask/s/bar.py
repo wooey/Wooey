@@ -12,7 +12,7 @@ from collections import defaultdict
 
 import utils
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description="Plot simple bar figures using matplotlib")
 
 parser.add_argument("-m", "--metabolite", dest="metabolite", default='',
                   help="name of metabolite to plot graph for")

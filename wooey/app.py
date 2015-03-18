@@ -22,8 +22,9 @@ def create_app(config_object=ProdConfig):
 
     :param config_object: The configuration object to use.
     '''
-    app = Flask(__name__)
+    app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(config_object)
+    app.config.from_pyfile('application.cfg', silent=False)
     register_extensions(app)
     register_blueprints(app)
     register_errorhandlers(app)

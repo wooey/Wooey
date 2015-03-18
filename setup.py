@@ -21,7 +21,7 @@ setup(
         'Topic :: Desktop Environment',
         'Topic :: Software Development :: Build Tools',
         'Topic :: Software Development :: Widget Sets',
-        'Programming Language :: Python :: 2.7'
+        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.4'
     ],
     long_description=long_description,

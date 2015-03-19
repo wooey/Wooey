@@ -195,45 +195,66 @@ def start_daemon():
 
                 for job in jobs_to_run[:MAX_RUNNING_JOBS]:
 
-                    # Get the config settings from the database (dict of values via JSON)
-                    if job.config:
-                        config = json.loads(job.config)
-                    else:
-                        config = {}
-
-                    # Get args from the config dict (stored in job)
-                    args = config['args']
-
-                    # Add the executable to the beginning of the sequence
-                    args.insert(0, job.script.exec_path)
-
-
-                    out = open(os.path.join(job.path, 'STDOUT'), 'w')
-                    cwd = os.path.join(job.path, 'output')
+                    # We wrap the entire execution block in a try-except to catch all errors that may be thrown
+                    # without dying. Errors at a lower level are raised to this catch-all.
                     try:
-                        # Create folder, accepting it already exists (re-run of previous job is OK)
-                        mkdirs(cwd)
-                    except:
-                        # Anything goes wrong here we stop
+
+                        # Get the config settings from the database (dict of values via JSON)
+                        if job.config:
+                            try:
+                                config = json.loads(job.config)
+                                # Get args from the config dict (stored in job)
+                                args = config['args']
+                            except Exception as e:
+                                raise e
+
+                        else:
+                            args = []
+
+
+                        # Add the executable to the beginning of the sequence
+                        args.insert(0, job.script.exec_path)
+
+                        try:
+                            out = open(os.path.join(job.path, 'STDOUT'), 'w')
+
+                        except Exception as e:
+                            raise e
+
+                        cwd = os.path.join(job.path, 'output')
+                        try:
+                            # Create folder, accepting it already exists (re-run of previous job is OK)
+                            mkdirs(cwd)
+
+                        except Exception as e:
+                            raise e
+
+                        logging.info("Starting job %d." % job.id)
+
+                        try:
+                            # Run the command and store the object for future use
+                            process = subprocess.Popen(args, cwd=cwd, stdout=out, stderr=subprocess.STDOUT)
+
+                        except Exception as e:
+                            raise e
+
+                        pids[job.id] = {
+                            'process': process,
+                            'out': out,
+                        }
+
+                        # Update the job status
+                        job.status = STATUS_RUNNING
+                        job.pid = process.pid
+
+                        db.session.commit()
+
+                    except Exception as e:
+                        # Anything goes wrong here we stop; log the error; set the status and try the next
+                        logging.error(e.message)
                         job.status = STATUS_ERROR
                         db.session.commit()
-                        continue # Next job
-
-                    logging.info("Starting job %d." % job.id)
-
-                    # Run the command and store the object for future use
-                    process = subprocess.Popen(args, cwd=cwd, stdout=out, stderr=subprocess.STDOUT)
-
-                    pids[job.id] = {
-                        'process': process,
-                        'out': out,
-                    }
-
-                    # Update the job status
-                    job.status = STATUS_RUNNING
-                    job.pid = process.pid
-
-                    db.session.commit()
+                        continue  # Next job
 
             time.sleep(1)
 

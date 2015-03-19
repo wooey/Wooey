@@ -205,8 +205,8 @@ def start_daemon():
                                 config = json.loads(job.config)
                                 # Get args from the config dict (stored in job)
                                 args = config['args']
-                            except Exception as e:
-                                raise e
+                            except Exception:
+                                raise
 
                         else:
                             args = []
@@ -218,16 +218,16 @@ def start_daemon():
                         try:
                             out = open(os.path.join(job.path, 'STDOUT'), 'w')
 
-                        except Exception as e:
-                            raise e
+                        except Exception:
+                            raise
 
                         cwd = os.path.join(job.path, 'output')
                         try:
                             # Create folder, accepting it already exists (re-run of previous job is OK)
                             mkdirs(cwd)
 
-                        except Exception as e:
-                            raise e
+                        except Exception:
+                            raise
 
                         logging.info("Starting job %d." % job.id)
 
@@ -235,8 +235,8 @@ def start_daemon():
                             # Run the command and store the object for future use
                             process = subprocess.Popen(args, cwd=cwd, stdout=out, stderr=subprocess.STDOUT)
 
-                        except Exception as e:
-                            raise e
+                        except Exception:
+                            raise
 
                         pids[job.id] = {
                             'process': process,

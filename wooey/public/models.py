@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import datetime as dt
 import json
+from flask.ext.login import current_user
+
 
 from wooey.database import (
     Column,
@@ -65,6 +67,10 @@ class Script(SurrogatePK, Model):
         else:
             return None
 
+    @property
+    def is_authorised(self):
+        return self.requires_login is False or current_user.is_authenticated()
+
 
 class Job(SurrogatePK, Model):
 
@@ -117,3 +123,4 @@ class Job(SurrogatePK, Model):
     @property
     def duration(self):
         return self.stopped_at - self.started_at
+

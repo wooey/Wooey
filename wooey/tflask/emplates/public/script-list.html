@@ -5,10 +5,10 @@
 
 <ul class="large-block-grid-3 medium-block-grid-2 small-block-grid-1">
   {% for script in scripts %}
-    <li class="{% if not script.is_active %} inactive{% endif %}"><div class="script radius">
+    <li class="{% if not script.is_active or not script.is_authorised %} inactive{% endif %}"><div class="script radius">
         <div class="script-icons">
             {% if not script.is_active %}<i class="fa fa-ban" title="This script is currently disabled."></i>{% endif %}
-
+            {% if not script.is_authorised %}<i class="fa fa-lock" title="This script requires you to log in."></i>{% endif %}
         </div>
 
         <h5>

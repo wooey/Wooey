@@ -155,7 +155,14 @@ def create_job(script_id):
         # Create the job
         # FIXME: Priority should be calculated from the higest value of the script and the user
         # e.g. a user with priority 10 running a priority 1 script, will get a priority 10 job
-        job = Job(script=script, user=current_user, path=tempdir, config=json.dumps({'args': args}), priority=script.priority)
+
+        if current_user.is_anonymous():
+            # Allow non-logged in users to submit public jobs
+            user = None
+        else:
+            user = current_user
+
+        job = Job(script=script, user=user, path=tempdir, config=json.dumps({'args': args}), priority=script.priority)
         db.session.commit()
 
         return redirect(url_for('public.job', job_id=job.id))

@@ -30,7 +30,6 @@ body {
 }
 
 .tabs {
-    background:url('../img/tab-shade.png');
 }
 
 .tabs .tab-title > a {
@@ -90,7 +89,7 @@ body {
 }
 
 a.title { padding-right:0.25em !important;}
-a.subtitle { padding-left:0.25em !important;}
+a.title { padding-left:0.25em !important;}
 
 h1.title, h1.title a {
     font-weight:bold !important;
@@ -98,36 +97,40 @@ h1.title, h1.title a {
 
 h1.title { color: #888; }
 
+.wooey {
+    font-family: 'Pacifico', cursive;
+    font-weight: normal !important;
+}
+
 .tab-overlay {
     position:relative;
     top:-2rem;
     margin-bottom:-2rem !important;
 }
 
-.row .header {
+.row.header {
     padding-top: 0.75em;
     min-height: 125px;
-    background-color: #333;
+    background-color: #004d66;
     margin-bottom:0;
-    background-image:url('../img/stripe.png');
 }
 
-.row .header h1 {
+.row.header h1 {
     margin-top:0 ;
     line-height: 1em;
     color: #fff;
 }
 
-.row .header .button {
+.row.header .button {
     margin-top:0.5em;
 }
 
-.row .header p {
+.row.header p {
     color:#ddd;
     margin:0 0 0.25em 0;
  }
 
- .row .header .metadata {
+ .row.header .metadata {
     margin-top: 0px;
     font-size:0.7em;
     color:#ccc;
@@ -183,7 +186,7 @@ label output {
 }
 
 .full-height-minus-header {
-    height: calc(100% - 125px);
+    height: calc(100% - 170px);
     margin-top: 0;
     margin-bottom: 0;
 }
@@ -195,4 +198,66 @@ html, body {
 
 .primary {
     color: #008CBA;
+}
+
+.hide {display:none;}
+.show-waiting, .show-running, .show-complete, .show-alert {display:inline-block; line-height:1em;}
+.show-waiting .waiting, .show-running .running, .show-complete .complete, .show-alert .alert {display:inline-block; line-height:1em;}
+
+.script {
+    position: relative;
+    background-color: #f5f5f5;
+    border:1px solid #ccc;
+    padding: 0.5em 1em;
+    height: 100%;
+    border-radius: 3px;
+}
+
+.script-icons {
+    position: absolute;
+    top: 0.5em; right: 0.5em;
+}
+
+li.inactive {
+    opacity: 0.5;
+}
+
+.script h5 {
+    margin-bottom: 0;
+}
+
+.script p {
+    margin-bottom: 0.5em;
+    font-size: 0.9rem;
+}
+
+.sitetitle {
+    text-align: center;
+    padding: 2rem 0;
+}
+
+.sitetitle h1 {
+    font-size: 5rem;
+    margin: 0.5rem 0;
+}
+
+.sitetitle p {
+    font-size: 1.6rem;
+    font-weight: lighter;
+    margin: 0;
+}
+
+.fixed-messages {
+    position:absolute;
+    top: 0;
+    left: 0;
+}
+
+.script-list {
+    margin-top:1em;
+}
+
+.sub-nav {
+    background-color: #F2F2F2;
+    padding: 10px 10px 10px 0px;
 }

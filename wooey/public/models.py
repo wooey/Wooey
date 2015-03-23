@@ -40,6 +40,11 @@ class Script(SurrogatePK, Model):
 
     is_active = Column(db.Boolean(), default=True)
 
+    # Defines whether a login is required to run this script, note that without a login the result of
+    # any execution must be public. Probably requires a warning for those users not to upload sensitive data
+    requires_login = Column(db.Boolean(), unique=False, nullable=False, default=True)
+
+
     def load_config(self):
         '''
         Load JSON config from file
@@ -68,13 +73,17 @@ class Job(SurrogatePK, Model):
     script_id = ReferenceCol('scripts')
     script = relationship('Script', backref='jobs')
 
-    user_id = ReferenceCol('users')
+    user_id = ReferenceCol('users', nullable=True)
     user = relationship('User', backref='jobs')
 
     path = Column(db.String(255), unique=True, nullable=False)
 
     created_at = Column(db.DateTime, nullable=False, default=dt.datetime.utcnow)
     updated_at = Column(db.DateTime, nullable=False, default=dt.datetime.utcnow, onupdate=db.func.now())
+
+    # Job start and stop times; must check for status to determine if stop is failure or completion
+    started_at = Column(db.DateTime, nullable=True, default=None)
+    stopped_at = Column(db.DateTime, nullable=True, default=None)
 
     status = Column(db.Enum(STATUS_WAITING, STATUS_RUNNING, STATUS_COMPLETE, STATUS_ERROR, name='status'), nullable=False, default=STATUS_WAITING)
 
@@ -104,3 +113,7 @@ class Job(SurrogatePK, Model):
     @property
     def is_error(self):
         return self.status == STATUS_ERROR
+
+    @property
+    def duration(self):
+        return self.stopped_at - self.started_at

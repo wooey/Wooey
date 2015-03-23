@@ -1,11 +1,11 @@
 
 {% extends "layout.html" %}
 
-{% block content_class %}row full-width{% endblock content_class %}
+{% block content_class %}row full-width full-height-minus-header{% endblock content_class %}
 
 {% block subtitle %}/ <a href="{{ url_for('public.create_job', script_id=script.id) }}" class="subtitle">{{ script.name }} </a>{% endblock %}
 
-{% block content %}
+{% block header %}
 <div class="row header full-width">
     <div class="large-9 columns"><!--<h1 class="no-margin-bottom">{% if script.nicename %}{{ script.display_name }}{% else %}{{ script.name }}{% endif %}</h1> -->
     <p>{% if script.description %}{{ script.description }}{% else %}&nbsp;{% endif %}</p>
@@ -19,6 +19,12 @@
     {% elif job.status == 'R' %}<span class="label info radius"><i class="fa fa-spinner fa-pulse"></i> Running</span>
     {% elif job.status == 'C' %}<span class="label success radius"><i class="fa fa-check"></i> Complete</span>
     {% elif job.status == 'X' %}<span class="label alert radius"><i class="fa fa-warning"></i> Error</span>{% endif %}
+<!--
+        <span class="show-running">
+            <span class="label success radius hide running"><i class="fa fa-warning"></i> Running</span>
+            <span class="label alert radius hide alert"><i class="fa fa-warning"></i> Error</span>
+        </span>
+-->
     </p>
 {% endif %}
     </div>
@@ -36,8 +42,10 @@
         </div>
     {% endif %}
 </div>
+{% endblock %}
 
-<div class="row tab-overlay full-height-minus-header">
+{% block content %}
+<div class="row tab-overlay full-height">
 {% include "public/job-form.html" %}
     <div class="large-8 columns no-pad-edges full-height">
 

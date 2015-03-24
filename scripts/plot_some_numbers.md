@@ -8,4 +8,4 @@ from the script source or config folders.
 
 ## Instructions
 
-To plot some numbers, simply provide a list of values in the field on the left and click "Run".
+To plot some numbers, provide a list of space-separated values in the field on the left and click "Run".

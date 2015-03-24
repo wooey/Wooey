@@ -9,6 +9,7 @@ css = Bundle(
 
 js = Bundle(
     "js/plugins.js",
+    "js/script.js",
     filters='jsmin',
     output="public/js/common.js"
 )

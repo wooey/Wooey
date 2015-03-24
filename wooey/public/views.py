@@ -247,7 +247,7 @@ def job(job_id):
                 display['Html'].append({
                     'name': name,
                     'src': '<object type="text/html">' + src + '</object>',
-                    'icon': 'file-html-o',
+                    'icon': 'file-text-o',
                     'metadata': ["%dkB" % (size/1024), 'text/%s' % ext[1:]]
                     })
 

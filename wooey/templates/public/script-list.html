@@ -12,9 +12,9 @@
         </div>
 
         <h5>
-            {% if script.is_active %}<a href="{{ url_for('public.create_job', script_id=script.id) }}">{% endif %}
+            {% if script.is_active and script.is_authorised %}<a href="{{ url_for('public.create_job', script_id=script.id) }}">{% endif %}
             {% if script.nicename %}{{ script.display_name }}{% else %}{{ script.name }}{% endif %}
-            {% if script.is_active %}</a>{% endif %}</h5>
+            {% if script.is_active and script.is_authorised %}</a>{% endif %}</h5>
 
         <p>{{ script.description }}</p>
 

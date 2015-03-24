@@ -6,10 +6,14 @@ import sys
 import subprocess
 import json
 import time
+import datetime as dt
+import shutil
 
 from flask.ext.script import Manager, Shell, Server
 from flask.ext.migrate import MigrateCommand
 from flask.ext.assets import ManageAssets
+
+from sqlalchemy import or_
 
 from wooey.app import create_app
 from wooey.user.models import User
@@ -278,6 +282,17 @@ def start_daemon():
 
     logging.info("Done.")
 
+
+@manager.command
+def cleanup():
+
+    # Initialise by setting all running jobs to error (must have died on previous execution)
+    old_jobs = Job.query.filter( or_(Job.status == STATUS_ERROR, Job.status == STATUS_COMPLETE) )[:-app.config.get('QUEUE_MAXIMUM_JOBS')]
+    for job in old_jobs:
+        # Delete the files for this job (recover space)
+        shutil.rmtree( job.path )
+        job.delete()
+    db.session.commit()
 
 # Asset management
 manager.add_command("assets", ManageAssets())

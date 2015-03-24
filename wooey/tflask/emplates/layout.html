@@ -22,13 +22,15 @@
   <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
   <script type="text/javascript" src="//code.jquery.com/jquery-2.1.3.min.js"></script>
   <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/foundation/5.5.1/js/foundation.min.js"></script>
-
   <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
 
   {% assets "css_all" %}
     <link rel="stylesheet" href="{{ ASSET_URL }}">
   {% endassets %}
 
+  {% assets "js_all" %}
+     <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+  {% endassets %}
 
   {% block css %}{% endblock %}
 
@@ -57,7 +59,6 @@
     {% elif form %}
       <form id="loginForm" method="POST" action="/" role="login">
         <li><a href="{{ url_for('public.register') }}">Create account</a></li>
-
         <li class="has-form">{{ form.hidden_tag() }}{{ form.username(placeholder="Username", class_="form-control") }}</li>
         <li class="has-form">{{ form.password(placeholder="Password", class_="form-control") }}</li>
         <li class="has-form"><button type="submit" class="btn btn-default">Log in</button></li>
@@ -74,9 +75,9 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 <div class="row fixed-messages">
-  <div class="large-12 columns">
+  <div class="large-12 columns message-container">
     {% for category, message in messages %}
-    <div class="alert-box {{ category }}">
+    <div data-alert class="alert-box {{ category }}">
       <a class="close" title="Close" href="#" data-dismiss="alert">&times;</a>
      {{message}}
     </div><!-- end .alert -->

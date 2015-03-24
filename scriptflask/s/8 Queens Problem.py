@@ -43,8 +43,10 @@ def checkerboard(s):
     return board[0:s,0:s]
     
 board = checkerboard(args.size)   
+solutions = solve(args.size)
 
-for n, answer in enumerate(solve(args.size)):
+print("There are %d solution(s) for a board %dx%d in size" % (len(solutions), args.size, args.size))
+for n, answer in enumerate(solutions):
     ax.cla()
     ax.matshow(board, cmap=plt.cm.gray)
     x, y = zip(*answer)
@@ -52,3 +54,4 @@ for n, answer in enumerate(solve(args.size)):
 
     fig.savefig('solution-%d.png' % n)
     
+

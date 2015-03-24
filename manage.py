@@ -9,6 +9,7 @@ import time
 
 from flask.ext.script import Manager, Shell, Server
 from flask.ext.migrate import MigrateCommand
+from flask.ext.assets import ManageAssets
 
 from wooey.app import create_app
 from wooey.user.models import User
@@ -60,6 +61,8 @@ def test():
 manager.add_command('server', Server())
 manager.add_command('shell', Shell(make_context=_make_context))
 manager.add_command('db', MigrateCommand)
+
+
 
 
 @manager.command
@@ -274,6 +277,10 @@ def start_daemon():
         del pids[k]  # Delete the object
 
     logging.info("Done.")
+
+
+# Asset management
+manager.add_command("assets", ManageAssets())
 
 
 if __name__ == '__main__':

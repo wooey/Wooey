@@ -17,6 +17,8 @@ class Config(object):
     SITE_NAME = "Wooey!"
     SITE_TAGLINE = "...it's a Web UI for Python scripts."
 
+    QUEUE_MAXIMUM_JOBS = 50  # Maximum number of finished (error/complete) jos in the Queue
+
 class ProdConfig(Config):
     """Production configuration."""
     ENV = 'prod'

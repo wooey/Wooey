@@ -44,13 +44,13 @@
                         {% if w['choices'] is mapping %}
 
                             {% for choice, label in w['choices'].items() %}
-                                <option value="{{ choice }}">{{ label }}</option>
+                                <option value="{{ choice }}" {% if choice == w['default'] %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
 
                         {% else %}
 
                             {% for choice in w['choices'] %}
-                                <option value="{{ choice }}">{{ choice }}</option>
+                                <option value="{{ choice }}" {% if choice == w['default'] %}selected{% endif %}>{{ choice }}</option>
                             {% endfor %}
 
                         {% endif %}

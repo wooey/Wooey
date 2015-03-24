@@ -8,11 +8,7 @@
 <head>
   <meta charset="utf-8">
 
-  <title>{% block page_title %}
-  
-    Wooey
-  
-    {% endblock %}
+  <title>{% block page_title %}{{ config.SITE_NAME }}{% endblock %}
   </title>
   <meta name="description" content="{% block meta_description %}{% endblock %}">
   <meta name="author" content="{% block meta_author %}{% endblock %}">
@@ -42,7 +38,7 @@
 {% with form=form  %}
 
 <nav class="top-bar" data-topbar role="navigation">
-  <ul class="title-area"><li class="name"><h1 class="title"><a href="{{ url_for('public.home') }}" class="title wooey">Wooey</a>
+  <ul class="title-area"><li class="name"><h1 class="title"><a href="{{ url_for('public.home') }}" class="title wooey">{{ config.SITE_NAME }}</a>
   {% block subtitle %}{% endblock %}
   </h1></li></ul>
 

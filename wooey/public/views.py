@@ -239,6 +239,19 @@ def job(job_id):
                     'metadata': ["%dkB" % (size/1024), 'image/%s' % ext[1:]]
                     })
 
+            elif ext in ['.htm', '.html']:
+                with open(fullpath, 'r') as f:
+                    src = f.read().decode('utf8')
+                    size = f.tell()
+
+                display['Html'].append({
+                    'name': name,
+                    'src': '<object type="text/html">' + src + '</object>',
+                    'icon': 'file-html-o',
+                    'metadata': ["%dkB" % (size/1024), 'text/%s' % ext[1:]]
+                    })
+
+
             else:  # Miscellaneous files
                 size = os.path.getsize(fullpath)
                 display['Other'].append({

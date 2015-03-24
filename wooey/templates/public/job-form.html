@@ -16,8 +16,8 @@
       <div class="row">
         <div class="large-12 columns">
             {% if w['widget'] == 'FileChooser' %}
-                <label for="{{ w['name'] }}">{{ w['help'] }}
-                    <input type="file" name="{{ w['name'] }}" id="{{ w['name'] }}">
+                <label for="{{ w['name'] }}">{{ w['help'] }} {% if w['required'] %}<small>required</small>{% endif %}
+                    <input type="file" name="{{ w['name'] }}" id="{{ w['name'] }}" {% if w['required'] %}required{% endif %}>
                 </label>
             {% elif w['widget'] == 'CheckBox' %}
                 <div class="row">
@@ -29,8 +29,8 @@
                     </div>
                 </div>
             {% elif w['widget'] == 'TextField' %}
-                <label for="{{ w['name'] }}">{{ w['help'] }}
-                    <input type="text" placeholder="{{ w['default'] }}" id="{{ w['name'] }}" name="{{ w['name'] }}">
+                <label for="{{ w['name'] }}">{{ w['help'] }} {% if w['required'] %}<small>required</small>{% endif %}
+                    <input type="text" placeholder="{{ w['default'] }}" id="{{ w['name'] }}" name="{{ w['name'] }}" {% if w['required'] %}required{% endif %}>
                 </label>
             {% elif w['widget'] == 'RangeField' %}
                 <label for="{{ w['name'] }}">{{ w['help'] }}

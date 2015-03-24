@@ -227,4 +227,6 @@ def as_json(action, widget):
         'default': defaultval,
 
         'widget': widget,
+
+        'required': action.required or False,
     }

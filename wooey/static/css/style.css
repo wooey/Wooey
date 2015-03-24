@@ -266,3 +266,8 @@ li.inactive {
     background-color: #F2F2F2;
     padding: 10px 10px 10px 0px;
 }
+
+label small {
+    color: #e88;
+    font-size:0.6em;
+}

@@ -14,6 +14,8 @@ class Config(object):
     DEBUG_TB_INTERCEPT_REDIRECTS = False
     CACHE_TYPE = 'simple'  # Can be "memcached", "redis", etc.
 
+    SITE_NAME = "Wooey!"
+    SITE_TAGLINE = "...it's a Web UI for Python scripts."
 
 class ProdConfig(Config):
     """Production configuration."""

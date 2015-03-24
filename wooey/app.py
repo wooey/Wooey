@@ -39,6 +39,7 @@ def register_extensions(app):
     login_manager.init_app(app)
     migrate.init_app(app, db)
     flask_admin.init_app(app)
+    flask_admin.name = app.config.get('SITE_NAME', 'Admin')
     return None
 
 

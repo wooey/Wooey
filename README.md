@@ -1,4 +1,4 @@
-![Wooey!](wooey.png)
+![Wooey!](wooey-banner.png)
 
 ## About
 

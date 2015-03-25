@@ -3,6 +3,8 @@
 This script is an implementation of the [Collatz Dash](http://puzzles.bostonpython.com/collatz.html)
 puzzle from Boston Python. 
 
+![Obligatory xkcd](http://imgs.xkcd.com/comics/collatz_conjecture.png)
+
 ## How to race
 
 Enter the ages of your two contestants. Optionally you can also specify names for each racer.

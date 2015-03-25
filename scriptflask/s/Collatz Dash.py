@@ -3,6 +3,7 @@
 import argparse
 from matplotlib import pyplot as plt
 import numpy as np
+import datetime as dt
 
 parser = argparse.ArgumentParser(description="Collatz Dash")
 
@@ -53,6 +54,10 @@ ax = fig.add_subplot(1,1,1)
 
 ax.plot(range(number_of_steps), a_steps, 'r', label=args.namea)
 ax.plot(range(number_of_steps), b_steps, 'b', label=args.nameb)
+
+ax.set_title("Collatz Dash %d" % dt.datetime.now().year)
+ax.set_ylabel('Distance to finish line')
+ax.set_xlabel('Steps')
 
 handles, labels = ax.get_legend_handles_labels()
 ax.legend(handles, labels, loc='best', prop={'size':20})

@@ -32,9 +32,6 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 
-# FIXME: Settings (move to the settings file)
-MAX_RUNNING_JOBS = 1
-
 
 
 if os.environ.get("WOOEY_ENV") == 'prod':
@@ -200,7 +197,7 @@ def start_daemon():
                 jobs_to_run = Job.query.filter(Job.status == STATUS_WAITING).order_by(Job.created_at)
 
 
-                for job in jobs_to_run[:MAX_RUNNING_JOBS]:
+                for job in jobs_to_run[:app.config.get('QUEUE_MAXIMUM_RUNNING_JOBS')]:
 
                     # We wrap the entire execution block in a try-except to catch all errors that may be thrown
                     # without dying. Errors at a lower level are raised to this catch-all.
@@ -287,7 +284,7 @@ def start_daemon():
 def cleanup():
 
     # Initialise by setting all running jobs to error (must have died on previous execution)
-    old_jobs = Job.query.filter( or_(Job.status == STATUS_ERROR, Job.status == STATUS_COMPLETE) ).order_by(Job.created_at)[:-app.config.get('QUEUE_MAXIMUM_JOBS')]
+    old_jobs = Job.query.filter( or_(Job.status == STATUS_ERROR, Job.status == STATUS_COMPLETE) ).order_by(Job.created_at)[:-app.config.get('QUEUE_MAXIMUM_FINISHED_JOBS')]
 
     for job in old_jobs:
         # Delete the files for this job (recover space)

@@ -197,7 +197,7 @@ def start_daemon():
                 # Get the waiting jobs (STATUS_WAITING) ordered by the age-in-minutes/priority DESC
                 # Jobs with a priority of `1` will sort above equally-old jobs with a higher priority value
                 # A job that is priority `2` will sort equal with a job half it's age
-                jobs_to_run = Job.query.filter(Job.status == STATUS_WAITING).order_by(Job.created_at.desc())
+                jobs_to_run = Job.query.filter(Job.status == STATUS_WAITING).order_by(Job.created_at)
 
 
                 for job in jobs_to_run[:MAX_RUNNING_JOBS]:

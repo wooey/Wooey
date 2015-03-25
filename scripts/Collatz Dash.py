@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import datetime as dt
 
-parser = argparse.ArgumentParser(description="Collatz Dash")
+parser = argparse.ArgumentParser(description="An implementation of the Boston Python Collatz Dash")
 
 parser.add_argument("-a", dest="a", type=int, required=True, help="Age of contestant A")
 parser.add_argument("-b", dest="b", type=int, required=True, help="Age of contestant B")

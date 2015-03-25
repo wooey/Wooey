@@ -7,7 +7,7 @@ Click "Run" to submit the query and the result will be returned under the tab "H
 
 ## More info
 
-This is a demo script to show off Wooey function. The back-end of this script is a plain-old-Python command-line script
+This is a demo script to show off Wooey function. The back-end of this page is a plain-old-Python command-line script
 using argparse to define arguments.
 
     usage: IMDB.py [-h] -t TITLE [-y YEAR]

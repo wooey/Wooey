@@ -12,7 +12,7 @@ To plot some numbers, provide a list of space-separated values in the field on t
 
 ## More info
 
-This is a demo script to show off Wooey function. The back-end of this script is a plain-old-Python command-line script
+This is a demo script to show off Wooey function. The back-end of this page is a plain-old-Python command-line script
 using argparse to define arguments.
 
     usage: plot_some_numbers.py [-h] N [N ...]

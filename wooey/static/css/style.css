@@ -281,7 +281,7 @@ label small {
 select {-moz-appearance: none !important;}
 
 
-select, input[type="text"] {
+select, input[type="text"], input[type="password"] {
     border-radius: 3px;
 }
 

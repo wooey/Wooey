@@ -12,7 +12,7 @@ positions will be output as figures.
 
 ## More info
 
-This is a demo script to show off Wooey function. The back-end of this script is a plain-old-Python command-line script
+This is a demo script to show off Wooey function. The back-end of this page is a plain-old-Python command-line script
 using argparse to define arguments.
 
     usage: 8 Queens Problem.py [-h] [-s {3,4,5,6,7,8,9}]

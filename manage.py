@@ -287,7 +287,8 @@ def start_daemon():
 def cleanup():
 
     # Initialise by setting all running jobs to error (must have died on previous execution)
-    old_jobs = Job.query.filter( or_(Job.status == STATUS_ERROR, Job.status == STATUS_COMPLETE) )[:-app.config.get('QUEUE_MAXIMUM_JOBS')]
+    old_jobs = Job.query.filter( or_(Job.status == STATUS_ERROR, Job.status == STATUS_COMPLETE) ).order_by(Job.created_at)[:-app.config.get('QUEUE_MAXIMUM_JOBS')]
+
     for job in old_jobs:
         # Delete the files for this job (recover space)
         shutil.rmtree( job.path )

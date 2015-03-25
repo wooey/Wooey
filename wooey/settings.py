@@ -17,7 +17,8 @@ class Config(object):
     SITE_NAME = "Wooey!"
     SITE_TAGLINE = "...it's a Web UI for Python scripts."
 
-    QUEUE_MAXIMUM_JOBS = 50  # Maximum number of finished (error/complete) jos in the Queue
+    QUEUE_MAXIMUM_RUNNING_JOBS = 4  # Maximum number of running jobs (processes)
+    QUEUE_MAXIMUM_FINISHED_JOBS = 50  # Maximum number of finished (error/complete) jos in the Queue
 
     GITHUB_URL = "https://github.com/mfitzp/Wooey"
 

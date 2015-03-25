@@ -30,7 +30,7 @@
                 </div>
             {% elif w['widget'] == 'TextField' %}
                 <label for="{{ w['name'] }}">{{ w['help'] }} {% if w['required'] %}<small>required</small>{% endif %}
-                    <input type="text" placeholder="{{ w['default'] }}" id="{{ w['name'] }}" name="{{ w['name'] }}" {% if w['required'] %}required{% endif %}>
+                    <input type="text" {% if not w['required'] %}placeholder="{{ w['default'] }}"{% endif %} id="{{ w['name'] }}" name="{{ w['name'] }}" {% if w['required'] %}required{% endif %}>
                 </label>
             {% elif w['widget'] == 'RangeField' %}
                 <label for="{{ w['name'] }}">{{ w['help'] }}

@@ -2,6 +2,13 @@
    App specific CSS file.
    ========================================================================== */
 
+body {
+    height: auto !important;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: grayscale;
+}
+
+
 .row.full-width { max-width: 100%; }
 
 .row.full-width .row { margin:0; }
@@ -19,9 +26,6 @@
 footer {
 }
 
-body {
-  height: auto !important;
-}
 
 .tab-title > a {
     padding: 6px 12px !important;
@@ -56,6 +60,10 @@ body {
     background-color: #f5f5f5 !important;
     padding: 0.8em;
     margin-bottom: 0;
+}
+
+.settings-panel section {
+    background-color: #f5f5f5 !important;
 }
 
 .settings-panel-tabs .tab-title > a {
@@ -269,5 +277,12 @@ li.inactive {
 
 label small {
     color: #e88;
-    font-size:0.6em;
+    font-size:0.6rem;
+}
+
+select {-moz-appearance: none !important;}
+
+
+select, input[type="text"] {
+    border-radius: 3px;
 }

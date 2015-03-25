@@ -1,7 +1,4 @@
-Wooey
-=====
-
-Automated web UIs for Python scripts
+![Wooey!](wooey.png)
 
 ## About
 

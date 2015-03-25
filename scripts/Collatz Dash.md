@@ -3,7 +3,7 @@
 This script is an implementation of the [Collatz Dash](http://puzzles.bostonpython.com/collatz.html)
 puzzle from Boston Python. 
 
-![Obligatory xkcd](http://imgs.xkcd.com/comics/collatz_conjecture.png)
+[![Obligatory xkcd](http://imgs.xkcd.com/comics/collatz_conjecture.png)](https://xkcd.com/710/)
 
 ## How to race
 

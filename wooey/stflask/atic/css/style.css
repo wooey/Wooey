@@ -98,8 +98,8 @@ a.title { padding-right:0.25em !important;}
 a.title { padding-left:0.25em !important;}
 
 h1.title, h1.title a {
-    font-weight:bold !important;
-    display:inline !important;}
+    display:inline !important;
+    }
 
 h1.title { color: #888; }
 
@@ -283,4 +283,10 @@ select {-moz-appearance: none !important;}
 
 select, input[type="text"] {
     border-radius: 3px;
+}
+
+iframe {
+    min-height: 300px;
+    width: 100%;
+    border: 0;
 }

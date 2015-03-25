@@ -246,7 +246,7 @@ def job(job_id):
 
                 display['Html'].append({
                     'name': name,
-                    'src': '<object type="text/html">' + src + '</object>',
+                    'src': '<iframe seamless srcdoc="%s" ></iframe>' % src,
                     'icon': 'file-text-o',
                     'metadata': ["%dkB" % (size/1024), 'text/%s' % ext[1:]]
                     })

@@ -19,6 +19,8 @@ class Config(object):
 
     QUEUE_MAXIMUM_JOBS = 50  # Maximum number of finished (error/complete) jos in the Queue
 
+    GITHUB_URL = "https://github.com/mfitzp/Wooey"
+
 class ProdConfig(Config):
     """Production configuration."""
     ENV = 'prod'

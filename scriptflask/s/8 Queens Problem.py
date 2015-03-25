@@ -52,6 +52,6 @@ for n, answer in enumerate(solutions):
     x, y = zip(*answer)
     ax.scatter(np.array(x)-1, np.array(y)-1, s=1000, marker='o', color='r')
 
-    fig.savefig('solution-%d.png' % n)
+    fig.savefig('solution-%d.png' % n+1)
     
 

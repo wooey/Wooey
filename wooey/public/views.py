@@ -209,7 +209,7 @@ def job(job_id):
                  and os.path.splitext(f)[1] not in EXCLUDED_EXTENSIONS_FOR_DOWNLOAD
                  and f not in EXCLUDED_FILES_FOR_DOWNLOAD]
 
-        for filename in files:
+        for filename in sorted(files):
 
             fullpath = os.path.join(cwd, filename)
             name, ext = os.path.splitext(filename)

@@ -297,3 +297,12 @@ iframe {
 .help-about h4 { font-size: 1.125rem; }
 .help-about h5 { font-size: 1rem; }
 .help-about h6 { font-size: 1rem; }
+
+span.status span {
+    display: none;
+}
+
+span.status-W span.label.status-waiting  {display: inline-block; }
+span.status-R span.label.status-running  {display: inline-block; }
+span.status-C span.label.status-complete {display: inline-block; }
+span.status-E span.label.status-error    {display: inline-block; }

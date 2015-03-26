@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 '''Public section, including homepage and signup.'''
 from flask import (Blueprint, request, render_template, flash, url_for,
-                    redirect, session, abort, send_from_directory)
+                    redirect, session, abort, send_from_directory, jsonify)
 from flask.ext.login import login_user, login_required, logout_user, current_user
 
 from wooey.extensions import login_manager
@@ -271,6 +271,29 @@ def job(job_id):
 
 
     return render_template("public/job.html", script=script, job=job, metadata=script.load_config(), console=console, display=display, has_output=has_output, documentation=documentation)
+
+@blueprint.route("/jobs/<int:job_id>.json")
+def job_json(job_id):
+    '''
+    Get the current job status information by AJAX, sufficient to update the current view with output.
+
+    This will be polled every 5s on running jobs.
+
+    :param job_id:
+    :return:
+    '''
+
+    job = Job.query.get(job_id)
+
+    data = {
+        'status': job.status,
+        'updated_at': job.updated_at,
+        'started_at': job.started_at,
+        'stopped_at': job.stopped_at,
+        'priority': job.priority,
+    }
+
+    return jsonify(**data)
 
 
 def make_zipdir(zipf, path):

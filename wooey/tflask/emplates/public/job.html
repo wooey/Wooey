@@ -5,21 +5,45 @@
 
 {% block subtitle %}/ <a href="{{ url_for('public.create_job', script_id=script.id) }}" class="subtitle">{{ script.name }} </a>{% endblock %}
 
+{% block js %}
+<script type=text/javascript>
+
+$(document).ready(function () {
+    status_check_interval = setInterval(
+        function() {
+          $.getJSON("{{ url_for('public.job_json', job_id=job.id) }}", {
+          }, function(data) {
+            $("#status").attr('class', 'status status-' + data.status);
+              if (data.status == 'C' || data.status == 'E'){
+                clearInterval(status_check_interval)
+                }
+          });
+          return false;
+        }
+    , 5000);
+});
+
+</script>
+{% endblock %}
+
 {% block header %}
 <div class="row header full-width">
     <div class="large-9 columns"><!--<h1 class="no-margin-bottom">{% if script.nicename %}{{ script.display_name }}{% else %}{{ script.name }}{% endif %}</h1> -->
     <p>{% if script.description %}{{ script.description }}{% else %}&nbsp;{% endif %}</p>
 {% if job %}
     <p class="metadata">
-    Current job <a href="{{ url_for('public.job', job_id=job.id) }}">#{{ job.id }}</a> submitted by <span class="primary">{{ job.user.username }}</span> on {{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+    Current job <a href="{{ url_for('public.job', job_id=job.id) }}">#{{ job.id }}</a> submitted by <span class="primary">{{ job.user.username or 'Guest' }}</span> on {{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
     &bull; Priority <span class="primary">{{ job.priority }}</span>
     {% if job.created_at != job.updated_at %}&bull; Updated {{ job.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}{% endif %}
 
-    {% if job.status == 'W' %}<span class="label info radius"><i class="fa fa-clock-o"></i> Waiting</span>
-    {% elif job.status == 'R' %}<span class="label info radius"><i class="fa fa-spinner fa-pulse"></i> Running</span>
-    {% elif job.status == 'C' %}<span class="label success radius"><i class="fa fa-check"></i> Complete</span>
-    {% elif job.status == 'X' %}<span class="label alert radius"><i class="fa fa-warning"></i> Error</span>{% endif %}
-<!--
+    <span id="status" class="status status-{{ job.status }}">
+        <span class="status-waiting label info radius"><i class="fa fa-clock-o"></i> Waiting</span>
+        <span class="status-running label info radius"><i class="fa fa-spinner fa-pulse"></i> Running</span>
+        <span class="status-complete label success radius"><i class="fa fa-check"></i> Complete</span>
+        <span class="status-error label alert radius"><i class="fa fa-warning"></i> Error</span>
+    </span>
+
+        <!--
         <span class="show-running">
             <span class="label success radius hide running"><i class="fa fa-warning"></i> Running</span>
             <span class="label alert radius hide alert"><i class="fa fa-warning"></i> Error</span>

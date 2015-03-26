@@ -189,7 +189,7 @@ def start_daemon():
 
 
             # If number of running jobs < MAX_RUNNING_JOBS start some more
-            if no_of_running_jobs < MAX_RUNNING_JOBS:
+            if no_of_running_jobs < app.config.get('QUEUE_MAXIMUM_RUNNING_JOBS'):
 
                 # Get the waiting jobs (STATUS_WAITING) ordered by the age-in-minutes/priority DESC
                 # Jobs with a priority of `1` will sort above equally-old jobs with a higher priority value

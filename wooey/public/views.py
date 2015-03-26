@@ -46,7 +46,7 @@ def home():
         else:
             flash_errors(form)
 
-    scripts = Script.query.all()
+    scripts = Script.query.order_by(Script.name)
     return render_template("public/home.html", form=form, scripts=scripts)
 
 
@@ -81,7 +81,7 @@ def about():
 
 @blueprint.route("/scripts/")
 def scripts():
-    scripts = Script.query.all()
+    scripts = Script.query.order_by(Script.name)
     return render_template("public/scripts.html", scripts=scripts)
 
 

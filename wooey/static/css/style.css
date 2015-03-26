@@ -305,4 +305,4 @@ span.status span {
 span.status-W span.label.status-waiting  {display: inline-block; }
 span.status-R span.label.status-running  {display: inline-block; }
 span.status-C span.label.status-complete {display: inline-block; }
-span.status-E span.label.status-error    {display: inline-block; }
+span.status-X span.label.status-error    {display: inline-block; }

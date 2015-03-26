@@ -7,7 +7,7 @@
 
 {% block js %}
 <script type=text/javascript>
-
+{% if job %}
 $(document).ready(function () {
     status_check_interval = setInterval(
         function() {
@@ -22,7 +22,7 @@ $(document).ready(function () {
         }
     , 5000);
 });
-
+{% endif %}
 </script>
 {% endblock %}
 

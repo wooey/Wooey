@@ -7,20 +7,21 @@
 
 {% block js %}
 <script type=text/javascript>
-{% if job %}
+{% if job and not job.stopped_at %}
 $(document).ready(function () {
     status_check_interval = setInterval(
         function() {
           $.getJSON("{{ url_for('public.job_json', job_id=job.id) }}", {
           }, function(data) {
             $("#status").attr('class', 'status status-' + data.status);
-              if (data.status == 'C' || data.status == 'E'){
+            $("#console-body").text(data.console);
+            if (data.status == 'C' || data.status == 'E'){
                 clearInterval(status_check_interval)
-                }
+            }
           });
           return false;
         }
-    , 5000);
+    , 2500);
 });
 {% endif %}
 </script>
@@ -101,7 +102,7 @@ $(document).ready(function () {
 
         <section role="tabpanel" aria-hidden="false" class="content console full-height active" id="console">
             <div class="row console full-height">
-                <div class="large-12 columns console-body">{{ console }}</div>
+                <div id="console-body" class="large-12 columns console-body">{{ job.console }}</div>
             </div>
         </section>
 

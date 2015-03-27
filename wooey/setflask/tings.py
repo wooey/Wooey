@@ -15,10 +15,16 @@ class Config(object):
     CACHE_TYPE = 'simple'  # Can be "memcached", "redis", etc.
 
     SITE_NAME = "Wooey!"
-    SITE_TAGLINE = "...it's a Web UI for Python scripts."
+    SITE_TAGLINE = "A web UI for Python scripts."
 
     QUEUE_MAXIMUM_RUNNING_JOBS = 4  # Maximum number of running jobs (processes)
     QUEUE_MAXIMUM_FINISHED_JOBS = 50  # Maximum number of finished (error/complete) jobs in the Queue
+
+    EXCLUDED_EXTENSIONS_FOR_DOWNLOAD = []
+    EXCLUDED_FILES_FOR_DOWNLOAD = []
+
+    EXCLUDED_FILES_FOR_UPLOAD = []
+    EXCLUDED_EXTENSIONS_FOR_UPLOAD = []
 
     GITHUB_URL = "https://github.com/mfitzp/Wooey"
 

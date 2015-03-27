@@ -306,3 +306,9 @@ span.status-W span.label.status-waiting  {display: inline-block; }
 span.status-R span.label.status-running  {display: inline-block; }
 span.status-C span.label.status-complete {display: inline-block; }
 span.status-X span.label.status-error    {display: inline-block; }
+
+.download-button .download-yes-button {display: none;}
+.download-button .download-no-button {display: none;}
+
+.download-button.download-true .download-yes-button {display: inline;}
+.download-button.download-false .download-no-button {display: inline;}

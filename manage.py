@@ -238,7 +238,7 @@ def start_daemon():
 
                         try:
                             # Run the command and store the object for future use
-                            process = subprocess.Popen(args, cwd=cwd, stdout=out, stderr=subprocess.STDOUT)
+                            process = subprocess.Popen(args, cwd=cwd, bufsize=0, stdout=out, stderr=subprocess.STDOUT)
 
                         except Exception:
                             raise

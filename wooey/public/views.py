@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 '''Public section, including homepage and signup.'''
 from flask import (Blueprint, request, render_template, flash, url_for,
-                    redirect, session, abort, send_from_directory, jsonify)
+                   redirect, session, abort, send_from_directory, jsonify)
 from flask.ext.login import login_user, login_required, logout_user, current_user
 
 from wooey.extensions import login_manager
@@ -33,6 +33,7 @@ blueprint = Blueprint('public', __name__, static_folder="../static")
 def load_user(id):
     return User.get_by_id(int(id))
 
+
 @blueprint.route("/", methods=["GET", "POST"])
 def home():
     form = LoginForm(request.form)
@@ -63,9 +64,9 @@ def register():
     form = RegisterForm(request.form, csrf_enabled=False)
     if form.validate_on_submit():
         new_user = User.create(username=form.username.data,
-                        email=form.email.data,
-                        password=form.password.data,
-                        active=True)
+                               email=form.email.data,
+                               password=form.password.data,
+                               active=True)
         flash("Thank you for registering. You can now log in.", 'success')
         return redirect(url_for('public.home'))
     else:
@@ -110,7 +111,8 @@ def create_job(script_id):
             documentation = mistune.markdown(documentation)
 
         # Render the script view
-        return render_template("public/job.html", script=script, metadata=script.load_config(), documentation=documentation)
+        return render_template("public/job.html", script=script, metadata=script.load_config(),
+                               documentation=documentation)
 
     elif request.method == 'POST':
         # Handle the form submission to generate the arguments for the script
@@ -125,7 +127,7 @@ def create_job(script_id):
                 name = a['name']
 
                 if (name in request.form and request.form[name]) or \
-                   (name in request.files and request.files[name]):
+                        (name in request.files and request.files[name]):
 
                     # Add the command switch if defined
                     if a['commands']:
@@ -142,10 +144,7 @@ def create_job(script_id):
                                 args.append(request.form[name])
 
                     elif name in request.files:
-
-                        EXCLUDED_FILES_FOR_UPLOAD = []
-                        EXCLUDED_EXTENSIONS_FOR_UPLOAD = []
-
+                        # FIXME: Should account for the EXCLUDED UPLOAD in settings.py
                         # Process file upload. We need to copy to a temporary file and update the dictionary
                         file = request.files[name]
                         fname = os.path.join(tempdir, secure_filename(file.filename))
@@ -168,6 +167,63 @@ def create_job(script_id):
         return redirect(url_for('public.job', job_id=job.id))
 
 
+def build_display_objects(files):
+
+    display = defaultdict(list)
+
+    for filename in sorted(files):
+
+        name, ext = os.path.splitext(os.path.basename(filename))
+
+        if ext in ['.png', '.jpg', '.jpeg', '.tif', '.tiff']:
+            with open(filename, 'r') as f:
+                src = '<img src="data:image/' + ext + ';base64,' + base64.b64encode(f.read()) + '">'
+                size = f.tell()
+
+            display['Images'].append({
+                'name': name,
+                'src': src,
+                'icon': 'file-image-o',
+                'metadata': ["%dkB" % (size / 1024), 'image/%s' % ext[1:]]
+            })
+
+        elif ext in ['.svg']:
+            with open(filename, 'r') as f:
+                src = f.read().decode('utf8')
+                size = f.tell()
+
+            display['Images'].append({
+                'name': name,
+                'src': src,
+                'icon': 'file-image-o',
+                'metadata': ["%dkB" % (size / 1024), 'image/%s' % ext[1:]]
+            })
+
+        elif ext in ['.htm', '.html']:
+            with open(filename, 'r') as f:
+                src = f.read().decode('utf8')
+                size = f.tell()
+
+            display['Html'].append({
+                'name': name,
+                'src': '<iframe seamless srcdoc="%s" ></iframe>' % src,
+                'icon': 'file-text-o',
+                'metadata': ["%dkB" % (size / 1024), 'text/%s' % ext[1:]]
+            })
+
+
+        else:  # Miscellaneous files
+            size = os.path.getsize(fullpath)
+            display['Other'].append({
+                'name': name,
+                'src': "",
+                'icon': 'file-o',
+                'metadata': ["%dkB" % (size / 1024), ext[1:].upper()]
+            })
+
+    return display
+
+
 @blueprint.route("/jobs/<int:job_id>/")
 def job(job_id):
     '''
@@ -184,85 +240,21 @@ def job(job_id):
     # Get the job object from the database
     job = Job.query.get(job_id)
     script = job.script
-
-    display = defaultdict(list)
-    has_output = False
+    display = {}
 
     cwd = os.path.join(job.path, 'output')  # Excution path of the job
     if os.path.isdir(cwd):  # Execution has begun/finished
 
-        EXCLUDED_FILES_FOR_DOWNLOAD = []
-        EXCLUDED_EXTENSIONS_FOR_DOWNLOAD = []
-
-        # Filter files for files and not excluded above list
-        # FIXME: The exclude list should come from config
-        # FIXME: Add excluded list of *extensions* for download
-        files = [f for f in os.listdir(cwd) if os.path.isfile(os.path.join(cwd, f))
-                 and os.path.splitext(f)[1] not in EXCLUDED_EXTENSIONS_FOR_DOWNLOAD
-                 and f not in EXCLUDED_FILES_FOR_DOWNLOAD]
-
-        for filename in sorted(files):
-
-            fullpath = os.path.join(cwd, filename)
-            name, ext = os.path.splitext(filename)
-            src = None
-
-            if ext in ['.png', '.jpg', '.jpeg', '.tif', '.tiff']:
-                with open(fullpath, 'r') as f:
-                    src = '<img src="data:image/' + ext + ';base64,' + base64.b64encode(f.read()) + '">'
-                    size = f.tell()
-
-                display['Images'].append({
-                    'name': name,
-                    'src': src,
-                    'icon': 'file-image-o',
-                    'metadata': ["%dkB" % (size/1024), 'image/%s' % ext[1:]]
-                    })
-
-            elif ext in ['.svg']:
-                with open(fullpath, 'r') as f:
-                    src = f.read().decode('utf8')
-                    size = f.tell()
-
-                display['Images'].append({
-                    'name': name,
-                    'src': src,
-                    'icon': 'file-image-o',
-                    'metadata': ["%dkB" % (size/1024), 'image/%s' % ext[1:]]
-                    })
-
-            elif ext in ['.htm', '.html']:
-                with open(fullpath, 'r') as f:
-                    src = f.read().decode('utf8')
-                    size = f.tell()
-
-                display['Html'].append({
-                    'name': name,
-                    'src': '<iframe seamless srcdoc="%s" ></iframe>' % src,
-                    'icon': 'file-text-o',
-                    'metadata': ["%dkB" % (size/1024), 'text/%s' % ext[1:]]
-                    })
-
-
-            else:  # Miscellaneous files
-                size = os.path.getsize(fullpath)
-                display['Other'].append({
-                    'name': name,
-                    'src': "",
-                    'icon': 'file-o',
-                    'metadata': ["%dkB" % (size/1024), ext[1:].upper()]
-                    })
-
-
-        # Don't report output until the job is stopped, or we'll have half-downloads
-        has_output = job.stopped_at is not None and len(files) > 0
+        files = job.get_output_files()
+        display = build_display_objects(files)
 
     documentation = script.load_docs()
     if documentation:
         documentation = mistune.markdown(documentation)
 
+    return render_template("public/job.html", script=script, job=job, metadata=script.load_config(), display=display,
+                           documentation=documentation)
 
-    return render_template("public/job.html", script=script, job=job, metadata=script.load_config(), display=display, has_output=has_output, documentation=documentation)
 
 @blueprint.route("/jobs/<int:job_id>.json")
 def job_json(job_id):
@@ -277,13 +269,26 @@ def job_json(job_id):
 
     job = Job.query.get(job_id)
 
+    files = job.get_output_files()
+    if files:
+        displayo = build_display_objects(files)
+
+    display = {}
+    for section, oo in displayo.items():
+        display[section] = {
+            'count': len(oo),
+            'content': render_template("public/job_content.html", section=section, oo=sorted(oo)),
+            }
+
     data = {
         'status': job.status,
         'updated_at': job.updated_at,
         'started_at': job.started_at,
         'stopped_at': job.stopped_at,
         'priority': job.priority,
-        'console': job.console, # Might be a bit heavy on disk access
+        'console': job.console,  # Might be a bit heavy on disk access
+        'has_output': job.has_output, # Might be a bit heavy on disk access
+        'display': display,
     }
 
     return jsonify(**data)
@@ -294,6 +299,7 @@ def make_zipdir(zipf, path):
         for file in files:
             fn = os.path.join(root, file)
             zipf.write(fn, os.path.relpath(fn, path))
+
 
 @blueprint.route("/jobs/<int:job_id>/download<format>")
 def download_job_output(job_id, format):
@@ -307,7 +313,7 @@ def download_job_output(job_id, format):
         abort(404)
 
     fn = secure_filename("%s_%d%s" % (job.script.name, job.id, format))
-    path_fn = os.path.join(job.path, fn )
+    path_fn = os.path.join(job.path, fn)
 
     # Check for existence of pre-zipped files
     if not os.path.exists(path_fn):

@@ -3,7 +3,7 @@ import os
 import datetime as dt
 import json
 from flask.ext.login import current_user
-
+from flask import current_app
 
 from wooey.database import (
     Column,
@@ -135,3 +135,20 @@ class Job(SurrogatePK, Model):
             console = ""
 
         return console
+
+    def get_output_files(self):
+        cwd = os.path.join(self.path, 'output')
+        if os.path.isdir(cwd):  # Execution has begun/finished
+            # Filter files for files and not excluded above list
+            # FIXME: The exclude list should come from config
+            # FIXME: Add excluded list of *extensions* for download
+            files = [os.path.join(cwd, f) for f in os.listdir(cwd) if os.path.isfile(os.path.join(cwd, f))
+                     and os.path.splitext(f)[1] not in current_app.config.get('EXCLUDED_EXTENSIONS_FOR_DOWNLOAD', [])
+                     and f not in current_app.config.get('EXCLUDED_FILES_FOR_DOWNLOAD', [])]
+        return files
+
+    @property
+    def has_output(self):
+        return self.stopped_at is not None and len(self.get_output_files()) > 0
+
+

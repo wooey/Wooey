@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 import os
 import errno
-import sys
 import subprocess
 import json
 import time
 import datetime as dt
 import shutil
+import datetime as dt
 
 from flask.ext.script import Manager, Shell, Server
 from flask.ext.migrate import MigrateCommand
@@ -185,6 +185,7 @@ def start_daemon():
 
                     # Delete the process object
                     del pids[k]
+                    job.stopped_at = dt.datetime.utcnow()
                     db.session.commit()
 
 
@@ -249,6 +250,7 @@ def start_daemon():
 
                         # Update the job status
                         job.status = STATUS_RUNNING
+                        job.started_at = dt.datetime.utcnow()
                         job.pid = process.pid
 
                         db.session.commit()

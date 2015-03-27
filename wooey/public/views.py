@@ -24,7 +24,7 @@ import mistune
 
 import zipfile, tarfile
 
-from .models import Script, Job
+from .models import Script, Job, STATUS_COMPLETE
 
 blueprint = Blueprint('public', __name__, static_folder="../static")
 
@@ -185,14 +185,6 @@ def job(job_id):
     job = Job.query.get(job_id)
     script = job.script
 
-    try:
-        with open(os.path.join(job.path, 'STDOUT'), 'rU') as f:
-            console = f.read().decode('utf8')
-
-    except IOError:
-        console = ""
-
-
     display = defaultdict(list)
     has_output = False
 
@@ -262,15 +254,15 @@ def job(job_id):
                     })
 
 
-
-        has_output = len(files) > 0
+        # Don't report output until the job is stopped, or we'll have half-downloads
+        has_output = job.stopped_at is not None and len(files) > 0
 
     documentation = script.load_docs()
     if documentation:
         documentation = mistune.markdown(documentation)
 
 
-    return render_template("public/job.html", script=script, job=job, metadata=script.load_config(), console=console, display=display, has_output=has_output, documentation=documentation)
+    return render_template("public/job.html", script=script, job=job, metadata=script.load_config(), display=display, has_output=has_output, documentation=documentation)
 
 @blueprint.route("/jobs/<int:job_id>.json")
 def job_json(job_id):
@@ -291,6 +283,7 @@ def job_json(job_id):
         'started_at': job.started_at,
         'stopped_at': job.stopped_at,
         'priority': job.priority,
+        'console': job.console, # Might be a bit heavy on disk access
     }
 
     return jsonify(**data)
@@ -308,6 +301,10 @@ def download_job_output(job_id, format):
         abort(404)
 
     job = Job.query.get(job_id)
+
+    if job.stopped_at is None:
+        # Don't return (or generate) a download until the job is stopped (error or complete)
+        abort(404)
 
     fn = secure_filename("%s_%d%s" % (job.script.name, job.id, format))
     path_fn = os.path.join(job.path, fn )

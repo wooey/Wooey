@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import datetime as dt
 import json
 from flask.ext.login import current_user
@@ -124,3 +125,13 @@ class Job(SurrogatePK, Model):
     def duration(self):
         return self.stopped_at - self.started_at
 
+    @property
+    def console(self):
+        try:
+            with open(os.path.join(self.path, 'STDOUT'), 'rU') as f:
+                console = f.read().decode('utf8')
+
+        except IOError:
+            console = ""
+
+        return console

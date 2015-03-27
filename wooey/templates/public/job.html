@@ -7,7 +7,7 @@
 
 {% block js %}
 <script type=text/javascript>
-{% if job  %}
+{% if job and not job.stopped_at %}
 $(document).ready(function () {
     status_check_interval = setInterval(
         function() {
@@ -40,9 +40,9 @@ $(document).ready(function () {
 
             // Update the content of each section with the latest data
 
-            //if (data.status == 'C' || data.status == 'E'){
-            //    clearInterval(status_check_interval)
-            //}
+            if (data.status == 'C' || data.status == 'E'){
+                clearInterval(status_check_interval)
+            }
           });
           return false;
         }

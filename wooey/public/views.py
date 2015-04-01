@@ -213,7 +213,7 @@ def build_display_objects(files):
 
 
         else:  # Miscellaneous files
-            size = os.path.getsize(fullpath)
+            size = os.path.getsize(filename)
             display['Other'].append({
                 'name': name,
                 'src': "",

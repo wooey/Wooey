@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import re
 import datetime as dt
 import json
 from flask.ext.login import current_user
@@ -135,6 +136,23 @@ class Job(SurrogatePK, Model):
             console = ""
 
         return console
+
+    @property
+    def progress(self):
+
+        if self.is_complete:
+            return 100
+        elif self.is_waiting:
+            return 0
+        else:
+            console = self.console
+            r = re.compile(current_app.config.get('DEFAULT_PROGRESS_REGEX'))
+            for line in console.splitlines()[::-1]:
+                m = r.match(line)
+                if m:
+                    return float(m.group(1))
+                    break
+
 
     def get_output_files(self):
         cwd = os.path.join(self.path, 'output')

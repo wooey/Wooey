@@ -87,7 +87,7 @@ footer {
 .console .console-body {
     padding:1em;
     white-space: pre;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
 }
 
 .no-margin-bottom {
@@ -333,4 +333,15 @@ span.status-X span.label.status-error    {display: inline-block; }
     margin-bottom: 0;
     border-top: 0;
     z-index: 1000;
+}
+
+div.progress {
+    position: relative;
+    top: -12px;
+
+    height: 5px;
+    border: none;
+    background: rgba(0,0,0,0.2);
+    margin: 0;
+    padding: 0;
 }

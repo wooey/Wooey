@@ -3,6 +3,7 @@
 import argparse
 from matplotlib import pyplot as plt
 import numpy as np
+import sys
 
 parser = argparse.ArgumentParser(description="Solve the 8 Queens problem for arbritary sized boards up to 9")
 
@@ -45,13 +46,19 @@ def checkerboard(s):
 board = checkerboard(args.size)   
 solutions = solve(args.size)
 
-print("There are %d solution(s) for a board %dx%d in size" % (len(solutions), args.size, args.size))
+n_solutions = len(solutions)
+print("There are %d solution(s) for a board %dx%d in size" % (n_solutions, args.size, args.size))
+
 for n, answer in enumerate(solutions):
+
     ax.cla()
     ax.matshow(board, cmap=plt.cm.gray)
     x, y = zip(*answer)
     ax.scatter(np.array(x)-1, np.array(y)-1, s=1000, marker='o', color='r')
 
     fig.savefig('solution-%d.png' % (n+1))
-    
+
+    print("__PROGRESS_%d%%__" % ( 100*(n+1)/n_solutions ) )
+    sys.stdout.flush()
+
 

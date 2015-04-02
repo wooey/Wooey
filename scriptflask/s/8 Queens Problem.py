@@ -5,9 +5,9 @@ from matplotlib import pyplot as plt
 import numpy as np
 import sys
 
-parser = argparse.ArgumentParser(description="Solve the 8 Queens problem for arbritary sized boards up to 9")
+parser = argparse.ArgumentParser(description="Solve the 8 Queens problem for arbritary sized boards up to 8")
 
-parser.add_argument("-s", "--size", dest="size", default=4, type=int, choices=range(3, 8),
+parser.add_argument("-s", "--size", dest="size", default=4, type=int, choices=range(3, 9),
                   help="size of the board")
 
 args = parser.parse_args()

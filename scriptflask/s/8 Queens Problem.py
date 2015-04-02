@@ -48,7 +48,7 @@ solutions = solve(args.size)
 
 n_solutions = len(solutions)
 print("There are %d solution(s) for a board %dx%d in size" % (n_solutions, args.size, args.size))
-
+print("Saving images...")
 for n, answer in enumerate(solutions):
 
     ax.cla()
@@ -58,7 +58,7 @@ for n, answer in enumerate(solutions):
 
     fig.savefig('solution-%d.png' % (n+1))
 
-    print("__PROGRESS_%d%%__" % ( 100*(n+1)/n_solutions ) )
+    print("Progress: %d%%" % ( 100*(n+1)/n_solutions ) )
     sys.stdout.flush()
 
 

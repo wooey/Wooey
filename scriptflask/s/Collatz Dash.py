@@ -2,7 +2,6 @@
 
 import argparse
 from matplotlib import pyplot as plt
-import numpy as np
 import datetime as dt
 
 parser = argparse.ArgumentParser(description="An implementation of the Boston Python Collatz Dash")
@@ -32,6 +31,12 @@ def calculate_next_step(x):
 a = args.a
 b = args.b
 
+print("Running the Collatz Dash!")
+print("%s (Age %d) vs. %s (Age %d)" % (args.namea, args.a, args.nameb, args.b))
+print("Ready...")
+print("Get set...")
+print("GO!")
+
 while a > 1 and b > 1:
     a_steps.append(a)
     b_steps.append(b)
@@ -47,6 +52,7 @@ if a == 1:
 
 elif b == 1:
     print("Runner '%s' won the race!" % args.nameb)
+
 
 
 fig = plt.figure()

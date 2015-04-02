@@ -270,8 +270,7 @@ def job_json(job_id):
     job = Job.query.get(job_id)
 
     files = job.get_output_files()
-    if files:
-        displayo = build_display_objects(files)
+    displayo = build_display_objects(files)
 
     display = {}
     for section, oo in displayo.items():

@@ -17,6 +17,9 @@ $(document).ready(function () {
             $("#console-body").text(data.console);
 
             $("#download-button").attr('class', 'large-3 columns download-button download-' + data.has_output);
+            if(data.progress){
+                $("#job-progress").css("width", data.progress + "%");
+            }
 
             // Iterate and add the tabs for content (if they don't already exist)
             for (var d in data.display) {
@@ -54,6 +57,11 @@ $(document).ready(function () {
 
 {% block header %}
 <div class="row header full-width">
+
+    <div class="progress small-12 large-12 success">
+        <span id="job-progress" class="meter" style="width: {% if job and job.progress %}{{ job.progress }}{% else %}0{% endif %}%"></span>
+    </div>
+
     <div class="large-9 columns"><!--<h1 class="no-margin-bottom">{% if script.nicename %}{{ script.display_name }}{% else %}{{ script.name }}{% endif %}</h1> -->
     <p>{% if script.description %}{{ script.description }}{% else %}&nbsp;{% endif %}</p>
 {% if job %}
@@ -69,12 +77,6 @@ $(document).ready(function () {
         <span class="status-error label alert radius"><i class="fa fa-warning"></i> Error</span>
     </span>
 
-        <!--
-        <span class="show-running">
-            <span class="label success radius hide running"><i class="fa fa-warning"></i> Running</span>
-            <span class="label alert radius hide alert"><i class="fa fa-warning"></i> Error</span>
-        </span>
--->
     </p>
 {% endif %}
     </div>
@@ -90,7 +92,9 @@ $(document).ready(function () {
             <span class="download-no-button button small right secondary disabled radius"><i class="fa fa-warning"></i> No download</span>
         </div>
     {% endif %}
+
 </div>
+
 {% endblock %}
 
 {% block content %}

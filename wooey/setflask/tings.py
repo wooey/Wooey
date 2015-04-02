@@ -28,6 +28,8 @@ class Config(object):
 
     GITHUB_URL = "https://github.com/mfitzp/Wooey"
 
+    DEFAULT_PROGRESS_REGEX = '^__PROGRESS_([0-9]*\.?[0-9]+.)%__$'  # Line-wise regex search for progress
+
 class ProdConfig(Config):
     """Production configuration."""
     ENV = 'prod'

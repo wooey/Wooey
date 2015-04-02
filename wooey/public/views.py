@@ -138,7 +138,7 @@ def create_job(script_id):
                         # Required arguments are positional; so plot it into place
                         # FIXME: Probably a better check to do here, might require additional data from the parser
                         if a['widget'] not in ["CheckBox"]:
-                            if a['nargs'] == '+' or a['nargs'] == '*':
+                            if 'nargs' in a and ( a['nargs'] == '+' or a['nargs'] == '*' ):
                                 args.extend(request.form[name].split(" "))
                             else:
                                 args.append(request.form[name])
@@ -288,6 +288,7 @@ def job_json(job_id):
         'console': job.console,  # Might be a bit heavy on disk access
         'has_output': job.has_output, # Might be a bit heavy on disk access
         'display': display,
+        'progress': job.progress,
     }
 
     return jsonify(**data)

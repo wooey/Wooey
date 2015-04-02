@@ -332,4 +332,5 @@ span.status-X span.label.status-error    {display: inline-block; }
 .message-container .alert-box {
     margin-bottom: 0;
     border-top: 0;
+    z-index: 1000;
 }

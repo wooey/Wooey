@@ -48,7 +48,7 @@ def home():
             flash_errors(form)
 
     scripts = Script.query.order_by(Script.name)
-    return render_template("public/home.html", form=form, scripts=scripts)
+    return render_template("public/home.html", login_form=form, scripts=scripts)
 
 
 @blueprint.route('/logout/')
@@ -337,3 +337,10 @@ def download_job_output(job_id, format):
 def queue():
     jobs = Job.query.order_by(Job.created_at.desc())
     return render_template("public/queue.html", jobs=jobs)
+
+
+@blueprint.context_processor
+def inject_login_form():
+    return {
+        'login_form': LoginForm(request.form),
+        }

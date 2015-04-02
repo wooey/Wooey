@@ -281,7 +281,7 @@ label small {
 select {-moz-appearance: none !important;}
 
 
-select, input[type="text"], input[type="password"] {
+select, input[type="text"], input[type="password"], button {
     border-radius: 3px;
 }
 
@@ -312,3 +312,24 @@ span.status-X span.label.status-error    {display: inline-block; }
 
 .download-button.download-true .download-yes-button {display: inline;}
 .download-button.download-false .download-no-button {display: inline;}
+
+.login_username input {
+    border-top-right-radius:0 !important;
+    border-bottom-right-radius:0 !important;
+    border-right-width: 1;
+}
+
+.login_password input {
+    border-radius:0 !important;
+    border-left-width: 0;
+}
+
+.login_submit button {
+    border-top-left-radius:0 !important;
+    border-bottom-left-radius:0 !important;
+}
+
+.message-container .alert-box {
+    margin-bottom: 0;
+    border-top: 0;
+}

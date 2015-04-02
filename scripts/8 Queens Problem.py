@@ -58,7 +58,7 @@ for n, answer in enumerate(solutions):
 
     fig.savefig('solution-%d.png' % (n+1))
 
-    print("Progress: %d%%" % ( 100*(n+1)/n_solutions ) )
+    print("Progress %d%%" % ( 100*(n+1)/n_solutions ) )
     sys.stdout.flush()
 
 

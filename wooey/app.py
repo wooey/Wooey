@@ -13,7 +13,7 @@ from wooey.extensions import (
     flask_admin,
     # debug_toolbar,
 )
-from wooey import public, user, admin, context_processors
+from wooey import public, user, admin
 
 def create_app(config_object=ProdConfig):
     '''An application factory, as explained here:

@@ -347,5 +347,5 @@ div.progress {
 }
 
 .meter {
-    transition: width 2.5s ease;
+    transition: width 1s ease;
 }

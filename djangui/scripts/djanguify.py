@@ -10,6 +10,7 @@ import imp
 import subprocess
 from argparse import ArgumentParser
 from django.template import Context, Engine
+from django.utils.crypto import get_random_string
 
 from djangui.backend.nodes import ArgParseNodeBuilder
 
@@ -73,9 +74,18 @@ def main():
         parser = ArgParseNodeBuilder(filename, module_parser)
         app_models.append(parser.getModelDict())
 
-    context = Context(dict({'app_name': app_name}, **{
+    secret_chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
+    context = Context(
+        dict({
+            'app_name': app_name,
+            'project_name': project_name,
+            'secret_key': get_random_string(50, secret_chars),
+        },
+        **{
             'models': app_models,
-    }), autoescape=False)
+        }),
+        autoescape=False
+    )
 
     template_files = []
     def walk_dir(templates, dest):

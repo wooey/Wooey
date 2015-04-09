@@ -4,3 +4,7 @@ from .djangui_settings import *
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'user_uploads')
 MEDIA_URL = '/uploads/'
+
+## Celery related options
+INSTALLED_APPS += ('djcelery',)
+CELERY_RESULT_BACKEND='djcelery.backends.database:DatabaseBackend'

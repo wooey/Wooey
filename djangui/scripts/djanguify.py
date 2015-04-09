@@ -63,7 +63,7 @@ def main():
     for script in scripts:
         arg_nodes = {}
         basename, extension = os.path.splitext(script)
-        basename = basename.lower()
+        basename = basename
         filename = os.path.split(basename)[1]
         try:
             module = imp.load_source(basename, script)
@@ -72,7 +72,7 @@ def main():
             sys.stderr.write('{0}\n'.format(traceback.format_exc()))
             continue
         module_parser = module.parser
-        parser = ArgParseNodeBuilder(filename, module_parser)
+        parser = ArgParseNodeBuilder(filename, module_parser, script)
         app_models.append(parser.getModelDict())
 
     secret_chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'

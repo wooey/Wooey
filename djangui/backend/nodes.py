@@ -76,7 +76,7 @@ class ArgParseNode(object):
             for i in model_field.get('getattr_kwargs', []):
                 cb = i.get('callback', None)
                 if cb is not None:
-                    cb(self.kwargs, i, action, extra={'class_name':class_name})
+                    cb(self.kwargs, i, action, extra={'class_name': class_name})
                 else:
                     attr = i['attr']
                     model_name = i['model_name']
@@ -97,10 +97,11 @@ class ArgParseNode(object):
         return str(self.__unicode__())
 
 class ArgParseNodeBuilder(object):
-    def __init__(self, script, parser):
+    def __init__(self, script, parser, script_path):
 
         self.nodes = []
         self.class_name = script
+        self.script_path = script_path
         for action in parser._actions:
             # This is the help message of argparse
             if action.default == argparse.SUPPRESS:
@@ -121,4 +122,6 @@ class ArgParseNodeBuilder(object):
             self.nodes.append(node)
 
     def getModelDict(self):
-        return {'class_name': self.class_name, 'fields': [str(node) for node in self.nodes]}
+        fields = [u'djangui_script_name = models.CharField(max_length=255, default="{0}")'.format(self.script_path)]
+        fields += [str(node) for node in self.nodes]
+        return {'class_name': self.class_name, 'fields': fields}

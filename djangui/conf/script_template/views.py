@@ -3,6 +3,7 @@ import sys
 from django.shortcuts import render
 from django.core.urlresolvers import reverse_lazy
 from django.db.models.base import ModelBase
+from django.forms.models import modelform_factory
 from django.views.generic import CreateView, UpdateView, TemplateView
 
 from .models import djangui_models
@@ -24,6 +25,9 @@ class DjanguiScriptMixin(object):
         ctx['script_name'] = self.script_name
         return ctx
 
+    def get_form_class(self):
+        return modelform_factory(self.model, fields=self.fields, exclude=('djangui_script_name',))
+
 
 class DjanguiScriptEdit(DjanguiScriptMixin, UpdateView):
     template_name = 'generic_script_view.html'
@@ -43,6 +47,8 @@ class DjanguiScriptHome(TemplateView):
         ctx = super(DjanguiScriptHome, self).get_context_data(**kwargs)
         ctx['scripts'] = []
         for model in dir(djangui_models):
+            if model == 'DjanguiModel':
+                continue
             klass = getattr(djangui_models, model)
             if issubclass(type(klass), ModelBase):
                 ctx['scripts'].append({

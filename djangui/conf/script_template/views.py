@@ -1,6 +1,7 @@
 import sys
 
 from django.shortcuts import render
+from django.core.urlresolvers import reverse_lazy
 from django.db.models.base import ModelBase
 from django.views.generic import CreateView, UpdateView, TemplateView
 
@@ -18,6 +19,11 @@ class DjanguiScriptMixin(object):
         klass = getattr(djangui_models, self.script_name)
         return klass.objects.all()
 
+    def get_context_data(self, **kwargs):
+        ctx = super(DjanguiScriptMixin, self).get_context_data(**kwargs)
+        ctx['script_name'] = self.script_name
+        return ctx
+
 
 class DjanguiScriptEdit(DjanguiScriptMixin, UpdateView):
     template_name = 'generic_script_view.html'
@@ -27,6 +33,7 @@ class DjanguiScriptEdit(DjanguiScriptMixin, UpdateView):
 class DjanguiScriptCreate(DjanguiScriptMixin, CreateView):
     fields = '__all__'
     template_name = 'generic_script_create.html'
+    success_url = reverse_lazy('{{ app_name }}_home')
 
 
 class DjanguiScriptHome(TemplateView):

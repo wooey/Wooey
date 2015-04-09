@@ -4,16 +4,16 @@ import sys
 import copy
 from . import utils
 
-def filetype_filefield_default(kwargs, default_kwargs, action):
+def filetype_filefield_default(kwargs, default_kwargs, action, extra=None):
     attr = default_kwargs['attr']
     model_name = default_kwargs['model_name']
     value = getattr(action, attr)
     if value is None:
         model_name = 'upload_to'
-        value = "''"
+        value = "''" if extra is None else "'{0}/'".format(extra.get('class_name', ''))
     kwargs[model_name] = value
 
-def str_charfield_default(kwargs, default_kwargs, action):
+def str_charfield_default(kwargs, default_kwargs, action, extra=None):
     attr = default_kwargs['attr']
     model_name = default_kwargs['model_name']
     value = getattr(action, attr)
@@ -59,7 +59,7 @@ class ArgParseNode(object):
     """
         This class takes an argument parser entry and assigns it to a Django field
     """
-    def __init__(self, action=None, model_field=None):
+    def __init__(self, action=None, model_field=None, class_name=''):
         try:
             model_field = copy.deepcopy(model_field)
             field = model_field['field']
@@ -76,13 +76,12 @@ class ArgParseNode(object):
             for i in model_field.get('getattr_kwargs', []):
                 cb = i.get('callback', None)
                 if cb is not None:
-                    cb(self.kwargs, i, action)
+                    cb(self.kwargs, i, action, extra={'class_name':class_name})
                 else:
                     attr = i['attr']
                     model_name = i['model_name']
                     value = getattr(action, attr)
                     self.kwargs[model_name] = value
-
             self.name = action.dest
             self.field = field
         except:
@@ -118,7 +117,7 @@ class ArgParseNodeBuilder(object):
                 else:
                     print 'NOOO'
                     continue
-            node = ArgParseNode(action=action, model_field=field_type)
+            node = ArgParseNode(action=action, model_field=field_type, class_name=self.class_name)
             self.nodes.append(node)
 
     def getModelDict(self):

@@ -40,7 +40,8 @@ def main():
     if project_name:
         if not args.fake:
             subprocess.call(['django-admin.py', 'startproject', project_name])
-        project_base_dir = os.path.join(app_base_dir, project_name, project_name)
+        project_root = os.path.join(app_base_dir, project_name)
+        project_base_dir = os.path.join(project_root, project_name)
         app_base_dir = os.path.join(app_base_dir, project_name)
     app_base_dir = os.path.join(app_base_dir, app_name)
 
@@ -115,6 +116,11 @@ def main():
             pass
         with open(to_name, 'wb') as new_file:
             new_file.write(content)
+
+    if project_name:
+        subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'makemigrations'])
+        subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'migrate'])
+        subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'runserver'])
 
 if __name__ == "__main__":
     sys.exit(main())

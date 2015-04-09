@@ -1,3 +1,6 @@
 from .djangui_settings import *
 
 # This file is where the user can override and customize their installation of djangui
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'user_uploads')
+MEDIA_URL = '/uploads/'

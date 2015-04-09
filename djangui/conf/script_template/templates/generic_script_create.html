@@ -1,6 +1,12 @@
 {% verbatim %}
 {% extends "scripts_home.html" %}
 {% block body %}
-{{ form.as_p }}
+{% endverbatim %}
+<form method="POST" action="{% templatetag openblock %} url '{{ app_name }}_script' script_name {% templatetag closeblock %}" enctype="multipart/form-data">
+{% verbatim %}
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="submit"/>
+</form>
 {% endblock body %}
 {% endverbatim %}

@@ -6,12 +6,20 @@ import subprocess
 
 @shared_task
 def submit_script(**kwargs):
+    model = kwargs.pop('djangui_model')
     com = [kwargs.pop('djangui_script_name')]
     for i,v in kwargs.iteritems():
-        param = '--{0}'.format(i)
+        param = model.get_option_param(i)
+        if param is None:
+            continue
         if isinstance(v, FieldFile):
             com += [param, v.path]
         else:
-            com += [param, str(v)]
+            if str(v) == 'True':
+                com += [param]
+            elif str(v) == 'False':
+                continue
+            else:
+                com += [param, str(v)]
     print com
     subprocess.call(com)

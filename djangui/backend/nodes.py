@@ -38,10 +38,12 @@ ACTION_CLASS_TO_MODEL_FIELD = {
 
     }),
     argparse._StoreTrueAction: dict(TYPE_FIELDS, **{
-        None: {'field': 'BooleanField', 'getattr_kwargs': [{'model_name': 'default', 'attr': 'default'},]},
+        None: {'field': 'BooleanField', 'kwargs': {'blank': True},
+               'getattr_kwargs': [{'model_name': 'default', 'attr': 'default'},]},
     }),
     argparse._StoreFalseAction: dict(TYPE_FIELDS, **{
-        None: {'field': 'BooleanField', 'getattr_kwargs': [{'model_name': 'default', 'attr': 'default'},]},
+        None: {'field': 'BooleanField', 'kwargs': {'blank': True},
+               'getattr_kwargs': [{'model_name': 'default', 'attr': 'default'},]},
     })
 }
 
@@ -100,6 +102,7 @@ class ArgParseNodeBuilder(object):
     def __init__(self, script, parser, script_path):
 
         self.nodes = []
+        self.options = {}
         self.class_name = script
         self.script_path = script_path
         for action in parser._actions:
@@ -120,8 +123,9 @@ class ArgParseNodeBuilder(object):
                     continue
             node = ArgParseNode(action=action, model_field=field_type, class_name=self.class_name)
             self.nodes.append(node)
+            self.options[action.dest] = action.option_strings[0]
 
     def getModelDict(self):
         fields = [u'djangui_script_name = models.CharField(max_length=255, default="{0}")'.format(self.script_path)]
         fields += [str(node) for node in self.nodes]
-        return {'class_name': self.class_name, 'fields': fields}
+        return {'class_name': self.class_name, 'fields': fields, 'options': self.options}

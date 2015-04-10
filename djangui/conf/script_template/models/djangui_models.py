@@ -8,10 +8,18 @@ class DjanguiModel(models.Model):
 
     def save(self, *args, **kwargs):
         super(DjanguiModel, self).save(*args, **kwargs)
-        submit_script(**dict([(i.name, getattr(self, i.name)) for i in self._meta.fields]))
+        script_options = dict([(i.name, getattr(self, i.name)) for i in self._meta.fields])
+        script_options['djangui_model'] = self
+        submit_script(**script_options)
+
+    def get_option_param(self, param):
+        # returns the param argparse accepts (ie --p vs -p)
+        return self.options.get(param)
 
 {% for model in models %}
 class {{ model.class_name }}(DjanguiModel):
+    # field related options
+    options = {{ model.options }}
     {% for field in model.fields %}{{ field }}
     {% endfor %}
     def get_absolute_url(self):

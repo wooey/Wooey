@@ -26,7 +26,7 @@ class DjanguiScriptMixin(object):
         return ctx
 
     def get_form_class(self):
-        return modelform_factory(self.model, fields=self.fields, exclude=('djangui_script_name',))
+        return modelform_factory(self.model, fields=self.fields, exclude=('djangui_script_name', 'djangui_celery_id', 'djangui_celery_state'))
 
 
 class DjanguiScriptEdit(DjanguiScriptMixin, UpdateView):

@@ -1,6 +1,8 @@
 import os
 import json
 import logging
+import imp
+from itertools import chain
 
 from . import argparse_to_json
 from . import source_parser
@@ -23,24 +25,31 @@ def collect_argparses(files, write_out_json=True):
         logging.info("Processing file %s." % filepath)
 
         run_cmd = 'python {}'.format(filepath)
-
+        # find the parsers
         try:
-            ast_source = source_parser.parse_source_file(filepath)
-            python_code = source_parser.convert_to_python(list(ast_source))
-        except Exception as e:  # Catch all exceptions and report, but continue
-            logging.error("Compilation of script %s failed with: %s" % (filepath, e))
-            continue  # Next script
+            # this can sometimes fail when there are required arguments in Argparse
+            source = imp.load_source(os.path.splitext(os.path.split(filename)[1])[0], filepath)
+            parsers = [v for i, v in chain(source.main.__globals__.iteritems(), vars(source).iteritems())
+                    if issubclass(type(v), ArgumentParser)]
+        except:
+            # this assumes a very defined way to create argparse, and will fail for instances where the user
+            # has subclassed Argparse.
+            try:
+                ast_source = source_parser.parse_source_file(filepath)
+                python_code = source_parser.convert_to_python(list(ast_source))
+            except Exception as e:  # Catch all exceptions and report, but continue
+                logging.error("Compilation of script %s failed with: %s" % (filepath, e))
+                continue  # Next script
+                globals = {}
+                # Now execute the code to get the argparse object
+                try:
+                    exec('\n'.join(python_code), globals)
 
-        globals = {}
-        # Now execute the code to get the argparse object
-        try:
-            exec('\n'.join(python_code), globals)
+                except Exception as e:  # Catch all exceptions and report, but continue
+                    logging.error("Execution of script %s failed with: %s" % (filepath, e))
+                    continue  # Next script
 
-        except Exception as e:  # Catch all exceptions and report, but continue
-            logging.error("Execution of script %s failed with: %s" % (filepath, e))
-            continue  # Next script
-
-        parsers = [p for k, p in globals.items() if isinstance(p, ArgumentParser)]
+                parsers = [p for k, p in globals.items() if isinstance(p, ArgumentParser)]
 
         if parsers:
             parser = parsers[0]  # Why would there be more than 1?

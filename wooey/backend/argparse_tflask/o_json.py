@@ -214,7 +214,10 @@ def as_json(action, widget):
         defaultval = action.default
     else:
         # This will work for classes or functions; might need to catch more here
-        defaultval = action.default.__name__
+        if issubclass(type(action.default), file):
+            defaultval = action.default.name
+        else:
+            defaultval = action.default.__name__
 
     return {
         'name': action.dest,

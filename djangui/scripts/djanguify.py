@@ -125,6 +125,7 @@ def main():
     if project_name:
         subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'makemigrations'])
         subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'migrate'])
+        subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'collectstatic', '--noinput'])
         subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'runserver'])
 
 if __name__ == "__main__":

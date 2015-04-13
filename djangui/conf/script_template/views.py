@@ -12,6 +12,7 @@ from django.views.generic import CreateView, UpdateView, TemplateView, View
 from .models import djangui_models
 # Create your views here.
 
+
 class DjanguiScriptMixin(object):
     def dispatch(self, request, *args, **kwargs):
         self.script_name = kwargs.pop('script_name')
@@ -40,12 +41,12 @@ class DjanguiScriptEdit(DjanguiScriptMixin, UpdateView):
 class DjanguiScriptCreate(DjanguiScriptMixin, CreateView):
     fields = '__all__'
     template_name = 'generic_script_create.html'
-    success_url = reverse_lazy('{{ app_name }}_home')
+    success_url = reverse_lazy(getattr(settings, 'POST_SCRIPT_URL', '{{ app_name }}_home'))
 
 class DjanguiScriptJSON(DjanguiScriptMixin, View):
     def get(self, request, *args, **kwargs):
         # returns the models required and optional fields as html
-        d = {'action': reverse('djangui_app_script_json', kwargs={'script_name': self.script_name}), 'required': '', 'optional': ''}
+        d = {'action': reverse('djangui_app_script', kwargs={'script_name': self.script_name}), 'required': '', 'optional': ''}
         form = modelform_factory(self.model, fields=self.model.get_required_fields(), exclude=('djangui_script_name', 'djangui_celery_id', 'djangui_celery_state'))
         d['required'] = str(form())
         form = modelform_factory(self.model, fields=self.model.get_optional_fields(), exclude=('djangui_script_name', 'djangui_celery_id', 'djangui_celery_state'))
@@ -53,7 +54,12 @@ class DjanguiScriptJSON(DjanguiScriptMixin, View):
         return JsonResponse(d)
 
     def post(self, request, *args, **kwargs):
-        pass
+        form = modelform_factory(self.model, fields='__all__', exclude=('djangui_script_name', 'djangui_celery_id', 'djangui_celery_state'))
+        import pdb; pdb.set_trace();
+        form = form(request.POST)
+        if form.is_valid():
+            return JsonResponse({'valid': True})
+        return JsonResponse({'valid': False, 'errors': form.errors})
 
 
 class DjanguiScriptHome(TemplateView):

@@ -15,11 +15,11 @@ def filetype_filefield_default(kwargs, attr, default_kwargs, action, extra=None)
         if not is_upload(action) and not action.required:
             kwargs['blank'] = True
             if value == sys.stderr:
-                kwargs['default'] = "'stderr'"
+                kwargs['djangui_output_default'] = "stderr"
             elif value == sys.stdout:
-                kwargs['default'] = "'stdout'"
+                kwargs['djangui_output_default'] = "stdout"
             elif value == os.devnull:
-                kwargs['default'] = "'null'"
+                kwargs['djangui_output_default'] = "null"
         model_name = 'upload_to'
         value = ['user_upload' if is_upload(action) else 'user_output']
         value.append("" if extra is None else extra.get('class_name', ''))
@@ -29,17 +29,34 @@ def filetype_filefield_default(kwargs, attr, default_kwargs, action, extra=None)
 def str_charfield_default(kwargs, attr, default_kwargs, action, extra=None):
     model_name = default_kwargs['model_name']
     value = getattr(action, attr)
-    kwargs[model_name] = '"{0}"'.format(value)
+    if value is not None:
+        kwargs[model_name] = '"{0}"'.format(value)
+
+def str_charfield_choices(kwargs, attr, default_kwargs, action, extra=None):
+    model_name = default_kwargs['model_name']
+    value = getattr(action, attr)
+    if value:
+        kwargs[model_name] = [(i, i.title()) for i in action.choices]
+
+def required_default(kwargs, attr, default_kwargs, action, extra=None):
+    # this sets blank=False if required = True
+    model_name = default_kwargs['model_name']
+    value = getattr(action, attr)
+    kwargs[model_name] = not value
 
 UNIVERSAL_KWARGS = {
-    'required': {'model_name': 'blank'},
+    'required': {'model_name': 'blank', 'callback': required_default},
     'default': {'model_name': 'default'}
     }
 
 TYPE_FIELDS = {
     int: {'field': 'CharField', 'kwargs': {'max_length': 255}},
     str: {'field': 'CharField', 'kwargs': {'max_length': 255},
-          'getattr_kwargs': {'default': {'model_name': 'default', 'callback': str_charfield_default}}},
+              'getattr_kwargs': {
+                  'default': {'model_name': 'default', 'callback': str_charfield_default},
+                  'choices': {'model_name': 'choices', 'callback': str_charfield_choices}
+              },
+          },
     bool: {'field': 'BooleanField',},
     argparse.FileType: {'field': 'FileField',
                         'getattr_kwargs': {'default': {'model_name': 'default', 'callback': filetype_filefield_default}}}
@@ -126,6 +143,8 @@ class ArgParseNodeBuilder(object):
         self.class_name = script
         self.script_path = script_path
         self.model_description = getattr(parser, 'description', None)
+        self.script_groups = []
+        self.optional_nodes = set([i.dest for i in parser._get_optional_actions()])
         for action in parser._actions:
             # This is the help message of argparse
             if action.default == argparse.SUPPRESS:
@@ -146,10 +165,13 @@ class ArgParseNodeBuilder(object):
             self.nodes.append(node)
             self.djangui_options[action.dest] = action.option_strings[0]
             if node.field == 'DjanguiOutputFileField':
-                self.djangui_output_defaults[action.dest] = node.kwargs.get('default')
+                self.djangui_output_defaults[action.dest] = node.kwargs.pop('djangui_output_default')
+            if node.field == 'DjanguiUploadFileField':
+                pass
 
     def getModelDict(self):
         fields = [u'djangui_script_name = models.CharField(max_length=255, default="{0}")'.format(self.script_path)]
         fields += [str(node) for node in self.nodes]
         return {'class_name': self.class_name, 'fields': fields, 'djangui_options': self.djangui_options,
-                'djangui_output_defaults': self.djangui_output_defaults, 'djangui_model_description': self.model_description}
+                'djangui_output_defaults': self.djangui_output_defaults,
+                'djangui_model_description': self.model_description, 'optional_fields': self.optional_nodes}

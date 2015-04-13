@@ -1,10 +1,13 @@
-import sys
-
-from django.shortcuts import render
-from django.core.urlresolvers import reverse_lazy
+try:
+    from django.http import JsonResponse
+except ImportError:
+    # TODO: make these fallbacks work
+    from django.http import HttpResponse
+    import json
+from django.core.urlresolvers import reverse_lazy, reverse
 from django.db.models.base import ModelBase
 from django.forms.models import modelform_factory
-from django.views.generic import CreateView, UpdateView, TemplateView
+from django.views.generic import CreateView, UpdateView, TemplateView, View
 
 from .models import djangui_models
 # Create your views here.
@@ -38,6 +41,19 @@ class DjanguiScriptCreate(DjanguiScriptMixin, CreateView):
     fields = '__all__'
     template_name = 'generic_script_create.html'
     success_url = reverse_lazy('{{ app_name }}_home')
+
+class DjanguiScriptJSON(DjanguiScriptMixin, View):
+    def get(self, request, *args, **kwargs):
+        # returns the models required and optional fields as html
+        d = {'action': reverse('djangui_app_script_json', kwargs={'script_name': self.script_name}), 'required': '', 'optional': ''}
+        form = modelform_factory(self.model, fields=self.model.get_required_fields(), exclude=('djangui_script_name', 'djangui_celery_id', 'djangui_celery_state'))
+        d['required'] = str(form())
+        form = modelform_factory(self.model, fields=self.model.get_optional_fields(), exclude=('djangui_script_name', 'djangui_celery_id', 'djangui_celery_state'))
+        d['optional'] = str(form())
+        return JsonResponse(d)
+
+    def post(self, request, *args, **kwargs):
+        pass
 
 
 class DjanguiScriptHome(TemplateView):

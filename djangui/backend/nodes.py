@@ -125,6 +125,7 @@ class ArgParseNodeBuilder(object):
         self.djangui_output_defaults = {}
         self.class_name = script
         self.script_path = script_path
+        self.model_description = getattr(parser, 'description', None)
         for action in parser._actions:
             # This is the help message of argparse
             if action.default == argparse.SUPPRESS:
@@ -151,4 +152,4 @@ class ArgParseNodeBuilder(object):
         fields = [u'djangui_script_name = models.CharField(max_length=255, default="{0}")'.format(self.script_path)]
         fields += [str(node) for node in self.nodes]
         return {'class_name': self.class_name, 'fields': fields, 'djangui_options': self.djangui_options,
-                'djangui_output_defaults': self.djangui_output_defaults}
+                'djangui_output_defaults': self.djangui_output_defaults, 'djangui_model_description': self.model_description}

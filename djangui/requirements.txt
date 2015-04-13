@@ -1,0 +1,4 @@
+Django
+django-celery
+djangui
+djangui-home

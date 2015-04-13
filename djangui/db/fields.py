@@ -1,6 +1,6 @@
 __author__ = 'chris'
 from django.db import models
-from ..forms.fields import djangui_fields as djangui_form_fields
+from ..forms import fields as djangui_form_fields
 
 class DjanguiOutputFileField(models.FileField):
     def formfield(self, **kwargs):

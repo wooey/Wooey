@@ -93,12 +93,17 @@ def main():
         l = []
         for root, folders, files in os.walk(templates):
             for filename in files:
+                if filename.endswith('.pyc'):
+                    continue
                 relative_dir = '.{0}'.format(os.path.split(os.path.join(root, filename).replace(templates, ''))[0])
                 l.append((os.path.join(root, filename), os.path.join(dest, relative_dir)))
         return l
 
     template_files += walk_dir(app_template_dir, app_base_dir)
     template_files += walk_dir(project_template_dir, project_base_dir)
+
+    # remove files of directories we are overriding
+    os.remove(os.path.join(app_base_dir, 'models.py'))
 
     for template_file, dest_dir in template_files:
         template_file = open(template_file)

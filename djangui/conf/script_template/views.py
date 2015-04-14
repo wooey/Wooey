@@ -8,10 +8,13 @@ from django.core.urlresolvers import reverse_lazy, reverse
 from django.db.models.base import ModelBase
 from django.forms.models import modelform_factory
 from django.views.generic import CreateView, UpdateView, TemplateView, View
+from django.conf import settings
 
 from .models import djangui_models
 # Create your views here.
 
+DJANGUI_EXCLUDES = ('djangui_script_name', 'djangui_celery_id', 'djangui_celery_state',
+                    'djangui_job_name', 'djangui_job_description')
 
 class DjanguiScriptMixin(object):
     def dispatch(self, request, *args, **kwargs):
@@ -47,15 +50,14 @@ class DjanguiScriptJSON(DjanguiScriptMixin, View):
     def get(self, request, *args, **kwargs):
         # returns the models required and optional fields as html
         d = {'action': reverse('djangui_app_script', kwargs={'script_name': self.script_name}), 'required': '', 'optional': ''}
-        form = modelform_factory(self.model, fields=self.model.get_required_fields(), exclude=('djangui_script_name', 'djangui_celery_id', 'djangui_celery_state'))
+        form = modelform_factory(self.model, fields=self.model.get_required_fields(), exclude=DJANGUI_EXCLUDES)
         d['required'] = str(form())
-        form = modelform_factory(self.model, fields=self.model.get_optional_fields(), exclude=('djangui_script_name', 'djangui_celery_id', 'djangui_celery_state'))
+        form = modelform_factory(self.model, fields=self.model.get_optional_fields(), exclude=DJANGUI_EXCLUDES)
         d['optional'] = str(form())
         return JsonResponse(d)
 
     def post(self, request, *args, **kwargs):
-        form = modelform_factory(self.model, fields='__all__', exclude=('djangui_script_name', 'djangui_celery_id', 'djangui_celery_state'))
-        import pdb; pdb.set_trace();
+        form = modelform_factory(self.model, fields='__all__', exclude=DJANGUI_EXCLUDES-('djangui_job_name', 'djangui_job_description'))
         form = form(request.POST)
         if form.is_valid():
             return JsonResponse({'valid': True})

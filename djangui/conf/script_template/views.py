@@ -49,7 +49,8 @@ class DjanguiScriptCreate(DjanguiScriptMixin, CreateView):
 class DjanguiScriptJSON(DjanguiScriptMixin, View):
     def get(self, request, *args, **kwargs):
         # returns the models required and optional fields as html
-        d = {'action': reverse('djangui_app_script', kwargs={'script_name': self.script_name}), 'required': '', 'optional': ''}
+        d = {'action': reverse('{{ app_name }}_script_json' if getattr(settings, 'DJANGUI_AJAX', False) else '{{ app_name }}_script',
+                               kwargs={'script_name': self.script_name}), 'required': '', 'optional': ''}
         form = modelform_factory(self.model, fields=self.model.get_required_fields(), exclude=DJANGUI_EXCLUDES)
         d['required'] = str(form())
         form = modelform_factory(self.model, fields=self.model.get_optional_fields(), exclude=DJANGUI_EXCLUDES)
@@ -57,8 +58,8 @@ class DjanguiScriptJSON(DjanguiScriptMixin, View):
         return JsonResponse(d)
 
     def post(self, request, *args, **kwargs):
-        form = modelform_factory(self.model, fields='__all__', exclude=DJANGUI_EXCLUDES-('djangui_job_name', 'djangui_job_description'))
-        form = form(request.POST)
+        form = modelform_factory(self.model, fields='__all__', exclude=set(DJANGUI_EXCLUDES)-{'djangui_job_name', 'djangui_job_description'})
+        form = form(request.POST, request.FILES)
         if form.is_valid():
             return JsonResponse({'valid': True})
         return JsonResponse({'valid': False, 'errors': form.errors})

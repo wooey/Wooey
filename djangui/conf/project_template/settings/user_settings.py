@@ -18,3 +18,5 @@ INSTALLED_APPS += ('djguihome',)
 
 # TODO: fix this name
 POST_SCRIPT_URL = 'djangui_home'
+
+DJANGUI_AJAX = True

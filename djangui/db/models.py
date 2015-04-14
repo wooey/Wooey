@@ -3,6 +3,9 @@ from django.db import models
 
 
 class DjanguiModel(models.Model):
+    djangui_job_name = models.CharField(max_length=255)
+    djangui_job_description = models.TextField()
+
     class Meta:
         abstract = True
 

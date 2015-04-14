@@ -26,6 +26,12 @@ def filetype_filefield_default(kwargs, attr, default_kwargs, action, extra=None)
         value = "'{0}'".format(os.path.join(*value))
     kwargs[model_name] = value
 
+def filetype_filefield_blank(kwargs, attr, default_kwargs, action, extra=None):
+    model_name = default_kwargs['model_name']
+    default = action.default
+    if is_upload(action) and default == sys.stdin:
+        kwargs[model_name] = False
+
 def str_charfield_default(kwargs, attr, default_kwargs, action, extra=None):
     model_name = default_kwargs['model_name']
     value = getattr(action, attr)
@@ -59,7 +65,10 @@ TYPE_FIELDS = {
           },
     bool: {'field': 'BooleanField',},
     argparse.FileType: {'field': 'FileField',
-                        'getattr_kwargs': {'default': {'model_name': 'default', 'callback': filetype_filefield_default}}}
+                        'getattr_kwargs': {
+                            'default': {'model_name': 'default', 'callback': filetype_filefield_default},
+                            'required': {'model_name': 'blank', 'callback': filetype_filefield_blank}
+                        }}
 }
 
 ACTION_CLASS_TO_MODEL_FIELD = {
@@ -120,6 +129,8 @@ class ArgParseNode(object):
                     self.kwargs[model_name] = value
             self.name = action.dest
             self.field = field
+            # if self.name == 'fasta':
+            #     import pdb; pdb.set_trace();
         except:
             import traceback
             print traceback.format_exc()

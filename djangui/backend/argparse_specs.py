@@ -129,6 +129,20 @@ class ArgParseNode(object):
     def __str__(self):
         return json.dumps(self.node_attrs)
 
+    def to_django(self):
+        exclude = {'name', 'model'}
+        field_module = 'models'
+        django_kwargs = {}
+        if self.node_attrs['model'] == 'CharField':
+            django_kwargs['max_length'] = 255
+        django_kwargs['blank'] = not self.node_attrs['required']
+        try:
+            django_kwargs['default'] = self.node_attrs['value']
+        except KeyError:
+            pass
+        return u'{0} = {1}.{2}({3})'.format(self.node_attrs['name'], field_module, self.node_attrs['model'],
+                                           ', '.join(['{0}={1}'.format(i,v) for i,v in django_kwargs.iteritems()]),)
+
 
 class ArgParseNodeBuilder(object):
     # TODO: Add groupings

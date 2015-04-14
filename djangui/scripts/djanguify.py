@@ -61,7 +61,6 @@ def main():
     app_models = []
 
     for script in scripts:
-        arg_nodes = {}
         basename, extension = os.path.splitext(script)
         basename = basename
         filename = os.path.split(basename)[1]
@@ -103,9 +102,6 @@ def main():
     # remove files of directories we are overriding
     os.remove(os.path.join(app_base_dir, 'models.py'))
 
-    # move the django settings to the settings path so we don't have to chase Django changes.
-    shutil.move(os.path.join(project_base_dir, 'settings.py'), os.path.join(project_base_dir, 'settings', 'django_settings.py'))
-
     for template_file, dest_dir in template_files:
         template_file = open(template_file)
         content = template_file.read()
@@ -122,6 +118,9 @@ def main():
             pass
         with open(to_name, 'wb') as new_file:
             new_file.write(content)
+
+    # move the django settings to the settings path so we don't have to chase Django changes.
+    shutil.move(os.path.join(project_base_dir, 'settings.py'), os.path.join(project_base_dir, 'settings', 'django_settings.py'))
 
     if project_name:
         subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'makemigrations'])

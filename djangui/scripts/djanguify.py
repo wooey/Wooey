@@ -8,9 +8,9 @@ import traceback
 import os
 import imp
 import subprocess
+import shutil
 from argparse import ArgumentParser
 from django.template import Context, Engine
-from django.utils.crypto import get_random_string
 
 from djangui.backend.nodes import ArgParseNodeBuilder
 
@@ -75,12 +75,10 @@ def main():
         parser = ArgParseNodeBuilder(filename, module_parser, script)
         app_models.append(parser.getModelDict())
 
-    secret_chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
     context = Context(
         dict({
             'app_name': app_name,
             'project_name': project_name,
-            'secret_key': get_random_string(50, secret_chars),
         },
         **{
             'models': app_models,
@@ -104,6 +102,9 @@ def main():
 
     # remove files of directories we are overriding
     os.remove(os.path.join(app_base_dir, 'models.py'))
+
+    # move the django settings to the settings path so we don't have to chase Django changes.
+    shutil.move(os.path.join(project_base_dir, 'settings.py'), os.path.join(project_base_dir, 'settings', 'django_settings.py'))
 
     for template_file, dest_dir in template_files:
         template_file = open(template_file)

@@ -20,3 +20,4 @@ INSTALLED_APPS += ('djguihome',)
 POST_SCRIPT_URL = 'djangui_home'
 
 DJANGUI_AJAX = True
+DJANGUI_ALLOW_ANONYMOUS = True

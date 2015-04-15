@@ -121,6 +121,8 @@ def main():
 
     # move the django settings to the settings path so we don't have to chase Django changes.
     shutil.move(os.path.join(project_base_dir, 'settings.py'), os.path.join(project_base_dir, 'settings', 'django_settings.py'))
+    # do the same with urls
+    shutil.move(os.path.join(project_base_dir, 'urls.py'), os.path.join(project_base_dir, 'urls', 'django_urls.py'))
 
     if project_name:
         subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'makemigrations'])

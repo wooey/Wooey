@@ -1,10 +1,16 @@
 __author__ = 'chris'
 from django.db import models
+from django.conf import settings
 
 
 class DjanguiModel(models.Model):
+    # blank=True, null=True is to allow anonymous users to submit jobs
+    # TODO: add a setting for allowing anonymous users
+    djangui_user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True)
     djangui_job_name = models.CharField(max_length=255)
     djangui_job_description = models.TextField()
+    created_date = models.DateTimeField(auto_now_add=True)
+    modified_date = models.DateTimeField(auto_now=True)
 
     class Meta:
         abstract = True

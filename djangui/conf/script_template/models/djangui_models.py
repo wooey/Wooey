@@ -1,14 +1,20 @@
 #!/usr/bin/env python
+import importlib
+
 from django.db import models
 from django.db.models.fields.files import FieldFile
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+from django.conf import settings
 
-from ..tasks import submit_script
 
 from djangui.db.models import DjanguiModel
 from djangui.db import fields as djangui_fields
 from djangui.backend import utils
+
+from djguicore.models import DjanguiJob
+
+tasks = importlib.import_module(settings.DJANGUI_CELERY_TASKS)
 
 def get_script_options(model):
     script_options = dict([(i.name, getattr(model, i.name)) for i in model._meta.fields])
@@ -42,10 +48,12 @@ class DjanguiAppModel(DjanguiModel):
 
     def submit_to_celery(self):
         script_options = get_script_options(self)
-        results = submit_script.delay(script_options)
+        results = tasks.submit_script.delay(script_options)
         self.djangui_celery_id = results.id
         self.djangui_celery_state = results.state
         self.save()
+        job = DjanguiJob(djangui_user=self.djangui_user, content_object=self)
+        job.save()
 
 {% for model in models %}
 class {{ model.class_name }}(DjanguiAppModel):

@@ -1,7 +1,7 @@
-from django.conf.urls import include, url
-from django.contrib import admin
+from .django_urls import *
 
-urlpatterns = [
+urlpatterns += [
     #url(r'^admin/', include(admin.site.urls)),
+    url(r'^', include('djguicore.urls')),
     url(r'^', include('{{ app_name }}.urls')),
 ]

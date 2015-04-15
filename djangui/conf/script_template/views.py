@@ -14,7 +14,7 @@ from .models import djangui_models
 # Create your views here.
 
 DJANGUI_EXCLUDES = ('djangui_script_name', 'djangui_celery_id', 'djangui_celery_state',
-                    'djangui_job_name', 'djangui_job_description')
+                    'djangui_job_name', 'djangui_job_description', 'djangui_user')
 
 class DjanguiScriptMixin(object):
     def dispatch(self, request, *args, **kwargs):
@@ -58,10 +58,15 @@ class DjanguiScriptJSON(DjanguiScriptMixin, View):
         return JsonResponse(d)
 
     def post(self, request, *args, **kwargs):
-        form = modelform_factory(self.model, fields='__all__', exclude=set(DJANGUI_EXCLUDES)-{'djangui_job_name', 'djangui_job_description'})
-        form = form(request.POST, request.FILES)
+        model_form = modelform_factory(self.model, fields='__all__', exclude=set(DJANGUI_EXCLUDES)-{'djangui_job_name', 'djangui_job_description', 'djangui_user'})
+        post = request.POST.copy()
+        if request.user.is_authenticated() or not settings.DJANGUI_ALLOW_ANONYMOUS:
+            post['djangui_user'] = request.user
+        form = model_form(post, request.FILES)
         if form.is_valid():
-            model = form.save(commit=False)
+            # We don't do commit=False here, even though we are saving the model again below in our celery submission.
+            # this ensures the file is uploaded if needed.
+            model = form.save()
             model.submit_to_celery()
             return JsonResponse({'valid': True})
         return JsonResponse({'valid': False, 'errors': form.errors})

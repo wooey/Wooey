@@ -52,7 +52,7 @@ class DjanguiAppModel(DjanguiModel):
         self.djangui_celery_id = results.id
         self.djangui_celery_state = results.state
         self.save()
-        job = DjanguiJob(djangui_user=self.djangui_user, content_object=self)
+        job = DjanguiJob(djangui_celery_id=self.djangui_celery_id, djangui_user=self.djangui_user, content_object=self)
         job.save()
 
 {% for model in models %}

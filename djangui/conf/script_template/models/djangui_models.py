@@ -39,7 +39,8 @@ def get_script_options(model):
             elif str(v) == 'False':
                 continue
             else:
-                com += [param, str(v)]
+                if v:
+                    com += [param, str(v)]
     return com
 
 class DjanguiAppModel(DjanguiModel):

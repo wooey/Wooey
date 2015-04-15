@@ -61,6 +61,8 @@ class DjanguiScriptJSON(DjanguiScriptMixin, View):
         form = modelform_factory(self.model, fields='__all__', exclude=set(DJANGUI_EXCLUDES)-{'djangui_job_name', 'djangui_job_description'})
         form = form(request.POST, request.FILES)
         if form.is_valid():
+            model = form.save(commit=False)
+            model.submit_to_celery()
             return JsonResponse({'valid': True})
         return JsonResponse({'valid': False, 'errors': form.errors})
 

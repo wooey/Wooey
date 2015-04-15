@@ -5,4 +5,6 @@ import subprocess
 
 @app.task
 def submit_script(com, **kwargs):
-    proc = subprocess.call(com)
+    proc = subprocess.Popen(com, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = proc.communicate()
+    return (stdout, stderr)

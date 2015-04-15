@@ -40,14 +40,12 @@ class DjanguiAppModel(DjanguiModel):
     class Meta:
         abstract = True
 
-    def save(self, *args, **kwargs):
-        super(DjanguiAppModel, self).save(*args, **kwargs)
-        # In Celery, the filepaths are not always kept for some reason, so we process the fields here
+    def submit_to_celery(self):
         script_options = get_script_options(self)
         results = submit_script.delay(script_options)
         self.djangui_celery_id = results.id
         self.djangui_celery_state = results.state
-        super(DjanguiAppModel, self).save(*args, **kwargs)
+        self.save()
 
 {% for model in models %}
 class {{ model.class_name }}(DjanguiAppModel):

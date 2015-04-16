@@ -156,10 +156,16 @@ class ArgParseNodeBuilder(object):
         self.model_description = getattr(parser, 'description', None)
         self.script_groups = []
         self.optional_nodes = set([i.dest for i in parser._get_optional_actions()])
+        self.containers = {}
         for action in parser._actions:
             # This is the help message of argparse
             if action.default == argparse.SUPPRESS:
                 continue
+            container = action.container.title
+            container_node = self.containers.get(container, None)
+            if container_node is None:
+                container_node = []
+                self.containers[container] = container_node
             fields = ACTION_CLASS_TO_MODEL_FIELD.get(type(action), TYPE_FIELDS)
             field_type = fields.get(action.type)
             # print action
@@ -171,9 +177,11 @@ class ArgParseNodeBuilder(object):
                     field_type = fields[field_types[0]]
                 else:
                     print 'NOOO'
+                    print action
                     continue
             node = ArgParseNode(action=action, model_field=field_type, class_name=self.class_name)
             self.nodes.append(node)
+            container_node.append(node.name)
             self.djangui_options[action.dest] = action.option_strings[0]
             if node.field == 'DjanguiOutputFileField':
                 self.djangui_output_defaults[action.dest] = node.kwargs.pop('djangui_output_default')
@@ -185,4 +193,5 @@ class ArgParseNodeBuilder(object):
         fields += [str(node) for node in self.nodes]
         return {'class_name': self.class_name, 'fields': fields, 'djangui_options': self.djangui_options,
                 'djangui_output_defaults': self.djangui_output_defaults,
-                'djangui_model_description': self.model_description, 'optional_fields': self.optional_nodes}
+                'djangui_model_description': self.model_description, 'optional_fields': self.optional_nodes,
+                'djangui_groups': dict([(i, sorted(v)) for i,v in self.containers.iteritems()])}

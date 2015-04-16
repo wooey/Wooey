@@ -9,6 +9,7 @@ class DjanguiModel(models.Model):
     djangui_user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True)
     djangui_job_name = models.CharField(max_length=255)
     djangui_job_description = models.TextField()
+    djangui_command = models.TextField(null=True, blank=True)
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
 

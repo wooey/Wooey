@@ -14,7 +14,7 @@ from .models import djangui_models
 # Create your views here.
 
 DJANGUI_EXCLUDES = ('djangui_script_name', 'djangui_celery_id', 'djangui_celery_state',
-                    'djangui_job_name', 'djangui_job_description', 'djangui_user')
+                    'djangui_job_name', 'djangui_job_description', 'djangui_user', 'djangui_command')
 
 class DjanguiScriptMixin(object):
     def dispatch(self, request, *args, **kwargs):
@@ -51,10 +51,15 @@ class DjanguiScriptJSON(DjanguiScriptMixin, View):
         # returns the models required and optional fields as html
         d = {'action': reverse('{{ app_name }}_script_json' if getattr(settings, 'DJANGUI_AJAX', False) else '{{ app_name }}_script',
                                kwargs={'script_name': self.script_name}), 'required': '', 'optional': ''}
-        form = modelform_factory(self.model, fields=self.model.get_required_fields(), exclude=DJANGUI_EXCLUDES)
+        required = set(self.model.get_required_fields())
+        form = modelform_factory(self.model, fields=required, exclude=DJANGUI_EXCLUDES)
         d['required'] = str(form())
         form = modelform_factory(self.model, fields=self.model.get_optional_fields(), exclude=DJANGUI_EXCLUDES)
         d['optional'] = str(form())
+        d['groups'] = []
+        for group_name, group_fields in self.model.djangui_groups.iteritems():
+            form = modelform_factory(self.model, fields=set(group_fields)-required, exclude=DJANGUI_EXCLUDES)
+            d['groups'].append({'group_name': group_name.title(), 'form': str(form())})
         return JsonResponse(d)
 
     def post(self, request, *args, **kwargs):

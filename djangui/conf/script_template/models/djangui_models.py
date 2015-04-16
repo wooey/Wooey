@@ -47,20 +47,26 @@ class DjanguiAppModel(DjanguiModel):
     class Meta:
         abstract = True
 
-    def submit_to_celery(self):
+    def submit_to_celery(self, resubmit=False):
         script_options = get_script_options(self)
         results = tasks.submit_script.delay(script_options)
+        if resubmit:
+            # this is a method(hack) to clone ourselves and create a new object
+            self.pk = None
         self.djangui_celery_id = results.id
         self.djangui_celery_state = results.state
+        self.djangui_command = ' '.join(script_options)
         self.save()
         job = DjanguiJob(djangui_celery_id=self.djangui_celery_id, djangui_user=self.djangui_user, content_object=self)
         job.save()
+        return self
 
 {% for model in models %}
 class {{ model.class_name }}(DjanguiAppModel):
     # field related options
     djangui_options = {{ model.djangui_options }}
     djangui_output_options = {{ model.djangui_output_defaults }}
+    djangui_groups = {{ model.djangui_groups }}
     optional_fields = {{ model.optional_fields }}
     djangui_model_description = """{{ model.djangui_model_description }}"""
     djangui_celery_id = models.CharField(max_length=255, blank=True, null=True)

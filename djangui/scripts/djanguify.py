@@ -9,10 +9,13 @@ import os
 import imp
 import subprocess
 import shutil
-from argparse import ArgumentParser
+import tempfile
+from itertools import chain
+from argparse import ArgumentParser, FileType
 from django.template import Context, Engine
 
 from djangui.backend.nodes import ArgParseNodeBuilder
+from djangui.backend.ast import source_parser
 
 
 def main():
@@ -62,15 +65,28 @@ def main():
 
     for script in scripts:
         basename, extension = os.path.splitext(script)
-        basename = basename
         filename = os.path.split(basename)[1]
         try:
-            module = imp.load_source(basename, script)
+            module = imp.load_source(filename, script)
         except:
-            sys.stderr.write('Error while loading %s:\n'.format(script))
+            sys.stderr.write('Error while loading {0}:\n'.format(script))
             sys.stderr.write('{0}\n'.format(traceback.format_exc()))
             continue
-        module_parser = module.parser
+        parsers = [v for i, v in chain(module.main.__globals__.iteritems(), vars(module).iteritems())
+                   if issubclass(type(v), ArgumentParser)]
+        if not parsers:
+            f = tempfile.NamedTemporaryFile()
+            ast_source = source_parser.parse_source_file(script)
+            python_code = source_parser.convert_to_python(list(ast_source))
+            f.write('\n'.join(python_code))
+            f.seek(0)
+            module = imp.load_source(filename, f.name)
+            parsers = [v for i, v in chain(module.main.__globals__.iteritems(), vars(module).iteritems())
+                   if issubclass(type(v), ArgumentParser)]
+        if not parsers:
+            sys.stderr.write('Unable to identify ArgParser for {0}:\n'.format(script))
+            continue
+        module_parser = parsers[0]
         parser = ArgParseNodeBuilder(filename, module_parser, script)
         app_models.append(parser.getModelDict())
 

@@ -2,6 +2,7 @@ __author__ = 'chris'
 import argparse
 import sys
 import copy
+import traceback
 import os
 from . import utils
 
@@ -38,6 +39,12 @@ def str_charfield_default(kwargs, attr, default_kwargs, action, extra=None):
     if value is not None:
         kwargs[model_name] = '"{0}"'.format(value)
 
+def charfield_choices(kwargs, attr, default_kwargs, action, extra=None):
+    model_name = default_kwargs['model_name']
+    value = getattr(action, attr)
+    if value:
+        kwargs[model_name] = [(i, i) for i in action.choices]
+
 def str_charfield_choices(kwargs, attr, default_kwargs, action, extra=None):
     model_name = default_kwargs['model_name']
     value = getattr(action, attr)
@@ -52,10 +59,28 @@ def required_default(kwargs, attr, default_kwargs, action, extra=None):
 
 UNIVERSAL_KWARGS = {
     'required': {'model_name': 'blank', 'callback': required_default},
-    'default': {'model_name': 'default'}
+    'default': {'model_name': 'default'},
+    'choices': {'model_name': 'choices', 'callback': charfield_choices}
     }
 
 TYPE_FIELDS = {
+    file: {'field': 'FileField',
+            'getattr_kwargs': {
+                'default': {'model_name': 'default', 'callback': filetype_filefield_default},
+                'required': {'model_name': 'blank', 'callback': filetype_filefield_blank}
+            }},
+    float: {'field': 'FloatField', 'kwargs': {}},
+    None: {'field': 'CharField', 'kwargs': {'max_length': 255},
+              'getattr_kwargs': {
+                  'default': {'model_name': 'default', 'callback': str_charfield_default},
+              },
+          },
+    unicode: {'field': 'CharField', 'kwargs': {'max_length': 255},
+              'getattr_kwargs': {
+                  'default': {'model_name': 'default', 'callback': str_charfield_default},
+                  'choices': {'model_name': 'choices', 'callback': str_charfield_choices}
+              },
+          },
     int: {'field': 'CharField', 'kwargs': {'max_length': 255}},
     str: {'field': 'CharField', 'kwargs': {'max_length': 255},
               'getattr_kwargs': {
@@ -144,9 +169,9 @@ class ArgParseNode(object):
     def __str__(self):
         return str(self.__unicode__())
 
+
 class ArgParseNodeBuilder(object):
     def __init__(self, script, parser, script_path):
-
         self.nodes = []
         self.djangui_options = {}
         # places to save files to
@@ -170,14 +195,14 @@ class ArgParseNodeBuilder(object):
             field_type = fields.get(action.type)
             # print action
             if field_type is None:
-                field_types = [i for i in fields.keys() if issubclass(type(action.type), i)]
+                field_types = [i for i in fields.keys() if i is not None and issubclass(type(action.type), i)]
                 if len(field_types) > 1:
-                    field_types = [i for i in fields.keys() if isinstance(action.type, i)]
+                    field_types = [i for i in fields.keys() if i is not None and isinstance(action.type, i)]
                 if len(field_types) == 1:
                     field_type = fields[field_types[0]]
                 else:
-                    print 'NOOO'
-                    print action
+                    sys.stderr.write('Error creating {0}\n. {1}'.format(action, traceback.format_exc()))
+                    import pdb; pdb.set_trace();
                     continue
             node = ArgParseNode(action=action, model_field=field_type, class_name=self.class_name)
             self.nodes.append(node)

@@ -11,7 +11,7 @@ import ast
 import _ast
 from itertools import *
 
-from . import codegen, modules
+from . import codegen
 
 
 def parse_source_file(file_name):
@@ -47,14 +47,38 @@ def parse_source_file(file_name):
     call_objects = get_nodes_by_instance_type(nodes, _ast.Call)
 
     argparse_assignments = get_nodes_by_containing_attr(assignment_objs, 'ArgumentParser')
+    group_arg_assignments = get_nodes_by_containing_attr(assignment_objs, 'add_argument_group')
     add_arg_assignments = get_nodes_by_containing_attr(call_objects, 'add_argument')
     parse_args_assignment = get_nodes_by_containing_attr(call_objects, 'parse_args')
+    # there are cases where we have custom argparsers, such as subclassing ArgumentParser. The above
+    # will fail on this. However, we can use the methods known to ArgumentParser to do a duck-type like
+    # approach to finding what is the arg parser
+    if not argparse_assignments:
+        aa_references = set([i.func.value.id for i in chain(add_arg_assignments, parse_args_assignment)])
+        argparse_like_objects = [getattr(i.value.func, 'id', None) for p_ref in aa_references for i in get_nodes_by_containing_attr(assignment_objs, p_ref)]
+        argparse_like_objects = filter(None, argparse_like_objects)
+        argparse_assignments = [get_nodes_by_containing_attr(assignment_objs, i) for i in argparse_like_objects]
+        # for now, we just choose one
+        try:
+            argparse_assignments = argparse_assignments[0]
+        except IndexError:
+            pass
+
+
+    # get things that are assigned inside ArgumentParser or its methods
+    argparse_assigned_variables = get_node_args_and_keywords(assignment_objs, argparse_assignments, 'ArgumentParser')
+    add_arg_assigned_variables = get_node_args_and_keywords(assignment_objs, add_arg_assignments, 'add_argument')
+    parse_args_assigned_variables = get_node_args_and_keywords(assignment_objs, parse_args_assignment, 'parse_args')
 
     ast_argparse_source = chain(
         module_imports,
         specific_imports,
+        argparse_assigned_variables,
+        add_arg_assigned_variables,
+        parse_args_assigned_variables,
         argparse_assignments,
-        add_arg_assignments
+        group_arg_assignments,
+        add_arg_assignments,
     )
     return ast_argparse_source
 
@@ -62,6 +86,24 @@ def parse_source_file(file_name):
 def read_client_module(filename):
     with open(filename, 'r') as f:
         return f.readlines()
+
+
+def get_node_args_and_keywords(assigned_objs, assignments, selector=None):
+    referenced_nodes = set([])
+    selector_line = -1
+    assignment_nodes = []
+    for node in assignments:
+        for i in walk_tree(node):
+            if i and isinstance(i, (_ast.keyword, _ast.Name)) and 'id' in i.__dict__:
+                if i.id == selector:
+                    selector_line = i.lineno
+                elif i.lineno == selector_line:
+                    referenced_nodes.add(i.id)
+    for node in assigned_objs:
+        for target in node.targets:
+            if getattr(target, 'id', None) in referenced_nodes:
+                assignment_nodes.append(node)
+    return assignment_nodes
 
 
 def get_nodes_by_instance_type(nodes, object_type):
@@ -73,8 +115,11 @@ def get_nodes_by_containing_attr(nodes, attr):
 
 
 def walk_tree(node):
-    yield node
-    d = node.__dict__
+    try:
+        d = node.__dict__
+    except AttributeError:
+        d = {}
+        yield node
     for key, value in d.items():
         if isinstance(value, list):
             for val in value:

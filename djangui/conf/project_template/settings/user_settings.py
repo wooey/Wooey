@@ -9,8 +9,13 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
 
 ## Celery related options
-INSTALLED_APPS += ('djcelery',)
+INSTALLED_APPS += (
+    'djcelery',
+    'kombu.transport.django',
+)
 CELERY_RESULT_BACKEND='djcelery.backends.database:DatabaseBackend'
+BROKER_URL = 'django://'
+
 
 ## Additional djangui apps. These can be replaced with alternatives for further customization
 

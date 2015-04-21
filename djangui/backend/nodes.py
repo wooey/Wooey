@@ -152,7 +152,7 @@ class ArgParseNodeBuilder(object):
         # places to save files to
         self.djangui_output_defaults = {}
         self.class_name = script
-        self.script_path = script_path
+        self.script_path = os.path.abspath(script_path)
         self.model_description = getattr(parser, 'description', None)
         self.script_groups = []
         self.optional_nodes = set([i.dest for i in parser._get_optional_actions()])

@@ -64,6 +64,8 @@ def main():
     app_models = []
 
     for script in scripts:
+        if '__init__' in script:
+            continue
         basename, extension = os.path.splitext(script)
         filename = os.path.split(basename)[1]
         try:

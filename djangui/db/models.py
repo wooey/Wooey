@@ -21,7 +21,10 @@ class DjanguiModel(models.Model):
         return self.djangui_options.get(param)
 
     def get_output_default(self, param):
-        return self.djangui_output_options.get(param)
+        try:
+            return self._djangui_temp_output[param]
+        except (KeyError, AttributeError) as e:
+            return self.djangui_output_options.get(param)
 
     @classmethod
     def get_required_fields(cls):

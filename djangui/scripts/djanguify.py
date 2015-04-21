@@ -42,7 +42,8 @@ def main():
     app_base_dir = ''
     update_app = args.update
     if project_name:
-        if not update_app:
+        new_project = not os.path.exists(project_name)
+        if new_project and not update_app:
             subprocess.call(['django-admin.py', 'startproject', project_name])
         project_root = os.path.join(app_base_dir, project_name)
         project_base_dir = os.path.join(project_root, project_name)
@@ -53,6 +54,9 @@ def main():
         com = ['django-admin.py', 'startapp', app_name]
         if project_name:
             app_path = os.path.join(os.path.abspath(project_name), app_name)
+            if os.path.exists(app_path):
+                sys.stderr.write('App {0} already exists. Did you forget the --update flag?\n'.format(app_path))
+                return 1
             os.mkdir(app_path)
             com.append(app_path)
         subprocess.call(com)
@@ -116,7 +120,7 @@ def main():
 
     template_files += walk_dir(app_template_dir, app_base_dir, filter={'djangui_models.py'} if update_app else None)
 
-    if project_name and not update_app:
+    if project_name and not update_app and new_project:
         template_files += walk_dir(project_template_dir, project_base_dir)
 
     # remove files of directories we are overriding
@@ -140,7 +144,7 @@ def main():
         with open(to_name, 'wb') as new_file:
             new_file.write(content)
 
-    if not update_app:
+    if not update_app and new_project:
         # move the django settings to the settings path so we don't have to chase Django changes.
         shutil.move(os.path.join(project_base_dir, 'settings.py'), os.path.join(project_base_dir, 'settings', 'django_settings.py'))
         # do the same with urls

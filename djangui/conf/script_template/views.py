@@ -74,6 +74,25 @@ class DjanguiScriptJSON(DjanguiScriptMixin, View):
             model = form.save()
             model.submit_to_celery()
             return JsonResponse({'valid': True})
+        # we can not validate due to files not yet being created, which will be created once the script is run.
+        # purge these
+        deleted_files = {}
+        for i in self.model.djangui_output_options:
+            if i in form.errors:
+                deleted_files[i] = post.get(i, None)
+                del form.errors[i]
+        if not form.errors:
+            model = form.save(commit=False)
+            # update our instance with where we want to save files if the user specified it
+            for i,v in deleted_files.iteritems():
+                if v:
+                    try:
+                        model._djangui_temp_output[i] = v[0] if isinstance(v, list) else v
+                    except AttributeError:
+                        model._djangui_temp_output = {i: v[0] if isinstance(v, list) else v}
+            model.save()
+            model.submit_to_celery()
+            return JsonResponse({'valid': True})
         return JsonResponse({'valid': False, 'errors': form.errors})
 
 

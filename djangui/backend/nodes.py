@@ -4,7 +4,12 @@ import sys
 import copy
 import traceback
 import os
+from django.db.models import Model
 from . import utils
+
+# these values cannot be field names assigned by a script, for instances such as a script having a parameter
+# 'save'
+FORBIDDEN = set(dir(Model))
 
 def filetype_filefield_default(kwargs, attr, default_kwargs, action, extra=None):
     model_name = default_kwargs['model_name']
@@ -13,13 +18,14 @@ def filetype_filefield_default(kwargs, attr, default_kwargs, action, extra=None)
     if value in (None, sys.stderr, sys.stdout, os.devnull):
         # For files we are saving (out script output), handle cases where they are
         # going to stdout/etc.
-        if not is_upload(action) and not action.required:
-            kwargs['blank'] = True
+        if not is_upload(action):
+            if not action.required:
+                kwargs['blank'] = True
             if value == sys.stderr:
                 kwargs['djangui_output_default'] = "stderr"
             elif value == sys.stdout:
                 kwargs['djangui_output_default'] = "stdout"
-            elif value == os.devnull:
+            elif value == os.devnull or value is None:
                 kwargs['djangui_output_default'] = "null"
         model_name = 'upload_to'
         value = ['user_upload' if is_upload(action) else 'user_output']
@@ -152,7 +158,8 @@ class ArgParseNode(object):
                     model_name = attr_dict['model_name']
                     value = getattr(action, attr)
                     self.kwargs[model_name] = value
-            self.name = action.dest
+            self.name = self.get_valid_name(action.dest)
+            self.kwargs.update({'verbose_name': '"{}"'.format(action.dest)})
             self.field = field
             # if self.name == 'fasta':
             #     import pdb; pdb.set_trace();
@@ -160,6 +167,14 @@ class ArgParseNode(object):
             import traceback
             print traceback.format_exc()
             import pdb; pdb.set_trace();
+
+    def get_valid_name(self, name):
+        add = 0
+        new_name = name
+        while new_name in FORBIDDEN:
+            add+=1
+            new_name = '{0}_{1}'.format(name, add)
+        return new_name
 
     def __unicode__(self):
         return u'{0} = {3}.{1}({2})'.format(self.name, self.field,
@@ -180,7 +195,8 @@ class ArgParseNodeBuilder(object):
         self.script_path = os.path.abspath(script_path)
         self.model_description = getattr(parser, 'description', None)
         self.script_groups = []
-        self.optional_nodes = set([i.dest for i in parser._get_optional_actions()])
+        non_req = set([i.dest for i in parser._get_optional_actions()])
+        self.optional_nodes = set([])
         self.containers = {}
         for action in parser._actions:
             # This is the help message of argparse
@@ -207,9 +223,14 @@ class ArgParseNodeBuilder(object):
             node = ArgParseNode(action=action, model_field=field_type, class_name=self.class_name)
             self.nodes.append(node)
             container_node.append(node.name)
-            self.djangui_options[action.dest] = action.option_strings[0]
+            self.djangui_options[node.name] = action.option_strings[0]
+            if action.dest in non_req:
+                self.optional_nodes.add(node.name)
             if node.field == 'DjanguiOutputFileField':
-                self.djangui_output_defaults[action.dest] = node.kwargs.pop('djangui_output_default')
+                try:
+                    self.djangui_output_defaults[node.name] = node.kwargs.pop('djangui_output_default')
+                except KeyError:
+                    import pdb; pdb.set_trace();
             if node.field == 'DjanguiUploadFileField':
                 pass
 

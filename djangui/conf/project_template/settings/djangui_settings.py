@@ -6,7 +6,7 @@ INSTALLED_APPS += (
 )
 
 # MIDDLEWARE_CLASSES = [[i] if i == 'django.middleware.common.CommonMiddleware' else ['corsheaders.middleware.CorsMiddleware',i] for i in MIDDLEWARE_CLASSES]
-MIDDLEWARE_CLASSES = [j for i in MIDDLEWARE_CLASSES for j in i]
+MIDDLEWARE_CLASSES = list(MIDDLEWARE_CLASSES)
 MIDDLEWARE_CLASSES.append('{{ project_name }}.middleware.ProcessExceptionMiddleware')
 
 PROJECT_NAME = "{{ project_name }}"

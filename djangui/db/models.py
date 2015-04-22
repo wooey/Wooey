@@ -51,7 +51,7 @@ class DjanguiModel(models.Model):
     # TODO: add a setting for allowing anonymous users
     djangui_user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True)
     djangui_job_name = models.CharField(max_length=255)
-    djangui_job_description = models.TextField()
+    djangui_job_description = models.TextField(null=True, blank=True)
     djangui_command = models.TextField(null=True, blank=True)
     djangui_celery_id = models.CharField(max_length=255, blank=True, null=True)
     djangui_celery_state = models.CharField(max_length=255, blank=True, null=True)

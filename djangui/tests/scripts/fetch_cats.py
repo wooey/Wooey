@@ -17,7 +17,7 @@ This will find you cats.
 parser = argparse.ArgumentParser(description = description)
 parser.add_argument('--count', help='The number of cats to find (max: 10)', type=int, default=1)
 parser.add_argument('--kittens', help='Search for kittens.', action='store_true')
-parser.add_argument('--breed', help='The breed of cat to find', type=str, choices=('lol', 'tabby', 'bengal', 'scottish'))
+parser.add_argument('--breed', help='The breed of cat to find', type=str, choices=('lol', 'tabby', 'bengal', 'scottish', 'grumpy'))
 
 
 # Start FancyURLopener with defined version

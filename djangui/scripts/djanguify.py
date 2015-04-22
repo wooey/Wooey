@@ -25,7 +25,9 @@ def main():
     parser.add_argument('-a', '--app', help='The name of the app to create.', type=str, required=True)
     parser.add_argument('-p', '--project', help='The name of the django project to create.', type=str)
     parser.add_argument('--update', help='Update the model definitions of a given app.', action='store_true')
+    parser.add_argument('--no-server', help='Do not run the server after setup.', action='store_true')
     args = parser.parse_args()
+    autostart = not args.no_server
     scripts_path = args.scripts
     scripts = []
     if os.path.isdir(scripts_path):
@@ -154,7 +156,8 @@ def main():
         subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'makemigrations'])
         subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'migrate'])
         subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'collectstatic', '--noinput'])
-        subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'runserver'])
+        if autostart:
+            subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'runserver'])
 
 if __name__ == "__main__":
     sys.exit(main())

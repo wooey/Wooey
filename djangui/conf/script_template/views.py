@@ -8,6 +8,8 @@ from django.core.urlresolvers import reverse_lazy, reverse
 from django.db.models.base import ModelBase
 from django.forms.models import modelform_factory
 from django.views.generic import CreateView, UpdateView, TemplateView, View
+from django.utils.translation import gettext_lazy as _
+from django.utils.encoding import force_unicode
 from django.conf import settings
 
 from .models import djangui_models
@@ -56,7 +58,7 @@ class DjanguiScriptJSON(DjanguiScriptMixin, View):
         d['required'] = str(form())
         form = modelform_factory(self.model, fields=self.model.get_optional_fields(), exclude=DJANGUI_EXCLUDES)
         d['optional'] = str(form())
-        d['groups'] = []
+        d['groups'] = [{'group_name': force_unicode(_('Required')), 'form': d['required']}] if required-set(DJANGUI_EXCLUDES) else []
         for group_name, group_fields in self.model.djangui_groups.iteritems():
             form = modelform_factory(self.model, fields=set(group_fields)-required, exclude=DJANGUI_EXCLUDES)
             d['groups'].append({'group_name': group_name.title(), 'form': str(form())})

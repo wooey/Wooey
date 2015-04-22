@@ -3,13 +3,10 @@ import importlib
 import os
 
 from django.db import models
-from django.conf import settings
 
 
 from djangui.db.models import DjanguiModel
 from djangui.db import fields as djangui_fields
-from djangui.backend import utils
-
 
 {% for model in models %}
 class {{ model.class_name }}(DjanguiModel):

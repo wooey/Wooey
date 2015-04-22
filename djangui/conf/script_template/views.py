@@ -12,11 +12,12 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_unicode
 from django.conf import settings
 
+from djangui.backend import utils
+
 from .models import djangui_models
 # Create your views here.
 
-DJANGUI_EXCLUDES = ('djangui_script_name', 'djangui_celery_id', 'djangui_celery_state',
-                    'djangui_job_name', 'djangui_job_description', 'djangui_user', 'djangui_command')
+# TODO: Figure out how to make this entire file a single copy instead of in each app
 
 class DjanguiScriptMixin(object):
     def dispatch(self, request, *args, **kwargs):
@@ -51,21 +52,18 @@ class DjanguiScriptCreate(DjanguiScriptMixin, CreateView):
 class DjanguiScriptJSON(DjanguiScriptMixin, View):
     def get(self, request, *args, **kwargs):
         # returns the models required and optional fields as html
-        d = {'action': reverse('{{ app_name }}_script_json' if getattr(settings, 'DJANGUI_AJAX', False) else '{{ app_name }}_script',
-                               kwargs={'script_name': self.script_name}), 'required': '', 'optional': ''}
-        required = set(self.model.get_required_fields())
-        form = modelform_factory(self.model, fields=required, exclude=DJANGUI_EXCLUDES)
-        d['required'] = str(form())
-        form = modelform_factory(self.model, fields=self.model.get_optional_fields(), exclude=DJANGUI_EXCLUDES)
-        d['optional'] = str(form())
-        d['groups'] = [{'group_name': force_unicode(_('Required')), 'form': d['required']}] if required-set(DJANGUI_EXCLUDES) else []
-        for group_name, group_fields in self.model.djangui_groups.iteritems():
-            form = modelform_factory(self.model, fields=set(group_fields)-required, exclude=DJANGUI_EXCLUDES)
-            d['groups'].append({'group_name': group_name.title(), 'form': str(form())})
+        task_id = request.GET.get('task_id')
+        instance = None
+        if task_id:
+            from djguicore.models import DjanguiJob
+            job = DjanguiJob.objects.get(djangui_celery_id=task_id)
+            if job.djangui_user is None or (request.user.is_authenticated() and job.djangui_user == request.user):
+                instance = job.content_object
+        d = utils.get_modelform_dict(self.model, instance=instance)
         return JsonResponse(d)
 
     def post(self, request, *args, **kwargs):
-        model_form = modelform_factory(self.model, fields='__all__', exclude=set(DJANGUI_EXCLUDES)-{'djangui_job_name', 'djangui_job_description', 'djangui_user'})
+        model_form = modelform_factory(self.model, fields='__all__', exclude=set(settings.DJANGUI_EXCLUDES)-{'djangui_job_name', 'djangui_job_description', 'djangui_user'})
         post = request.POST.copy()
         if request.user.is_authenticated() or not settings.DJANGUI_ALLOW_ANONYMOUS:
             post['djangui_user'] = request.user

@@ -3,8 +3,6 @@ from .django_settings import *
 INSTALLED_APPS += (
     # 'corsheaders',
     'djguicore',
-
-    '{{ app_name }}',
 )
 
 # MIDDLEWARE_CLASSES = [[i] if i == 'django.middleware.common.CommonMiddleware' else ['corsheaders.middleware.CorsMiddleware',i] for i in MIDDLEWARE_CLASSES]

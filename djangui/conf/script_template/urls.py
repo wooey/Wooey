@@ -1,7 +1,7 @@
 from django.conf.urls import include, url
 from django.contrib import admin
 
-from .views import DjanguiScriptCreate, DjanguiScriptEdit, DjanguiScriptHome, DjanguiScriptJSON
+from djguicore.views import DjanguiScriptCreate, DjanguiScriptEdit, DjanguiScriptHome, DjanguiScriptJSON
 
 script_patterns = [
     url(r'^(?P<script_name>[a-zA-Z0-9\_]+)/(?P<pk>\d+)/$', DjanguiScriptEdit.as_view(), name='{{ app_name }}_script_edit'),
@@ -12,5 +12,5 @@ script_patterns = [
 
 urlpatterns = [
     #url(r'^admin/', include(admin.site.urls)),
-    url(r'{{ app_name }}/', include(script_patterns)),
+    url(r'(?P<app_name>{{ app_name }})/', include(script_patterns)),
 ]

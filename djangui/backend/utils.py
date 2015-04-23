@@ -11,16 +11,16 @@ def sanitize_string(value):
     return value.replace('"', '\\"')
 
 def get_djangui_model_json_url(app, model_name):
-    return reverse_lazy('{0}_script_json'.format(app), kwargs={'script_name': model_name})
+    return reverse_lazy('{0}_script_json'.format(app), kwargs={'script_name': model_name, 'app_name': app})
 
 def is_djangui_model(model):
     from ..db.models import DjanguiModel
     return issubclass(model, DjanguiModel) and not isinstance(type(model), DjanguiModel)
 
-def get_model_script_url(model):
+def get_model_script_url(model, json=True):
     app = model._meta.app_label
-    return reverse('{}_script_json'.format(app) if getattr(settings, 'DJANGUI_AJAX', False) else '{}_script'.format(app),
-                               kwargs={'script_name': model._meta.object_name})
+    return reverse('{}_script_json'.format(app) if getattr(settings, 'DJANGUI_AJAX', False) and json else '{}_script'.format(app),
+                               kwargs={'script_name': model._meta.object_name, 'app_name': app})
 
 def get_modelform_dict(model, instance=None):
     from django.forms.models import modelform_factory

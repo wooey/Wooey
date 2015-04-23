@@ -36,3 +36,4 @@ INSTALLED_APPS += (
 )
 CELERY_RESULT_BACKEND='djcelery.backends.database:DatabaseBackend'
 BROKER_URL = 'django://'
+CELERY_TRACK_STARTED = True

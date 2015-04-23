@@ -13,6 +13,9 @@ from django.utils.encoding import force_unicode
 from django.conf import settings
 
 from djangui.backend import utils
+from djangui.db import fields as djangui_fields
+
+from djguicore.models import DjanguiJob
 
 from .models import djangui_models
 # Create your views here.
@@ -55,7 +58,6 @@ class DjanguiScriptJSON(DjanguiScriptMixin, View):
         task_id = request.GET.get('task_id')
         instance = None
         if task_id:
-            from djguicore.models import DjanguiJob
             job = DjanguiJob.objects.get(djangui_celery_id=task_id)
             if job.djangui_user is None or (request.user.is_authenticated() and job.djangui_user == request.user):
                 instance = job.content_object
@@ -81,6 +83,14 @@ class DjanguiScriptJSON(DjanguiScriptMixin, View):
             if i in form.errors:
                 deleted_files[i] = post.get(i, None)
                 del form.errors[i]
+        # we also cannot validate due to files not being replaced, though they are set such as when cloning a job
+        files_to_sync = set([])
+        for i in self.model._meta.fields:
+            if issubclass(type(i), djangui_fields.DjanguiUploadFileField):
+                if post.get(i.name):
+                    if i.name in form.errors:
+                        del form.errors[i.name]
+                    files_to_sync.add(i.name)
         if not form.errors:
             model = form.save(commit=False)
             # update our instance with where we want to save files if the user specified it
@@ -90,6 +100,11 @@ class DjanguiScriptJSON(DjanguiScriptMixin, View):
                         model._djangui_temp_output[i] = v[0] if isinstance(v, list) else v
                     except AttributeError:
                         model._djangui_temp_output = {i: v[0] if isinstance(v, list) else v}
+            # update out instance with any referenced files
+            if files_to_sync:
+                parent = DjanguiJob.objects.get(djangui_celery_id=post.get('djangui_clone_task_id')).content_object
+                for model_field in files_to_sync:
+                    setattr(model, model_field, getattr(parent, model_field))
             model.save()
             model.submit_to_celery()
             return JsonResponse({'valid': True})

@@ -1,5 +1,0 @@
-Django
-django-celery
-djangui
-djangui-core
-djangui-home

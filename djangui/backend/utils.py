@@ -1,41 +1,76 @@
 __author__ = 'chris'
+import json
+from collections import OrderedDict
+
 from django.core.urlresolvers import reverse_lazy, reverse
 from django.conf import settings
+from django import forms
+from django.db import transaction
 from django.utils.encoding import force_unicode
 from django.utils.translation import gettext_lazy as _
+from django.db.utils import OperationalError
+
+from ..forms.factory import DJ_FORM_FACTORY
 
 def sanitize_name(name):
     return name.replace(' ', '_').replace('-', '_')
 
+
 def sanitize_string(value):
     return value.replace('"', '\\"')
 
-def get_djangui_model_json_url(app, model_name):
-    return reverse_lazy('{0}_script_json'.format(app), kwargs={'script_name': model_name, 'app_name': app})
 
-def is_djangui_model(model):
-    from ..db.models import DjanguiModel
-    return issubclass(model, DjanguiModel) and not isinstance(type(model), DjanguiModel)
+def get_script_commands(script=None, parameters=None):
+    com = ['python', script.get_script_path()]
+    for param in parameters:
+        com.extend(param.get_subprocess_value())
+    return com
 
-def get_model_script_url(model, json=True):
-    app = model._meta.app_label
-    return reverse('{}_script_json'.format(app) if getattr(settings, 'DJANGUI_AJAX', False) and json else '{}_script'.format(app),
-                               kwargs={'script_name': model._meta.object_name, 'app_name': app})
+@transaction.atomic
+def create_djangui_job(data):
+    from ..models import Script, DjanguiJob, ScriptParameter, ScriptParameters
+    script = Script.objects.get(pk=data.get('djangui_type'))
+    job = DjanguiJob(user=data.get('user'), job_name=data.get('job_name'), job_description=data.get('job_description'),
+                     script=script)
+    job.save()
+    parameters = {i.slug: i for i in ScriptParameter.objects.filter(slug__in=data.keys())}
+    params = []
+    for i, v in data.iteritems():
+        param = parameters.get(i)
+        if param is not None:
+            new_param = ScriptParameters(job=job, parameter=param)
+            # import ipdb; ipdb.set_trace();
+            new_param.value = v
+            new_param.save()
+            params.append(new_param)
+    com = get_script_commands(script=script, parameters=params)
+    return job, com
 
-def get_modelform_dict(model, instance=None):
-    from django.forms.models import modelform_factory
-    required = set(model.get_required_fields())
-    form = modelform_factory(model, fields=required, exclude=settings.DJANGUI_EXCLUDES)
-    d = {'action': get_model_script_url(model), 'required': '', 'optional': ''}
-    # clear the instance's output fields if we have one
-    if instance is not None:
-        for out_arg, out_to in instance.djangui_output_options.iteritems():
-            setattr(instance, out_arg, None)
-    d['required'] = str(form(instance=instance))
-    form = modelform_factory(model, fields=model.get_optional_fields(), exclude=settings.DJANGUI_EXCLUDES)
-    d['optional'] = str(form(instance=instance))
-    d['groups'] = [{'group_name': force_unicode(_('Required')), 'form': d['required']}] if required-set(settings.DJANGUI_EXCLUDES) else []
-    for group_name, group_fields in model.djangui_groups.iteritems():
-        form = modelform_factory(model, fields=set(group_fields)-required, exclude=settings.DJANGUI_EXCLUDES)
-        d['groups'].append({'group_name': group_name.title(), 'form': str(form(instance=instance))})
-    return d
+
+def get_master_form(model=None, pk=None):
+    return DJ_FORM_FACTORY.get_master_form(model=model, pk=pk)
+
+
+def get_form_groups(model=None, pk=None, initial=None):
+    return DJ_FORM_FACTORY.get_group_forms(model=model, pk=pk, initial=initial)
+
+def load_scripts():
+    from ..models import Script
+    # select all the scripts we have, then divide them into groups
+    dj_scripts = OrderedDict()
+    try:
+        scripts = Script.objects.count()
+    except OperationalError:
+        # database not initialized yet
+        return
+    if scripts:
+        scripts = Script.objects.all()
+        for script in scripts:
+            group = dj_scripts.get(script.script_group.pk, {
+                # 'url': reverse_lazy('script_group', kwargs={'script_group', script.script_group.slug}),
+                'group': script.script_group, 'scripts': []
+            })
+            dj_scripts[script.script_group.pk] = group
+            # the url mapping is script_group/script_name
+            group['scripts'].append(script)
+    settings.DJANGUI_APPS = dj_scripts

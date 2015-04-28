@@ -1,0 +1,114 @@
+__author__ = 'chris'
+import copy
+import json
+from collections import OrderedDict
+
+from django import forms
+from django.core.files.storage import default_storage
+
+from .scripts import DjanguiForm
+
+
+class DjanguiFormFactory(object):
+    djangui_forms = {}
+
+    @staticmethod
+    def get_field(param, initial=None):
+        field = param.form_field
+        choices = json.loads(param.choices)
+        field_kwargs = {'label': param.script_param.title(),
+                        'required': param.required,
+                        'help_text': param.param_help,
+                        }
+        if choices:
+            field = 'ChoiceField'
+            base_choices = [(None, '----')] if not param.required else []
+            field_kwargs['choices'] = base_choices+[(i, i.title()) for i in choices]
+        if field == 'FileField':
+            if param.is_output:
+                field = 'CharField'
+                initial = None
+            else:
+                if initial is not None:
+                    # TODO: There is probably a much, much, much better way to do this
+                    new_initial = default_storage.open(initial)
+                    new_initial.url = default_storage.url(initial)
+                    initial = new_initial
+                    field_kwargs['widget'] = forms.ClearableFileInput()
+        if initial is not None:
+            field_kwargs['initial'] = initial
+        field = getattr(forms, field)
+        return field(**field_kwargs)
+
+    def get_group_forms(self, model=None, pk=None, initial=None):
+        print initial
+        pk = int(pk) if pk is not None else pk
+        if pk is not None and pk in self.djangui_forms:
+            if 'groups' in self.djangui_forms[pk]:
+                return copy.deepcopy(self.djangui_forms[pk]['groups'])
+        from ..models import ScriptParameter
+        params = ScriptParameter.objects.filter(script=model)
+        # set a reference to the object type for POST methods to use
+        script_id_field = forms.CharField(widget=forms.HiddenInput)
+        group_map = {}
+        for param in params:
+            field = self.get_field(param, initial=initial.get(param.slug) if initial else None)
+            group_id = -1 if param.required else param.parameter_group.pk
+            group_name = 'Required' if param.required else param.parameter_group.group_name
+            group = group_map.get(group_id, {
+                'group': group_name,
+                'fields': {}
+            })
+            group['fields'][param.slug] = field
+            group_map[group_id] = group
+        # create individual forms for each group
+        group_map = OrderedDict([(i, group_map[i]) for i in sorted(group_map.keys())])
+        d = {'action': model.get_url()}
+        d['groups'] = []
+        pk = model.pk
+        for group_index, group in enumerate(group_map.iteritems()):
+            group_pk, group_info = group
+            form = DjanguiForm()
+            if group_index == 0:
+                form.fields['djangui_type'] = script_id_field
+                form.fields['djangui_type'].initial = pk
+            for field_pk, field in group_info['fields'].iteritems():
+                form.fields[field_pk] = field
+            d['groups'].append({'group_name': group_info['group'], 'form': str(form)})
+        try:
+            self.djangui_forms[pk]['groups'] = d
+        except KeyError:
+            self.djangui_forms[pk] = {'groups': d}
+        # if the master form doesn't exist, create it while we have the model
+        if 'master' not in self.djangui_forms[pk]:
+            self.get_master_form(model=model, pk=pk)
+        return d
+
+    def get_master_form(self, model=None, pk=None):
+        from ..models import ScriptParameter
+        pk = int(pk) if pk is not None else pk
+        if pk is not None and pk in self.djangui_forms:
+            if 'master' in self.djangui_forms[pk]:
+                return copy.deepcopy(self.djangui_forms[pk]['master'])
+        # import pdb; pdb.set_trace();
+        master_form = DjanguiForm()
+        params = ScriptParameter.objects.filter(script=model)
+        # set a reference to the object type for POST methods to use
+        pk = model.pk
+        script_id_field = forms.CharField(widget=forms.HiddenInput)
+        master_form.fields['djangui_type'] = script_id_field
+        master_form.fields['djangui_type'].initial = pk
+        group_map = {}
+        for param in params:
+            field = self.get_field(param)
+            master_form.fields[param.slug] = field
+        try:
+            self.djangui_forms[pk]['master'] = master_form
+        except KeyError:
+            self.djangui_forms[pk] = {'master': master_form}
+        # create the group forms while we have the model
+        if 'groups' not in self.djangui_forms[pk]:
+            self.get_group_forms(model=model, pk=pk)
+        return master_form
+
+DJ_FORM_FACTORY = DjanguiFormFactory()

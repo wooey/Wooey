@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+
+
+{% block body %}
+{% for script in scripts %}
+    {% include "includes/script_details.html" %}
+{% endfor %}
+{% endblock body %}
+
+
+</body>
+</html>

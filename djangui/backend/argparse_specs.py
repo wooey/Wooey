@@ -3,6 +3,9 @@ import sys
 import json
 import imp
 import traceback
+import tempfile
+from .ast import source_parser
+from itertools import chain
 
 def is_upload(action):
     """Checks if this should be a user upload
@@ -56,7 +59,7 @@ TYPE_FIELDS = {
            'attr_kwargs': GLOBAL_ATTR_KWARGS},
     float: {'model': 'FloatField', 'type': 'text', 'html5-type': 'number', 'nullcheck': lambda x: x.default is None,
             'attr_kwargs': GLOBAL_ATTR_KWARGS},
-    int: {'model': 'BigIntegerField', 'type': 'text', 'nullcheck': lambda x: x.default is None,
+    int: {'model': 'IntegerField', 'type': 'text', 'nullcheck': lambda x: x.default is None,
           'attr_kwargs': GLOBAL_ATTR_KWARGS},
     None: {'model': 'CharField', 'type': 'text', 'nullcheck': lambda x: x.default is None,
           'attr_kwargs': GLOBAL_ATTR_KWARGS},
@@ -126,6 +129,10 @@ class ArgParseNode(object):
             elif 'callback' in attr_dict:
                 self.node_attrs[attr] = attr_dict['callback'](action)
 
+    @property
+    def name(self):
+        return self.node_attrs.get('name')
+
     def __str__(self):
         return json.dumps(self.node_attrs)
 
@@ -148,27 +155,58 @@ class ArgParseNodeBuilder(object):
     # TODO: Add groupings
     def __init__(self, script_path=None, script_name=None):
         try:
-            print script_name, script_path
             module = imp.load_source(script_name, script_path)
-            self.valid = True
         except:
-            sys.stderr.write('Error while loading %s:\n'.format(script_name))
+            sys.stderr.write('Error while loading {0}:\n'.format(script_path))
             sys.stderr.write('{0}\n'.format(traceback.format_exc()))
-            self.valid = False
-        else:
-            parser = module.parser
-            self.class_name = script_name
-            self.script_path = script_path
-            self.script_description = getattr(parser, 'description', None)
-            self.script_groups = []
-            self.nodes = []
-            for action in parser._actions:
-                # This is the help message of argparse
-                if action.default == argparse.SUPPRESS:
-                    continue
-                node = ArgParseNode(action=action)
-                self.nodes.append(node)
+            return
+        parsers = [v for i, v in chain(module.main.__globals__.iteritems(), vars(module).iteritems())
+                   if issubclass(type(v), argparse.ArgumentParser)]
+        if not parsers:
+            f = tempfile.NamedTemporaryFile()
+            ast_source = source_parser.parse_source_file(script_path)
+            python_code = source_parser.convert_to_python(list(ast_source))
+            f.write('\n'.join(python_code))
+            f.seek(0)
+            module = imp.load_source(script_name, f.name)
+            parsers = [v for i, v in chain(module.main.__globals__.iteritems(), vars(module).iteritems())
+                   if issubclass(type(v), argparse.ArgumentParser)]
+        if not parsers:
+            sys.stderr.write('Unable to identify ArgParser for {0}:\n'.format(script_path))
+            return
+        parser = parsers[0]
+        self.class_name = script_name
+        self.script_path = script_path
+        self.script_description = getattr(parser, 'description', None)
+        self.script_groups = []
+        self.nodes = {}
+        self.djangui_options = {}
+        self.script_groups = []
+        non_req = set([i.dest for i in parser._get_optional_actions()])
+        self.optional_nodes = set([])
+        self.containers = {}
+        for action in parser._actions:
+            # This is the help message of argparse
+            if action.default == argparse.SUPPRESS:
+                continue
+            node = ArgParseNode(action=action)
+            container = action.container.title
+            container_node = self.containers.get(container, None)
+            if container_node is None:
+                container_node = []
+                self.containers[container] = container_node
+            self.nodes[node.name] = node
+            container_node.append(node.name)
+            self.djangui_options[node.name] = action.option_strings[0]
+            if action.dest in non_req:
+                self.optional_nodes.add(node.name)
+        print self.containers
 
-    def __str__(self):
-        return json.dumps({'name': self.class_name, 'path': self.script_path,
-                           'description': self.script_description, 'inputs': [i.node_attrs for i in self.nodes]})
+
+    def get_script_description(self):
+        return {'name': self.class_name, 'path': self.script_path,
+                'description': self.script_description, 'inputs': [{'group': container_name, 'nodes': [self.nodes[node].node_attrs for node in nodes]} for container_name, nodes in self.containers.iteritems()]}
+
+    @property
+    def json(self):
+        return json.dumps(self.get_script_description())

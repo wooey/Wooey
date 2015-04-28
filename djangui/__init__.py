@@ -1,1 +1,1 @@
-__author__ = 'chris'
+default_app_config = 'djangui.apps.DjanguiConfig'

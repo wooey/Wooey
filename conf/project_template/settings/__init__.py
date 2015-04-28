@@ -1,0 +1,1 @@
+from conf.project_template.settings.user_settings import *

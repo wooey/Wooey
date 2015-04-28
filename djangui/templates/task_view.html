@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+     <div>
+        <h2>{{ task_info.job_name }}</h2>
+        <h3>{% trans "Job Output" %}</h3>
+        <p>{{ task_info.stdout|linebreaks }}</p>
+        <h3>{% trans "Job Errors" %}</h3>
+        <p>{{ task_info.stderr|linebreaks }}</p>
+        <h3>{% trans "Files Used and Created" %}</h3>
+        <ul>
+            {% for field_name, file in task_info.files.iteritems %}
+            <li>
+                {{ field_name }}: <a href="{{ file.url }}">{{ file.name }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

@@ -1,0 +1,4 @@
+Django
+django-celery
+git://github.com/Chris7/djangui.git
+git://github.com/Chris7/djangui-home.git

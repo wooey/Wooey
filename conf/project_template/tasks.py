@@ -3,13 +3,10 @@ import subprocess
 import tarfile
 import os
 import zipfile
-import importlib
 
-from django.conf import settings
 from celery import Task
-from celery import app, states
+from celery import app
 
-from djguicore.models import DjanguiJob
 
 celery_app = app.app_or_default()
 

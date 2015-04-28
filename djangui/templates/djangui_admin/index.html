@@ -1,0 +1,6 @@
+{% extends "admin/index.html" %}
+{% load i18n %}
+{% block content %}
+    <a href="{% url 'admin:add_scripts' %}">{% trans "Add Scripts" %}</a>
+{{ block.super }}
+{% endblock %}

@@ -1,14 +1,11 @@
-import json
-
-from django.views.generic import TemplateView, DetailView
+from django.views.generic import DetailView
 from django.http import JsonResponse
 from django.conf import settings
 from django.forms import FileField
 from django.core.files.storage import default_storage
-from django.forms.models import model_to_dict
 
 from djangui.backend import utils
-from djangui.views.mixins import DjanguiScriptMixin
+# from djangui.views.mixins import DjanguiScriptMixin
 from ..models import DjanguiJob, Script
 
 
@@ -54,7 +51,9 @@ class DjanguiScriptJSON(DetailView):
                     to_delete.append(i)
                     if i not in request.FILES and (i not in form.cleaned_data or form.cleaned_data[i] is None):
                         # this is a previously set field, so a cloned job
-                        form.cleaned_data[i] = default_storage.open(post.get(i))
+                        path = post.get(i)
+                        if path:
+                            form.cleaned_data[i] = default_storage.open(path)
             for i in to_delete:
                 if i in form.errors:
                     del form.errors[i]
@@ -68,24 +67,24 @@ class DjanguiScriptJSON(DetailView):
         return JsonResponse({'valid': False, 'errors': form.errors})
 
 
-class DjanguiScriptHome(DjanguiScriptMixin, TemplateView):
-    template_name = 'scripts_home.html'
-
-    def get_context_data(self, **kwargs):
-        ctx = super(DjanguiScriptHome, self).get_context_data(**kwargs)
-        ctx['scripts'] = []
-        # import pdb; pdb.set_trace();
-        for model in dir(self.djangui_models):
-            if model == 'DjanguiModel':
-                continue
-            klass = getattr(self.djangui_models, model)
-            try:
-                if klass._meta.app_label == self.app_name:
-                    ctx['scripts'].append({
-                        'name': klass._meta.object_name,
-                        'objects': klass.objects.all(),
-                        'url': utils.get_model_script_url(klass, json=False)
-                    })
-            except AttributeError:
-                continue
-        return ctx
+# class DjanguiScriptHome(DjanguiScriptMixin, TemplateView):
+#     template_name = 'scripts_home.html'
+#
+#     def get_context_data(self, **kwargs):
+#         ctx = super(DjanguiScriptHome, self).get_context_data(**kwargs)
+#         ctx['scripts'] = []
+#         # import pdb; pdb.set_trace();
+#         for model in dir(self.djangui_models):
+#             if model == 'DjanguiModel':
+#                 continue
+#             klass = getattr(self.djangui_models, model)
+#             try:
+#                 if klass._meta.app_label == self.app_name:
+#                     ctx['scripts'].append({
+#                         'name': klass._meta.object_name,
+#                         'objects': klass.objects.all(),
+#                         'url': utils.get_model_script_url(klass, json=False)
+#                     })
+#             except AttributeError:
+#                 continue
+#         return ctx

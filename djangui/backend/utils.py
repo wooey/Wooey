@@ -9,8 +9,7 @@ from django.db import transaction
 from django.utils.encoding import force_unicode
 from django.utils.translation import gettext_lazy as _
 from django.db.utils import OperationalError
-
-from ..forms.factory import DJ_FORM_FACTORY
+from django.core.files.storage import default_storage
 
 def sanitize_name(name):
     return name.replace(' ', '_').replace('-', '_')
@@ -39,7 +38,6 @@ def create_djangui_job(data):
         param = parameters.get(i)
         if param is not None:
             new_param = ScriptParameters(job=job, parameter=param)
-            # import ipdb; ipdb.set_trace();
             new_param.value = v
             new_param.save()
             params.append(new_param)
@@ -48,10 +46,12 @@ def create_djangui_job(data):
 
 
 def get_master_form(model=None, pk=None):
+    from ..forms.factory import DJ_FORM_FACTORY
     return DJ_FORM_FACTORY.get_master_form(model=model, pk=pk)
 
 
 def get_form_groups(model=None, pk=None, initial=None):
+    from ..forms.factory import DJ_FORM_FACTORY
     return DJ_FORM_FACTORY.get_group_forms(model=model, pk=pk, initial=initial)
 
 def load_scripts():
@@ -74,3 +74,10 @@ def load_scripts():
             # the url mapping is script_group/script_name
             group['scripts'].append(script)
     settings.DJANGUI_APPS = dj_scripts
+
+def get_storage_object(path):
+    # TODO: If we have to add anymore, just make this a class and route the DS methods we need
+    obj = default_storage.open(path)
+    obj.url = default_storage.url(path)
+    obj.path = default_storage.path(path)
+    return obj

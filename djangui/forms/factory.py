@@ -4,9 +4,10 @@ import json
 from collections import OrderedDict
 
 from django import forms
-from django.core.files.storage import default_storage
 
 from .scripts import DjanguiForm
+from ..backend import utils
+from ..models import ScriptParameter
 
 
 class DjanguiFormFactory(object):
@@ -31,9 +32,7 @@ class DjanguiFormFactory(object):
             else:
                 if initial is not None:
                     # TODO: There is probably a much, much, much better way to do this
-                    new_initial = default_storage.open(initial)
-                    new_initial.url = default_storage.url(initial)
-                    initial = new_initial
+                    initial = utils.get_storage_object(initial)
                     field_kwargs['widget'] = forms.ClearableFileInput()
         if initial is not None:
             field_kwargs['initial'] = initial
@@ -41,12 +40,10 @@ class DjanguiFormFactory(object):
         return field(**field_kwargs)
 
     def get_group_forms(self, model=None, pk=None, initial=None):
-        print initial
         pk = int(pk) if pk is not None else pk
         if pk is not None and pk in self.djangui_forms:
             if 'groups' in self.djangui_forms[pk]:
                 return copy.deepcopy(self.djangui_forms[pk]['groups'])
-        from ..models import ScriptParameter
         params = ScriptParameter.objects.filter(script=model)
         # set a reference to the object type for POST methods to use
         script_id_field = forms.CharField(widget=forms.HiddenInput)
@@ -85,12 +82,10 @@ class DjanguiFormFactory(object):
         return d
 
     def get_master_form(self, model=None, pk=None):
-        from ..models import ScriptParameter
         pk = int(pk) if pk is not None else pk
         if pk is not None and pk in self.djangui_forms:
             if 'master' in self.djangui_forms[pk]:
                 return copy.deepcopy(self.djangui_forms[pk]['master'])
-        # import pdb; pdb.set_trace();
         master_form = DjanguiForm()
         params = ScriptParameter.objects.filter(script=model)
         # set a reference to the object type for POST methods to use
@@ -98,7 +93,7 @@ class DjanguiFormFactory(object):
         script_id_field = forms.CharField(widget=forms.HiddenInput)
         master_form.fields['djangui_type'] = script_id_field
         master_form.fields['djangui_type'].initial = pk
-        group_map = {}
+
         for param in params:
             field = self.get_field(param)
             master_form.fields[param.slug] = field

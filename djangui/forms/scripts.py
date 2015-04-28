@@ -1,4 +1,5 @@
 from django import forms
+from ..backend import utils
 
 
 class DjanguiForm(forms.Form):
@@ -10,7 +11,6 @@ class DjanguiForm(forms.Form):
         self.fields['job_description'] = forms.CharField(required=False)
 
     def save(self, **kwargs):
-        from ..backend import utils
         if 'user' in self.data:
             self.cleaned_data['user'] = self.data['user']
         job, command = utils.create_djangui_job(self.cleaned_data)

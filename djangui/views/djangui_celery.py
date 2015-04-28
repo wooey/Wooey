@@ -6,7 +6,6 @@ from django.views.generic import TemplateView
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_unicode
-from django.forms.models import model_to_dict
 
 from djcelery.models import TaskMeta
 from celery import app, states
@@ -48,8 +47,8 @@ def celery_task_command(request):
     response = {'valid': False,}
     if user == job.user:
         if command == 'resubmit':
-            obj = job.submit_to_celery(resubmit=True)
-            response.update({'valid': True, 'extra': {'task_url': reverse('celery_results_info', kwargs={'task_id': obj.celery_id})}})
+            job.submit_to_celery(resubmit=True)
+            response.update({'valid': True, 'extra': {'task_url': reverse('celery_results_info', kwargs={'task_id': job.celery_id})}})
         elif command == 'clone':
             response.update({'valid': True, 'redirect': '{0}?task_id={1}'.format(reverse('djangui_task_launcher'), task_id)})
         elif command == 'delete':
@@ -73,9 +72,10 @@ class CeleryTaskView(TemplateView):
         for field in parameters:
             try:
                 if field.parameter.form_field == 'FileField':
-                    # import ipdb; ipdb.set_trace();
                     d = {'name': field.parameter.slug}
                     value = field.value
+                    if value is None:
+                        continue
                     d['url'] = value.url
                     d['path'] = value.path
                     files.append(d)
@@ -102,6 +102,7 @@ class CeleryTaskView(TemplateView):
         import imghdr
         file_groups['images'] = [{'name': filemodel['name'], 'url': filemodel['url']} for filemodel in files if imghdr.what(filemodel.get('path', filemodel['url']))]
         file_groups['tabular'] = []
+        file_groups['fasta'] = []
 
         def test_delimited(filepath):
             import csv
@@ -122,10 +123,36 @@ class CeleryTaskView(TemplateView):
                     return False, None
                 return True, rows
 
+        def test_fastx(filepath):
+            # if every odd line starts with a >, it's a fasta
+            # if every first line starts with a > and every third a +, it's a fastq
+            with open(filepath, 'rb') as fastx_file:
+                rows = []
+                for row_index, row in enumerate(fastx_file, 1):
+                    if row_index > 28:
+                        break
+                    if row_index % 4 == 0:
+                        pass
+                    elif row_index % 3 == 0:
+                        # check for both fastq/a
+                        if not row[0] == '+' or row[0] == '>':
+                            return False, None
+                    elif row_index % 2 == 0:
+                        pass
+                    else:
+                        if not row[0] == '>':
+                            return False, None
+                    row.append(row)
+            return True, rows
+
         for filemodel in files:
             is_delimited, first_rows = test_delimited(filemodel.get('path', filemodel['url']))
             if is_delimited:
                 file_groups['tabular'].append({'name': filemodel['name'], 'preview': first_rows, 'url': filemodel['url']})
+            else:
+                is_fasta, first_rows = test_fastx(filemodel.get('path', filemodel['url']))
+                if is_fasta:
+                    file_groups['fasta'].append({'name': filemodel['name'], 'preview': first_rows, 'url': filemodel['url']})
         return file_groups
 
     def get_context_data(self, **kwargs):

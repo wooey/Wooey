@@ -16,27 +16,28 @@ from ..models import DjanguiJob
 
 def celery_status(request):
     jobs = DjanguiJob.objects.filter(user=request.user if request.user.is_authenticated() else None)
-    # TODO: Batch this to a scheduled task
-    tasks = [job.celery_id for job in jobs]
-    celery_tasks = dict([(task.task_id, task) for task in TaskMeta.objects.filter(task_id__in=tasks)])
-    to_update = []
-    for job in jobs:
-        celery_task = celery_tasks.get(job.celery_id)
-        if celery_task is None and job.celery_state != states.FAILURE:
-            continue
-            # the task doesn't exist, consider it a failure
-            # TODO: we can't report these with all backends, code a way to figure out backend and see if this is viable
-            job.celery_state = states.FAILURE
-            to_update.append(job)
-        elif celery_task is not None and job.celery_state != celery_task.status:
-            job.celery_state = celery_task.status
-            to_update.append(job)
-    for i in to_update:
-        i.save()
+    if getattr(settings, 'DJANGUI_CELERY', False):
+        # TODO: Batch this to a scheduled task that just updates our DjanguiJob info when done
+        tasks = [job.celery_id for job in jobs]
+        celery_tasks = dict([(task.task_id, task) for task in TaskMeta.objects.filter(task_id__in=tasks)])
+        to_update = []
+        for job in jobs:
+            celery_task = celery_tasks.get(job.celery_id)
+            if celery_task is None and job.celery_state != states.FAILURE:
+                continue
+                # the task doesn't exist, consider it a failure
+                # TODO: we can't report these with all backends, code a way to figure out backend and see if this is viable
+                job.celery_state = states.FAILURE
+                to_update.append(job)
+            elif celery_task is not None and job.celery_state != celery_task.status:
+                job.celery_state = celery_task.status
+                to_update.append(job)
+        for i in to_update:
+            i.save()
     return JsonResponse([{'job_name': job.job_name, 'job_status': job.celery_state,
                         'job_submitted': job.created_date.strftime('%b %d %Y, %H:%M:%S'),
-                        'job_id': job.celery_id,
-                        'job_url': reverse('celery_results_info', kwargs={'task_id': job.celery_id})} for job in jobs], safe=False)
+                        'job_id': job.pk,
+                        'job_url': reverse('celery_results_info', kwargs={'job_id': job.pk})} for job in jobs], safe=False)
 
 
 def celery_task_command(request):
@@ -142,7 +143,7 @@ class CeleryTaskView(TemplateView):
                     else:
                         if not row[0] == '>':
                             return False, None
-                    row.append(row)
+                    rows.append(row)
             return True, rows
 
         for filemodel in files:
@@ -157,34 +158,32 @@ class CeleryTaskView(TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super(CeleryTaskView, self).get_context_data(**kwargs)
-        task_id = ctx.get('task_id')
-        try:
-            celery_task = TaskMeta.objects.get(task_id=task_id)
-        except TaskMeta.DoesNotExist:
-            celery_task = None
-        djangui_job = DjanguiJob.objects.get(celery_id=task_id)
+        task_id = ctx.get('job_id')
+        djangui_job = DjanguiJob.objects.get(pk=task_id)
         ctx['task_info'] = {'stdout': '', 'stderr': '', 'job_id': djangui_job.celery_id,
                             'status': djangui_job.celery_state, 'submission_time': djangui_job.created_date,
                             'last_modified': djangui_job.modified_date, 'job_name': djangui_job.job_name,
                             'job_command': djangui_job.command,
                             'job_description': djangui_job.job_description, 'all_files': {},
                             'file_groups': {}}
-        if celery_task:
-            out_files = self.get_file_fields(djangui_job)
-            all = out_files.pop('all')
-            archives = out_files.pop('archives')
-            try:
-                stdout, stderr = celery_task.result
-            except KeyError:
-                stdout, stderr = None, None
-            ctx['task_info'].update({
-                'stdout': stdout,
-                'stderr': stderr,
-                'status': celery_task.status,
-                'last_modified': celery_task.date_done,
+        out_files = self.get_file_fields(djangui_job)
+        all = out_files.pop('all')
+        archives = out_files.pop('archives')
+        ctx['task_info'].update({
                 'all_files': all,
                 'archives': archives,
                 'file_groups': out_files,
             })
+        # if celery_task:
+        #     try:
+        #         stdout, stderr = celery_task.result
+        #     except KeyError:
+        #         stdout, stderr = None, None
+        #     ctx['task_info'].update({
+        #         'stdout': stdout,
+        #         'stderr': stderr,
+        #         'status': celery_task.status,
+        #         'last_modified': celery_task.date_done,
+        #     })
         return ctx
 

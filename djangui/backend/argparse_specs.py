@@ -153,11 +153,13 @@ class ArgParseNode(object):
 
 class ArgParseNodeBuilder(object):
     def __init__(self, script_path=None, script_name=None):
+        self.valid = True
         try:
             module = imp.load_source(script_name, script_path)
         except:
             sys.stderr.write('Error while loading {0}:\n'.format(script_path))
             sys.stderr.write('{0}\n'.format(traceback.format_exc()))
+            self.valid = False
             return
         parsers = [v for i, v in chain(module.main.__globals__.iteritems(), vars(module).iteritems())
                    if issubclass(type(v), argparse.ArgumentParser)]
@@ -172,6 +174,7 @@ class ArgParseNodeBuilder(object):
                    if issubclass(type(v), argparse.ArgumentParser)]
         if not parsers:
             sys.stderr.write('Unable to identify ArgParser for {0}:\n'.format(script_path))
+            self.valid = False
             return
         parser = parsers[0]
         self.class_name = script_name

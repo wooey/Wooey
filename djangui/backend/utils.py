@@ -1,11 +1,14 @@
 __author__ = 'chris'
 import json
+import os
 from collections import OrderedDict
 
 from django.conf import settings
 from django.db import transaction
 from django.db.utils import OperationalError
 from django.core.files.storage import default_storage
+
+from .argparse_specs import ArgParseNodeBuilder
 
 def sanitize_name(name):
     return name.replace(' ', '_').replace('-', '_')
@@ -77,3 +80,40 @@ def get_storage_object(path):
     obj.url = default_storage.url(path)
     obj.path = default_storage.path(path)
     return obj
+
+def add_djangui_script(script=None, group=None):
+    basename, extension = os.path.splitext(script)
+    filename = os.path.split(basename)[1]
+
+    parser = ArgParseNodeBuilder(script_name=filename, script_path=script)
+    if not parser.valid:
+        return False
+    # make our script
+    d = parser.get_script_description()
+    from ..models import Script, ScriptParameterGroup, ScriptParameter, ScriptGroup
+    script_group, created = ScriptGroup.objects.get_or_create(group_name=group)
+    djangui_script, created = Script.objects.get_or_create(script_group=script_group, script_description=d['description'],
+                                   script_path=script, script_name=d['name'])
+    if not created:
+        djangui_script.script_version += 1
+        djangui_script.save()
+    # make our parameters
+    CHOICE_MAPPING = {
+
+    }
+    for param_group_info in d['inputs']:
+        param_group, created = ScriptParameterGroup.objects.get_or_create(group_name=param_group_info.get('group'), script=djangui_script)
+        for param in param_group_info.get('nodes'):
+            # TODO: fix choice limits
+            #choice_limit = CHOICE_MAPPING[param.get('choice_limit')]
+            # TODO: fix 'file' to be global in argparse
+            is_out = True if param.get('upload', None) is False and param.get('type') == 'file' else not param.get('upload', False)
+            print param, is_out
+            script_param, created = ScriptParameter.objects.get_or_create(script=djangui_script, short_param=param['param'], script_param=param['name'],
+                                                  is_output=is_out, required=param.get('required', False),
+                                                  form_field=param['model'], default=param.get('default'), input_type=param.get('type'),
+                                                  choices=json.dumps(param.get('choices')), choice_limit=None,
+                                                  param_help=param.get('help'), is_checked=param.get('checked', False),
+                                                  parameter_group=param_group)
+    # update our loaded scripts
+    load_scripts()

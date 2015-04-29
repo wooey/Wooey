@@ -19,7 +19,7 @@ from ..backend import utils
 
 
 # TODO: Handle cases where celery is not used
-tasks = importlib.import_module(settings.DJANGUI_CELERY_TASKS)
+tasks = importlib.import_module(getattr(settings, 'DJANGUI_CELERY_TASKS', 'djangui.tasks'))
 
 # TODO: Add user rights, hide/lock/ordering in an inherited class to cover scriptgroup/scripts
 
@@ -171,7 +171,7 @@ class AddScript(models.Model):
                                                       choices=json.dumps(param.get('choices')), choice_limit=None,
                                                       param_help=param.get('help'), is_checked=param.get('checked', False),
                                                       parameter_group=param_group)
-        # upload our loaded scripts
+        # update our loaded scripts
         utils.load_scripts()
 
 

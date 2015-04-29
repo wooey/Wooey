@@ -152,7 +152,6 @@ class ArgParseNode(object):
 
 
 class ArgParseNodeBuilder(object):
-    # TODO: Add groupings
     def __init__(self, script_path=None, script_name=None):
         try:
             module = imp.load_source(script_name, script_path)
@@ -180,7 +179,6 @@ class ArgParseNodeBuilder(object):
         self.script_description = getattr(parser, 'description', None)
         self.script_groups = []
         self.nodes = {}
-        self.djangui_options = {}
         self.script_groups = []
         non_req = set([i.dest for i in parser._get_optional_actions()])
         self.optional_nodes = set([])
@@ -197,15 +195,14 @@ class ArgParseNodeBuilder(object):
                 self.containers[container] = container_node
             self.nodes[node.name] = node
             container_node.append(node.name)
-            self.djangui_options[node.name] = action.option_strings[0]
             if action.dest in non_req:
                 self.optional_nodes.add(node.name)
-        print self.containers
-
 
     def get_script_description(self):
         return {'name': self.class_name, 'path': self.script_path,
-                'description': self.script_description, 'inputs': [{'group': container_name, 'nodes': [self.nodes[node].node_attrs for node in nodes]} for container_name, nodes in self.containers.iteritems()]}
+                'description': self.script_description,
+                'inputs': [{'group': container_name, 'nodes': [self.nodes[node].node_attrs for node in nodes]}
+                           for container_name, nodes in self.containers.iteritems()]}
 
     @property
     def json(self):

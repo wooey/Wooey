@@ -3,11 +3,11 @@ import subprocess
 import tarfile
 import os
 import zipfile
-from celery.contrib import rdb
+
 
 from celery import Task
 from celery import app
-
+from celery.contrib import rdb
 
 celery_app = app.app_or_default()
 
@@ -49,8 +49,6 @@ def submit_script(com, **kwargs):
             if path == zip_out:
                 continue
             zip.write(path, arcname=os.path.join(arcname, filename))
-    # rdb.set_trace();
-
-
     zip.close()
+
     return (stdout, stderr)

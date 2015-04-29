@@ -25,14 +25,14 @@ from .models import Script, ScriptGroup, ScriptParameter, DjanguiJob, AddScript,
 #         return TemplateResponse(request, "djangui_admin/add_scripts.html", context)
 
 # djangui_admin = DjanguiAdmin()
-djangui_admin = admin.AdminSite()
+# djangui_admin = admin.AdminSite()
 
 class AddScriptsAdmin(admin.ModelAdmin):
     pass
 
-djangui_admin.register(DjanguiJob, admin.ModelAdmin)
-djangui_admin.register(Script, admin.ModelAdmin)
-djangui_admin.register(ScriptParameter, admin.ModelAdmin)
-djangui_admin.register(ScriptGroup, admin.ModelAdmin)
-djangui_admin.register(AddScript, AddScriptsAdmin)
-djangui_admin.register(ScriptParameterGroup, AddScriptsAdmin)
+admin.site.register(DjanguiJob, admin.ModelAdmin)
+admin.site.register(Script, admin.ModelAdmin)
+admin.site.register(ScriptParameter, admin.ModelAdmin)
+admin.site.register(ScriptGroup, admin.ModelAdmin)
+admin.site.register(AddScript, AddScriptsAdmin)
+admin.site.register(ScriptParameterGroup, AddScriptsAdmin)

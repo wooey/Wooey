@@ -5,7 +5,6 @@ from django.forms import FileField
 from django.core.files.storage import default_storage
 
 from djangui.backend import utils
-# from djangui.views.mixins import DjanguiScriptMixin
 from ..models import DjanguiJob, Script
 
 

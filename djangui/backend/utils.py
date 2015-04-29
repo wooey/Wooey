@@ -2,12 +2,8 @@ __author__ = 'chris'
 import json
 from collections import OrderedDict
 
-from django.core.urlresolvers import reverse_lazy, reverse
 from django.conf import settings
-from django import forms
 from django.db import transaction
-from django.utils.encoding import force_unicode
-from django.utils.translation import gettext_lazy as _
 from django.db.utils import OperationalError
 from django.core.files.storage import default_storage
 
@@ -73,7 +69,7 @@ def load_scripts():
             dj_scripts[script.script_group.pk] = group
             # the url mapping is script_group/script_name
             group['scripts'].append(script)
-    settings.DJANGUI_APPS = dj_scripts
+    settings.DJANGUI_SCRIPTS = dj_scripts
 
 def get_storage_object(path):
     # TODO: If we have to add anymore, just make this a class and route the DS methods we need

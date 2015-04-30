@@ -117,11 +117,14 @@ class DjanguiJob(models.Model):
                 pass
             else:
                 raise
-        results = tasks.submit_script.delay(command, djangui_cwd=abscwd)
         self.command = ' '.join(command)
         self.save_path = folder
-        self.celery_id = results.id
-        self.celery_state = results.state
+        if getattr(settings, 'DJANGUI_CELERY', False):
+            results = tasks.submit_script.delay(command, djangui_cwd=abscwd)
+            self.celery_id = results.id
+            self.celery_state = results.state
+        else:
+            results = tasks.submit_script(command, djangui_cwd=abscwd)
         self.save()
 
     def get_resubmit_url(self):
@@ -140,7 +143,7 @@ class AddScript(models.Model):
     @transaction.atomic
     def save(self, **kwargs):
         super(AddScript, self).save(**kwargs)
-        utils.add_djangui_script(script=self.script_path.script, group=self.script_group.group_name)
+        utils.add_djangui_script(script=self.script_path.path, group=self.script_group.group_name)
 
 
 class ScriptParameterGroup(models.Model):

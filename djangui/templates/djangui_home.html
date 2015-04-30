@@ -7,7 +7,7 @@
 
 {% block left_sidebar_content %}
 <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
-    {% for group_id, group in djangui_apps.iteritems %}
+    {% for group_id, group in djangui_scripts.iteritems %}
       <div class="panel panel-primary">
         <div class="panel-heading" role="tab" id="{{ group_id }}">
           <h4 class="panel-title">

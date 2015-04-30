@@ -58,7 +58,7 @@ class DjanguiScriptJSON(DetailView):
                     del form.errors[i]
 
         if not form.errors:
-            data = form.cleaned_data
+            # data = form.cleaned_data
             job, com = form.save()
             job.submit_to_celery(command=com)
             return JsonResponse({'valid': True})

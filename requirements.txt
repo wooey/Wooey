@@ -1,5 +1,3 @@
 Django
 django-celery
 django-autoslug
-#git://github.com/Chris7/djangui.git
-#git://github.com/Chris7/djangui-home.git

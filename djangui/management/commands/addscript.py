@@ -3,6 +3,7 @@ import os
 from django.core.management.base import BaseCommand, CommandError
 from ...backend.utils import add_djangui_script
 
+
 class Command(BaseCommand):
     help = 'Closes the specified poll for voting'
 

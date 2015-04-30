@@ -1,4 +1,4 @@
-from django.views.generic import DetailView
+from django.views.generic import DetailView, TemplateView
 from django.http import JsonResponse
 from django.conf import settings
 from django.forms import FileField
@@ -66,24 +66,15 @@ class DjanguiScriptJSON(DetailView):
         return JsonResponse({'valid': False, 'errors': form.errors})
 
 
-# class DjanguiScriptHome(DjanguiScriptMixin, TemplateView):
-#     template_name = 'scripts_home.html'
-#
-#     def get_context_data(self, **kwargs):
-#         ctx = super(DjanguiScriptHome, self).get_context_data(**kwargs)
-#         ctx['scripts'] = []
-#         # import pdb; pdb.set_trace();
-#         for model in dir(self.djangui_models):
-#             if model == 'DjanguiModel':
-#                 continue
-#             klass = getattr(self.djangui_models, model)
-#             try:
-#                 if klass._meta.app_label == self.app_name:
-#                     ctx['scripts'].append({
-#                         'name': klass._meta.object_name,
-#                         'objects': klass.objects.all(),
-#                         'url': utils.get_model_script_url(klass, json=False)
-#                     })
-#             except AttributeError:
-#                 continue
-#         return ctx
+class DjanguiHomeView(TemplateView):
+    template_name = 'djangui_home.html'
+
+    def get_context_data(self, **kwargs):
+        task_id = self.request.GET.get('task_id')
+        ctx = super(DjanguiHomeView, self).get_context_data(**kwargs)
+        ctx['djangui_scripts'] = getattr(settings, 'DJANGUI_SCRIPTS', {})
+        if task_id:
+            job = DjanguiJob.objects.get(celery_id=task_id)
+            if job.user is None or (self.request.user.is_authenticated() and job.user == self.request.user):
+                ctx['clone_job'] = {'task_id': task_id, 'url': job.get_resubmit_url()}
+        return ctx

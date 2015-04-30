@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block extra_style %}
+
+{% endblock extra_style %}
+
+{% block left_sidebar_content %}
+<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+    {% for group_id, group in djangui_apps.iteritems %}
+      <div class="panel panel-primary">
+        <div class="panel-heading" role="tab" id="{{ group_id }}">
+          <h4 class="panel-title">
+            <a data-toggle="collapse" data-parent="#accordion" href="#{{ group_id }}_accordion" aria-expanded="true" aria-controls="{{ group_id }}_accordion">
+              {{ group.group.group_name }}
+            </a>
+          </h4>
+        </div>
+        <div id="{{ app_name }}_accordion" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="{{ group_id }}">
+            <div class="panel-body">
+                <p><em>{{ group.group.group_description }}</em></p>
+                <div class="list-group">
+                {% for script in group.scripts %}
+                  <a href="#" data-href="{{ script.get_url }}" class="list-group-item djangui-script-url">
+                    <h4 class="list-group-item-heading djangui-script-title">{{ script.script_name }}</h4>
+                    <p class="list-group-item-text djangui-script-description">{{ script.script_description }}</p>
+                  </a>
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+      </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block center_content %}
+    <div class="page-header">
+        <em><h3 id="djangui-script-title"></h3></em>
+        <p id="djangui-script-description"></p>
+    </div>
+    <form id="djangui-job-form" method="POST" action="" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group row">
+            <label for="job-name">{% trans "Job Name" %}</label>
+            <input class="form-control" id="djangui_job_name" type="text" name="job_name" placeholder="{% trans "Job Name" %}"/>
+        </div>
+        <div class="form-group row">
+            <label for="job-description">{% trans "Job Description" %}</label>
+            <textarea class="form-control" id="djangui_job_description" cols="30" rows="5" name="job_description" placeholder="{% trans "Enter job description here..." %}"></textarea>
+        </div>
+        <div role="tabpanel">
+          <!-- Nav tabs -->
+          <ul class="nav nav-tabs" role="tablist" id="djangui-script-tabs">
+{#            <li role="presentation" class="active"><a href="#required" aria-controls="home" role="tab" data-toggle="tab">{% trans "Required" %}</a></li>#}
+          </ul>
+
+          <!-- Tab panes -->
+          <div class="tab-content" id="djangui-script-content">
+            <div role="tabpanel" class="tab-pane active" id="required"></div>
+          </div>
+
+        </div>
+        <input name="djangui_clone_task_id" id="djangui_clone_task_id" type="hidden">
+        <div class="pull-right">
+            <button id="djangui-form-submit" type="submit" class="btn btn-primary">{% trans "Submit" %}</button>
+        </div>
+    </form>
+{% endblock center_content %}
+
+{% block right_sidebar_content %}
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">{% trans "Job History" %}</h3>
+  </div>
+  <div class="panel-body table-responsive">
+    <table id="djangui-job-table" class="table hover stripe col-md-3 col-xs-12">
+    <thead>
+        <th>{% trans "Job Id" %}</th>
+        <th>{% trans "Job Name" %}</th>
+        <th>{% trans "Job Status" %}</th>
+        <th>{% trans "Submission Time" %}</th>
+    </thead>
+    <tbody>
+
+    </tbody>
+
+    </table>
+  </div>
+</div>
+{% endblock right_sidebar_content %}
+
+{% block inline_js %}
+{{ block.super }}
+<script type="text/javascript">
+
+    $(document).ready(function(){
+        var filesUploaded = {};
+
+        function clearErrors(){
+            $('.errorlist').remove();
+            $('.has-error').toggleClass('has-error');
+        }
+
+        function addUlError($field, error){
+            $field.closest('.form-group').addClass('has-error');
+            $field.after('<ul class="errorlist list-unstyled alert alert-danger"><li class="error">'+error+'</li></ul>');
+        }
+
+        function processErrors($form, errors){
+            for (var key in errors){
+                var error = errors[key][0];
+                var $field = $('#'+key);
+                if(!$field.length)
+                    $field = $('[name="'+key+'"]');
+                addUlError($field, error);
+            }
+        }
+
+        $('.djangui-script-url').click(function(event){
+            event.preventDefault();
+            filesUploaded = {};
+            clearErrors();
+            // set the details of what script we clicked
+            var title = $(this).find('.djangui-script-title').text();
+            var desc = $(this).find('.djangui-script-description').text();
+            var $title = $('#djangui-script-title');
+            $title.text(title);
+            $('#djangui-script-description').text(desc);
+            $('.djangui-dynamic-tabs').remove();
+            $.get($(this).data('href'), {},function(data){
+                var $jobform = $('#djangui-job-form');
+                $jobform.attr('action', data.action);
+                var $djangui_tabs = $jobform.find('#djangui-script-tabs');
+                var $djangui_content = $jobform.find('#djangui-script-content');
+                for(var i=0;i<data.groups.length;i++){
+                    $djangui_tabs.append('<li class="djangui-dynamic-tabs" role="presentation"><a href="#djangui_dynamic_tab'+i+'" aria-controls="profile" role="tab" data-toggle="tab">'+data.groups[i].group_name+'</a></li>');
+                    var new_panel = $('<div role="tabpanel" class="tab-pane djangui-dynamic-tabs" id="djangui_dynamic_tab'+i+'"></div>');
+                    new_panel.html(data.groups[i].form);
+                    $djangui_content.append(new_panel);
+                }
+                var $first = $('a[href="#djangui_dynamic_tab0"]');
+                if($first.length)
+                    $first.trigger('click');
+                window.scrollTo(0, $title.closest('.center-div').offset().top);
+{#                bindPanels();#}
+
+            }, "json");
+        });
+
+        {% if clone_job %}
+            // Track file changes
+            $("input:file").change(function (){
+               var fileName = $(this).val();
+               filesUploaded[$(this).attr('name')] = fileName;
+             });
+
+            $.get('{{ clone_job.url }}', {task_id: '{{ clone_job.task_id }}'},function(data){
+                var $jobform = $('#djangui-job-form');
+                $jobform.find('#djangui_clone_task_id').val("{{ clone_job.task_id }}");
+                $jobform.attr('action', data.action);
+                var $djangui_tabs = $jobform.find('#djangui-script-tabs');
+                var $djangui_content = $jobform.find('#djangui-script-content');
+                for(var i=0;i<data.groups.length;i++){
+                    $djangui_tabs.append('<li class="djangui-dynamic-tabs" role="presentation"><a href="#djangui_dynamic_tab'+i+'" aria-controls="profile" role="tab" data-toggle="tab">'+data.groups[i].group_name+'</a></li>');
+                    var new_panel = $('<div role="tabpanel" class="tab-pane djangui-dynamic-tabs" id="djangui_dynamic_tab'+i+'"></div>');
+                    new_panel.html(data.groups[i].form);
+                    $djangui_content.append(new_panel);
+                }
+                var $first = $('a[href="#djangui_dynamic_tab0"]');
+                if($first.length)
+                    $first.trigger('click');
+            }, "json");
+        {% endif %}
+
+
+
+
+
+        $('#djangui-form-submit').click(function(event){
+            event.preventDefault();
+            var $form = $(this).closest('form');
+            // if we are cloning a job, we need to specify the fields as the files because the file type input
+            // will be blank
+            var formData = new FormData($form[0]);
+            $('input[type="file"]').each(function(index, value){
+                if(filesUploaded[$(this).attr('name')] === undefined){
+                    // the user has not selected a file to replace this one
+                    formData.append($(this).attr('name'), $(this).siblings('a').text());
+                }
+            });
+            $.ajax({
+                url: $form.attr('action'),
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                async: false,
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function(data){
+                    clearErrors();
+                    if(data.valid){
+                        // clear form
+                        $form[0].reset();
+                    }
+                    else{
+                        processErrors($form, data.errors)
+                    }
+                }
+            });
+        });
+
+        var djangui_dt = $('#djangui-job-table').dataTable({
+            "columnDefs": [
+                { "visible": false,  "targets": [ 0 ] }
+            ],
+            "order": [[ 3, "desc" ]]
+        });
+        var djangui_dt_api = djangui_dt.api();
+        $('#djangui-job-table_wrapper').addClass('col-md-12');
+
+        var dt_jobs = {};
+
+        var task_reloaded = false;
+
+        // loop for job history updates
+{#        var tid = setInterval(celeryRefresh, 10000);#}
+        function celeryRefresh() {
+            $.get("{% url "celery_results" %}", function(data){
+                for(var i=0;i<data.length;i++){
+                    if(!dt_jobs[data[i].job_id] || dt_jobs[data[i].job_id] != data[i].job_status){
+                        if(dt_jobs[data[i].job_id] && dt_jobs[data[i].job_id] != data[i].job_status){
+                            var indexes = djangui_dt_api.rows().eq( 0 ).filter( function (rowIdx) {
+                                return djangui_dt_api.cell( rowIdx, 0 ).data() === data[i].job_id ? true : false;
+                            } );
+                            if(window.location.href.indexOf(data[i].job_id) != -1){
+                                // job update while on task page, stdout/etc will be updated, so just reload the page
+                                if(!task_reloaded)
+                                    location.reload();
+                                task_reloaded = true;
+                                return;
+                            }
+                            djangui_dt.fnUpdate(data[i].job_status, indexes[0], 2);
+                        }
+                        else
+                            djangui_dt_api.row.add([data[i].job_id, '<a href="'+data[i].job_url+'">'+data[i].job_name+'</a>', data[i].job_status, data[i].job_submitted]);
+                        dt_jobs[data[i].job_id] = data[i].job_status;
+                    }
+                }
+                djangui_dt_api.draw();
+            }, "json");
+        }
+        celeryRefresh();
+    });
+</script>
+{% endblock inline_js %}

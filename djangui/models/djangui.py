@@ -134,7 +134,7 @@ class AddScript(models.Model):
         This model serves to allow users to upload scripts through the admin. It's a bit redundant, but it's a simple
         integration with the admin.
     """
-    script_path = models.FileField(help_text=_('The file to Djanguify'))
+    script_path = models.FileField(help_text=_('The file to Djanguify'), upload_to='djangui_scripts')
     script_group = models.ForeignKey('ScriptGroup')
 
     @transaction.atomic

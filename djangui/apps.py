@@ -9,4 +9,3 @@ class DjanguiConfig(AppConfig):
     def ready(self):
         from .backend import utils
         utils.load_scripts()
-        settings.DJANGUI_HOME_URLS = getattr(settings, 'DJANGUI_HOME_URLS', 'djguihome.urls')

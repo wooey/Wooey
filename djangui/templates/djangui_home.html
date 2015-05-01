@@ -155,9 +155,9 @@
                filesUploaded[$(this).attr('name')] = fileName;
              });
 
-            $.get('{{ clone_job.url }}', {task_id: '{{ clone_job.task_id }}'},function(data){
+            $.get('{{ clone_job.url }}', {job_id: '{{ clone_job.job_id }}'},function(data){
                 var $jobform = $('#djangui-job-form');
-                $jobform.find('#djangui_clone_task_id').val("{{ clone_job.task_id }}");
+                $jobform.find('#djangui_clone_task_id').val("{{ clone_job.job_id }}");
                 $jobform.attr('action', data.action);
                 var $djangui_tabs = $jobform.find('#djangui-script-tabs');
                 var $djangui_content = $jobform.find('#djangui-script-content');

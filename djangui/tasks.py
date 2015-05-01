@@ -6,6 +6,7 @@ import zipfile
 
 
 from celery import Task
+from celery import states
 from celery import app
 from celery.contrib import rdb
 
@@ -21,6 +22,7 @@ class DjanguiTask(Task):
 @celery_app.task(base=DjanguiTask)
 def submit_script(com, **kwargs):
     cwd = kwargs.pop('djangui_cwd')
+    job_id = kwargs.pop('djangui_job')
     proc = subprocess.Popen(com, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
     stdout, stderr = proc.communicate()
     # tar/zip up the generated content for bulk downloads
@@ -50,5 +52,12 @@ def submit_script(com, **kwargs):
                 continue
             zip.write(path, arcname=os.path.join(arcname, filename))
     zip.close()
+
+    from .models import DjanguiJob
+    job = DjanguiJob.objects.get(pk=job_id)
+    job.stdout = stdout
+    job.stderr = stderr
+    job.celery_state = states.SUCCESS
+    job.save()
 
     return (stdout, stderr)

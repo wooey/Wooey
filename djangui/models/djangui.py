@@ -14,11 +14,14 @@ from django.db import transaction
 
 from autoslug import AutoSlugField
 
+from celery import states
+
+from .. import settings as djangui_settings
 from ..backend import utils
 
 
 # TODO: Handle cases where celery is not used
-tasks = importlib.import_module(getattr(settings, 'DJANGUI_CELERY_TASKS', 'djangui.tasks'))
+tasks = importlib.import_module(djangui_settings.DJANGUI_CELERY_TASKS)
 
 # TODO: Add user rights, hide/lock/ordering in an inherited class to cover scriptgroup/scripts
 
@@ -31,6 +34,9 @@ class ScriptGroup(models.Model):
     group_name = models.TextField()
     group_description = models.TextField(null=True, blank=True)
     slug = AutoSlugField(populate_from='group_name')
+
+    def __unicode__(self):
+        return unicode(self.group_name)
 
 class Script(models.Model):
     # blank=True, null=True is to allow anonymous users to submit jobs
@@ -52,6 +58,9 @@ class Script(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
 
+    def __unicode__(self):
+        return unicode(self.script_name)
+
     def get_url(self):
         return reverse('djangui_script', kwargs={'script_group': self.script_group.slug,
                                                       'script_name': self.slug})
@@ -59,8 +68,8 @@ class Script(models.Model):
     def get_script_path(self):
         return self.script_path if self.execute_full_path else os.path.split(self.script_path)[1]
 
-    def get_output_path(self):
-        path = os.path.join(self.slug, str(DjanguiJob.objects.count()))
+    @staticmethod
+    def mkdirs(path):
         try:
             os.makedirs(path)
         except OSError as exc:
@@ -68,17 +77,15 @@ class Script(models.Model):
                 pass
             else:
                 raise
+
+    def get_output_path(self):
+        path = os.path.join(djangui_settings.DJANGUI_FILE_DIR, self.slug, str(DjanguiJob.objects.count()))
+        self.mkdirs(path)
         return path
 
     def get_upload_path(self):
-        path = self.slug#os.path.join(settings.MEDIA_ROOT, self.slug)
-        try:
-            os.makedirs(path)
-        except OSError as exc:
-            if exc.errno == errno.EEXIST and os.path.isdir(path):
-                pass
-            else:
-                raise
+        path = os.path.join(djangui_settings.DJANGUI_FILE_DIR, self.slug)
+        self.mkdirs(path)
         return path
 
 
@@ -90,12 +97,17 @@ class DjanguiJob(models.Model):
     celery_id = models.CharField(max_length=255, null=True)
     job_name = models.CharField(max_length=255)
     job_description = models.TextField(null=True, blank=True)
+    stdout = models.TextField(null=True, blank=True)
+    stderr = models.TextField(null=True, blank=True)
     celery_state = models.CharField(max_length=255, blank=True, null=True)
     save_path = models.CharField(max_length=255, blank=True, null=True)
     command = models.TextField()
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
     script = models.ForeignKey('Script')
+
+    def __unicode__(self):
+        return unicode(self.job_name)
 
     def get_parameters(self):
         return ScriptParameters.objects.filter(job=self)
@@ -106,30 +118,20 @@ class DjanguiJob(models.Model):
         if resubmit:
             # clone ourselves
             self.pk = None
-        folder = str(DjanguiJob.objects.count())
-        cwd = os.path.join(settings.MEDIA_ROOT, folder)
+        cwd = self.script.get_output_path()
         abscwd = os.path.abspath(cwd)
-        try:
-            os.makedirs(abscwd)
-        except OSError as exc:
-            # directory already exists
-            if exc.errno == errno.EEXIST and os.path.isdir(abscwd):
-                pass
-            else:
-                raise
         self.command = ' '.join(command)
-        self.save_path = folder
-        if getattr(settings, 'DJANGUI_CELERY', False):
-            results = tasks.submit_script.delay(command, djangui_cwd=abscwd)
-            self.celery_id = results.id
-            self.celery_state = results.state
-        else:
-            results = tasks.submit_script(command, djangui_cwd=abscwd)
+        self.save_path = cwd
+        self.celery_state = states.PENDING
         self.save()
+        if djangui_settings.DJANGUI_CELERY:
+            results = tasks.submit_script.delay(command, djangui_cwd=abscwd, djangui_job=self.pk)
+        else:
+            results = tasks.submit_script(command, djangui_cwd=abscwd, djangui_job=self.pk)
 
     def get_resubmit_url(self):
         return reverse('djangui_script_clone', kwargs={'script_group': self.script.script_group.slug,
-                                                      'script_name': self.script.slug, 'task_id': self.celery_id})
+                                                      'script_name': self.script.slug, 'job_id': self.pk})
 
 
 class AddScript(models.Model):
@@ -137,7 +139,7 @@ class AddScript(models.Model):
         This model serves to allow users to upload scripts through the admin. It's a bit redundant, but it's a simple
         integration with the admin.
     """
-    script_path = models.FileField(help_text=_('The file to Djanguify'), upload_to='djangui_scripts')
+    script_path = models.FileField(help_text=_('The file to Djanguify'), upload_to=djangui_settings.DJANGUI_FILE_DIR)
     script_group = models.ForeignKey('ScriptGroup')
 
     @transaction.atomic
@@ -145,10 +147,16 @@ class AddScript(models.Model):
         super(AddScript, self).save(**kwargs)
         utils.add_djangui_script(script=self.script_path.path, group=self.script_group.group_name)
 
+    def __unicode__(self):
+        return unicode('{}: {}'.format(self.script_group.group_name, self.script_path.path))
+
 
 class ScriptParameterGroup(models.Model):
     group_name = models.TextField()
     script = models.ForeignKey('Script')
+
+    def __unicode__(self):
+        return unicode('{}: {}'.format(self.script.script_name, self.group_name))
 
 
 class ScriptParameter(models.Model):
@@ -171,6 +179,9 @@ class ScriptParameter(models.Model):
     param_help = models.TextField(verbose_name='help')
     is_checked = models.BooleanField(default=False)
     parameter_group = models.ForeignKey('ScriptParameterGroup')
+
+    def __unicode__(self):
+        return unicode('{}: {}'.format(self.script.script_name, self.script_param))
 
 
 # TODO: find a better name for this class
@@ -199,6 +210,9 @@ class ScriptParameters(models.Model):
         FLOAT: float,
         INTEGER: int,
     }
+
+    def __unicode__(self):
+        return unicode('{}: {}'.format(self.parameter.script_param, self.value))
 
     def get_subprocess_value(self):
         value = self.value

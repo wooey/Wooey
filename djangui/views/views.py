@@ -6,6 +6,7 @@ from django.core.files.storage import default_storage
 
 from djangui.backend import utils
 from ..models import DjanguiJob, Script
+from .. import settings as djangui_settings
 
 
 class DjanguiScriptJSON(DetailView):
@@ -16,10 +17,10 @@ class DjanguiScriptJSON(DetailView):
     def render_to_response(self, context, **response_kwargs):
         # returns the models required and optional fields as html
         # import pdb; pdb.set_trace();
-        task_id = self.kwargs.get('task_id')
+        job_id = self.kwargs.get('job_id')
         initial = None
-        if task_id:
-            job = DjanguiJob.objects.get(celery_id=task_id)
+        if job_id:
+            job = DjanguiJob.objects.get(pk=job_id)
             if job.user is None or (self.request.user.is_authenticated() and job.user == self.request.user):
                 initial = {}
                 for i in job.get_parameters():
@@ -31,7 +32,7 @@ class DjanguiScriptJSON(DetailView):
 
     def post(self, request, *args, **kwargs):
         post = request.POST.copy()
-        if request.user.is_authenticated() or not settings.DJANGUI_ALLOW_ANONYMOUS:
+        if request.user.is_authenticated() or not djangui_settings.DJANGUI_ALLOW_ANONYMOUS:
             post['user'] = request.user
         form = utils.get_master_form(pk=post['djangui_type'])
         # TODO: Check with people who know more if there's a smarter way to do this
@@ -70,11 +71,11 @@ class DjanguiHomeView(TemplateView):
     template_name = 'djangui_home.html'
 
     def get_context_data(self, **kwargs):
-        task_id = self.request.GET.get('task_id')
+        job_id = self.request.GET.get('job_id')
         ctx = super(DjanguiHomeView, self).get_context_data(**kwargs)
         ctx['djangui_scripts'] = getattr(settings, 'DJANGUI_SCRIPTS', {})
-        if task_id:
-            job = DjanguiJob.objects.get(celery_id=task_id)
+        if job_id:
+            job = DjanguiJob.objects.get(pk=job_id)
             if job.user is None or (self.request.user.is_authenticated() and job.user == self.request.user):
-                ctx['clone_job'] = {'task_id': task_id, 'url': job.get_resubmit_url()}
+                ctx['clone_job'] = {'job_id': job_id, 'url': job.get_resubmit_url()}
         return ctx

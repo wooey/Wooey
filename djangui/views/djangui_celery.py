@@ -13,27 +13,28 @@ from celery import app, states
 celery_app = app.app_or_default()
 
 from ..models import DjanguiJob
+from .. import settings as djangui_settings
 
 def celery_status(request):
     jobs = DjanguiJob.objects.filter(user=request.user if request.user.is_authenticated() else None)
-    if getattr(settings, 'DJANGUI_CELERY', False):
-        # TODO: Batch this to a scheduled task that just updates our DjanguiJob info when done
-        tasks = [job.celery_id for job in jobs]
-        celery_tasks = dict([(task.task_id, task) for task in TaskMeta.objects.filter(task_id__in=tasks)])
-        to_update = []
-        for job in jobs:
-            celery_task = celery_tasks.get(job.celery_id)
-            if celery_task is None and job.celery_state != states.FAILURE:
-                continue
-                # the task doesn't exist, consider it a failure
-                # TODO: we can't report these with all backends, code a way to figure out backend and see if this is viable
-                job.celery_state = states.FAILURE
-                to_update.append(job)
-            elif celery_task is not None and job.celery_state != celery_task.status:
-                job.celery_state = celery_task.status
-                to_update.append(job)
-        for i in to_update:
-            i.save()
+    # if getattr(settings, 'DJANGUI_CELERY', False):
+    #     # TODO: Batch this to a scheduled task that just updates our DjanguiJob info when done
+    #     tasks = [job.celery_id for job in jobs]
+    #     celery_tasks = dict([(task.task_id, task) for task in TaskMeta.objects.filter(task_id__in=tasks)])
+    #     to_update = []
+    #     for job in jobs:
+    #         celery_task = celery_tasks.get(job.celery_id)
+    #         if celery_task is None and job.celery_state != states.FAILURE:
+    #             continue
+    #             # the task doesn't exist, consider it a failure
+    #             # TODO: we can't report these with all backends, code a way to figure out backend and see if this is viable
+    #             job.celery_state = states.FAILURE
+    #             to_update.append(job)
+    #         elif celery_task is not None and job.celery_state != celery_task.status:
+    #             job.celery_state = celery_task.status
+    #             to_update.append(job)
+    #     for i in to_update:
+    #         i.save()
     return JsonResponse([{'job_name': job.job_name, 'job_status': job.celery_state,
                         'job_submitted': job.created_date.strftime('%b %d %Y, %H:%M:%S'),
                         'job_id': job.pk,
@@ -42,22 +43,22 @@ def celery_status(request):
 
 def celery_task_command(request):
     command = request.POST.get('celery-command')
-    task_id = request.POST.get('task-id')
-    job = DjanguiJob.objects.get(celery_id=task_id)
-    user = None if not request.user.is_authenticated() and settings.DJANGUI_ALLOW_ANONYMOUS else request.user
+    job_id = request.POST.get('job-id')
+    job = DjanguiJob.objects.get(pk=job_id)
+    user = None if not request.user.is_authenticated() and djangui_settings.DJANGUI_ALLOW_ANONYMOUS else request.user
     response = {'valid': False,}
     if user == job.user:
         if command == 'resubmit':
             job.submit_to_celery(resubmit=True)
-            response.update({'valid': True, 'extra': {'task_url': reverse('celery_results_info', kwargs={'task_id': job.celery_id})}})
+            response.update({'valid': True, 'extra': {'task_url': reverse('celery_results_info', kwargs={'job_id': job.celery_id})}})
         elif command == 'clone':
-            response.update({'valid': True, 'redirect': '{0}?task_id={1}'.format(reverse('djangui_task_launcher'), task_id)})
+            response.update({'valid': True, 'redirect': '{0}?job_id={1}'.format(reverse('djangui_task_launcher'), job_id)})
         elif command == 'delete':
             job.delete()
             response.update({'valid': True, 'redirect': reverse('djangui_home')})
         elif command == 'stop':
-            celery_app.control.revoke(task_id, terminate=True)
-            response.update({'valid': True, 'redirect': reverse('celery_results_info', kwargs={'task_id': task_id})})
+            celery_app.control.revoke(job_id, terminate=True)
+            response.update({'valid': True, 'redirect': reverse('celery_results_info', kwargs={'job_id': job_id})})
         else:
             response.update({'errors': {'__all__': force_unicode(_("Unknown Command"))}})
     return JsonResponse(response)
@@ -87,12 +88,13 @@ class CeleryTaskView(TemplateView):
         # add the user_output files, these are things which may be missed by the model fields because the script
         # generated them without an explicit argument reference in argparse
         file_groups = {'archives': []}
-        absbase = os.path.join(settings.MEDIA_ROOT, model.save_path)
+        absbase = os.path.abspath(model.save_path)
         for filename in os.listdir(absbase):
             url = os.path.join(model.save_path, filename)
+            url = '{0}{1}'.format(settings.MEDIA_URL, url)
             if url in known_files:
                 continue
-            d = {'name': filename, 'path': os.path.join(absbase, filename), 'url': '{0}{1}'.format(settings.MEDIA_URL, url)}
+            d = {'name': filename, 'path': os.path.join(absbase, filename), 'url': url}
             if filename.startswith('djangui_all'):
                 file_groups['archives'].append(d)
             else:
@@ -158,13 +160,10 @@ class CeleryTaskView(TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super(CeleryTaskView, self).get_context_data(**kwargs)
-        task_id = ctx.get('job_id')
-        djangui_job = DjanguiJob.objects.get(pk=task_id)
-        ctx['task_info'] = {'stdout': '', 'stderr': '', 'job_id': djangui_job.celery_id,
-                            'status': djangui_job.celery_state, 'submission_time': djangui_job.created_date,
-                            'last_modified': djangui_job.modified_date, 'job_name': djangui_job.job_name,
-                            'job_command': djangui_job.command,
-                            'job_description': djangui_job.job_description, 'all_files': {},
+        job_id = ctx.get('job_id')
+        djangui_job = DjanguiJob.objects.get(pk=job_id)
+        ctx['task_info'] = {'stdout': '', 'stderr': '', 'job': djangui_job,
+                            'all_files': {},
                             'file_groups': {}}
         out_files = self.get_file_fields(djangui_job)
         all = out_files.pop('all')

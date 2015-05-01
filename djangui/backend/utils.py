@@ -72,7 +72,10 @@ def load_scripts():
             dj_scripts[script.script_group.pk] = group
             # the url mapping is script_group/script_name
             group['scripts'].append(script)
+            # might as well load the form here too
+            get_master_form(script)
     settings.DJANGUI_SCRIPTS = dj_scripts
+
 
 def get_storage_object(path):
     # TODO: If we have to add anymore, just make this a class and route the DS methods we need
@@ -82,6 +85,7 @@ def get_storage_object(path):
     return obj
 
 def add_djangui_script(script=None, group=None):
+    from djangui.models import Script, ScriptGroup, ScriptParameter, ScriptParameterGroup
     basename, extension = os.path.splitext(script)
     filename = os.path.split(basename)[1]
 
@@ -90,7 +94,6 @@ def add_djangui_script(script=None, group=None):
         return False
     # make our script
     d = parser.get_script_description()
-    from ..models import Script, ScriptParameterGroup, ScriptParameter, ScriptGroup
     script_group, created = ScriptGroup.objects.get_or_create(group_name=group)
     djangui_script, created = Script.objects.get_or_create(script_group=script_group, script_description=d['description'],
                                    script_path=script, script_name=d['name'])

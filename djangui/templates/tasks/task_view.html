@@ -20,7 +20,7 @@
 {% block center_content_class %}col-md-9 col-xs-12{% endblock center_content_class %}
 {% block center_content %}
 {% include "modals/resubmit_modal.html" %}
-<h1 class="text-center">{{ task_info.job_name }}</h1>
+<h1 class="text-center">{{ task_info.job.job_name }}</h1>
 <div role="tabpanel">
 
   <!-- Nav tabs -->
@@ -46,8 +46,8 @@
         {% endif %}
             <form action="{% url 'celery_task_command' %}" id="djangui-task-submit">
                 {% csrf_token %}
-                <input name="task-id" value="{{ task_info.job_id }}" type="hidden">
-                {% if task_info.status == 'PENDING' %}
+                <input name="job-id" value="{{ task_info.job.pk }}" type="hidden">
+                {% if task_info.job.status == 'PENDING' %}
                 <button class="btn btn-primary btn-danger" name="celery-command" value="stop" type="submit">
                     <span class="glyphicon glyphicon-stop" aria-hidden="true"></span> {% trans "Stop Job" %}
                 </button>
@@ -80,9 +80,9 @@
             <div class="panel-body">
                 <dl class="dl-horizontal">
                   <dt>{% trans "Job Status" %}</dt>
-                  <dd>{{ task_info.status }}</dd>
+                  <dd>{{ task_info.job.celery_state }}</dd>
                   <dt>{% trans "Job Description" %}</dt>
-                  <dd>{{ task_info.job_description }}</dd>
+                  <dd>{{ task_info.job.job_description }}</dd>
                 </dl>
             </div>
         </div>
@@ -91,7 +91,7 @@
                 <h4 class="panel-title">{% trans "Command Sent" %}</h4>
             </div>
             <div class="panel-body">
-                <code>{{ task_info.job_command }}</code>
+                <code>{{ task_info.job.command }}</code>
             </div>
         </div>
         <div class="panel panel-default">
@@ -99,7 +99,7 @@
                 <h3 class="panel-title">{% trans "Job Output" %}</h3>
             </div>
             <div class="panel-body">
-                <code>{{ task_info.stdout|linebreaks }}</code>
+                <code>{{ task_info.job.stdout|linebreaks }}</code>
             </div>
         </div>
         <div class="panel panel-default">
@@ -107,7 +107,7 @@
                 <h3 class="panel-title">{% trans "Job Errors" %}</h3>
             </div>
             <div class="panel-body">
-                <code>{{ task_info.stderr|linebreaks }}</code>
+                <code>{{ task_info.job.stderr|linebreaks }}</code>
             </div>
         </div>
     </div>

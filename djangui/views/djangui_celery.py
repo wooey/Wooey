@@ -88,9 +88,10 @@ class CeleryTaskView(TemplateView):
         # add the user_output files, these are things which may be missed by the model fields because the script
         # generated them without an explicit argument reference in argparse
         file_groups = {'archives': []}
-        absbase = os.path.abspath(model.save_path)
+        absbase = os.path.join(settings.MEDIA_ROOT, model.user.username if model.user is not None else '', model.save_path)
         for filename in os.listdir(absbase):
-            url = os.path.join(model.save_path, filename)
+            # we filter out the '' here to avoid double // in the url
+            url = '/'.join(filter(lambda x: x, [model.user.username if model.user is not None else '', model.save_path, filename]))
             url = '{0}{1}'.format(settings.MEDIA_URL, url)
             if url in known_files:
                 continue

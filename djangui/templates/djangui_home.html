@@ -97,30 +97,11 @@
     $(document).ready(function(){
         var filesUploaded = {};
 
-        function clearErrors(){
-            $('.errorlist').remove();
-            $('.has-error').toggleClass('has-error');
-        }
-
-        function addUlError($field, error){
-            $field.closest('.form-group').addClass('has-error');
-            $field.after('<ul class="errorlist list-unstyled alert alert-danger"><li class="error">'+error+'</li></ul>');
-        }
-
-        function processErrors($form, errors){
-            for (var key in errors){
-                var error = errors[key][0];
-                var $field = $('#'+key);
-                if(!$field.length)
-                    $field = $('[name="'+key+'"]');
-                addUlError($field, error);
-            }
-        }
-
         $('.djangui-script-url').click(function(event){
             event.preventDefault();
             filesUploaded = {};
-            clearErrors();
+            var $jobform = $('#djangui-job-form');
+            clearErrors($jobform);
             // set the details of what script we clicked
             var title = $(this).find('.djangui-script-title').text();
             var desc = $(this).find('.djangui-script-description').text();
@@ -129,7 +110,6 @@
             $('#djangui-script-description').text(desc);
             $('.djangui-dynamic-tabs').remove();
             $.get($(this).data('href'), {},function(data){
-                var $jobform = $('#djangui-job-form');
                 $jobform.attr('action', data.action);
                 var $djangui_tabs = $jobform.find('#djangui-script-tabs');
                 var $djangui_content = $jobform.find('#djangui-script-content');
@@ -199,7 +179,7 @@
                 contentType: false,
                 processData: false,
                 success: function(data){
-                    clearErrors();
+                    clearErrors($form);
                     if(data.valid){
                         // clear form
                         $form[0].reset();

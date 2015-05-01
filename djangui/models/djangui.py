@@ -68,26 +68,6 @@ class Script(models.Model):
     def get_script_path(self):
         return self.script_path if self.execute_full_path else os.path.split(self.script_path)[1]
 
-    @staticmethod
-    def mkdirs(path):
-        try:
-            os.makedirs(path)
-        except OSError as exc:
-            if exc.errno == errno.EEXIST and os.path.isdir(path):
-                pass
-            else:
-                raise
-
-    def get_output_path(self):
-        path = os.path.join(djangui_settings.DJANGUI_FILE_DIR, self.slug, str(DjanguiJob.objects.count()))
-        self.mkdirs(path)
-        return path
-
-    def get_upload_path(self):
-        path = os.path.join(djangui_settings.DJANGUI_FILE_DIR, self.slug)
-        self.mkdirs(path)
-        return path
-
 
 class DjanguiJob(models.Model):
     """
@@ -118,7 +98,7 @@ class DjanguiJob(models.Model):
         if resubmit:
             # clone ourselves
             self.pk = None
-        cwd = self.script.get_output_path()
+        cwd = self.get_output_path()
         abscwd = os.path.abspath(cwd)
         self.command = ' '.join(command)
         self.save_path = cwd
@@ -133,19 +113,40 @@ class DjanguiJob(models.Model):
         return reverse('djangui_script_clone', kwargs={'script_group': self.script.script_group.slug,
                                                       'script_name': self.script.slug, 'job_id': self.pk})
 
+    @staticmethod
+    def mkdirs(path):
+        try:
+            os.makedirs(path)
+        except OSError as exc:
+            if exc.errno == errno.EEXIST and os.path.isdir(path):
+                pass
+            else:
+                raise
+
+    def get_output_path(self):
+        path = os.path.join(djangui_settings.DJANGUI_FILE_DIR, self.user.username if self.user is not None else '', self.script.slug, str(DjanguiJob.objects.count()))
+        self.mkdirs(path)
+        return path
+
+    def get_upload_path(self):
+        path = os.path.join(djangui_settings.DJANGUI_FILE_DIR, self.user.username if self.user is not None else '', self.script.slug)#os.path.join(settings.MEDIA_ROOT, self.slug)
+        self.mkdirs(path)
+        return path
+
 
 class AddScript(models.Model):
     """
         This model serves to allow users to upload scripts through the admin. It's a bit redundant, but it's a simple
         integration with the admin.
     """
-    script_path = models.FileField(help_text=_('The file to Djanguify'), upload_to=djangui_settings.DJANGUI_FILE_DIR)
+    script_name = models.CharField(max_length=255, null=True, blank=True)
+    script_path = models.FileField(help_text=_('The file to Djanguify'), upload_to='djangui_scripts')
     script_group = models.ForeignKey('ScriptGroup')
 
     @transaction.atomic
     def save(self, **kwargs):
         super(AddScript, self).save(**kwargs)
-        utils.add_djangui_script(script=self.script_path.path, group=self.script_group.group_name)
+        utils.add_djangui_script(script=self.script_path.path, group=self.script_group.group_name, display_name=self.script_name)
 
     def __unicode__(self):
         return unicode('{}: {}'.format(self.script_group.group_name, self.script_path.path))
@@ -262,12 +263,12 @@ class ScriptParameters(models.Model):
             _file = None
             if self.parameter.is_output:
                 # make a fake object for it
-                path = os.path.join(self.parameter.script.get_output_path(), self.parameter.slug)
+                path = os.path.join(self.job.get_output_path(), self.parameter.slug)
                 _file = ContentFile('')
             else:
                 if value:
                     _file = value
-                    path = os.path.join(self.parameter.script.get_upload_path(), value.name)
+                    path = os.path.join(self.job.get_upload_path(), value.name)
             if _file is not None:
                 default_storage.save(path, _file)
                 value = path

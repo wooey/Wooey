@@ -84,7 +84,7 @@ def get_storage_object(path):
     obj.path = default_storage.path(path)
     return obj
 
-def add_djangui_script(script=None, group=None):
+def add_djangui_script(script=None, group=None, display_name=None):
     from djangui.models import Script, ScriptGroup, ScriptParameter, ScriptParameterGroup
     basename, extension = os.path.splitext(script)
     filename = os.path.split(basename)[1]
@@ -96,7 +96,7 @@ def add_djangui_script(script=None, group=None):
     d = parser.get_script_description()
     script_group, created = ScriptGroup.objects.get_or_create(group_name=group)
     djangui_script, created = Script.objects.get_or_create(script_group=script_group, script_description=d['description'],
-                                   script_path=script, script_name=d['name'])
+                                   script_path=script, script_name=display_name if display_name is not None else d['name'])
     if not created:
         djangui_script.script_version += 1
         djangui_script.save()

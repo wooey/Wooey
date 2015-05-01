@@ -1,8 +1,10 @@
-from django.views.generic import DetailView, TemplateView
+from django.views.generic import DetailView, TemplateView, CreateView
 from django.http import JsonResponse
 from django.conf import settings
 from django.forms import FileField
+from django.core.urlresolvers import reverse
 from django.core.files.storage import default_storage
+from django.contrib.auth import get_user_model, login, authenticate
 
 from djangui.backend import utils
 from ..models import DjanguiJob, Script

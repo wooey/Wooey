@@ -1,1 +1,1 @@
-from conf.project_template.settings.user_settings import *
+from .user_settings import *

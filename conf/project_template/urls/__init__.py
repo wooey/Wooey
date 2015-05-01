@@ -1,1 +1,1 @@
-from conf.project_template.urls.user_urls import *
+from .user_urls import *

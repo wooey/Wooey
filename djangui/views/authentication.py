@@ -1,5 +1,6 @@
 from django.views.generic import CreateView
 from django.http import JsonResponse
+from django.core.urlresolvers import reverse
 from django.contrib.auth import login, authenticate, get_user_model
 from django.forms import modelform_factory
 from django.utils.translation import gettext_lazy as _
@@ -12,7 +13,10 @@ class DjanguiRegister(CreateView):
 
     def post(self, request, *args, **kwargs):
         self.object = None
-        form = self.get_form()
+        form = self.get_form_class()
+        post = request.POST.copy()
+        post['username'] = post['username'].lower()
+        form = form(post)
         if request.POST['password'] != request.POST['password2']:
             form.add_error('password', 'Passwords do not match.')
         if request.POST['username'].lower() == 'admin':

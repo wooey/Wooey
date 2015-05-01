@@ -21,6 +21,7 @@ INSTALLED_APPS += (
 CELERY_RESULT_BACKEND='djcelery.backends.database:DatabaseBackend'
 BROKER_URL = 'django://'
 CELERY_TRACK_STARTED = True
+DJANGUI_CELERY = True
 
 ## Setup database related things here. Here are some examples for non-development based settings
 
@@ -39,3 +40,5 @@ MEDIA_URL = '/uploads/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 # the url mapping
 STATIC_URL = '/static/'
+
+AUTHENTICATION_BACKEND = 'django.contrib.auth.backends.ModelBackend'

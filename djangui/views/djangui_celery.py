@@ -17,24 +17,6 @@ from .. import settings as djangui_settings
 
 def celery_status(request):
     jobs = DjanguiJob.objects.filter(user=request.user if request.user.is_authenticated() else None)
-    # if getattr(settings, 'DJANGUI_CELERY', False):
-    #     # TODO: Batch this to a scheduled task that just updates our DjanguiJob info when done
-    #     tasks = [job.celery_id for job in jobs]
-    #     celery_tasks = dict([(task.task_id, task) for task in TaskMeta.objects.filter(task_id__in=tasks)])
-    #     to_update = []
-    #     for job in jobs:
-    #         celery_task = celery_tasks.get(job.celery_id)
-    #         if celery_task is None and job.celery_state != states.FAILURE:
-    #             continue
-    #             # the task doesn't exist, consider it a failure
-    #             # TODO: we can't report these with all backends, code a way to figure out backend and see if this is viable
-    #             job.celery_state = states.FAILURE
-    #             to_update.append(job)
-    #         elif celery_task is not None and job.celery_state != celery_task.status:
-    #             job.celery_state = celery_task.status
-    #             to_update.append(job)
-    #     for i in to_update:
-    #         i.save()
     return JsonResponse([{'job_name': job.job_name, 'job_status': job.celery_state,
                         'job_submitted': job.created_date.strftime('%b %d %Y, %H:%M:%S'),
                         'job_id': job.pk,
@@ -49,8 +31,8 @@ def celery_task_command(request):
     response = {'valid': False,}
     if user == job.user:
         if command == 'resubmit':
-            job.submit_to_celery(resubmit=True)
-            response.update({'valid': True, 'extra': {'task_url': reverse('celery_results_info', kwargs={'job_id': job.celery_id})}})
+            new_job = job.submit_to_celery(resubmit=True)
+            response.update({'valid': True, 'extra': {'task_url': reverse('celery_results_info', kwargs={'job_id': new_job.pk})}})
         elif command == 'clone':
             response.update({'valid': True, 'redirect': '{0}?job_id={1}'.format(reverse('djangui_task_launcher'), job_id)})
         elif command == 'delete':
@@ -74,10 +56,10 @@ class CeleryTaskView(TemplateView):
         for field in parameters:
             try:
                 if field.parameter.form_field == 'FileField':
-                    d = {'name': field.parameter.slug}
                     value = field.value
                     if value is None:
                         continue
+                    d = {'slug': field.parameter.slug, 'name': os.path.split(value.path)[1]}
                     d['url'] = value.url
                     d['path'] = value.path
                     files.append(d)
@@ -88,15 +70,16 @@ class CeleryTaskView(TemplateView):
         # add the user_output files, these are things which may be missed by the model fields because the script
         # generated them without an explicit argument reference in argparse
         file_groups = {'archives': []}
-        absbase = os.path.join(settings.MEDIA_ROOT, model.user.username if model.user is not None else '', model.save_path)
+        # import pdb; pdb.set_trace();
+        absbase = os.path.join(settings.MEDIA_ROOT, model.save_path)
         for filename in os.listdir(absbase):
             # we filter out the '' here to avoid double // in the url
-            url = '/'.join(filter(lambda x: x, [model.user.username if model.user is not None else '', model.save_path, filename]))
+            url = '/'.join(filter(lambda x: x, [model.save_path, filename]))
             url = '{0}{1}'.format(settings.MEDIA_URL, url)
             if url in known_files:
                 continue
             d = {'name': filename, 'path': os.path.join(absbase, filename), 'url': url}
-            if filename.startswith('djangui_all'):
+            if filename.endswith('.tar.gz') or filename.endswith('.zip'):
                 file_groups['archives'].append(d)
             else:
                 files.append(d)
@@ -104,7 +87,7 @@ class CeleryTaskView(TemplateView):
         # establish grouping by inferring common things
         file_groups['all'] = files
         import imghdr
-        file_groups['images'] = [{'name': filemodel['name'], 'url': filemodel['url']} for filemodel in files if imghdr.what(filemodel.get('path', filemodel['url']))]
+        file_groups['images'] = [filemodel for filemodel in files if imghdr.what(filemodel.get('path', filemodel['url']))]
         file_groups['tabular'] = []
         file_groups['fasta'] = []
 
@@ -152,11 +135,11 @@ class CeleryTaskView(TemplateView):
         for filemodel in files:
             is_delimited, first_rows = test_delimited(filemodel.get('path', filemodel['url']))
             if is_delimited:
-                file_groups['tabular'].append({'name': filemodel['name'], 'preview': first_rows, 'url': filemodel['url']})
+                file_groups['tabular'].append(dict(filemodel, **{'preview': first_rows}))
             else:
                 is_fasta, first_rows = test_fastx(filemodel.get('path', filemodel['url']))
                 if is_fasta:
-                    file_groups['fasta'].append({'name': filemodel['name'], 'preview': first_rows, 'url': filemodel['url']})
+                    file_groups['fasta'].append(dict(filemodel, **{'preview': first_rows}))
         return file_groups
 
     def get_context_data(self, **kwargs):
@@ -173,6 +156,8 @@ class CeleryTaskView(TemplateView):
                 'all_files': all,
                 'archives': archives,
                 'file_groups': out_files,
+                'status': djangui_job.celery_state,
+                'last_modified': djangui_job.modified_date,
             })
         # if celery_task:
         #     try:

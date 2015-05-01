@@ -126,7 +126,7 @@
             <div role="tabpanel" class="tab-pane active" id="task-output-all">
                 <dl class="dl-horizontal">
                 {% for file in task_info.all_files %}
-                    <dt>{{ file.name }}</dt>
+                    <dt>{{ file.slug }}</dt>
                     <dd><a href="{{ file.url }}">{{ file.name }}</a></dd>
                 {% endfor %}
                 </dl>

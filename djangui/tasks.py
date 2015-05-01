@@ -3,6 +3,7 @@ import subprocess
 import tarfile
 import os
 import zipfile
+from django.utils.text import get_valid_filename
 
 
 from celery import Task
@@ -34,12 +35,16 @@ def submit_script(com, **kwargs):
             out = os.path.join(cwd, '{}_{}'.format(name, index))
         return '{}.{}'.format(out, ext)
 
-    tar_out = get_valid_file(cwd, 'djangui_all', 'tar.gz')
+
+    from .models import DjanguiJob
+    job = DjanguiJob.objects.get(pk=job_id)
+
+    tar_out = get_valid_file(cwd, get_valid_filename(job.job_name), 'tar.gz')
     tar = tarfile.open(tar_out, "w:gz")
     tar.add(cwd, arcname=os.path.splitext(os.path.splitext(os.path.split(tar_out)[1])[0])[0])
     tar.close()
 
-    zip_out = get_valid_file(cwd, 'djangui_all', 'zip')
+    zip_out = get_valid_file(cwd, get_valid_filename(job.job_name), 'zip')
     zip = zipfile.ZipFile(zip_out, "w")
     arcname = os.path.splitext(os.path.split(zip_out)[1])[0]
     zip.write(cwd, arcname=arcname)
@@ -53,8 +58,6 @@ def submit_script(com, **kwargs):
             zip.write(path, arcname=os.path.join(arcname, filename))
     zip.close()
 
-    from .models import DjanguiJob
-    job = DjanguiJob.objects.get(pk=job_id)
     job.stdout = stdout
     job.stderr = stderr
     job.celery_state = states.SUCCESS

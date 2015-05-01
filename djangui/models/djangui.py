@@ -108,6 +108,7 @@ class DjanguiJob(models.Model):
             results = tasks.submit_script.delay(command, djangui_cwd=abscwd, djangui_job=self.pk)
         else:
             results = tasks.submit_script(command, djangui_cwd=abscwd, djangui_job=self.pk)
+        return self
 
     def get_resubmit_url(self):
         return reverse('djangui_script_clone', kwargs={'script_group': self.script.script_group.slug,
@@ -225,7 +226,6 @@ class ScriptParameters(models.Model):
             if value:
                 return [param]
         if field == self.FILE:
-            # import ipdb; ipdb.set_trace();
             value = value.name
         return [param, str(value)]
 
@@ -263,7 +263,7 @@ class ScriptParameters(models.Model):
             _file = None
             if self.parameter.is_output:
                 # make a fake object for it
-                path = os.path.join(self.job.get_output_path(), self.parameter.slug)
+                path = os.path.join(self.job.get_output_path(), self.parameter.slug if not value else value)
                 _file = ContentFile('')
             else:
                 if value:

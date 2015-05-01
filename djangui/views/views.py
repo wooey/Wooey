@@ -80,29 +80,3 @@ class DjanguiHomeView(TemplateView):
             if job.user is None or (self.request.user.is_authenticated() and job.user == self.request.user):
                 ctx['clone_job'] = {'task_id': task_id, 'url': job.get_resubmit_url()}
         return ctx
-
-class DjanguiRegister(CreateView):
-    template_name = 'registration/register.html'
-    model = get_user_model()
-    fields = ('username', 'email', 'password')
-
-    def post(self, request, *args, **kwargs):
-        self.object = None
-        form = self.get_form()
-        if request.POST['password'] != request.POST['password2']:
-            form.add_error('password', 'Passwords do not match.')
-        if request.POST['username'].lower() == 'admin':
-            form.add_error('username', 'Reserved username.')
-        if form.is_valid():
-            return self.form_valid(form)
-        else:
-            return self.form_invalid(form)
-
-    def get_success_url(self):
-        next_url = self.request.POST.get('next')
-        # for some bizarre reason the password isn't setting by the modelform
-        self.object.set_password(self.request.POST['password'])
-        self.object.save()
-        auser = authenticate(username=self.object.username, password=self.request.POST['password'])
-        login(self.request, auser)
-        return reverse(next_url) if next_url else reverse('djangui_home')

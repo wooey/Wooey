@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html>
 <head lang="en">
@@ -18,17 +19,26 @@
         .navbar-center
         {
             position: absolute;
-            width: 100%;
             left: 0;
-            top: 0;
+            top: 5px;
             text-align: center;
             margin: auto;
+            margin-left: 50% !important;
+            margin-right: 50% !important;
           height:100%;
         }
 
         .djangui-affix{
          max-height: 100%;
          overflow-y: auto;
+        }
+
+        .navbar-nav li {
+         line-height: 40px;
+        }
+
+        .navbar-nav li.register {
+            margin-top: 5px;
         }
 
         @media(max-width: 1200px){
@@ -67,8 +77,9 @@
                   {% if request.user.is_authenticated %}
                       <li><a href="{% url "logout" %}">Logout</a></li>
                   {% else %}
-                      <li><a href="{% url "login" %}">Login</a></li>
-                      <li><a href="{% url "djangui_register" %}">Register</a></li>
+{#                      <li><a href="{% url "login" %}">Login</a></li>#}
+                      <li>{% include "registration/login_header.html" %}</li>
+                      <li class="register"><a href="{% url "djangui_register" %}">Register</a></li>
                   {% endif %}
 {#                <li class="dropdown">#}
 {#                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Jobs <span class="caret"></span></a>#}
@@ -116,5 +127,80 @@
     {% block extra_js %}
     {% endblock extra_js %}
     {% block inline_js %}
+
+        <script type="text/javascript">
+            function clearErrors($form){
+                $form.find('.errorlist').remove();
+                $form.find('.has-error').toggleClass('has-error');
+            }
+
+            function addUlError($field, error){
+                $field.closest('.form-group').addClass('has-error');
+                $field.after('<ul class="errorlist list-unstyled alert alert-danger"><li class="error">'+error+'</li></ul>');
+            }
+
+            function addInlineError($field, error){
+                $field.closest('.form-group').addClass('has-error');
+                $field.append('<span class="errorlist error alert-danger">'+error+'</span>');
+            }
+
+            function processErrors($form, errors){
+                for (var key in errors){
+                    for(var i=0;i<errors[key].length;i++) {
+                        var error = errors[key][i];
+                        var $field;
+                        if (key == '__all__') {
+                            //stick it at the form's top
+                            $field = $('<ul class="errorlist"></ul>');
+                            $field.prependTo($form);
+                        }
+                        else {
+                            $field = $('#' + key);
+                            if (!$field.length)
+                                $field = $('[name="' + key + '"]');
+                            if($form.hasClass('form-inline') || $form.hasClass('navbar-form')){
+                                $field2 = $('<span class="errorlist"></span>');
+                                $field2.appendTo($field.parent());
+                                $field = $field2;
+                            }
+                        }
+                        if ($form.hasClass('form-inline') || $form.hasClass('navbar-form'))
+                            addInlineError($field, error);
+                        else
+                            addUlError($field, error);
+                    }
+                }
+            }
+
+        $(document).ready(function(){
+            $('#djangui-login').click(function(event){
+            event.preventDefault();
+            var $form = $(this).closest('form');
+            // if we are cloning a job, we need to specify the fields as the files because the file type input
+            // will be blank
+            var formData = $form.serializeArray();
+            $.ajax({
+                url: $form.attr('action'),
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                async: false,
+                cache: false,
+                success: function(data){
+                    clearErrors($form);
+                    if(data.valid){
+                        if(data.redirect){
+                            window.location.href = data.redirect;
+                        }
+                    }
+                    else{
+                        processErrors($form, data.errors)
+                    }
+                }
+            });
+        });
+
+        })
+        </script>
     {% endblock inline_js %}
 </html>

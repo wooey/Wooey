@@ -59,28 +59,6 @@ class Script(models.Model):
     def get_script_path(self):
         return self.script_path if self.execute_full_path else os.path.split(self.script_path)[1]
 
-    def get_output_path(self):
-        path = os.path.join(self.slug, str(DjanguiJob.objects.count()))
-        try:
-            os.makedirs(path)
-        except OSError as exc:
-            if exc.errno == errno.EEXIST and os.path.isdir(path):
-                pass
-            else:
-                raise
-        return path
-
-    def get_upload_path(self):
-        path = self.slug#os.path.join(settings.MEDIA_ROOT, self.slug)
-        try:
-            os.makedirs(path)
-        except OSError as exc:
-            if exc.errno == errno.EEXIST and os.path.isdir(path):
-                pass
-            else:
-                raise
-        return path
-
 
 class DjanguiJob(models.Model):
     """
@@ -107,7 +85,7 @@ class DjanguiJob(models.Model):
             # clone ourselves
             self.pk = None
         folder = str(DjanguiJob.objects.count())
-        cwd = os.path.join(settings.MEDIA_ROOT, folder)
+        cwd = os.path.join(settings.MEDIA_ROOT, self.user.username if self.user is not None else '', folder)
         abscwd = os.path.abspath(cwd)
         try:
             os.makedirs(abscwd)
@@ -130,6 +108,26 @@ class DjanguiJob(models.Model):
     def get_resubmit_url(self):
         return reverse('djangui_script_clone', kwargs={'script_group': self.script.script_group.slug,
                                                       'script_name': self.script.slug, 'task_id': self.celery_id})
+
+    @staticmethod
+    def mkdirs(path):
+        try:
+            os.makedirs(path)
+        except OSError as exc:
+            if exc.errno == errno.EEXIST and os.path.isdir(path):
+                pass
+            else:
+                raise
+
+    def get_output_path(self):
+        path = os.path.join(self.user.username if self.user is not None else '', self.script.slug, str(DjanguiJob.objects.count()))
+        self.mkdirs(path)
+        return path
+
+    def get_upload_path(self):
+        path = os.path.join(self.user.username if self.user is not None else '', self.script.slug)#os.path.join(settings.MEDIA_ROOT, self.slug)
+        self.mkdirs(path)
+        return path
 
 
 class AddScript(models.Model):

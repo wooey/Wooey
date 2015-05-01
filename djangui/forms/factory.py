@@ -24,7 +24,7 @@ class DjanguiFormFactory(object):
         if choices:
             field = 'ChoiceField'
             base_choices = [(None, '----')] if not param.required else []
-            field_kwargs['choices'] = base_choices+[(i, i.title()) for i in choices]
+            field_kwargs['choices'] = base_choices+[(str(i), str(i).title()) for i in choices]
         if field == 'FileField':
             if param.is_output:
                 field = 'CharField'

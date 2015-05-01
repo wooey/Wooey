@@ -19,13 +19,15 @@ from celery import states
 from .. import settings as djangui_settings
 from ..backend import utils
 
+from .mixins import UpdateScriptsMixin
+
 
 # TODO: Handle cases where celery is not used
 tasks = importlib.import_module(djangui_settings.DJANGUI_CELERY_TASKS)
 
 # TODO: Add user rights, hide/lock/ordering in an inherited class to cover scriptgroup/scripts
 
-class ScriptGroup(models.Model):
+class ScriptGroup(UpdateScriptsMixin, models.Model):
     """
         This is a group of scripts, it holds general information
         about a collection of scripts, and allows for custom descriptions
@@ -38,7 +40,7 @@ class ScriptGroup(models.Model):
     def __unicode__(self):
         return unicode(self.group_name)
 
-class Script(models.Model):
+class Script(UpdateScriptsMixin, models.Model):
     # blank=True, null=True is to allow anonymous users to submit jobs
     user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True)
     script_name = models.CharField(max_length=255)
@@ -153,7 +155,7 @@ class AddScript(models.Model):
         return unicode('{}: {}'.format(self.script_group.group_name, self.script_path.path))
 
 
-class ScriptParameterGroup(models.Model):
+class ScriptParameterGroup(UpdateScriptsMixin, models.Model):
     group_name = models.TextField()
     script = models.ForeignKey('Script')
 
@@ -161,7 +163,7 @@ class ScriptParameterGroup(models.Model):
         return unicode('{}: {}'.format(self.script.script_name, self.group_name))
 
 
-class ScriptParameter(models.Model):
+class ScriptParameter(UpdateScriptsMixin, models.Model):
     """
         This holds the parameter mapping for each script, and enforces uniqueness by each script via a FK.
     """

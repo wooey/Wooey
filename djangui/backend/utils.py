@@ -1,6 +1,8 @@
 __author__ = 'chris'
 import json
 import os
+import sys
+import traceback
 from collections import OrderedDict
 
 from django.conf import settings
@@ -9,6 +11,7 @@ from django.db.utils import OperationalError
 from django.core.files.storage import default_storage
 
 from .argparse_specs import ArgParseNodeBuilder
+
 
 def sanitize_name(name):
     return name.replace(' ', '_').replace('-', '_')
@@ -70,10 +73,14 @@ def load_scripts():
                 'group': script.script_group, 'scripts': []
             })
             dj_scripts[script.script_group.pk] = group
-            # the url mapping is script_group/script_name
-            group['scripts'].append(script)
-            # might as well load the form here too
-            get_master_form(script)
+            try:
+                # make sure we can load the form
+                get_master_form(script)
+                # the url mapping is script_group/script_name
+                group['scripts'].append(script)
+            except:
+                sys.stdout.write('Traceback while loading {0}:\n {1}\n'.format(script, traceback.format_exc()))
+                continue
     settings.DJANGUI_SCRIPTS = dj_scripts
 
 

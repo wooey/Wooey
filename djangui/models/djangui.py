@@ -137,13 +137,14 @@ class AddScript(models.Model):
         This model serves to allow users to upload scripts through the admin. It's a bit redundant, but it's a simple
         integration with the admin.
     """
+    script_name = models.CharField(max_length=255, null=True, blank=True)
     script_path = models.FileField(help_text=_('The file to Djanguify'), upload_to='djangui_scripts')
     script_group = models.ForeignKey('ScriptGroup')
 
     @transaction.atomic
     def save(self, **kwargs):
         super(AddScript, self).save(**kwargs)
-        utils.add_djangui_script(script=self.script_path.path, group=self.script_group.group_name)
+        utils.add_djangui_script(script=self.script_path.path, group=self.script_group.group_name, display_name=self.script_name)
 
 
 class ScriptParameterGroup(models.Model):

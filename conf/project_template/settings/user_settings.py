@@ -1,25 +1,11 @@
+from .djangui_settings import *
+
 # This file is where the user can override and customize their installation of djangui
 
 # Djangui Apps - add additional apps here after the initial install (remember to follow everything by a comma)
 
 INSTALLED_APPS += (
-    '{{ app_name }}',
 )
-
-
-## Apps which extend the core of Djangui. These can be replaced with alternatives for further customization
-
-INSTALLED_APPS += (
-    # the home screen, encompasses the entire front end of djangui
-    'djguihome',
-)
-
-# TODO: fix this name
-# The url to go to after a successful task submission -- it should be a url mapping for the home screen app.
-POST_SCRIPT_URL = 'djangui_home'
-
-# Whether to use Ajax (for things such as asynchronous task submission)
-DJANGUI_AJAX = True
 
 # Whether to allow anonymous job submissions, set False to disallow 'guest' job submissions
 DJANGUI_ALLOW_ANONYMOUS = True

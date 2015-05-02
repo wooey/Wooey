@@ -5,10 +5,13 @@ Djangui is designed to take scripts implemented with a python command line argum
 This project was inspired by how simply and powerfully [sandman](https://github.com/jeffknupp/sandman) could expose users to a database. 
 It was also based on my own needs as a data scientist to have a system that could:
     
-    1. Autodocument my workflows for data analysis (simple model saving).
-    2. Enable fellow lab members with no command line experience to utilize python scripts.
-    3. Enable the easy wrapping of any program in simple python instead of having
-       to use markup language specific to existing tools such as Galaxy.
+    1. Autodocument my workflows for data analysis
+        (simple model saving).
+    2. Enable fellow lab members with no command line
+        experience to utilize python scripts.
+    3. Enable the easy wrapping of any program in simple
+       python instead of having to use language specific 
+       to existing tools such as Galaxy.
        
 1. [Installation](#install)
     1. [A Djangui Only Project](#djonly)

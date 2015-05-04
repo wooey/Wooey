@@ -12,7 +12,7 @@
 {#        check the user has access to the group#}
         {% with group_show=group.group|valid_user:request.user %}
             {% if group_show != 'hide' %}
-              <div class="panel panel-primary {% if group_show == 'disabled' %}disabled{% endif %}">
+              <div class="panel panel-primary">
                 <div class="panel-heading" role="tab" id="{{ group_id }}">
                   <h4 class="panel-title">
                     <a data-toggle="collapse" data-parent="#accordion" href="#{{ group_id }}_accordion" aria-expanded="true" aria-controls="{{ group_id }}_accordion">
@@ -27,7 +27,7 @@
                         {% for script in group.scripts %}
                             {% with script_show=script|valid_user:request.user %}
                                 {% if script_show != 'hide' %}
-                                  <a href="#" data-href="{{ script.get_url }}" class="list-group-item djangui-script-url {% if script_show == 'disabled' %}disabled{% endif %}">
+                                  <a href="#" data-href="{{ script.get_url }}" class="list-group-item djangui-script-url {% if script_show == 'disabled' or group_show == 'disabled' %}disabled{% endif %}">
                                     <h4 class="list-group-item-heading djangui-script-title">{{ script.script_name }}</h4>
                                     <p class="list-group-item-text djangui-script-description">{{ script.script_description }}</p>
                                   </a>

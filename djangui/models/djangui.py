@@ -36,27 +36,28 @@ class ScriptGroup(UpdateScriptsMixin, models.Model):
 
     """
     group_name = models.TextField()
+    slug = AutoSlugField(populate_from='group_name', unique=True)
     group_description = models.TextField(null=True, blank=True)
     group_order = models.SmallIntegerField(default=1)
     is_active = models.BooleanField(default=True)
-    user_groups = models.ForeignKey(Group, blank=True, null=True)
-    slug = AutoSlugField(populate_from='group_name', unique=True)
+    user_groups = models.ManyToManyField(Group, blank=True)
 
     def __unicode__(self):
         return unicode(self.group_name)
 
 class Script(ModelDiffMixin, models.Model):
-    user_groups = models.ForeignKey(Group, blank=True, null=True)
     script_name = models.CharField(max_length=255)
-
     slug = AutoSlugField(populate_from='script_name', unique=True)
     script_group = models.ForeignKey('ScriptGroup')
     script_description = models.TextField(blank=True, null=True)
     script_order = models.PositiveSmallIntegerField(default=1)
     is_active = models.BooleanField(default=True)
+    user_groups = models.ManyToManyField(Group, blank=True)
     script_path = models.FileField()
     execute_full_path = models.BooleanField(default=True) # use full path for subprocess calls
-    save_path = models.CharField(max_length=255, blank=True, null=True)
+    save_path = models.CharField(max_length=255, blank=True, null=True,
+                                 help_text='By default save to the script name,'
+                                           ' this will change the output folder.')
     # when a script updates, increment this to keep old scripts that are cloned working. The downside is we get redundant
     # parameters, but even a huge site may only have a few thousand parameters to query though.
     script_version = models.PositiveSmallIntegerField(default=0)
@@ -79,6 +80,15 @@ class Script(ModelDiffMixin, models.Model):
         if 'script_path' in self.changed_fields:
             self.script_version += 1
         new_script = self.pk is None
+        # if uploading from the admin, fix its path
+        # we do this to avoid having migrations specific to various users with different DJANGUI_SCRIPT_DIR settings
+        if new_script and djangui_settings.DJANGUI_SCRIPT_DIR not in self.script_path.file.name:
+            old_path = self.script_path.path
+            new_name = os.path.join(djangui_settings.DJANGUI_SCRIPT_DIR, self.script_path.file.name)
+            new_path = os.path.join(settings.MEDIA_ROOT, new_name)
+            default_storage.save(new_path, self.script_path.file)
+            default_storage.delete(old_path)
+            self.script_path.name = new_name
         super(Script, self).save(**kwargs)
         if 'script_path' in self.changed_fields or new_script:
             if getattr(self, '_add_script', True):

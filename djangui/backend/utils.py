@@ -10,9 +10,10 @@ from django.conf import settings
 from django.db import transaction
 from django.db.utils import OperationalError
 from django.core.files.storage import default_storage
-from django.core.files import File
 
 from .argparse_specs import ArgParseNodeBuilder
+
+from .. import settings as djangui_settings
 
 
 def sanitize_name(name):
@@ -155,3 +156,12 @@ def add_djangui_script(script=None, group=None):
                                                   parameter_group=param_group)
     # update our loaded scripts
     load_scripts()
+
+def valid_user(obj, user):
+    groups = obj.user_groups.all()
+    if not groups and obj.is_active:
+        return True
+    if obj.is_active is True:
+        if user.groups.filter(name__in=groups).exists():
+            return True
+    return 'disabled' if djangui_settings.DJANGUI_SHOW_LOCKED_SCRIPTS else 'hide'

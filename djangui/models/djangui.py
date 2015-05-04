@@ -53,8 +53,8 @@ class Script(ModelDiffMixin, models.Model):
     script_group = models.ForeignKey('ScriptGroup')
     script_description = models.TextField(blank=True, null=True)
     script_order = models.PositiveSmallIntegerField(default=1)
-    script_active = models.BooleanField(default=True)
-    script_path = models.FileField(upload_to=djangui_settings.DJANGUI_SCRIPT_DIR)
+    is_active = models.BooleanField(default=True)
+    script_path = models.FileField()
     execute_full_path = models.BooleanField(default=True) # use full path for subprocess calls
     save_path = models.CharField(max_length=255, blank=True, null=True)
     # when a script updates, increment this to keep old scripts that are cloned working. The downside is we get redundant

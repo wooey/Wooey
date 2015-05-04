@@ -6,13 +6,13 @@ class JobAdmin(admin.ModelAdmin):
     list_display = ('user', 'job_name', 'script', 'celery_state', 'created_date')
 
 class ScriptAdmin(admin.ModelAdmin):
-    list_display = ('script_name', 'script_group', 'script_active', 'script_version')
+    list_display = ('script_name', 'script_group', 'is_active', 'script_version')
 
 class ParameterAdmin(admin.ModelAdmin):
     list_display = ('script', 'parameter_group', 'short_param')
 
 class GroupAdmin(admin.ModelAdmin):
-    list_display = ('group_name',)
+    list_display = ('group_name', 'is_active')
 
 class ParameterGroupAdmin(admin.ModelAdmin):
     list_display = ('script', 'group_name')

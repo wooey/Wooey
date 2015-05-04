@@ -58,8 +58,8 @@ Scripts may be added in two ways, through the Django admin interface as well as 
 ### The admin Interface
 
 Within the django admin interface, scripts may be added to through the 'scripts' model. Here, the user permissions may be set, as
-well as cosmetic features such as the script's display name, description (if  provided, it will be automatically populated
-by the description from argparse).
+well as cosmetic features such as the script's display name, description (if provided, otherwise the script name and description
+will be automatically populated by the description from argparse if available).
  
 ### The command line
 

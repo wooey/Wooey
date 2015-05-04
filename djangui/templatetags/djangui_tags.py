@@ -18,10 +18,11 @@ def endswith(value, arg):
 def valid_user(obj, user):
     from ..models import Group
     groups = obj.user_groups
-    if not groups:
+    if not groups and obj.is_active:
         return True
-    if not isinstance(groups, list):
-        groups = [groups]
-    if user.groups.filter(name__in=groups).exists():
-        return True
+    if obj.is_active is True:
+        if not isinstance(groups, list):
+            groups = [groups]
+        if user.groups.filter(name__in=groups).exists():
+            return True
     return 'disabled' if djangui_settings.DJANGUI_SHOW_LOCKED_SCRIPTS else 'hide'

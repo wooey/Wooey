@@ -38,7 +38,7 @@ class ScriptGroup(UpdateScriptsMixin, models.Model):
     group_name = models.TextField()
     group_description = models.TextField(null=True, blank=True)
     group_order = models.SmallIntegerField(default=1)
-    group_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
     user_groups = models.ForeignKey(Group, blank=True, null=True)
     slug = AutoSlugField(populate_from='group_name', unique=True)
 

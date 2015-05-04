@@ -23,11 +23,75 @@ BROKER_URL = 'django://'
 CELERY_TRACK_STARTED = True
 DJANGUI_CELERY = True
 
-## Setup database related things here. Here are some examples for non-development based settings
+## Here is a setup example for production servers
 
+## A postgres database -- for multiple users a sqlite based database is asking for trouble
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         # for production environments, these should be stored as environment variables
+#         # I also recommend the django-heroku-postgresify package for a super simple setup
+#         'NAME': os.environ.get('DATABASE_NAME', 'djangui'),
+#         'USER': os.environ.get('DATABASE_USER', 'djangui'),
+#         'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'djangui'),
+#         'HOST': os.environ.get('DATABASE_URL', 'localhost'),
+#         'PORT': os.environ.get('DATABASE_PORT', '')
+#     }
+# }
 
+## A better celery backend -- using RabbitMQ (these defaults are from two free rabbitmq Heroku providers)
+# CELERY_RESULT_BACKEND = 'amqp'
+# BROKER_URL = os.environ.get('AMQP_URL') or \
+#              os.environ.get('RABBITMQ_BIGWIG_TX_URL') or \
+#              os.environ.get('CLOUDAMQP_URL', 'amqp://djangui:djangui@localhost:5672/djangui')
+# BROKER_POOL_LIMIT = 1
+# CELERYD_CONCURRENCY = 1
+#
 
+## for production environments, django-storages abstracts away much of the difficulty of various storage engines.
+## Here is an example for hosting static and user generated content with S3
+
+# from boto.s3.connection import SubdomainCallingFormat, VHostCallingFormat
+#
+# INSTALLED_APPS += (
+#     'storages',
+#     'collectfast',
+# )
+
+## We have user authentication -- we need to use https
+# MIDDLEWARE_CLASSES = ['sslify.middleware.SSLifyMiddleware']+list(MIDDLEWARE_CLASSES)
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+#
+# AWS_CALLING_FORMAT = VHostCallingFormat
+#
+# AWS_ACCESS_KEY_ID = environ.get('AWS_ACCESS_KEY_ID', '')
+# AWS_SECRET_ACCESS_KEY = environ.get('AWS_SECRET_ACCESS_KEY', '')
+# AWS_STORAGE_BUCKET_NAME = environ.get('AWS_STORAGE_BUCKET_NAME', '')
+# AWS_AUTO_CREATE_BUCKET = True
+# AWS_QUERYSTRING_AUTH = False
+# AWS_S3_SECURE_URLS = True
+# AWS_PRELOAD_METADATA = True
+# AWS_S3_CUSTOM_DOMAIN = environ.get('AWS_S3_CUSTOM_DOMAIN', '')
+#
+# GZIP_CONTENT_TYPES = (
+#     'text/css',
+#     'application/javascript',
+#     'application/x-javascript',
+#     'text/javascript',
+# )
+#
+# AWS_EXPIREY = 60 * 60 * 7
+# AWS_HEADERS = {
+#     'Cache-Control': 'max-age=%d, s-maxage=%d, must-revalidate' % (AWS_EXPIREY,
+#         AWS_EXPIREY)
+# # }
+#
+# STATIC_URL = 'http://%s.s3.amazonaws.com/' % AWS_STORAGE_BUCKET_NAME
+# MEDIA_URL = STATIC_URL
+# COMPRESS_URL = STATIC_URL
+#
+# STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = 'storages.backends.s3boto.S3BotoStorage'
 
 # Things you most likely do not need to change
 

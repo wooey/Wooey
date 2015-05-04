@@ -11,6 +11,7 @@ setup(
     name='djangui',
     version='0.0.0',
     packages=['djangui'],
+    scripts=['scripts/djanguify.py'],
     include_package_data=True,
     license='GPLv3',
     description='An app to create a Django app or project from argparse scripts',

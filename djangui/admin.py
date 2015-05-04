@@ -1,38 +1,24 @@
 from django.contrib import admin
 
-from .models import Script, ScriptGroup, ScriptParameter, DjanguiJob, AddScript, ScriptParameterGroup
+from .models import Script, ScriptGroup, ScriptParameter, DjanguiJob, ScriptParameterGroup
 
+class JobAdmin(admin.ModelAdmin):
+    list_display = ('user', 'job_name', 'script', 'celery_state', 'created_date')
 
+class ScriptAdmin(admin.ModelAdmin):
+    list_display = ('script_name', 'script_group', 'script_active', 'script_version')
 
-# class DjanguiAdmin(admin.AdminSite):
-#     index_template = 'djangui_admin/index.html'
-#
-#     def get_urls(self):
-#         urls = super(DjanguiAdmin, self).get_urls()
-#         my_urls = [
-#             url(r'^add-scripts/$', self.admin_view(self.add_scripts), name='add_scripts'),
-#         ]
-#         return my_urls + urls
-#
-#     def add_scripts(self, request):
-#         # ...
-#         context = dict(
-#            # Include common variables for rendering the admin template.
-#            self.each_context(request),
-#            # Anything else you want in the context...
-#             form=AddScriptForm,
-#         )
-#         return TemplateResponse(request, "djangui_admin/add_scripts.html", context)
+class ParameterAdmin(admin.ModelAdmin):
+    list_display = ('script', 'parameter_group', 'short_param')
 
-# djangui_admin = DjanguiAdmin()
-# djangui_admin = admin.AdminSite()
+class GroupAdmin(admin.ModelAdmin):
+    list_display = ('group_name',)
 
-class AddScriptsAdmin(admin.ModelAdmin):
-    pass
+class ParameterGroupAdmin(admin.ModelAdmin):
+    list_display = ('script', 'group_name')
 
-admin.site.register(DjanguiJob, admin.ModelAdmin)
-admin.site.register(Script, admin.ModelAdmin)
-admin.site.register(ScriptParameter, admin.ModelAdmin)
-admin.site.register(ScriptGroup, admin.ModelAdmin)
-admin.site.register(AddScript, AddScriptsAdmin)
-admin.site.register(ScriptParameterGroup, AddScriptsAdmin)
+admin.site.register(DjanguiJob, JobAdmin)
+admin.site.register(Script, ScriptAdmin)
+admin.site.register(ScriptParameter, ParameterAdmin)
+admin.site.register(ScriptGroup, GroupAdmin)
+admin.site.register(ScriptParameterGroup, ParameterGroupAdmin)

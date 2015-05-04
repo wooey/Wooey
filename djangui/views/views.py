@@ -2,13 +2,14 @@ from django.views.generic import DetailView, TemplateView, CreateView
 from django.http import JsonResponse
 from django.conf import settings
 from django.forms import FileField
-from django.core.urlresolvers import reverse
 from django.core.files.storage import default_storage
-from django.contrib.auth import get_user_model, login, authenticate
+from django.utils.translation import gettext_lazy as _
+from django.utils.encoding import force_unicode
 
 from djangui.backend import utils
 from ..models import DjanguiJob, Script
 from .. import settings as djangui_settings
+from ..templatetags.djangui_tags import valid_user
 
 
 class DjanguiScriptJSON(DetailView):
@@ -62,9 +63,12 @@ class DjanguiScriptJSON(DetailView):
 
         if not form.errors:
             # data = form.cleaned_data
-            job, com = form.save()
-            job.submit_to_celery(command=com)
-            return JsonResponse({'valid': True})
+            script = Script.objects.get(pk=form.cleaned_data.get('djangui_type'))
+            if valid_user(script, request.user) is True and valid_user(script.script_group, request.user) is True:
+                job, com = form.save()
+                job.submit_to_celery(command=com)
+                return JsonResponse({'valid': True})
+            return JsonResponse({'valid': False, 'errors': {'__all__': [force_unicode(_('You are not permitted to access this script.'))]}})
 
         return JsonResponse({'valid': False, 'errors': form.errors})
 

@@ -9,8 +9,10 @@ from django.core.files.base import ContentFile
 from django.db import models
 from django.conf import settings
 from django.core.urlresolvers import reverse_lazy, reverse
+from django.contrib.auth.models import Group
 from django.utils.translation import gettext_lazy as _
 from django.db import transaction
+from django.utils.text import get_valid_filename
 
 from autoslug import AutoSlugField
 
@@ -19,7 +21,7 @@ from celery import states
 from .. import settings as djangui_settings
 from ..backend import utils
 
-from .mixins import UpdateScriptsMixin
+from .mixins import UpdateScriptsMixin, ModelDiffMixin
 
 
 # TODO: Handle cases where celery is not used
@@ -35,22 +37,24 @@ class ScriptGroup(UpdateScriptsMixin, models.Model):
     """
     group_name = models.TextField()
     group_description = models.TextField(null=True, blank=True)
-    slug = AutoSlugField(populate_from='group_name')
+    group_order = models.SmallIntegerField(default=1)
+    group_active = models.BooleanField(default=True)
+    user_groups = models.ForeignKey(Group, blank=True, null=True)
+    slug = AutoSlugField(populate_from='group_name', unique=True)
 
     def __unicode__(self):
         return unicode(self.group_name)
 
-class Script(UpdateScriptsMixin, models.Model):
-    # blank=True, null=True is to allow anonymous users to submit jobs
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True)
+class Script(ModelDiffMixin, models.Model):
+    user_groups = models.ForeignKey(Group, blank=True, null=True)
     script_name = models.CharField(max_length=255)
 
-    slug = AutoSlugField(populate_from='script_name')
+    slug = AutoSlugField(populate_from='script_name', unique=True)
     script_group = models.ForeignKey('ScriptGroup')
     script_description = models.TextField(blank=True, null=True)
     script_order = models.PositiveSmallIntegerField(default=1)
     script_active = models.BooleanField(default=True)
-    script_path = models.CharField(max_length=255)#, default="/home/chris/Devel/djangui/djangui/tests/scripts/fetch_cats.py")
+    script_path = models.FileField(upload_to=djangui_settings.DJANGUI_SCRIPT_DIR)
     execute_full_path = models.BooleanField(default=True) # use full path for subprocess calls
     save_path = models.CharField(max_length=255, blank=True, null=True)
     # when a script updates, increment this to keep old scripts that are cloned working. The downside is we get redundant
@@ -68,13 +72,26 @@ class Script(UpdateScriptsMixin, models.Model):
                                                       'script_name': self.slug})
 
     def get_script_path(self):
-        return self.script_path if self.execute_full_path else os.path.split(self.script_path)[1]
+        path = self.script_path.path
+        return path if self.execute_full_path else os.path.split(path)[1]
+
+    def save(self, **kwargs):
+        if 'script_path' in self.changed_fields:
+            self.script_version += 1
+        new_script = self.pk is None
+        super(Script, self).save(**kwargs)
+        if 'script_path' in self.changed_fields or new_script:
+            if getattr(self, '_add_script', True):
+                utils.add_djangui_script(script=self, group=self.script_group)
+        utils.load_scripts()
+
 
 
 class DjanguiJob(models.Model):
     """
     This model serves to link the submitted celery tasks to a script submitted
     """
+    # blank=True, null=True is to allow anonymous users to submit jobs
     user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True)
     celery_id = models.CharField(max_length=255, null=True)
     job_name = models.CharField(max_length=255)
@@ -100,8 +117,9 @@ class DjanguiJob(models.Model):
         if resubmit:
             # clone ourselves
             self.pk = None
+        # This is where the script works from -- it doesn't include the media_root since that may change
         cwd = self.get_output_path()
-        abscwd = os.path.abspath(cwd)
+        abscwd = os.path.abspath(os.path.join(settings.MEDIA_ROOT, cwd))
         self.command = ' '.join(command)
         self.save_path = cwd
         self.celery_state = states.PENDING
@@ -127,32 +145,16 @@ class DjanguiJob(models.Model):
                 raise
 
     def get_output_path(self):
-        path = os.path.join(djangui_settings.DJANGUI_FILE_DIR, self.user.username if self.user is not None else '', self.script.slug, str(DjanguiJob.objects.count()))
-        self.mkdirs(path)
+        path = os.path.join(djangui_settings.DJANGUI_FILE_DIR, get_valid_filename(self.user.username if self.user is not None else ''),
+                            get_valid_filename(self.script.slug if not self.script.save_path else self.script.save_path), str(DjanguiJob.objects.count()))
+        self.mkdirs(os.path.join(settings.MEDIA_ROOT, path))
         return path
 
     def get_upload_path(self):
-        path = os.path.join(djangui_settings.DJANGUI_FILE_DIR, self.user.username if self.user is not None else '', self.script.slug)#os.path.join(settings.MEDIA_ROOT, self.slug)
-        self.mkdirs(path)
+        path = os.path.join(djangui_settings.DJANGUI_FILE_DIR, get_valid_filename(self.user.username if self.user is not None else ''),
+                            get_valid_filename(self.script.slug if not self.script.save_path else self.script.save_path))
+        self.mkdirs(os.path.join(settings.MEDIA_ROOT, path))
         return path
-
-
-class AddScript(models.Model):
-    """
-        This model serves to allow users to upload scripts through the admin. It's a bit redundant, but it's a simple
-        integration with the admin.
-    """
-    script_name = models.CharField(max_length=255, null=True, blank=True)
-    script_path = models.FileField(help_text=_('The file to Djanguify'), upload_to='djangui_scripts')
-    script_group = models.ForeignKey('ScriptGroup')
-
-    @transaction.atomic
-    def save(self, **kwargs):
-        super(AddScript, self).save(**kwargs)
-        utils.add_djangui_script(script=self.script_path.path, group=self.script_group.group_name, display_name=self.script_name)
-
-    def __unicode__(self):
-        return unicode('{}: {}'.format(self.script_group.group_name, self.script_path.path))
 
 
 class ScriptParameterGroup(UpdateScriptsMixin, models.Model):
@@ -170,7 +172,7 @@ class ScriptParameter(UpdateScriptsMixin, models.Model):
     script = models.ForeignKey('Script')
     short_param = models.CharField(max_length=255)
     script_param = models.CharField(max_length=255)
-    slug = AutoSlugField(populate_from='script_param')
+    slug = AutoSlugField(populate_from='script_param', unique=True)
     is_output = models.BooleanField(default=None)
     required = models.BooleanField(default=False)
     output_path = models.FilePathField(path=settings.MEDIA_ROOT, allow_folders=True, allow_files=False,

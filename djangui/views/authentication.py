@@ -1,15 +1,22 @@
 from django.views.generic import CreateView
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.contrib.auth import login, authenticate, get_user_model
 from django.forms import modelform_factory
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_unicode
 
+from .. import settings as djangui_settings
+
 class DjanguiRegister(CreateView):
     template_name = 'registration/register.html'
     model = get_user_model()
     fields = ('username', 'email', 'password')
+
+    def dispatch(self, request, *args, **kwargs):
+        if djangui_settings.DJANGUI_AUTH is False:
+            return HttpResponseRedirect(djangui_settings.DJANGUI_REGISTER_URL)
+        return super(DjanguiRegister, self).dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.object = None
@@ -36,6 +43,8 @@ class DjanguiRegister(CreateView):
         return reverse(next_url) if next_url else reverse('djangui_home')
 
 def djangui_login(request):
+    if djangui_settings.DJANGUI_AUTH is False:
+        return HttpResponseRedirect(djangui_settings.DJANGUI_LOGIN_URL)
     User = get_user_model()
     form = modelform_factory(User, fields=('username', 'password'))
     user = User.objects.filter(username=request.POST.get('username'))

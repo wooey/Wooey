@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load djangui_tags %}
 
 {% block extra_style %}
 
@@ -8,28 +9,37 @@
 {% block left_sidebar_content %}
 <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
     {% for group_id, group in djangui_scripts.iteritems %}
-      <div class="panel panel-primary">
-        <div class="panel-heading" role="tab" id="{{ group_id }}">
-          <h4 class="panel-title">
-            <a data-toggle="collapse" data-parent="#accordion" href="#{{ group_id }}_accordion" aria-expanded="true" aria-controls="{{ group_id }}_accordion">
-              {{ group.group.group_name }}
-            </a>
-          </h4>
-        </div>
-        <div id="{{ group_id }}_accordion" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="{{ group_id }}">
-            <div class="panel-body">
-                <p><em>{{ group.group.group_description }}</em></p>
-                <div class="list-group">
-                {% for script in group.scripts %}
-                  <a href="#" data-href="{{ script.get_url }}" class="list-group-item djangui-script-url">
-                    <h4 class="list-group-item-heading djangui-script-title">{{ script.script_name }}</h4>
-                    <p class="list-group-item-text djangui-script-description">{{ script.script_description }}</p>
-                  </a>
-                {% endfor %}
+{#        check the user has access to the group#}
+        {% with group_show=group.group|valid_user:request.user %}
+            {% if group_show != 'hide' %}
+              <div class="panel panel-primary {% if group_show == 'disabled' %}disabled{% endif %}">
+                <div class="panel-heading" role="tab" id="{{ group_id }}">
+                  <h4 class="panel-title">
+                    <a data-toggle="collapse" data-parent="#accordion" href="#{{ group_id }}_accordion" aria-expanded="true" aria-controls="{{ group_id }}_accordion">
+                      {{ group.group.group_name }}
+                    </a>
+                  </h4>
                 </div>
-            </div>
-        </div>
-      </div>
+                <div id="{{ group_id }}_accordion" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="{{ group_id }}">
+                    <div class="panel-body">
+                        <p><em>{{ group.group.group_description }}</em></p>
+                        <div class="list-group">
+                        {% for script in group.scripts %}
+                            {% with script_show=script|valid_user:request.user %}
+                                {% if script_show != 'hide' %}
+                                  <a href="#" data-href="{{ script.get_url }}" class="list-group-item djangui-script-url {% if script_show == 'disabled' %}disabled{% endif %}">
+                                    <h4 class="list-group-item-heading djangui-script-title">{{ script.script_name }}</h4>
+                                    <p class="list-group-item-text djangui-script-description">{{ script.script_description }}</p>
+                                  </a>
+                                {% endif %}
+                            {% endwith %}
+                        {% endfor %}
+                        </div>
+                    </div>
+                </div>
+              </div>
+            {% endif %}
+        {% endwith %}
   {% endfor %}
 </div>
 {% endblock %}
@@ -71,7 +81,7 @@
 {% block right_sidebar_content %}
 <div class="panel panel-default">
   <div class="panel-heading">
-    <h3 class="panel-title">{% trans "Job History" %}</h3>
+    <h3 class="panel-title">{% trans "Job History" %} <a href="#" id="celery-refresh"><span class="glyphicon glyphicon-refresh"></span></a></h3>
   </div>
   <div class="panel-body table-responsive">
     <table id="djangui-job-table" class="table hover stripe col-md-3 col-xs-12">
@@ -99,6 +109,8 @@
 
         $('.djangui-script-url').click(function(event){
             event.preventDefault();
+            if($(this).hasClass('disabled'))
+                return;
             filesUploaded = {};
             var $jobform = $('#djangui-job-form');
             clearErrors($jobform);
@@ -206,6 +218,9 @@
 
         // loop for job history updates
 {#        var tid = setInterval(celeryRefresh, 10000);#}
+        $('#celery-refresh').click(function(event){
+            celeryRefresh();
+        });
         function celeryRefresh() {
             $.get("{% url "celery_results" %}", function(data){
                 for(var i=0;i<data.length;i++){

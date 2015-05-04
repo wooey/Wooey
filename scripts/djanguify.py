@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 __author__ = 'chris'
 description = """
-Convert things to django
+Create a Django app with Djangui setup.
 """
 import sys
 import traceback

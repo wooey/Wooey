@@ -54,7 +54,7 @@ class DjanguiFormFactory(object):
             group_name = 'Required' if param.required else param.parameter_group.group_name
             group = group_map.get(group_id, {
                 'group': group_name,
-                'fields': {}
+                'fields': OrderedDict()
             })
             group['fields'][param.slug] = field
             group_map[group_id] = group

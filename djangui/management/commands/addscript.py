@@ -2,7 +2,12 @@ __author__ = 'chris'
 import os
 import sys
 from django.core.management.base import BaseCommand, CommandError
+from django.core.files import File
+from django.core.files.storage import default_storage
+from django.conf import settings
+
 from ...backend.utils import add_djangui_script
+from ... import settings as djangui_settings
 
 
 class Command(BaseCommand):
@@ -29,6 +34,9 @@ class Command(BaseCommand):
                 continue
             if script.endswith('.py'):
                 sys.stdout.write('Converting {}\n'.format(script))
-                add_djangui_script(script=os.path.abspath(script), group=group)
+                # copy the script to our storage
+                with open(script, 'r') as f:
+                    script = default_storage.save(os.path.join(djangui_settings.DJANGUI_SCRIPT_DIR, os.path.split(script)[1]), File(f))
+                add_djangui_script(script=os.path.abspath(os.path.join(settings.MEDIA_ROOT, script)), group=group)
                 converted += 1
         sys.stdout.write('Converted {} scripts\n'.format(converted))

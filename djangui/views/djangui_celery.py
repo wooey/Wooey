@@ -24,6 +24,7 @@ def celery_status(request):
 
 
 def celery_task_command(request):
+
     command = request.POST.get('celery-command')
     job_id = request.POST.get('job-id')
     job = DjanguiJob.objects.get(pk=job_id)

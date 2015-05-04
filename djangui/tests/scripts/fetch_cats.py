@@ -6,12 +6,14 @@ __author__ = 'Chris Mitchell'
 
 import argparse
 import sys
+import os
+import imghdr
 from urllib import FancyURLopener
 import urllib2
 import json
 
 description = """
-This will find you cats.
+This will find you cats, and optionally, kitties.
 """
 
 parser = argparse.ArgumentParser(description = description)
@@ -30,12 +32,16 @@ myopener = MyOpener()
 def main():
     args = parser.parse_args()
     searchTerm = 'kittens' if args.kittens else 'cats'
-    cat_count = args.count
+    cat_count = args.count if args.count < 10 else 10
     if args.breed:
         searchTerm += '%20{0}'.format(args.breed)
 
-    # Notice that the start changes for each iteration in order to request a new set of     images for each loop
-    for i in xrange(0, cat_count/4+1):
+    # Notice that the start changes for each iteration in order to request a new set of images for each loop
+    found = 0
+    i = 0
+    downloaded = set([])
+    while found <= cat_count:
+        i += 1
         template = 'https://ajax.googleapis.com/ajax/services/search/images?v=1.0&q={}&start={}&userip=MyIP'
         url = template.format(searchTerm, i+1)
         request = urllib2.Request(url, None, {'Referer': 'testing'})
@@ -45,14 +51,21 @@ def main():
         results = json.load(response)
         data = results['responseData']
         dataInfo = data['results']
-        # import pdb; pdb.set_trace();
 
         # Iterate for each result and get unescaped url
         for count, myUrl in enumerate(dataInfo, 1):
-            if count > cat_count:
+            if found > cat_count:
                 break
-            my_url = myUrl['unescapedUrl']
-            myopener.retrieve(myUrl['unescapedUrl'], '{0}.jpg'.format(i*4+count))
+            uurl = myUrl['unescapedUrl']
+            filename = uurl.split('/')[-1]
+            if filename in downloaded:
+                continue
+            myopener.retrieve(uurl, filename)
+            if imghdr.what(filename):
+                found += 1
+                downloaded.add(filename)
+            else:
+                os.remove(filename)
 
 
 if __name__ == "__main__":

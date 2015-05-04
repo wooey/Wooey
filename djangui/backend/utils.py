@@ -3,12 +3,14 @@ import json
 import os
 import sys
 import traceback
+from operator import itemgetter
 from collections import OrderedDict
 
 from django.conf import settings
 from django.db import transaction
 from django.db.utils import OperationalError
 from django.core.files.storage import default_storage
+from django.core.files import File
 
 from .argparse_specs import ArgParseNodeBuilder
 
@@ -59,7 +61,7 @@ def get_form_groups(model=None, pk=None, initial=None):
 def load_scripts():
     from ..models import Script
     # select all the scripts we have, then divide them into groups
-    dj_scripts = OrderedDict()
+    dj_scripts = {}
     try:
         scripts = Script.objects.count()
     except OperationalError:
@@ -68,20 +70,29 @@ def load_scripts():
     if scripts:
         scripts = Script.objects.all()
         for script in scripts:
-            group = dj_scripts.get(script.script_group.pk, {
+            key = (script.script_group.group_order, script.script_group.pk)
+            group = dj_scripts.get(key, {
                 # 'url': reverse_lazy('script_group', kwargs={'script_group', script.script_group.slug}),
                 'group': script.script_group, 'scripts': []
             })
-            dj_scripts[script.script_group.pk] = group
+            dj_scripts[key] = group
             try:
                 # make sure we can load the form
                 get_master_form(script)
                 # the url mapping is script_group/script_name
-                group['scripts'].append(script)
+                group['scripts'].append((script.script_order, script))
             except:
                 sys.stdout.write('Traceback while loading {0}:\n {1}\n'.format(script, traceback.format_exc()))
                 continue
-    settings.DJANGUI_SCRIPTS = dj_scripts
+    for group_pk, group_info in dj_scripts.iteritems():
+        # order scripts
+        group_info['scripts'].sort(key=itemgetter(0))
+        group_info['scripts'] = [i[1] for i in group_info['scripts']]
+    # order groups
+    ordered_scripts = OrderedDict()
+    for key in sorted(dj_scripts.keys(), key=itemgetter(0)):
+        ordered_scripts[key[1]] = dj_scripts[key]
+    settings.DJANGUI_SCRIPTS = ordered_scripts
 
 
 def get_storage_object(path):
@@ -91,8 +102,13 @@ def get_storage_object(path):
     obj.path = default_storage.path(path)
     return obj
 
-def add_djangui_script(script=None, group=None, display_name=None):
+def add_djangui_script(script=None, group=None):
     from djangui.models import Script, ScriptGroup, ScriptParameter, ScriptParameterGroup
+    script_obj, script = (script, script.script_path.path) if isinstance(script, Script) else (False, script)
+    if isinstance(group, ScriptGroup):
+        group = group.group_name
+    if group is None:
+        group = 'Djangui Scripts'
     basename, extension = os.path.splitext(script)
     filename = os.path.split(basename)[1]
 
@@ -102,11 +118,24 @@ def add_djangui_script(script=None, group=None, display_name=None):
     # make our script
     d = parser.get_script_description()
     script_group, created = ScriptGroup.objects.get_or_create(group_name=group)
-    djangui_script, created = Script.objects.get_or_create(script_group=script_group, script_description=d['description'],
-                                   script_path=script, script_name=display_name if display_name is not None else d['name'])
+    if script_obj is False:
+        djangui_script, created = Script.objects.get_or_create(script_group=script_group, script_description=d['description'],
+                                   script_path=script, script_name=d['name'])
+    else:
+        created = False
+        if not script_obj.script_description:
+            script_obj.script_description = d['description']
+        if not script_obj.script_name:
+            script_obj.script_name = d['name']
+        # probably a much better way to avoid this recursion
+        script_obj._add_script = False
+        script_obj.save()
     if not created:
-        djangui_script.script_version += 1
-        djangui_script.save()
+        if script_obj is False:
+            djangui_script.script_version += 1
+            djangui_script.save()
+    if script_obj:
+        djangui_script = script_obj
     # make our parameters
     CHOICE_MAPPING = {
 
@@ -118,7 +147,6 @@ def add_djangui_script(script=None, group=None, display_name=None):
             #choice_limit = CHOICE_MAPPING[param.get('choice_limit')]
             # TODO: fix 'file' to be global in argparse
             is_out = True if param.get('upload', None) is False and param.get('type') == 'file' else not param.get('upload', False)
-            print param, is_out
             script_param, created = ScriptParameter.objects.get_or_create(script=djangui_script, short_param=param['param'], script_param=param['name'],
                                                   is_output=is_out, required=param.get('required', False),
                                                   form_field=param['model'], default=param.get('default'), input_type=param.get('type'),

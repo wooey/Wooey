@@ -205,6 +205,15 @@
                           </a>
                         </div>
                         {% endif %}
+                    {% elif output_group == 'fasta' %}
+                         {% for output_file_content in output_files %}
+                              <div class="panel-heading"><a href="{{ output_file_content.url }}">{{ output_file_content.name }}</a></div>
+                              <div class="panel panel-body">
+                                    {% for entry in output_file_content.preview %}
+                                        {{ entry }}<br>
+                                    {% endfor %}
+                              </div>
+                        {% endfor %}
                     {% endif %}
                     </div>
 

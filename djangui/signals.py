@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from celery.signals import task_postrun, task_prerun
+from celery.signals import task_postrun, task_prerun, task_revoked
 
 @task_postrun.connect
 @task_prerun.connect

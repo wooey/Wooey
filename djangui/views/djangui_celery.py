@@ -40,7 +40,9 @@ def celery_task_command(request):
             job.delete()
             response.update({'valid': True, 'redirect': reverse('djangui_home')})
         elif command == 'stop':
-            celery_app.control.revoke(job_id, terminate=True)
+            celery_app.control.revoke(job.celery_id, signal='SIGKILL', terminate=True)
+            job.celery_state = states.REVOKED
+            job.save()
             response.update({'valid': True, 'redirect': reverse('celery_results_info', kwargs={'job_id': job_id})})
         else:
             response.update({'errors': {'__all__': force_unicode(_("Unknown Command"))}})

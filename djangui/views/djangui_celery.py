@@ -6,7 +6,6 @@ from django.views.generic import TemplateView
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_unicode
-from django.template.defaultfilters import truncatechars
 
 from djcelery.models import TaskMeta
 from celery import app, states
@@ -23,7 +22,7 @@ def celery_status(request):
         states.REVOKED: "<span class='glyphicon glyphicon-stop'></span>",
     }
     jobs = DjanguiJob.objects.filter(user=request.user if request.user.is_authenticated() else None)
-    return JsonResponse([{'job_name': job.job_name, 'job_display': truncatechars(job.job_name, 15), 'job_status': STATE_MAPPER.get(job.celery_state, job.celery_state),
+    return JsonResponse([{'job_name': job.job_name, 'job_status': STATE_MAPPER.get(job.celery_state, job.celery_state),
                         'job_submitted': job.created_date.strftime('%b %d %Y, %H:%M:%S'),
                         'job_id': job.pk, 'job_description': 'Script: {}\n{}'.format(job.script.script_name, job.job_description),
                         'job_url': reverse('celery_results_info', kwargs={'job_id': job.pk})} for job in jobs], safe=False)

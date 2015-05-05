@@ -158,7 +158,8 @@ class ArgParseNodeBuilder(object):
             module = imp.load_source(script_name, script_path)
         except:
             sys.stderr.write('Error while loading {0}:\n'.format(script_path))
-            sys.stderr.write('{0}\n'.format(traceback.format_exc()))
+            self.error = '{0}\n'.format(traceback.format_exc())
+            sys.stderr.write(self.error)
             self.valid = False
             return
         parsers = [v for i, v in chain(module.main.__globals__.iteritems(), vars(module).iteritems())

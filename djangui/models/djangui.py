@@ -76,10 +76,11 @@ class Script(ModelDiffMixin, models.Model):
         path = self.script_path.path
         return path if self.execute_full_path else os.path.split(path)[1]
 
+    @transaction.atomic
     def save(self, **kwargs):
         if 'script_path' in self.changed_fields:
             self.script_version += 1
-        new_script = self.pk is None
+        new_script = self.pk is None or 'script_path' in self.changed_fields
         # if uploading from the admin, fix its path
         # we do this to avoid having migrations specific to various users with different DJANGUI_SCRIPT_DIR settings
         if new_script and djangui_settings.DJANGUI_SCRIPT_DIR not in self.script_path.file.name:
@@ -90,9 +91,12 @@ class Script(ModelDiffMixin, models.Model):
             default_storage.delete(old_path)
             self.script_path.name = new_name
         super(Script, self).save(**kwargs)
-        if 'script_path' in self.changed_fields or new_script:
+        if  new_script:
             if getattr(self, '_add_script', True):
-                utils.add_djangui_script(script=self, group=self.script_group)
+                added, error = utils.add_djangui_script(script=self, group=self.script_group)
+                if added is False:
+                    # TODO: Make a better error
+                    raise BaseException(error)
         utils.load_scripts()
 
 
@@ -192,7 +196,7 @@ class ScriptParameter(UpdateScriptsMixin, models.Model):
     form_field = models.CharField(max_length=255)
     default = models.CharField(max_length=255, null=True, blank=True)
     input_type = models.CharField(max_length=255)
-    param_help = models.TextField(verbose_name='help')
+    param_help = models.TextField(verbose_name='help', null=True, blank=True)
     is_checked = models.BooleanField(default=False)
     parameter_group = models.ForeignKey('ScriptParameterGroup')
 

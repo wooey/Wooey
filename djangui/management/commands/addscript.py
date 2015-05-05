@@ -37,6 +37,7 @@ class Command(BaseCommand):
                 # copy the script to our storage
                 with open(script, 'r') as f:
                     script = default_storage.save(os.path.join(djangui_settings.DJANGUI_SCRIPT_DIR, os.path.split(script)[1]), File(f))
-                add_djangui_script(script=os.path.abspath(os.path.join(settings.MEDIA_ROOT, script)), group=group)
-                converted += 1
+                added, error = add_djangui_script(script=os.path.abspath(os.path.join(settings.MEDIA_ROOT, script)), group=group)
+                if added:
+                    converted += 1
         sys.stdout.write('Converted {} scripts\n'.format(converted))

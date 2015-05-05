@@ -83,8 +83,8 @@
   <div class="panel-heading">
     <h3 class="panel-title">{% trans "Job History" %} <a href="#" id="celery-refresh"><span class="glyphicon glyphicon-refresh"></span></a></h3>
   </div>
-  <div class="table-responsive">
-    <table id="djangui-job-table" class="table-responsive table hover stripe col-md-3 col-xs-12">
+  <div class="panel panel-body table-responsive">
+    <table id="djangui-job-table" class="table-responsive table hover stripe" witdh="100%">
     <thead>
         <th>{% trans "Id" %}</th>
         <th>{% trans "Name" %}</th>
@@ -247,7 +247,7 @@
                             djangui_dt.fnUpdate(data[i].job_status, indexes[0], 2);
                         }
                         else {
-                            var node = djangui_dt_api.row.add([data[i].job_id, '<a href="' + data[i].job_url + '" data-title="'+data[i].job_name+'" data-toggle="popover" data-content="'+data[i].job_description+'">' + data[i].job_display + '</a>', data[i].job_status, data[i].job_submitted]);
+                            var node = djangui_dt_api.row.add([data[i].job_id, '<a href="' + data[i].job_url + '" data-title="'+data[i].job_name+'" data-toggle="popover" data-content="'+data[i].job_description+'">' + data[i].job_name + '</a>', data[i].job_status, data[i].job_submitted]);
                         }
                         dt_jobs[data[i].job_id] = data[i].job_status;
                     }

@@ -1,6 +1,9 @@
 from __future__ import absolute_import
 
+from django.db.models.signals import post_delete
+
 from celery.signals import task_postrun, task_prerun, task_revoked
+
 
 @task_postrun.connect
 @task_prerun.connect
@@ -14,3 +17,13 @@ def task_completed(sender=None, **kwargs):
         job.celery_state = state
     job.celery_id = kwargs.get('task_id')
     job.save()
+
+def reload_scripts(**kwargs):
+    from .backend import utils
+    utils.load_scripts()
+
+from .models import Script, ScriptGroup, ScriptParameter, ScriptParameterGroup
+post_delete.connect(reload_scripts, sender=Script)
+post_delete.connect(reload_scripts, sender=ScriptGroup)
+post_delete.connect(reload_scripts, sender=ScriptParameter)
+post_delete.connect(reload_scripts, sender=ScriptParameterGroup)

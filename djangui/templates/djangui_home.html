@@ -83,13 +83,13 @@
   <div class="panel-heading">
     <h3 class="panel-title">{% trans "Job History" %} <a href="#" id="celery-refresh"><span class="glyphicon glyphicon-refresh"></span></a></h3>
   </div>
-  <div class="panel-body table-responsive">
-    <table id="djangui-job-table" class="table hover stripe col-md-3 col-xs-12">
+  <div class="table-responsive">
+    <table id="djangui-job-table" class="table-responsive table hover stripe col-md-3 col-xs-12">
     <thead>
-        <th>{% trans "Job Id" %}</th>
-        <th>{% trans "Job Name" %}</th>
-        <th>{% trans "Job Status" %}</th>
-        <th>{% trans "Submission Time" %}</th>
+        <th>{% trans "Id" %}</th>
+        <th>{% trans "Name" %}</th>
+        <th>{% trans "Status" %}</th>
+        <th>{% trans "Submitted" %}</th>
     </thead>
     <tbody>
 
@@ -135,7 +135,6 @@
                 if($first.length)
                     $first.trigger('click');
                 window.scrollTo(0, $title.closest('.center-div').offset().top);
-{#                bindPanels();#}
 
             }, "json");
         });
@@ -195,6 +194,7 @@
                     if(data.valid){
                         // clear form
                         $form[0].reset();
+                        celeryRefresh();
                     }
                     else{
                         processErrors($form, data.errors)
@@ -203,11 +203,19 @@
             });
         });
 
-        var djangui_dt = $('#djangui-job-table').dataTable({
+        var $jobtable = $('#djangui-job-table');
+        var djangui_dt = $jobtable.dataTable({
             "columnDefs": [
-                { "visible": false,  "targets": [ 0 ] }
+                { "visible": false,  "targets": [ 0 ] },
             ],
             "order": [[ 3, "desc" ]]
+        });
+        $jobtable.on( 'draw.dt', function () {
+            $('[data-toggle="popover"]').popover({
+                trigger: 'hover',
+                container: 'body',
+                placement: 'auto left',
+            });
         });
         var djangui_dt_api = djangui_dt.api();
         $('#djangui-job-table_wrapper').addClass('col-md-12');
@@ -238,8 +246,9 @@
                             }
                             djangui_dt.fnUpdate(data[i].job_status, indexes[0], 2);
                         }
-                        else
-                            djangui_dt_api.row.add([data[i].job_id, '<a href="'+data[i].job_url+'">'+data[i].job_name+'</a>', data[i].job_status, data[i].job_submitted]);
+                        else {
+                            var node = djangui_dt_api.row.add([data[i].job_id, '<a href="' + data[i].job_url + '" data-title="'+data[i].job_name+'" data-toggle="popover" data-content="'+data[i].job_description+'">' + data[i].job_display + '</a>', data[i].job_status, data[i].job_submitted]);
+                        }
                         dt_jobs[data[i].job_id] = data[i].job_status;
                     }
                 }

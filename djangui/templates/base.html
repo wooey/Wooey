@@ -160,6 +160,7 @@
             }
 
         $(document).ready(function(){
+            $('[data-toggle="popover"]').popover();
             $('#djangui-login').click(function(event){
             event.preventDefault();
             var $form = $(this).closest('form');

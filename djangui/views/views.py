@@ -38,12 +38,7 @@ class DjanguiScriptJSON(DetailView):
             post['user'] = request.user
         form = utils.get_master_form(pk=post['djangui_type'])
         # TODO: Check with people who know more if there's a smarter way to do this
-        form.add_djangui_fields()
-        form.data = post
-        form.files = request.FILES
-        form.is_bound = True
-        form.full_clean()
-
+        utils.validate_form(form=form, data=post, files=request.FILES)
         if not form.is_valid():
             # for cloned jobs, we have the files named in 'currently'. This will cause validation issues.
             to_delete = []

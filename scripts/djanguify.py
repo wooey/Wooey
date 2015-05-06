@@ -6,6 +6,7 @@ Create a Django app with Djangui setup.
 import sys
 import traceback
 import os
+env = os.environ
 import imp
 import subprocess
 import shutil
@@ -25,7 +26,8 @@ def main():
     if not new_project:
         sys.stderr.write('Project {0} already exists.\n'.format(project_name))
         return 1
-    subprocess.call(['django-admin.py', 'startproject', project_name])
+    env['DJANGO_SETTINGS_MODULE'] = ''
+    subprocess.call(['django-admin', 'startproject', project_name], env=env)
     project_root = project_name
     project_base_dir = os.path.join(project_root, project_name)
 
@@ -72,12 +74,13 @@ def main():
     shutil.move(os.path.join(project_base_dir, 'settings.py'), os.path.join(project_base_dir, 'settings', 'django_settings.py'))
     # do the same with urls
     shutil.move(os.path.join(project_base_dir, 'urls.py'), os.path.join(project_base_dir, 'urls', 'django_urls.py'))
-
-    subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'makemigrations'])
-    subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'migrate'])
-    subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'collectstatic', '--noinput'])
-    sys.stdout.write("Please enter the project directory {}, and run python manage.py createsuperuser and"
-                     " python manage.py runserver to start. The admin can be found at localhost:8000/admin \n".format(project_name))
+    env['DJANGO_SETTINGS_MODULE'] = '.'.join([project_name, 'settings', 'user_settings'])
+    subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'makemigrations'], env=env)
+    subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'migrate'], env=env)
+    subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'collectstatic', '--noinput'], env=env)
+    sys.stdout.write("Please enter the project directory {0}, and run python manage.py createsuperuser and"
+                     " python manage.py runserver to start. The admin can be found at localhost:8000/admin. You may also want to set your"
+                     "DJANGO_SETTINGS_MODULE environment variable to {0}.settings \n".format(project_name))
 
 if __name__ == "__main__":
     sys.exit(main())

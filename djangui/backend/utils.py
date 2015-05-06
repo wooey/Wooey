@@ -59,6 +59,13 @@ def get_form_groups(model=None, pk=None, initial=None):
     from ..forms.factory import DJ_FORM_FACTORY
     return DJ_FORM_FACTORY.get_group_forms(model=model, pk=pk, initial=initial)
 
+def validate_form(form=None, data=None, files=None):
+    form.add_djangui_fields()
+    form.data = data if data is not None else {}
+    form.files = files if files is not None else {}
+    form.is_bound = True
+    form.full_clean()
+
 def load_scripts():
     from ..models import Script
     # select all the scripts we have, then divide them into groups

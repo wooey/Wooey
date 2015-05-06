@@ -1,0 +1,5 @@
+pip install Django
+pip install django-djangui
+pip install django-sslify
+pip install django-storages
+pip install django-celery

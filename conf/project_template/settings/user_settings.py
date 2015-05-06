@@ -59,7 +59,7 @@ DJANGUI_CELERY = True
 #     'collectfast',
 # )
 
-## We have user authentication -- we need to use https
+## We have user authentication -- we need to use https (django-sslify)
 # MIDDLEWARE_CLASSES = ['sslify.middleware.SSLifyMiddleware']+list(MIDDLEWARE_CLASSES)
 # SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 #

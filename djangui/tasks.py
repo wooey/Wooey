@@ -61,6 +61,7 @@ def submit_script(com, **kwargs):
     job.stdout = stdout
     job.stderr = stderr
     job.celery_state = states.SUCCESS
+    job.status = DjanguiJob.COMPLETED
     job.save()
 
     return (stdout, stderr)

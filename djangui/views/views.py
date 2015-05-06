@@ -19,7 +19,6 @@ class DjanguiScriptJSON(DetailView):
 
     def render_to_response(self, context, **response_kwargs):
         # returns the models required and optional fields as html
-        # import pdb; pdb.set_trace();
         job_id = self.kwargs.get('job_id')
         initial = None
         if job_id:

@@ -21,7 +21,7 @@ def celery_status(request):
         states.PENDING: "<span class='glyphicon glyphicon-time'></span>",
         states.REVOKED: "<span class='glyphicon glyphicon-stop'></span>",
     }
-    jobs = DjanguiJob.objects.filter(user=request.user if request.user.is_authenticated() else None)
+    jobs = DjanguiJob.objects.filter(user=request.user if request.user.is_authenticated() else None).exclude(status=DjanguiJob.DELETED)
     return JsonResponse([{'job_name': job.job_name, 'job_status': STATE_MAPPER.get(job.celery_state, job.celery_state),
                         'job_submitted': job.created_date.strftime('%b %d %Y, %H:%M:%S'),
                         'job_id': job.pk, 'job_description': 'Script: {}\n{}'.format(job.script.script_name, job.job_description),
@@ -42,7 +42,8 @@ def celery_task_command(request):
         elif command == 'clone':
             response.update({'valid': True, 'redirect': '{0}?job_id={1}'.format(reverse('djangui_task_launcher'), job_id)})
         elif command == 'delete':
-            job.delete()
+            job.status = DjanguiJob.DELETED
+            job.save()
             response.update({'valid': True, 'redirect': reverse('djangui_home')})
         elif command == 'stop':
             celery_app.control.revoke(job.celery_id, signal='SIGKILL', terminate=True)

@@ -113,6 +113,19 @@ class DjanguiJob(models.Model):
     stdout = models.TextField(null=True, blank=True)
     stderr = models.TextField(null=True, blank=True)
     celery_state = models.CharField(max_length=255, blank=True, null=True)
+
+    DELETED = 'deleted'
+    SUBMITTED = 'submitted'
+    COMPLETED = 'completed'
+
+    STATUS_CHOICES = (
+        (SUBMITTED, _('Submitted')),
+        (COMPLETED, _('Completed')),
+        (DELETED, _('Deleted')),
+    )
+
+    status = models.CharField(max_length=10, default=SUBMITTED, choices=STATUS_CHOICES)
+
     save_path = models.CharField(max_length=255, blank=True, null=True)
     command = models.TextField()
     created_date = models.DateTimeField(auto_now_add=True)
@@ -286,7 +299,7 @@ class ScriptParameters(models.Model):
             else:
                 if value:
                     _file = value
-                    path = os.path.join(self.job.get_upload_path(), value.name)
+                    path = os.path.join(self.job.get_upload_path(), os.path.split(value.name)[1])
             if _file is not None:
                 default_storage.save(path, _file)
                 value = path

@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from django.db.models.signals import post_delete
 
 from celery.signals import task_postrun, task_prerun, task_revoked

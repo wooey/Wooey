@@ -40,16 +40,17 @@ def collect_argparses(files, write_out_json=True):
             except Exception as e:  # Catch all exceptions and report, but continue
                 logging.error("Compilation of script %s failed with: %s" % (filepath, e))
                 continue  # Next script
-                globals = {}
-                # Now execute the code to get the argparse object
-                try:
-                    exec('\n'.join(python_code), globals)
 
-                except Exception as e:  # Catch all exceptions and report, but continue
-                    logging.error("Execution of script %s failed with: %s" % (filepath, e))
-                    continue  # Next script
+            globals = {}
+            # Now execute the code to get the argparse object
+            try:
+                exec('\n'.join(python_code), globals)
 
-                parsers = [p for k, p in globals.items() if isinstance(p, ArgumentParser)]
+            except Exception as e:  # Catch all exceptions and report, but continue
+                logging.error("Execution of script %s failed with: %s" % (filepath, e))
+                continue  # Next script
+
+            parsers = [p for k, p in globals.items() if isinstance(p, ArgumentParser)]
 
         if parsers:
             parser = parsers[0]  # Why would there be more than 1?

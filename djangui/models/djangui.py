@@ -83,10 +83,10 @@ class Script(ModelDiffMixin, models.Model):
         # we do this to avoid having migrations specific to various users with different DJANGUI_SCRIPT_DIR settings
         if new_script or djangui_settings.DJANGUI_SCRIPT_DIR not in self.script_path.file.name:
             new_name = os.path.join(djangui_settings.DJANGUI_SCRIPT_DIR, self.script_path.file.name)
-            utils.storage_save(new_name, self.script_path.file, local=False)
+            utils.get_storage(local=False).save(new_name, self.script_path.file)
             # save it locally a well
-            if not utils.file_exists(new_name, local=True):
-                utils.storage_save(new_name, self.script_path.file, local=True)
+            if not utils.get_storage(local=True).exists(new_name):
+                utils.get_storage(local=True).save(new_name, self.script_path.file)
             self.script_path.save(new_name, self.script_path.file, save=False)
             self.script_path.name = new_name
         super(Script, self).save(**kwargs)
@@ -261,14 +261,14 @@ class ScriptParameters(models.Model):
                 try:
                     value = value.path
                 except AttributeError:
-                    value = utils.file_path(value, local=True)
+                    value = utils.get_storage(local=True).path(value)
                     # trim the output path, we don't want to be adding our platform specific paths to the output
                     op = self.job.get_output_path()
                     value = value[value.find(op)+len(op)+1:]
             else:
                 # make sure we have it locally otherwise download it
-                if not utils.file_exists(value.path, local=True):
-                    new_path = utils.storage_save(value.path, value, local=True)
+                if not utils.get_storage(local=True).exists(value.path):
+                    new_path = utils.get_storage(local=True).save(value.path, value)
                     value = new_path
                 else:
                     # return the string for processing
@@ -340,8 +340,8 @@ class ScriptParameters(models.Model):
             else:
                 if value:
                     path = os.path.join(self.job.get_upload_path(), os.path.split(value.name)[1])
-                    utils.storage_save(path, value, local=False)
-                    utils.storage_save(path, value, local=True)
+                    utils.get_storage(local=False).save(path, value)
+                    utils.get_storage(local=True).save(path, value)
                     value = path
         self._value = json.dumps(value)
 

@@ -49,7 +49,7 @@ class DjanguiScriptJSON(DetailView):
                 if i not in request.FILES and (i not in form.cleaned_data or (not form.cleaned_data[i] and new_value)):
                     # this is a previously set field, so a cloned job
                     if new_value is not None:
-                        form.cleaned_data[i] = utils.file_open(new_value, local=False)
+                        form.cleaned_data[i] = utils.get_storage(local=False).open(new_value)
                     to_delete.append(i)
         for i in to_delete:
             if i in form.errors:

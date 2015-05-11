@@ -31,30 +31,6 @@ def get_storage(local=True):
         storage = default_storage
     return storage
 
-def storage_save(path, file_object, local=True):
-    storage = get_storage(local=local)
-    return storage.save(path, file_object)
-
-def file_exists(path, local=True):
-    storage = get_storage(local=local)
-    return storage.exists(path)
-
-def file_size(path, local=True):
-    storage = get_storage(local=local)
-    return storage.size(path)
-
-def file_delete(path, local=True):
-    storage = get_storage(local=local)
-    return storage.delete(path)
-
-def file_path(path, local=True):
-    storage = get_storage(local=local)
-    return storage.path(path)
-
-def file_open(path, local=True):
-    storage = get_storage(local=local)
-    return storage.open(path)
-
 def get_job_commands(job=None):
     script = job.script
     com = ['python', script.get_script_path()]
@@ -135,11 +111,7 @@ def load_scripts():
 
 
 def get_storage_object(path, local=False):
-    # TODO: If we have to add anymore, just make this a class and route the DS methods we need
-    if local:
-        storage = default_storage.local_storage
-    else:
-        storage = default_storage
+    storage = get_storage(local=local)
     obj = storage.open(path)
     obj.url = storage.url(path)
     obj.path = storage.path(path)
@@ -239,9 +211,9 @@ def create_job_fileinfo(job):
                     continue
                 if isinstance(value, basestring):
                     # check if this was ever created and make a fileobject if so
-                    if default_storage.local_storage.exists(value):
-                        if not default_storage.exists(value):
-                            default_storage.save(value, File(default_storage.local_storage.open(value)))
+                    if get_storage(local=True).exists(value):
+                        if not get_storage(local=False).exists(value):
+                            get_storage(local=False).save(value, File(get_storage(local=True).open(value)))
                         value = field.value
                     else:
                         field.force_value(None)
@@ -350,7 +322,7 @@ def create_job_fileinfo(job):
                                 parameter=group_file.get('parameter'))
             filepath = group_file['file'].path
             # make it relative to the root
-            dj_file.filepath.name = filepath[filepath.find(settings.MEDIA_ROOT)+len(settings.MEDIA_ROOT):]
+            dj_file.filepath.name = filepath[filepath.find(settings.MEDIA_ROOT)+len(settings.MEDIA_ROOT)+1:]
             dj_file.save()
 
 
@@ -359,8 +331,9 @@ def get_file_previews(job):
     files = DjanguiFile.objects.filter(job=job)
     groups = {'all': []}
     for file_info in files:
+        print file_info.filepath, vars(file_info.filepath)
         filedict = {'name': file_info.filepath.name, 'preview': json.loads(file_info.filepreview),
-                    'url': file_info.filepath.url if os.environ.get('HEROKU', False) else '',
+                    'url': get_storage(local=False).url(file_info.filepath.name),
                     'slug': file_info.parameter.parameter.script_param if file_info.parameter else None}
         try:
             groups[file_info.filetype].append(filedict)

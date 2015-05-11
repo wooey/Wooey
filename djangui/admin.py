@@ -3,7 +3,7 @@ from django.contrib import admin
 from .models import Script, ScriptGroup, ScriptParameter, DjanguiJob, ScriptParameterGroup
 
 class JobAdmin(admin.ModelAdmin):
-    list_display = ('user', 'job_name', 'script', 'celery_state', 'status', 'created_date')
+    list_display = ('user', 'job_name', 'script', 'status', 'created_date')
 
 class ScriptAdmin(admin.ModelAdmin):
     list_display = ('script_name', 'script_group', 'is_active', 'script_version')

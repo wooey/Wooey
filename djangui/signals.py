@@ -9,10 +9,11 @@ def task_completed(sender=None, **kwargs):
     task_kwargs = kwargs.get('kwargs')
     job_id = task_kwargs.get('djangui_job')
     from .models import DjanguiJob
+    from celery import states
     job = DjanguiJob.objects.get(pk=job_id)
     state = kwargs.get('state')
     if state:
-        job.celery_state = state
+        job.status = DjanguiJob.COMPLETED if state == states.SUCCESS else state
     job.celery_id = kwargs.get('task_id')
     job.save()
 
@@ -20,7 +21,7 @@ def reload_scripts(**kwargs):
     from .backend import utils
     utils.load_scripts()
 
-from .models import Script, ScriptGroup, ScriptParameter, ScriptParameterGroup
+from models import Script, ScriptGroup, ScriptParameter, ScriptParameterGroup
 post_delete.connect(reload_scripts, sender=Script)
 post_delete.connect(reload_scripts, sender=ScriptGroup)
 post_delete.connect(reload_scripts, sender=ScriptParameter)

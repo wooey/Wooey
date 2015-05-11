@@ -39,28 +39,28 @@ class DjanguiScriptJSON(DetailView):
         form = utils.get_master_form(pk=post['djangui_type'])
         # TODO: Check with people who know more if there's a smarter way to do this
         utils.validate_form(form=form, data=post, files=request.FILES)
-        if not form.is_valid():
-            # for cloned jobs, we have the files named in 'currently'. This will cause validation issues.
-            to_delete = []
-            for i in post:
-                if isinstance(form.fields.get(i), FileField):
-                    # if we have a value set, reassert this
+        # for cloned jobs, we don't have the files in input fields, they'll be in a list like ['', filename]
+        # This will cause issues.
+        to_delete = []
+        for i in post:
+            if isinstance(form.fields.get(i), FileField):
+                # if we have a value set, reassert this
+                new_value = post.get(i)
+                if i not in request.FILES and (i not in form.cleaned_data or (not form.cleaned_data[i] and new_value)):
+                    # this is a previously set field, so a cloned job
+                    if new_value is not None:
+                        form.cleaned_data[i] = default_storage.open(new_value)
                     to_delete.append(i)
-                    if i not in request.FILES and (i not in form.cleaned_data or form.cleaned_data[i] is None):
-                        # this is a previously set field, so a cloned job
-                        path = post.get(i)
-                        if path:
-                            form.cleaned_data[i] = default_storage.open(path)
-            for i in to_delete:
-                if i in form.errors:
-                    del form.errors[i]
+        for i in to_delete:
+            if i in form.errors:
+                del form.errors[i]
 
         if not form.errors:
             # data = form.cleaned_data
             script = Script.objects.get(pk=form.cleaned_data.get('djangui_type'))
             if valid_user(script, request.user) is True and valid_user(script.script_group, request.user) is True:
-                job, com = form.save()
-                job.submit_to_celery(command=com)
+                job = form.save()
+                job.submit_to_celery()
                 return JsonResponse({'valid': True})
             return JsonResponse({'valid': False, 'errors': {'__all__': [force_unicode(_('You are not permitted to access this script.'))]}})
 

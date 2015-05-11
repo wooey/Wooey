@@ -18,3 +18,9 @@ def endswith(value, arg):
 def valid_user(obj, user):
     from ..backend import utils
     return utils.valid_user(obj, user)
+
+@register.filter
+def complete_job(status):
+    from ..models import DjanguiJob
+    from celery import states
+    return status in (DjanguiJob.COMPLETED, states.REVOKED)

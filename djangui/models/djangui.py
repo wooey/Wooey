@@ -24,10 +24,8 @@ from ..backend import utils
 from .mixins import UpdateScriptsMixin, ModelDiffMixin
 
 
-# TODO: Handle cases where celery is not used
+# TODO: Handle cases where celery is not setup but specified to be used
 tasks = importlib.import_module(djangui_settings.DJANGUI_CELERY_TASKS)
-
-# TODO: Add user rights, hide/lock/ordering in an inherited class to cover scriptgroup/scripts
 
 class ScriptGroup(UpdateScriptsMixin, models.Model):
     """
@@ -83,15 +81,15 @@ class Script(ModelDiffMixin, models.Model):
         new_script = self.pk is None or 'script_path' in self.changed_fields
         # if uploading from the admin, fix its path
         # we do this to avoid having migrations specific to various users with different DJANGUI_SCRIPT_DIR settings
-        if new_script and djangui_settings.DJANGUI_SCRIPT_DIR not in self.script_path.file.name:
-            old_path = self.script_path.path
+        if new_script or djangui_settings.DJANGUI_SCRIPT_DIR not in self.script_path.file.name:
             new_name = os.path.join(djangui_settings.DJANGUI_SCRIPT_DIR, self.script_path.file.name)
-            new_path = os.path.join(settings.MEDIA_ROOT, new_name)
-            default_storage.save(new_path, self.script_path.file)
-            default_storage.delete(old_path)
+            default_storage.save(new_name, self.script_path.file)
+            # save it locally a well
+            default_storage.local_storage.save(new_name, self.script_path.file)
+            self.script_path.save(new_name, self.script_path.file, save=False)
             self.script_path.name = new_name
         super(Script, self).save(**kwargs)
-        if  new_script:
+        if new_script:
             if getattr(self, '_add_script', True):
                 added, error = utils.add_djangui_script(script=self, group=self.script_group)
                 if added is False:
@@ -112,19 +110,20 @@ class DjanguiJob(models.Model):
     job_description = models.TextField(null=True, blank=True)
     stdout = models.TextField(null=True, blank=True)
     stderr = models.TextField(null=True, blank=True)
-    celery_state = models.CharField(max_length=255, blank=True, null=True)
 
     DELETED = 'deleted'
     SUBMITTED = 'submitted'
     COMPLETED = 'completed'
+    RUNNING = 'running'
 
     STATUS_CHOICES = (
         (SUBMITTED, _('Submitted')),
+        (RUNNING, _('Running')),
         (COMPLETED, _('Completed')),
         (DELETED, _('Deleted')),
     )
 
-    status = models.CharField(max_length=10, default=SUBMITTED, choices=STATUS_CHOICES)
+    status = models.CharField(max_length=255, default=SUBMITTED, choices=STATUS_CHOICES)
 
     save_path = models.CharField(max_length=255, blank=True, null=True)
     command = models.TextField()
@@ -138,23 +137,23 @@ class DjanguiJob(models.Model):
     def get_parameters(self):
         return ScriptParameters.objects.filter(job=self)
 
-    def submit_to_celery(self, command=None, resubmit=False):
-        if command is None:
-            command = utils.get_script_commands(script=self.script, parameters=ScriptParameters.objects.filter(job=self))
-        if resubmit:
-            # clone ourselves
+    def submit_to_celery(self, **kwargs):
+        if kwargs.get('resubmit'):
+            params = self.get_parameters()
             self.pk = None
-        # This is where the script works from -- it doesn't include the media_root since that may change
-        cwd = self.get_output_path()
-        abscwd = os.path.abspath(os.path.join(settings.MEDIA_ROOT, cwd))
-        self.command = ' '.join(command)
-        self.save_path = cwd
-        self.celery_state = states.PENDING
+            self.save()
+            with transaction.atomic():
+                for param in params:
+                    param.pk = None
+                    param.job = self
+                    param.recreate()
+                    param.save()
+        self.status = self.SUBMITTED
         self.save()
         if djangui_settings.DJANGUI_CELERY:
-            results = tasks.submit_script.delay(command, djangui_cwd=abscwd, djangui_job=self.pk)
+            results = tasks.submit_script.delay(djangui_job=self.pk)
         else:
-            results = tasks.submit_script(command, djangui_cwd=abscwd, djangui_job=self.pk)
+            results = tasks.submit_script(djangui_job=self.pk)
         return self
 
     def get_resubmit_url(self):
@@ -173,7 +172,7 @@ class DjanguiJob(models.Model):
 
     def get_output_path(self):
         path = os.path.join(djangui_settings.DJANGUI_FILE_DIR, get_valid_filename(self.user.username if self.user is not None else ''),
-                            get_valid_filename(self.script.slug if not self.script.save_path else self.script.save_path), str(DjanguiJob.objects.count()))
+                            get_valid_filename(self.script.slug if not self.script.save_path else self.script.save_path), str(self.pk))
         self.mkdirs(os.path.join(settings.MEDIA_ROOT, path))
         return path
 
@@ -257,8 +256,44 @@ class ScriptParameters(models.Model):
             if value:
                 return [param]
         if field == self.FILE:
-            value = value.name
+            if self.parameter.is_output:
+                try:
+                    value = value.path
+                except AttributeError:
+                    value = default_storage.local_storage.path(value)
+                    # trim the output path, we don't want to be adding our platform specific paths to the output
+                    op = self.job.get_output_path()
+                    value = value[value.find(op)+len(op)+1:]
+            else:
+                # make sure we have it locally otherwise download it
+                if not default_storage.local_storage.exists(value.path):
+                    new_path = default_storage.local_storage.save(value.path, value)
+                    value = new_path
+                else:
+                    # return the string for processing
+                    value = value.path
         return [param, str(value)]
+
+    def force_value(self, value):
+        self._value = json.dumps(value)
+
+    def recreate(self):
+        # we want to change filefields to reflect whatever is the current job's path. This is currently used for
+        # job resubmission
+        value = json.loads(self._value)
+        field = self.parameter.form_field
+        if field == self.FILE:
+            # we are perfectly fine using old input files instead of recreating them, so only check output files
+            if self.parameter.is_output:
+                new_path = self.job.get_output_path()
+                new_root, new_id = os.path.split(new_path)
+                # we want to remove the root + the old job's pk
+                value = value[value.find(new_root)+len(new_root)+1:]
+                value = value[value.find(os.path.sep)+1:]
+                # we want to create a new path for the current job
+                path = os.path.join(new_path, self.parameter.slug if not value else value)
+                value = path
+                self._value = json.dumps(value)
 
     @property
     def value(self):
@@ -266,8 +301,14 @@ class ScriptParameters(models.Model):
         if value is not None:
             field = self.parameter.form_field
             if field == self.FILE:
-                file_obj = utils.get_storage_object(value)
-                value = file_obj
+                try:
+                    file_obj = utils.get_storage_object(value)
+                    value = file_obj
+                except IOError:
+                    # this can occur when the storage object is not yet made for output
+                    if self.parameter.is_output:
+                        return value
+                    raise IOError
         return value
 
     @value.setter
@@ -291,18 +332,22 @@ class ScriptParameters(models.Model):
             if value:
                 value = True
         elif field == self.FILE:
-            _file = None
             if self.parameter.is_output:
                 # make a fake object for it
                 path = os.path.join(self.job.get_output_path(), self.parameter.slug if not value else value)
-                _file = ContentFile('')
-            else:
-                if value:
-                    _file = value
-                    path = os.path.join(self.job.get_upload_path(), os.path.split(value.name)[1])
-            if _file is not None:
-                default_storage.save(path, _file)
                 value = path
             else:
-                value = None
+                if value:
+                    path = os.path.join(self.job.get_upload_path(), os.path.split(value.name)[1])
+                    default_storage.save(path, value)
+                    default_storage.local_storage.save(path, value)
+                    value = path
         self._value = json.dumps(value)
+
+
+class DjanguiFile(models.Model):
+    filepath = models.FileField()
+    job = models.ForeignKey('DjanguiJob')
+    filepreview = models.TextField(null=True, blank=True)
+    filetype = models.CharField(max_length=255, null=True, blank=True)
+    parameter = models.ForeignKey('ScriptParameters', null=True, blank=True)

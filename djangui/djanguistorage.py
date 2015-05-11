@@ -1,9 +1,8 @@
 from boto.utils import parse_ts
-from django.core.files.base import File
 from django.core.files.storage import get_storage_class
 from storages.backends.s3boto import S3BotoStorage
 
-import os
+from . import settings as djangui_settings
 
 # From https://github.com/jezdez/django_compressor/issues/100
 

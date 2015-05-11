@@ -83,9 +83,10 @@ class Script(ModelDiffMixin, models.Model):
         # we do this to avoid having migrations specific to various users with different DJANGUI_SCRIPT_DIR settings
         if new_script or djangui_settings.DJANGUI_SCRIPT_DIR not in self.script_path.file.name:
             new_name = os.path.join(djangui_settings.DJANGUI_SCRIPT_DIR, self.script_path.file.name)
-            default_storage.save(new_name, self.script_path.file)
+            utils.storage_save(new_name, self.script_path.file, local=False)
             # save it locally a well
-            default_storage.local_storage.save(new_name, self.script_path.file)
+            if not utils.file_exists(new_name, local=True):
+                utils.storage_save(new_name, self.script_path.file, local=True)
             self.script_path.save(new_name, self.script_path.file, save=False)
             self.script_path.name = new_name
         super(Script, self).save(**kwargs)
@@ -260,14 +261,14 @@ class ScriptParameters(models.Model):
                 try:
                     value = value.path
                 except AttributeError:
-                    value = default_storage.local_storage.path(value)
+                    value = utils.file_path(value, local=True)
                     # trim the output path, we don't want to be adding our platform specific paths to the output
                     op = self.job.get_output_path()
                     value = value[value.find(op)+len(op)+1:]
             else:
                 # make sure we have it locally otherwise download it
-                if not default_storage.local_storage.exists(value.path):
-                    new_path = default_storage.local_storage.save(value.path, value)
+                if not utils.file_exists(value.path, local=True):
+                    new_path = utils.storage_save(value.path, value, local=True)
                     value = new_path
                 else:
                     # return the string for processing
@@ -339,8 +340,8 @@ class ScriptParameters(models.Model):
             else:
                 if value:
                     path = os.path.join(self.job.get_upload_path(), os.path.split(value.name)[1])
-                    default_storage.save(path, value)
-                    default_storage.local_storage.save(path, value)
+                    utils.storage_save(path, value, local=False)
+                    utils.storage_save(path, value, local=True)
                     value = path
         self._value = json.dumps(value)
 

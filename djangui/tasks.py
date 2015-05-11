@@ -48,8 +48,8 @@ def submit_script(**kwargs):
     # make sure we have the script, otherwise download it. This can happen if we have an ephemeral file system or are
     # executing jobs on a worker node.
     script_path = job.script.script_path
-    if not default_storage.local_storage.exists(script_path.path):
-        default_storage.local_storage.save(script_path.path, script_path.file)
+    if not utils.file_exists(script_path.path, local=True):
+        utils.storage_save(script_path.path, script_path.file, local=True)
 
     job.status = DjanguiJob.RUNNING
     job.save()
@@ -95,12 +95,12 @@ def submit_script(**kwargs):
         for filename in files:
             filepath = os.path.join(root, filename)
             s3path = os.path.join(root[root.find(cwd):], filename)
-            exists = default_storage.exists(s3path)
-            filesize = default_storage.size(s3path)
+            exists = utils.file_exists(s3path, local=False)
+            filesize = utils.file_size(s3path, local=False)
             if not exists or (exists and filesize == 0):
                 if exists:
-                    default_storage.delete(s3path)
-                default_storage.save(s3path, File(open(filepath, 'rb')))
+                    utils.file_delete(s3path, local=False)
+                utils.storage_save(s3path, File(open(filepath, 'rb')), local=False)
 
     utils.create_job_fileinfo(job)
 

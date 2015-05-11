@@ -17,7 +17,6 @@ from .argparse_specs import ArgParseNodeBuilder
 
 from .. import settings as djangui_settings
 
-
 def sanitize_name(name):
     return name.replace(' ', '_').replace('-', '_')
 
@@ -25,6 +24,36 @@ def sanitize_name(name):
 def sanitize_string(value):
     return value.replace('"', '\\"')
 
+def get_storage(local=True):
+    if djangui_settings.DJANGUI_EPHEMERAL_FILES:
+        storage = default_storage.local_storage if local else default_storage
+    else:
+        storage = default_storage
+    return storage
+
+def storage_save(path, file_object, local=True):
+    storage = get_storage(local=local)
+    return storage.save(path, file_object)
+
+def file_exists(path, local=True):
+    storage = get_storage(local=local)
+    return storage.exists(path)
+
+def file_size(path, local=True):
+    storage = get_storage(local=local)
+    return storage.size(path)
+
+def file_delete(path, local=True):
+    storage = get_storage(local=local)
+    return storage.delete(path)
+
+def file_path(path, local=True):
+    storage = get_storage(local=local)
+    return storage.path(path)
+
+def file_open(path, local=True):
+    storage = get_storage(local=local)
+    return storage.open(path)
 
 def get_job_commands(job=None):
     script = job.script

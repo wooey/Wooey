@@ -10,8 +10,6 @@ INSTALLED_APPS += (
 # Whether to allow anonymous job submissions, set False to disallow 'guest' job submissions
 DJANGUI_ALLOW_ANONYMOUS = True
 
-CORS_ORIGIN_ALLOW_ALL = True
-
 ## Celery related options
 INSTALLED_APPS += (
     'djcelery',
@@ -22,6 +20,18 @@ CELERY_RESULT_BACKEND='djcelery.backends.database:DatabaseBackend'
 BROKER_URL = 'django://'
 CELERY_TRACK_STARTED = True
 DJANGUI_CELERY = True
+
+# Things you most likely do not need to change
+
+# the directory for uploads (physical directory)
+MEDIA_ROOT = os.path.join(BASE_DIR, 'user_uploads')
+# the url mapping
+MEDIA_URL = '/uploads/'
+
+# the directory to store our webpage assets (images, javascript, etc.)
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+# the url mapping
+STATIC_URL = '/static/'
 
 ## Here is a setup example for production servers
 
@@ -36,7 +46,7 @@ DJANGUI_CELERY = True
 #         'USER': os.environ.get('DATABASE_USER', 'djangui'),
 #         'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'djangui'),
 #         'HOST': os.environ.get('DATABASE_URL', 'localhost'),
-#         'PORT': os.environ.get('DATABASE_PORT', '')
+#         'PORT': os.environ.get('DATABASE_PORT', '5432')
 #     }
 # }
 
@@ -44,15 +54,17 @@ DJANGUI_CELERY = True
 # CELERY_RESULT_BACKEND = 'amqp'
 # BROKER_URL = os.environ.get('AMQP_URL') or \
 #              os.environ.get('RABBITMQ_BIGWIG_TX_URL') or \
-#              os.environ.get('CLOUDAMQP_URL', 'amqp://djangui:djangui@localhost:5672/djangui')
+#              os.environ.get('CLOUDAMQP_URL', 'amqp://guest:guest@localhost:5672/')
 # BROKER_POOL_LIMIT = 1
 # CELERYD_CONCURRENCY = 1
+# CELERY_TASK_SERIALIZER = 'json'
+# ACKS_LATE = True
 #
 
 ## for production environments, django-storages abstracts away much of the difficulty of various storage engines.
 ## Here is an example for hosting static and user generated content with S3
 
-# from boto.s3.connection import SubdomainCallingFormat, VHostCallingFormat
+# from boto.s3.connection import VHostCallingFormat
 #
 # INSTALLED_APPS += (
 #     'storages',
@@ -60,8 +72,15 @@ DJANGUI_CELERY = True
 # )
 
 ## We have user authentication -- we need to use https (django-sslify)
-# MIDDLEWARE_CLASSES = ['sslify.middleware.SSLifyMiddleware']+list(MIDDLEWARE_CLASSES)
-# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# if not DEBUG:
+#     MIDDLEWARE_CLASSES = ['sslify.middleware.SSLifyMiddleware']+list(MIDDLEWARE_CLASSES)
+#     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+#
+# ALLOWED_HOSTS = (
+#     'localhost',
+#     '127.0.0.1',
+#     "djangui.herokuapp.com",# put your site here
+# )
 #
 # AWS_CALLING_FORMAT = VHostCallingFormat
 #
@@ -71,6 +90,7 @@ DJANGUI_CELERY = True
 # AWS_AUTO_CREATE_BUCKET = True
 # AWS_QUERYSTRING_AUTH = False
 # AWS_S3_SECURE_URLS = True
+# AWS_FILE_OVERWRITE = False
 # AWS_PRELOAD_METADATA = True
 # AWS_S3_CUSTOM_DOMAIN = environ.get('AWS_S3_CUSTOM_DOMAIN', '')
 #
@@ -88,21 +108,9 @@ DJANGUI_CELERY = True
 # # }
 #
 # STATIC_URL = 'http://%s.s3.amazonaws.com/' % AWS_STORAGE_BUCKET_NAME
-# MEDIA_URL = STATIC_URL
-# COMPRESS_URL = STATIC_URL
+# MEDIA_URL = '/user-uploads/'
 #
-# STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = 'storages.backends.s3boto.S3BotoStorage'
+# STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = 'djangui.djanguistorage.CachedS3BotoStorage'
 
-# Things you most likely do not need to change
-
-# the directory for uploads (physical directory)
-MEDIA_ROOT = os.path.join(BASE_DIR, 'user_uploads')
-# the url mapping
-MEDIA_URL = '/uploads/'
-
-# the directory to store our webpage assets (images, javascript, etc.)
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-# the url mapping
-STATIC_URL = '/static/'
 
 AUTHENTICATION_BACKEND = 'django.contrib.auth.backends.ModelBackend'

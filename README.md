@@ -6,7 +6,8 @@
 2. [Adding Scripts](#adding)
 3. [Script Organization](#organization)
 4. [Script Permissions](#permissions)
-4. [Configuration](#config)
+5. [Configuration](#config)
+6. [Usage with S3/remote file systems](#s3)
 
 Djangui is designed to take scripts implemented with a python command line argument parser (such as argparse), and convert them into a web interface.
  
@@ -90,11 +91,23 @@ Scripts and groups may also be shutoff to all users by unchecked the 'script/gro
 
 **DJANGUI_ALLOW_ANONYMOUS**: Boolean, whether to allow submission of jobs by anonymous users. (Default: True)
 
-By default, Djangui has a basic user account system. It is very basic, and doesn't confirm registrations via email, nor support
-password recovery (the admin must reset the passwords).
+By default, Djangui has a basic user account system. It is very basic, and doesn't confirm registrations via email.
 
 **DJANGUI_AUTH**: Boolean, whether to use the authorization system of Djangui for simple login/registration. (Default: True)
 
 **DJANGUI_LOGIN_URL**: String, if you have an existing authorization system, the login url: (Default: settings.LOGIN_URL
 
 **DJANGUI_REGISTER_URL**: String, if you have an existing authorization system, the registration url: (Default: /accounts/register/)
+
+**DJANGUI_EPHEMERAL_FILES**: Boolean, if your file system changes with each restart. (Default: False)
+
+**DJANGUI_SHOW_LOCKED_SCRIPTS**: Boolean, whether to show locked scripts as disabled or hide them entirely. (Defalt: True -- show as disabled)
+
+# <a name="s3"></a>Remote File Systems
+
+Djangui has been tested on heroku with S3 as a file storage system. Settings for this can be seen in the user_settings.py, which give you a starting point for a non-local server. In short, you need to change your storage settings like such:
+
+<code>
+STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = 'djangui.djanguistorage.CachedS3BotoStorage'
+DJANGUI_EPHEMERAL_FILES = True
+</code>

@@ -108,6 +108,8 @@ By default, Djangui has a basic user account system. It is very basic, and doesn
 Djangui has been tested on heroku with S3 as a file storage system. Settings for this can be seen in the user_settings.py, which give you a starting point for a non-local server. In short, you need to change your storage settings like such:
 
 <code>
+
 STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = 'djangui.djanguistorage.CachedS3BotoStorage'
 DJANGUI_EPHEMERAL_FILES = True
+
 </code>

@@ -318,12 +318,16 @@ def create_job_fileinfo(job):
         for group_file in group_files:
             if file_type == 'all' and group_file['file'].path in grouped:
                 continue
-            dj_file = DjanguiFile(job=job, filetype=file_type, filepreview=json.dumps(group_file.get('preview')),
-                                parameter=group_file.get('parameter'))
-            filepath = group_file['file'].path
-            # make it relative to the root
-            dj_file.filepath.name = filepath[filepath.find(settings.MEDIA_ROOT)+len(settings.MEDIA_ROOT)+1:]
-            dj_file.save()
+            try:
+                dj_file = DjanguiFile(job=job, filetype=file_type, filepreview=json.dumps(group_file.get('preview')),
+                                    parameter=group_file.get('parameter'))
+                filepath = group_file['file'].path
+                # make it relative to the root
+                dj_file.filepath.name = filepath[filepath.find(settings.MEDIA_ROOT)+len(settings.MEDIA_ROOT)+1:]
+                dj_file.save()
+            except:
+                sys.stderr.write('Error in saving DJFile: {}\n'.format(traceback.format_exc()))
+                continue
 
 
 def get_file_previews(job):
@@ -331,7 +335,6 @@ def get_file_previews(job):
     files = DjanguiFile.objects.filter(job=job)
     groups = {'all': []}
     for file_info in files:
-        print file_info.filepath, vars(file_info.filepath)
         filedict = {'name': file_info.filepath.name, 'preview': json.loads(file_info.filepreview),
                     'url': get_storage(local=False).url(file_info.filepath.name),
                     'slug': file_info.parameter.parameter.script_param if file_info.parameter else None}

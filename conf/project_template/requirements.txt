@@ -3,3 +3,9 @@ django-djangui
 django-sslify
 django-storages
 django-celery
+django-autoslug
+boto
+waitress
+psycopg2
+collectfast
+honcho

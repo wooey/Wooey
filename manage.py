@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
+import sys
 import errno
 import subprocess
 import json
@@ -235,6 +236,17 @@ def start_daemon():
                             raise
 
                         logging.info("Starting job %d." % job.id)
+
+                        # On Windows we need to supply the python executable as a first argument
+                        if sys.platform == 'win32':
+                            req_version = (3, 3)
+                            if sys.version_info >= req_version:
+                                # On python 3.3+ use py launcher
+                                args.insert(0, 'py')
+
+                            else:
+                                # On python <3.3 use python executable
+                                args.insert(0, 'python')
 
                         try:
                             # Run the command and store the object for future use

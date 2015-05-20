@@ -80,5 +80,5 @@ class DjanguiHomeView(TemplateView):
         if job_id:
             job = DjanguiJob.objects.get(pk=job_id)
             if job.user is None or (self.request.user.is_authenticated() and job.user == self.request.user):
-                ctx['clone_job'] = {'job_id': job_id, 'url': job.get_resubmit_url()}
+                ctx['clone_job'] = {'job_id': job_id, 'url': job.get_resubmit_url(), 'data_url': job.script.get_url()}
         return ctx

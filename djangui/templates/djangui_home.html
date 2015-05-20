@@ -107,24 +107,11 @@
     $(document).ready(function(){
         var filesUploaded = {};
 
-        $('.djangui-script-url').click(function(event){
-            event.preventDefault();
-            if($(this).hasClass('disabled'))
-                return;
-            filesUploaded = {};
-            var $jobform = $('#djangui-job-form');
-            clearErrors($jobform);
-            // set the details of what script we clicked
-            var title = $(this).find('.djangui-script-title').text();
-            var desc = $(this).find('.djangui-script-description').text();
-            var $title = $('#djangui-script-title');
-            $title.text(title);
-            $('#djangui-script-description').text(desc);
-            $('.djangui-dynamic-tabs').remove();
-            $.get($(this).data('href'), {},function(data){
-                $jobform.attr('action', data.action);
-                var $djangui_tabs = $jobform.find('#djangui-script-tabs');
-                var $djangui_content = $jobform.find('#djangui-script-content');
+        var loadDjanguiScript = function(url, params, form){
+            $.get(url, params, function(data){
+                form.attr('action', data.action);
+                var $djangui_tabs = form.find('#djangui-script-tabs');
+                var $djangui_content = form.find('#djangui-script-content');
                 for(var i=0;i<data.groups.length;i++){
                     $djangui_tabs.append('<li class="djangui-dynamic-tabs" role="presentation"><a href="#djangui_dynamic_tab'+i+'" aria-controls="profile" role="tab" data-toggle="tab">'+data.groups[i].group_name+'</a></li>');
                     var new_panel = $('<div role="tabpanel" class="tab-pane djangui-dynamic-tabs" id="djangui_dynamic_tab'+i+'"></div>');
@@ -134,9 +121,34 @@
                 var $first = $('a[href="#djangui_dynamic_tab0"]');
                 if($first.length)
                     $first.trigger('click');
-                window.scrollTo(0, $title.closest('.center-div').offset().top);
-
             }, "json");
+
+        };
+
+        var updateScriptInfo = function(url){
+            // set the details of what script we clicked
+            $('.djangui-dynamic-tabs').remove();
+            var $scriptBox = $("a[data-href='"+url+"']");
+            var title = $scriptBox.find('.djangui-script-title').text();
+            var desc = $scriptBox.find('.djangui-script-description').text();
+            $('#djangui-script-description').text(desc);
+            var $title = $('#djangui-script-title');
+            $title.text(title);
+            var currentTop = $(document).scrollTop();
+            var scriptTop = $title.closest('.center-div').offset().top;
+            if (currentTop > scriptTop)
+                window.scrollTo(0, scriptTop);
+        };
+
+        $('.djangui-script-url').click(function(event){
+            event.preventDefault();
+            if($(this).hasClass('disabled'))
+                return;
+            filesUploaded = {};
+            var $jobform = $('#djangui-job-form');
+            clearErrors($jobform);
+            updateScriptInfo($(this).data('href'));
+            loadDjanguiScript($(this).data('href'), {}, $jobform);
         });
 
         {% if clone_job %}
@@ -145,23 +157,10 @@
                var fileName = $(this).val();
                filesUploaded[$(this).attr('name')] = fileName;
              });
-
-            $.get('{{ clone_job.url }}', {job_id: '{{ clone_job.job_id }}'},function(data){
-                var $jobform = $('#djangui-job-form');
-                $jobform.find('#djangui_clone_task_id').val("{{ clone_job.job_id }}");
-                $jobform.attr('action', data.action);
-                var $djangui_tabs = $jobform.find('#djangui-script-tabs');
-                var $djangui_content = $jobform.find('#djangui-script-content');
-                for(var i=0;i<data.groups.length;i++){
-                    $djangui_tabs.append('<li class="djangui-dynamic-tabs" role="presentation"><a href="#djangui_dynamic_tab'+i+'" aria-controls="profile" role="tab" data-toggle="tab">'+data.groups[i].group_name+'</a></li>');
-                    var new_panel = $('<div role="tabpanel" class="tab-pane djangui-dynamic-tabs" id="djangui_dynamic_tab'+i+'"></div>');
-                    new_panel.html(data.groups[i].form);
-                    $djangui_content.append(new_panel);
-                }
-                var $first = $('a[href="#djangui_dynamic_tab0"]');
-                if($first.length)
-                    $first.trigger('click');
-            }, "json");
+            var $jobform = $('#djangui-job-form');
+            updateScriptInfo('{{ clone_job.data_url }}');
+            loadDjanguiScript('{{ clone_job.url }}', {job_id: '{{ clone_job.job_id }}'}, $jobform);
+            $jobform.find('#djangui_clone_task_id').val("{{ clone_job.job_id }}");
         {% endif %}
 
 

@@ -9,12 +9,13 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 DJANGUI_TEMPLATE_DIR = os.path.join('djangui', 'templates')
 
 setup(
-    name='djangui',
-    version='0.1.0',
+    name='django-djangui',
+    version='0.1.1',
     packages=find_packages(),
     data_files=[(DJANGUI_TEMPLATE_DIR, [os.path.join(root, filename) for root, folders, files in os.walk(DJANGUI_TEMPLATE_DIR)
                                         for filename in files])],
     scripts=['scripts/djanguify.py'],
+    install_requires = ['Django>=1.8', 'django-autoslug', 'django-celery'],
     include_package_data=True,
     license='GPLv3',
     description='An app to create a Django app or project from argparse scripts',

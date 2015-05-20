@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 __author__ = 'chris'
 import copy
 import json
@@ -31,8 +32,7 @@ class DjanguiFormFactory(object):
                 initial = None
             else:
                 if initial is not None:
-                    # TODO: There is probably a much, much, much better way to do this
-                    initial = utils.get_storage_object(initial)
+                    initial = utils.get_storage_object(initial) if not hasattr(initial, 'path') else initial
                     field_kwargs['widget'] = forms.ClearableFileInput()
         if initial is not None:
             field_kwargs['initial'] = initial

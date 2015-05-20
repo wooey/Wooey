@@ -47,7 +47,7 @@
             <form action="{% url 'celery_task_command' %}" id="djangui-task-submit" method="post">
                 {% csrf_token %}
                 <input name="job-id" value="{{ task_info.job.pk }}" type="hidden">
-                {% if task_info.job.celery_state == 'PENDING' %}
+                {% if not task_info.job.status|complete_job %}
                 <button class="btn btn-primary btn-danger" name="celery-command" value="stop" type="submit">
                     <span class="glyphicon glyphicon-stop" aria-hidden="true"></span> {% trans "Stop Job" %}
                 </button>
@@ -80,7 +80,7 @@
             <div class="panel-body">
                 <dl class="dl-horizontal">
                   <dt>{% trans "Job Status" %}</dt>
-                  <dd>{{ task_info.job.celery_state }}</dd>
+                  <dd>{{ task_info.job.status }}</dd>
                   <dt>{% trans "Job Description" %}</dt>
                   <dd>{{ task_info.job.job_description }}</dd>
                 </dl>
@@ -126,7 +126,7 @@
             <div role="tabpanel" class="tab-pane active" id="task-output-all">
                 <dl class="dl-horizontal">
                 {% for file in task_info.all_files %}
-                    <dt>{{ file.slug }}</dt>
+                    <dt>{% if file.slug %}{{ file.slug }}{% endif %}</dt>
                     <dd><a href="{{ file.url }}">{{ file.name }}</a></dd>
                 {% endfor %}
                 </dl>
@@ -250,6 +250,10 @@
                             $('#new-task-url').attr('href', data.extra.task_url);
                             $('#myModal').modal();
                         }
+                    }
+                    else{
+                        clearErrors($form.parent());
+                        processErrors($form.parent(), data.errors);
                     }
                 }
             });

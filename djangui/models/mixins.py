@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 __author__ = 'chris'
 from django.forms.models import model_to_dict
 

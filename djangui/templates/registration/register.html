@@ -15,6 +15,15 @@
             {% endif %}
         </div>
       </div>
+      <div class="form-group {% if 'email' in form.errors %}has-error{% endif %}">
+        <label for="email" class="col-sm-2 control-label">{% trans "Email" %}</label>
+        <div class="col-sm-4">
+          <input name="email" type="email" class="form-control" id="email" placeholder="{% trans "Email" %}" value="{% if form.email.value %}{{ form.email.value }}{% endif %}">
+            {% if 'email' in form.errors %}
+                <div class="alert-danger" role="alert">{{ form.errors.email }}</div>
+            {% endif %}
+        </div>
+      </div>
       <div class="form-group {% if 'password' in form.errors %}has-error{% endif %}">
         <label for="password" class="col-sm-2 control-label">Password</label>
         <div class="col-sm-4">

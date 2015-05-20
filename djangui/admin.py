@@ -1,24 +1,25 @@
-from django.contrib import admin
+from __future__ import absolute_import
+from django.contrib.admin import ModelAdmin, site
 
-from .models import Script, ScriptGroup, ScriptParameter, DjanguiJob, ScriptParameterGroup
+from djangui.models import Script, ScriptGroup, ScriptParameter, DjanguiJob, ScriptParameterGroup
 
-class JobAdmin(admin.ModelAdmin):
-    list_display = ('user', 'job_name', 'script', 'celery_state', 'status', 'created_date')
+class JobAdmin(ModelAdmin):
+    list_display = ('user', 'job_name', 'script', 'status', 'created_date')
 
-class ScriptAdmin(admin.ModelAdmin):
+class ScriptAdmin(ModelAdmin):
     list_display = ('script_name', 'script_group', 'is_active', 'script_version')
 
-class ParameterAdmin(admin.ModelAdmin):
+class ParameterAdmin(ModelAdmin):
     list_display = ('script', 'parameter_group', 'short_param')
 
-class GroupAdmin(admin.ModelAdmin):
+class GroupAdmin(ModelAdmin):
     list_display = ('group_name', 'is_active')
 
-class ParameterGroupAdmin(admin.ModelAdmin):
+class ParameterGroupAdmin(ModelAdmin):
     list_display = ('script', 'group_name')
 
-admin.site.register(DjanguiJob, JobAdmin)
-admin.site.register(Script, ScriptAdmin)
-admin.site.register(ScriptParameter, ParameterAdmin)
-admin.site.register(ScriptGroup, GroupAdmin)
-admin.site.register(ScriptParameterGroup, ParameterGroupAdmin)
+site.register(DjanguiJob, JobAdmin)
+site.register(Script, ScriptAdmin)
+site.register(ScriptParameter, ParameterAdmin)
+site.register(ScriptGroup, GroupAdmin)
+site.register(ScriptParameterGroup, ParameterGroupAdmin)

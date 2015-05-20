@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from django.views.generic import CreateView
 from django.http import JsonResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
@@ -25,9 +26,11 @@ class DjanguiRegister(CreateView):
         post['username'] = post['username'].lower()
         form = form(post)
         if request.POST['password'] != request.POST['password2']:
-            form.add_error('password', 'Passwords do not match.')
+            form.add_error('password', _('Passwords do not match.'))
         if request.POST['username'].lower() == 'admin':
-            form.add_error('username', 'Reserved username.')
+            form.add_error('username', _('Reserved username.'))
+        if not request.POST['email']:
+            form.add_error('email', _('Please enter your email address.'))
         if form.is_valid():
             return self.form_valid(form)
         else:

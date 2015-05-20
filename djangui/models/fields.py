@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 __author__ = 'chris'
 from django.db import models
 from ..forms import fields as djangui_form_fields

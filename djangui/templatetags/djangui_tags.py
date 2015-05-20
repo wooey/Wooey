@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, absolute_import
 from django import template
 from .. import settings as djangui_settings
 
@@ -17,4 +17,11 @@ def endswith(value, arg):
 @register.filter
 def valid_user(obj, user):
     from ..backend import utils
-    return utils.valid_user(obj, user)
+    valid = utils.valid_user(obj, user)
+    return True if valid.get('valid') else valid.get('display')
+
+@register.filter
+def complete_job(status):
+    from ..models import DjanguiJob
+    from celery import states
+    return status in (DjanguiJob.COMPLETED, states.REVOKED)

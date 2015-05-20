@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from django import forms
 from ..backend import utils
 
@@ -13,5 +14,5 @@ class DjanguiForm(forms.Form):
     def save(self, **kwargs):
         if 'user' in self.data:
             self.cleaned_data['user'] = self.data['user']
-        job, command = utils.create_djangui_job(self.cleaned_data)
-        return job, command
+        job = utils.create_djangui_job(self.cleaned_data)
+        return job

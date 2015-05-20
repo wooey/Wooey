@@ -10,7 +10,7 @@ DJANGUI_TEMPLATE_DIR = os.path.join('djangui', 'templates')
 
 setup(
     name='djangui',
-    version='0.0.0',
+    version='0.1.0',
     packages=find_packages(),
     data_files=[(DJANGUI_TEMPLATE_DIR, [os.path.join(root, filename) for root, folders, files in os.walk(DJANGUI_TEMPLATE_DIR)
                                         for filename in files])],

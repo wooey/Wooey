@@ -247,6 +247,9 @@ def create_job_fileinfo(job):
         if new_name in known_files:
             continue
         try:
+            filepath = os.path.join(absbase, filename)
+            if os.path.isdir(filepath):
+                continue
             d = {'name': filename, 'file': get_storage_object(os.path.join(job.save_path, filename))}
             if filename.endswith('.tar.gz') or filename.endswith('.zip'):
                 file_groups['archives'].append(d)

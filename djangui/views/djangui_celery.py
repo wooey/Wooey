@@ -67,10 +67,6 @@ def celery_task_command(request):
 class CeleryTaskView(TemplateView):
     template_name = 'tasks/task_view.html'
 
-            filepath = os.path.join(absbase, filename)
-            if os.path.isdir(filepath):
-                continue
-            d = {'name': filename, 'path': filepath, 'url': url}
     def get_context_data(self, **kwargs):
         ctx = super(CeleryTaskView, self).get_context_data(**kwargs)
         job_id = ctx.get('job_id')

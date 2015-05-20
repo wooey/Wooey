@@ -38,9 +38,10 @@ def celery_task_command(request):
     job_id = request.POST.get('job-id')
     job = DjanguiJob.objects.get(pk=job_id)
     from ..backend.utils import valid_user
-    if valid_user(job.script, request.user) is True:
+    response = {'valid': False,}
+    valid = valid_user(job.script, request.user)
+    if valid.get('valid') is True:
         user = request.user if request.user.is_authenticated() else None
-        response = {'valid': False,}
         if user == job.user:
             if command == 'resubmit':
                 new_job = job.submit_to_celery(resubmit=True)
@@ -57,8 +58,10 @@ def celery_task_command(request):
                 job.save()
                 response.update({'valid': True, 'redirect': reverse('celery_results_info', kwargs={'job_id': job_id})})
             else:
-                response.update({'errors': {'__all__': force_unicode(_("Unknown Command"))}})
-        return JsonResponse(response)
+                response.update({'errors': {'__all__': [force_unicode(_("Unknown Command"))]}})
+    else:
+        response.update({'errors': {'__all__': [force_unicode(valid.get('error'))]}})
+    return JsonResponse(response)
 
 
 class CeleryTaskView(TemplateView):

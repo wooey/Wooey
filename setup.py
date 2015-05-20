@@ -10,7 +10,7 @@ DJANGUI_TEMPLATE_DIR = os.path.join('djangui', 'templates')
 
 setup(
     name='django-djangui',
-    version='0.1.1',
+    version='0.1.2',
     packages=find_packages(),
     data_files=[(DJANGUI_TEMPLATE_DIR, [os.path.join(root, filename) for root, folders, files in os.walk(DJANGUI_TEMPLATE_DIR)
                                         for filename in files])],
@@ -18,8 +18,7 @@ setup(
     install_requires = ['Django>=1.8', 'django-autoslug', 'django-celery'],
     include_package_data=True,
     license='GPLv3',
-    description='An app to create a Django app or project from argparse scripts',
-    long_description=README,
+    description='A Django app which creates a web GUI and task interface for argparse scripts',
     url='http://www.github.com/chris7/djangui',
     author='Chris Mitchell',
     author_email='chris.mit7@gmail.com',

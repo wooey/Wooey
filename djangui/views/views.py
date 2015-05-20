@@ -59,8 +59,10 @@ class DjanguiScriptJSON(DetailView):
         if not form.errors:
             # data = form.cleaned_data
             script = Script.objects.get(pk=form.cleaned_data.get('djangui_type'))
-            if valid_user(script, request.user) is True:
-                if valid_user(script, request.user) is True and valid_user(script.script_group, request.user) is True:
+            valid = valid_user(script, request.user).get('valid')
+            if valid is True:
+                group_valid = valid_user(script.script_group, request.user).get('valid')
+                if valid is True and group_valid is True:
                     job = form.save()
                     job.submit_to_celery()
                     return JsonResponse({'valid': True})

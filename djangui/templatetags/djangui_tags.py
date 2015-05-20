@@ -17,7 +17,8 @@ def endswith(value, arg):
 @register.filter
 def valid_user(obj, user):
     from ..backend import utils
-    return utils.valid_user(obj, user)
+    valid = utils.valid_user(obj, user)
+    return True if valid.get('valid') else valid.get('display')
 
 @register.filter
 def complete_job(status):

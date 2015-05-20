@@ -13,6 +13,7 @@ from django.db import transaction
 from django.db.utils import OperationalError
 from django.core.files.storage import default_storage
 from django.core.files import File
+from django.utils.translation import gettext_lazy as _
 
 from .argparse_specs import ArgParseNodeBuilder
 
@@ -181,20 +182,23 @@ def add_djangui_script(script=None, group=None):
     return (True, '')
 
 def valid_user(obj, user):
-    # TODO: Make this function better and more consistent with its return
     groups = obj.user_groups.all()
     from ..models import Script
+    ret = {'valid': False, 'error': '', 'display': ''}
     if isinstance(obj, Script):
         from itertools import chain
         groups = list(chain(groups, obj.script_group.user_groups.all()))
     if not user.is_authenticated() and djangui_settings.DJANGUI_ALLOW_ANONYMOUS and len(groups) == 0:
-        return True
+        ret['valid'] = True
+    elif groups:
+        ret['error'] = _('You are not permitted to use this script')
     if not groups and obj.is_active:
-        return True
+        ret['valid'] = True
     if obj.is_active is True:
         if set(list(user.groups.all())) & set(list(groups)):
-            return True
-    return 'disabled' if djangui_settings.DJANGUI_SHOW_LOCKED_SCRIPTS else 'hide'
+            ret['valid'] = True
+    ret['display'] = 'disabled' if djangui_settings.DJANGUI_SHOW_LOCKED_SCRIPTS else 'hide'
+    return ret
 
 def mkdirs(path):
     try:

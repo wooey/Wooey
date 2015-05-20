@@ -251,6 +251,10 @@
                             $('#myModal').modal();
                         }
                     }
+                    else{
+                        clearErrors($form.parent());
+                        processErrors($form.parent(), data.errors);
+                    }
                 }
             });
             return true;

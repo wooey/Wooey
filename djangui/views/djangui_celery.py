@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import os
 
 from django.http import JsonResponse
@@ -36,26 +37,28 @@ def celery_task_command(request):
     command = request.POST.get('celery-command')
     job_id = request.POST.get('job-id')
     job = DjanguiJob.objects.get(pk=job_id)
-    user = None if not request.user.is_authenticated() and djangui_settings.DJANGUI_ALLOW_ANONYMOUS else request.user
-    response = {'valid': False,}
-    if user == job.user:
-        if command == 'resubmit':
-            new_job = job.submit_to_celery(resubmit=True)
-            response.update({'valid': True, 'extra': {'task_url': reverse('celery_results_info', kwargs={'job_id': new_job.pk})}})
-        elif command == 'clone':
-            response.update({'valid': True, 'redirect': '{0}?job_id={1}'.format(reverse('djangui_task_launcher'), job_id)})
-        elif command == 'delete':
-            job.status = DjanguiJob.DELETED
-            job.save()
-            response.update({'valid': True, 'redirect': reverse('djangui_home')})
-        elif command == 'stop':
-            celery_app.control.revoke(job.celery_id, signal='SIGKILL', terminate=True)
-            job.status = states.REVOKED
-            job.save()
-            response.update({'valid': True, 'redirect': reverse('celery_results_info', kwargs={'job_id': job_id})})
-        else:
-            response.update({'errors': {'__all__': force_unicode(_("Unknown Command"))}})
-    return JsonResponse(response)
+    from ..backend.utils import valid_user
+    if valid_user(job.script, request.user) is True:
+        user = request.user if request.user.is_authenticated() else None
+        response = {'valid': False,}
+        if user == job.user:
+            if command == 'resubmit':
+                new_job = job.submit_to_celery(resubmit=True)
+                response.update({'valid': True, 'extra': {'task_url': reverse('celery_results_info', kwargs={'job_id': new_job.pk})}})
+            elif command == 'clone':
+                response.update({'valid': True, 'redirect': '{0}?job_id={1}'.format(reverse('djangui_task_launcher'), job_id)})
+            elif command == 'delete':
+                job.status = DjanguiJob.DELETED
+                job.save()
+                response.update({'valid': True, 'redirect': reverse('djangui_home')})
+            elif command == 'stop':
+                celery_app.control.revoke(job.celery_id, signal='SIGKILL', terminate=True)
+                job.status = states.REVOKED
+                job.save()
+                response.update({'valid': True, 'redirect': reverse('celery_results_info', kwargs={'job_id': job_id})})
+            else:
+                response.update({'errors': {'__all__': force_unicode(_("Unknown Command"))}})
+        return JsonResponse(response)
 
 
 class CeleryTaskView(TemplateView):

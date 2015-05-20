@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, absolute_import
 from django import template
 from .. import settings as djangui_settings
 

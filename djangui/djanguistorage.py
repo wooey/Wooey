@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from boto.utils import parse_ts
 from django.core.files.storage import get_storage_class
 from storages.backends.s3boto import S3BotoStorage

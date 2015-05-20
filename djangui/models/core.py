@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 __author__ = 'chris'
 import os
 import errno
@@ -19,9 +20,9 @@ from autoslug import AutoSlugField
 from celery import states
 
 from .. import settings as djangui_settings
-from ..backend import utils
+from .. backend import utils
 
-from .mixins import UpdateScriptsMixin, ModelDiffMixin
+from . mixins import UpdateScriptsMixin, ModelDiffMixin
 
 
 # TODO: Handle cases where celery is not setup but specified to be used

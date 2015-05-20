@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from django.views.generic import DetailView, TemplateView, CreateView
 from django.http import JsonResponse
 from django.conf import settings
@@ -58,12 +59,12 @@ class DjanguiScriptJSON(DetailView):
         if not form.errors:
             # data = form.cleaned_data
             script = Script.objects.get(pk=form.cleaned_data.get('djangui_type'))
-            if valid_user(script, request.user) is True and valid_user(script.script_group, request.user) is True:
-                job = form.save()
-                job.submit_to_celery()
-                return JsonResponse({'valid': True})
+            if valid_user(script, request.user) is True:
+                if valid_user(script, request.user) is True and valid_user(script.script_group, request.user) is True:
+                    job = form.save()
+                    job.submit_to_celery()
+                    return JsonResponse({'valid': True})
             return JsonResponse({'valid': False, 'errors': {'__all__': [force_unicode(_('You are not permitted to access this script.'))]}})
-
         return JsonResponse({'valid': False, 'errors': form.errors})
 
 

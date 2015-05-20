@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from django.db.models.signals import post_delete
 
 from celery.signals import task_postrun, task_prerun, task_revoked
@@ -21,7 +23,8 @@ def reload_scripts(**kwargs):
     from .backend import utils
     utils.load_scripts()
 
-from models import Script, ScriptGroup, ScriptParameter, ScriptParameterGroup
+# TODO: Figure out why relative imports fail here
+from djangui.models import Script, ScriptGroup, ScriptParameter, ScriptParameterGroup
 post_delete.connect(reload_scripts, sender=Script)
 post_delete.connect(reload_scripts, sender=ScriptGroup)
 post_delete.connect(reload_scripts, sender=ScriptParameter)

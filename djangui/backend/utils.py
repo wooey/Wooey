@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 __author__ = 'chris'
 import json
 import errno
@@ -180,11 +181,18 @@ def add_djangui_script(script=None, group=None):
     return (True, '')
 
 def valid_user(obj, user):
+    # TODO: Make this function better and more consistent with its return
     groups = obj.user_groups.all()
+    from ..models import Script
+    if isinstance(obj, Script):
+        from itertools import chain
+        groups = list(chain(groups, obj.script_group.user_groups.all()))
+    if not user.is_authenticated() and djangui_settings.DJANGUI_ALLOW_ANONYMOUS and len(groups) == 0:
+        return True
     if not groups and obj.is_active:
         return True
     if obj.is_active is True:
-        if user.groups.filter(name__in=groups).exists():
+        if set(list(user.groups.all())) & set(list(groups)):
             return True
     return 'disabled' if djangui_settings.DJANGUI_SHOW_LOCKED_SCRIPTS else 'hide'
 

@@ -1,3 +1,4 @@
+from os import environ
 from .djangui_settings import *
 
 # This file is where the user can override and customize their installation of djangui
@@ -20,6 +21,7 @@ CELERY_RESULT_BACKEND='djcelery.backends.database:DatabaseBackend'
 BROKER_URL = 'django://'
 CELERY_TRACK_STARTED = True
 DJANGUI_CELERY = True
+CELERY_SEND_EVENTS = True
 
 # Things you most likely do not need to change
 
@@ -105,12 +107,13 @@ STATIC_URL = '/static/'
 # AWS_HEADERS = {
 #     'Cache-Control': 'max-age=%d, s-maxage=%d, must-revalidate' % (AWS_EXPIREY,
 #         AWS_EXPIREY)
-# # }
+# }
 #
 # STATIC_URL = 'http://%s.s3.amazonaws.com/' % AWS_STORAGE_BUCKET_NAME
 # MEDIA_URL = '/user-uploads/'
 #
 # STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = 'djangui.djanguistorage.CachedS3BotoStorage'
+# DJANGUI_EPHEMERAL_FILES = True
 
 
 AUTHENTICATION_BACKEND = 'django.contrib.auth.backends.ModelBackend'

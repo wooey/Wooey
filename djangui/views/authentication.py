@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from django.views.generic import CreateView
 from django.http import JsonResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse

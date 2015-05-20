@@ -87,7 +87,10 @@ class CeleryTaskView(TemplateView):
             url = '{0}{1}'.format(settings.MEDIA_URL, url)
             if url in known_files:
                 continue
-            d = {'name': filename, 'path': os.path.join(absbase, filename), 'url': url}
+            filepath = os.path.join(absbase, filename)
+            if os.path.isdir(filepath):
+                continue
+            d = {'name': filename, 'path': filepath, 'url': url}
             if filename.endswith('.tar.gz') or filename.endswith('.zip'):
                 file_groups['archives'].append(d)
             else:

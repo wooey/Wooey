@@ -133,14 +133,14 @@
             </div>
             {% for output_group, output_files in task_info.file_groups.iteritems %}
                 <div role="tabpanel" class="tab-pane" id="task-output-{{ output_group }}">
-                    <div class="panel panel-default">
                     {% if output_group == 'tabular' %}
                         {% for output_file_content in output_files %}
+                    <div class="panel panel-default">
                           <!-- Default panel contents -->
                           <div class="panel-heading"><a href="{{ output_file_content.url }}">{{ output_file_content.name }}</a></div>
 
                           <!-- Table -->
-                          <div class="table-responsive">
+                          <div class="panel-body table-responsive">
                               <table class="table">
                                 {% for entry in output_file_content.preview %}
                                     {% if forloop.first %}
@@ -163,6 +163,7 @@
                                 {% endfor %}
                               </table>
                           </div>
+                        </div>
                         {% endfor %}
 
                     {% elif output_group == 'images' %}
@@ -207,17 +208,16 @@
                         {% endif %}
                     {% elif output_group == 'fasta' %}
                          {% for output_file_content in output_files %}
+            <div class="panel panel-default">
                               <div class="panel-heading"><a href="{{ output_file_content.url }}">{{ output_file_content.name }}</a></div>
                               <div class="panel panel-body">
                                     {% for entry in output_file_content.preview %}
                                         {{ entry }}<br>
                                     {% endfor %}
-                              </div>
+                              </div></div>
                         {% endfor %}
                     {% endif %}
                     </div>
-
-                </div>
             {% endfor %}
           </div>
         </div>

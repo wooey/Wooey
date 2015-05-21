@@ -20,7 +20,7 @@ urlpatterns = [
     url(r'^djscript/(?P<script_group>[a-zA-Z0-9\-\_]+)/(?P<script_name>[a-zA-Z0-9\-\_]+)/$', DjanguiScriptJSON.as_view(), name='djangui_script'),
     url(r'^$', DjanguiHomeView.as_view(), name='djangui_home'),
     url(r'^$', DjanguiHomeView.as_view(), name='djangui_task_launcher'),
-    url('^{}/'.format(djangui_settings.DJANGUI_LOGIN_URL), djangui_login, name='djangui_login'),
-    url('^{}/'.format(djangui_settings.DJANGUI_REGISTER_URL), DjanguiRegister.as_view(), name='djangui_register'),
+    url('^{}'.format(djangui_settings.DJANGUI_LOGIN_URL.lstrip('/')), djangui_login, name='djangui_login'),
+    url('^{}'.format(djangui_settings.DJANGUI_REGISTER_URL.lstrip('/')), DjanguiRegister.as_view(), name='djangui_register'),
     url('^', include('django.contrib.auth.urls')),
 ]

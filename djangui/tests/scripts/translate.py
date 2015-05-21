@@ -38,9 +38,9 @@ def main():
 
     def translate(seq=None, frame=None):
         if frame.startswith('-'):
-            seq = ''.join([BASE_PAIR_COMPLEMENTS[i] for i in seq])
+            seq = ''.join([BASE_PAIR_COMPLEMENTS.get(i, 'N') for i in seq])
         frame = int(frame[1])-1
-        return ''.join([CODON_TABLE[seq[i:i+3]] for i in xrange(frame, len(seq), 3) if i+3<=len(seq)])
+        return ''.join([CODON_TABLE.get(seq[i:i+3], 'X') for i in xrange(frame, len(seq), 3) if i+3<=len(seq)])
 
     frame = args.frame
     with args.out as fasta_out:
@@ -59,7 +59,7 @@ def main():
                 if seq:
                     fasta_out.write('{}\n{}\n'.format(header, translate(seq, frame)))
         else:
-            fasta_out.write('{}\n{}\n'.format('>1', translate(seq, frame)))
+            fasta_out.write('{}\n{}\n'.format('>1', translate(seq.upper(), frame)))
 
 if __name__ == "__main__":
     sys.exit(main())

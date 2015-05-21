@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load staticfiles %}
 <!DOCTYPE html>
 <html>
 <head lang="en">
@@ -87,7 +88,7 @@
             <span class="icon-bar"></span>
           </button>
         </div>
-        <div class="navbar-center navbar-brand"><a class="navbar-brand" href="{% url 'djangui_home' %}"><span class="glyphicon glyphicon-home"></span> Djangui</a></div>
+        <div class="navbar-center"><a href="{% url 'djangui_home' %}"><img src="{% static 'djangui/djangui_logo.png' %}"/></a></div>
             <!-- Collect the nav links, forms, and other content for toggling -->
             <div class="collapse navbar-collapse" id="navbar-collapse-1">
               <ul class="nav navbar-nav navbar-right">

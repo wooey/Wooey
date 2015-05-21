@@ -10,7 +10,6 @@ from django.utils.encoding import force_unicode
 from djangui.backend import utils
 from ..models import DjanguiJob, Script
 from .. import settings as djangui_settings
-from ..templatetags.djangui_tags import valid_user
 
 
 class DjanguiScriptJSON(DetailView):
@@ -59,9 +58,9 @@ class DjanguiScriptJSON(DetailView):
         if not form.errors:
             # data = form.cleaned_data
             script = Script.objects.get(pk=form.cleaned_data.get('djangui_type'))
-            valid = valid_user(script, request.user).get('valid')
+            valid = utils.valid_user(script, request.user).get('valid')
             if valid is True:
-                group_valid = valid_user(script.script_group, request.user).get('valid')
+                group_valid = utils.valid_user(script.script_group, request.user).get('valid')
                 if valid is True and group_valid is True:
                     job = form.save()
                     job.submit_to_celery()

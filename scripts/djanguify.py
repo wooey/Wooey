@@ -79,7 +79,7 @@ def main():
     subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'migrate'], env=env)
     subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'collectstatic', '--noinput'], env=env)
     sys.stdout.write("Please enter the project directory {0}, and run python manage.py createsuperuser and"
-                     " python manage.py runserver to start. The admin can be found at localhost:8000/admin. You may also want to set your"
+                     " python manage.py runserver to start. The admin can be found at localhost:8000/admin. You may also want to set your "
                      "DJANGO_SETTINGS_MODULE environment variable to {0}.settings \n".format(project_name))
 
 if __name__ == "__main__":

@@ -79,24 +79,47 @@
 {% endblock center_content %}
 
 {% block right_sidebar_content %}
-<div class="panel panel-default">
-  <div class="panel-heading">
-    <h3 class="panel-title">{% trans "Job History" %} <a href="#" id="celery-refresh"><span class="glyphicon glyphicon-refresh"></span></a></h3>
-  </div>
-  <div class="panel panel-body table-responsive">
-    <table id="djangui-job-table" class="table-responsive table hover stripe" witdh="100%">
-    <thead>
-        <th>{% trans "Id" %}</th>
-        <th>{% trans "Name" %}</th>
-        <th>{% trans "Status" %}</th>
-        <th>{% trans "Submitted" %}</th>
-    </thead>
-    <tbody>
+<div class="panel panel-default tabpanel">
+    <ul class="nav nav-tabs">
+        {% if request.user.is_authenticated %}
+            <li class="active"><a href="#user-jobs" data-toggle="pill">{% trans "Your Jobs" %}</a></li>
+        {% endif %}
+        <li><a {% if not request.user.is_authenticated %}class="active"{% endif %} href="#all-jobs" data-toggle="pill">{% trans "All Jobs" %}</a></li>
+        <li><a href="#" id="celery-refresh"><span class="glyphicon glyphicon-refresh"></span></a></li>
+    </ul>
+    <div class="tab-content">
+        {% if request.user.is_authenticated %}
+            <div role="tabpanel" id="user-jobs" class="panel panel-body tab-pane active table-responsive">
+                <table id="djangui-job-table-user" class="table-responsive table hover stripe" width="100%">
+                <thead>
+                    <th>{% trans "Id" %}</th>
+                    <th>{% trans "Name" %}</th>
+                    <th>{% trans "Status" %}</th>
+                    <th>{% trans "Submitted" %}</th>
+                </thead>
+                <tbody>
 
-    </tbody>
+                </tbody>
 
-    </table>
-  </div>
+                </table>
+              </div>
+        {% endif %}
+
+      <div role="tabpanel" id="all-jobs" class="panel panel-body tab-pane {% if not request.user.is_authenticated %}active{% endif %} table-responsive">
+        <table id="djangui-job-table-anon" class="table-responsive table hover stripe" width="100%">
+        <thead>
+            <th>{% trans "Id" %}</th>
+            <th>{% trans "Name" %}</th>
+            <th>{% trans "Status" %}</th>
+            <th>{% trans "Submitted" %}</th>
+        </thead>
+        <tbody>
+
+        </tbody>
+
+        </table>
+      </div>
+    </div>
 </div>
 {% endblock right_sidebar_content %}
 
@@ -202,56 +225,83 @@
             });
         });
 
-        var $jobtable = $('#djangui-job-table');
+        // TODO: Make this nice
+        var $jobtable = $('#djangui-job-table-anon');
+        var $jobtable_user = $('#djangui-job-table-user');
         var djangui_dt = $jobtable.dataTable({
             "columnDefs": [
                 { "visible": false,  "targets": [ 0 ] },
             ],
             "order": [[ 3, "desc" ]]
         });
-        $jobtable.on( 'draw.dt', function () {
+        var djangui_dt_user = $jobtable_user.dataTable({
+            "columnDefs": [
+                { "visible": false,  "targets": [ 0 ] },
+            ],
+            "order": [[ 3, "desc" ]]
+        });
+        $('#djangui-job-table-anon,#djangui-job-table-user').on( 'draw.dt', function () {
             $('[data-toggle="popover"]').popover({
                 trigger: 'hover',
                 container: 'body',
                 placement: 'auto left',
             });
         });
-        var djangui_dt_api = djangui_dt.api();
-        $('#djangui-job-table_wrapper').addClass('col-md-12');
+        $('#djangui-job-table-anon_wrapper,#djangui-job-table-user_wrapper').addClass('col-md-12');
 
-        var dt_jobs = {};
+
+        var job_tables = {
+            anon: {
+                table: $jobtable,
+                dt: djangui_dt,
+                dt_api: djangui_dt.api(),
+                jobs: {}
+            },
+            user: {
+                table: $jobtable_user,
+                dt: djangui_dt_user,
+                dt_api: djangui_dt_user.api(),
+                jobs: {}
+            }
+        };
 
         var task_reloaded = false;
 
-        // loop for job history updates
-{#        var tid = setInterval(celeryRefresh, 10000);#}
         $('#celery-refresh').click(function(event){
             celeryRefresh();
         });
         function celeryRefresh() {
             $.get("{% url "celery_results" %}", function(data){
-                for(var i=0;i<data.length;i++){
-                    if(!dt_jobs[data[i].job_id] || dt_jobs[data[i].job_id] != data[i].job_status){
-                        if(dt_jobs[data[i].job_id] && dt_jobs[data[i].job_id] != data[i].job_status){
-                            var indexes = djangui_dt_api.rows().eq( 0 ).filter( function (rowIdx) {
-                                return djangui_dt_api.cell( rowIdx, 0 ).data() === data[i].job_id ? true : false;
-                            } );
-                            if(window.location.href.indexOf(data[i].job_id) != -1){
-                                // job update while on task page, stdout/etc will be updated, so just reload the page
-                                if(!task_reloaded)
-                                    location.reload();
-                                task_reloaded = true;
-                                return;
+                for(var table_key in data) {
+                    var dt_jobs = job_tables[table_key]['jobs'];
+                    var djangui_dt = job_tables[table_key]['dt'];
+                    var djangui_dt_api = job_tables[table_key]['dt_api'];
+                    var job_data = data[table_key];
+                    console.log(job_data);
+                    for (var i = 0; i < job_data.length; i++) {
+                        if (!dt_jobs[job_data[i].job_id] || dt_jobs[job_data[i].job_id] != job_data[i].job_status) {
+                            if (dt_jobs[job_data[i].job_id] && dt_jobs[job_data[i].job_id] != job_data[i].job_status) {
+                                var indexes = djangui_dt_api.rows().eq(0).filter(function (rowIdx) {
+                                    return djangui_dt_api.cell(rowIdx, 0).data() === job_data[i].job_id ? true : false;
+                                });
+                                if (window.location.href.indexOf(job_data[i].job_id) != -1) {
+                                    // job update while on task page, stdout/etc will be updated, so just reload the page
+                                    if (!task_reloaded)
+                                        location.reload();
+                                    task_reloaded = true;
+                                    return;
+                                }
+                                djangui_dt.fnUpdate(job_data[i].job_status, indexes[0], 2);
                             }
-                            djangui_dt.fnUpdate(data[i].job_status, indexes[0], 2);
+                            else {
+                                var node = djangui_dt_api.row.add([job_data[i].job_id, '<a href="' + job_data[i].job_url + '" data-title="' + job_data[i].job_name + '" data-toggle="popover" data-content="' + job_data[i].job_description + '">' + job_data[i].job_name + '</a>', job_data[i].job_status, job_data[i].job_submitted]);
+                            }
+                            dt_jobs[job_data[i].job_id] = job_data[i].job_status;
                         }
-                        else {
-                            var node = djangui_dt_api.row.add([data[i].job_id, '<a href="' + data[i].job_url + '" data-title="'+data[i].job_name+'" data-toggle="popover" data-content="'+data[i].job_description+'">' + data[i].job_name + '</a>', data[i].job_status, data[i].job_submitted]);
-                        }
-                        dt_jobs[data[i].job_id] = data[i].job_status;
                     }
+                    djangui_dt_api.draw();
+
                 }
-                djangui_dt_api.draw();
             }, "json");
         }
         celeryRefresh();

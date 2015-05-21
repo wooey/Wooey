@@ -7,6 +7,7 @@ from django.views.generic import TemplateView
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_unicode
+from django.db.models import Q
 
 from djcelery.models import TaskMeta
 from celery import app, states
@@ -25,11 +26,17 @@ def celery_status(request):
         states.REVOKED: spanbase.format('glyphicon-stop', _('Halted')),
         DjanguiJob.SUBMITTED: spanbase.format('glyphicon-hourglass', _('Waiting to be queued'))
     }
-    jobs = DjanguiJob.objects.filter(user=request.user if request.user.is_authenticated() else None).exclude(status=DjanguiJob.DELETED)
-    return JsonResponse([{'job_name': job.job_name, 'job_status': STATE_MAPPER.get(job.status, job.status),
-                        'job_submitted': job.created_date.strftime('%b %d %Y, %H:%M:%S'),
-                        'job_id': job.pk, 'job_description': 'Script: {}\n{}'.format(job.script.script_name, job.job_description),
-                        'job_url': reverse('celery_results_info', kwargs={'job_id': job.pk})} for job in jobs], safe=False)
+    jobs = DjanguiJob.objects.filter(Q(user=None) | Q(user=request.user) if request.user.is_authenticated() else Q(user=None))
+    jobs = jobs.exclude(status=DjanguiJob.DELETED)
+    # divide into user and anon jobs
+    def get_job_list(job_query):
+        return [{'job_name': job.job_name, 'job_status': STATE_MAPPER.get(job.status, job.status),
+                'job_submitted': job.created_date.strftime('%b %d %Y, %H:%M:%S'),
+                'job_id': job.pk, 'job_description': 'Script: {}\n{}'.format(job.script.script_name, job.job_description),
+                'job_url': reverse('celery_results_info', kwargs={'job_id': job.pk})} for job in job_query]
+    d = {'user': get_job_list([i for i in jobs if i.user == request.user]),
+         'anon': get_job_list([i for i in jobs if i.user == None])}
+    return JsonResponse(d, safe=False)
 
 
 def celery_task_command(request):

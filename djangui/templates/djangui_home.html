@@ -84,7 +84,7 @@
         {% if request.user.is_authenticated %}
             <li class="active"><a href="#user-jobs" data-toggle="pill">{% trans "Your Jobs" %}</a></li>
         {% endif %}
-        <li><a {% if not request.user.is_authenticated %}class="active"{% endif %} href="#all-jobs" data-toggle="pill">{% trans "All Jobs" %}</a></li>
+        <li{% if not request.user.is_authenticated %} class="active"{% endif %}><a href="#all-jobs" data-toggle="pill">{% trans "All Jobs" %}</a></li>
         <li><a href="#" id="celery-refresh"><span class="glyphicon glyphicon-refresh"></span></a></li>
     </ul>
     <div class="tab-content">

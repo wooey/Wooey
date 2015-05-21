@@ -14,6 +14,8 @@ from celery import states
 from celery import app
 from celery.contrib import rdb
 
+from . import settings as djangui_settings
+
 celery_app = app.app_or_default()
 
 class DjanguiTask(Task):
@@ -91,16 +93,17 @@ def submit_script(**kwargs):
 
 
     # save all the files generated as well to our default storage for ephemeral storage setups
-    for root, folders, files in os.walk(abscwd):
-        for filename in files:
-            filepath = os.path.join(root, filename)
-            s3path = os.path.join(root[root.find(cwd):], filename)
-            exists = utils.get_storage(local=False).exists(s3path)
-            filesize = utils.get_storage(local=False).size(s3path)
-            if not exists or (exists and filesize == 0):
-                if exists:
-                    utils.get_storage(local=False).delete(s3path)
-                utils.get_storage(local=False).save(s3path, File(open(filepath, 'rb')))
+    if djangui_settings.DJANGUI_EPHEMERAL_FILES:
+        for root, folders, files in os.walk(abscwd):
+            for filename in files:
+                filepath = os.path.join(root, filename)
+                s3path = os.path.join(root[root.find(cwd):], filename)
+                exists = utils.get_storage(local=False).exists(s3path)
+                filesize = utils.get_storage(local=False).size(s3path)
+                if not exists or (exists and filesize == 0):
+                    if exists:
+                        utils.get_storage(local=False).delete(s3path)
+                    utils.get_storage(local=False).save(s3path, File(open(filepath, 'rb')))
 
     utils.create_job_fileinfo(job)
 

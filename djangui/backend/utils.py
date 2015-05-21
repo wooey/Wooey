@@ -14,6 +14,7 @@ from django.db.utils import OperationalError
 from django.core.files.storage import default_storage
 from django.core.files import File
 from django.utils.translation import gettext_lazy as _
+from celery.contrib import rdb
 
 from .argparse_specs import ArgParseNodeBuilder
 
@@ -244,7 +245,7 @@ def create_job_fileinfo(job):
     absbase = os.path.join(settings.MEDIA_ROOT, job.save_path)
     for filename in os.listdir(absbase):
         new_name = os.path.join(job.save_path, filename)
-        if new_name in known_files:
+        if any([i.endswith(new_name) for i in known_files]):
             continue
         try:
             filepath = os.path.join(absbase, filename)
@@ -328,7 +329,6 @@ def create_job_fileinfo(job):
 
     # mark things that are in groups so we don't add this to the 'all' category too to reduce redundancy
     grouped = set([i['file'].path for file_type, groups in file_groups.iteritems() for i in groups if file_type != 'all'])
-
     for file_type, group_files in file_groups.iteritems():
         for group_file in group_files:
             if file_type == 'all' and group_file['file'].path in grouped:

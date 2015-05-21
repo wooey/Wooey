@@ -69,7 +69,7 @@ class Script(ModelDiffMixin, models.Model):
 
     def get_url(self):
         return reverse('djangui_script', kwargs={'script_group': self.script_group.slug,
-                                                      'script_name': self.slug})
+                                                  'script_name': self.slug})
 
     def get_script_path(self):
         path = self.script_path.path
@@ -84,10 +84,17 @@ class Script(ModelDiffMixin, models.Model):
         # we do this to avoid having migrations specific to various users with different DJANGUI_SCRIPT_DIR settings
         if new_script or djangui_settings.DJANGUI_SCRIPT_DIR not in self.script_path.file.name:
             new_name = os.path.join(djangui_settings.DJANGUI_SCRIPT_DIR, self.script_path.file.name)
-            utils.get_storage(local=False).save(new_name, self.script_path.file)
-            # save it locally a well
-            if not utils.get_storage(local=True).exists(new_name):
-                utils.get_storage(local=True).save(new_name, self.script_path.file)
+            # TODO -- versioning of old scripts
+            remote_store = utils.get_storage(local=False)
+            if remote_store.exists(new_name):
+                remote_store.delete(new_name)
+            local_storage = utils.get_storage(local=True)
+            if local_storage.exists(new_name):
+                local_storage.delete(new_name)
+            remote_store.save(new_name, self.script_path.file)
+            # save it locally as well, check if it exists because for some setups remote=local
+            if not local_storage.exists(new_name):
+                local_storage.save(new_name, self.script_path.file)
             self.script_path.save(new_name, self.script_path.file, save=False)
             self.script_path.name = new_name
         super(Script, self).save(**kwargs)

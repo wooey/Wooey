@@ -348,9 +348,11 @@ class ScriptParameters(models.Model):
             else:
                 if value:
                     path = os.path.join(self.job.get_upload_path(), os.path.split(value.name)[1])
-                    utils.get_storage(local=False).save(path, value)
-                    utils.get_storage(local=True).save(path, value)
-                    value = path
+                    local_path = utils.get_storage(local=True).save(path, value)
+                    remote_storage = utils.get_storage(local=False)
+                    if not remote_storage.exists(path):
+                        remote_storage.save(local_path, value)
+                    value = local_path
         self._value = json.dumps(value)
 
 

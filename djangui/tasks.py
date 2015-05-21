@@ -57,6 +57,7 @@ def submit_script(**kwargs):
     job.save()
 
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=abscwd)
+
     stdout, stderr = proc.communicate()
     # tar/zip up the generated content for bulk downloads
     def get_valid_file(cwd, name, ext):

@@ -6,12 +6,14 @@ import os
 import sys
 import pandas as pd
 import seaborn as sns
+import numpy as np
 
 parser = argparse.ArgumentParser(description="Create a heatmap from a delimited file.")
 parser.add_argument('--tsv', help='The delimited file to plot.', type=argparse.FileType('r'), required=True)
 parser.add_argument('--delimiter', help='The delimiter for fields. Default: tab', type=str, default='\t')
 parser.add_argument('--row', help='The column containing row to create a heatmap from. Default to first row.', type=str)
 parser.add_argument('--cols', help='The columns to choose values from (separate by a comma for multiple). Default: All non-rows', type=str)
+parser.add_argument('--log-normalize', help='Whether to log normalize data.', action='store_true')
 
 def main():
     args = parser.parse_args()
@@ -23,7 +25,8 @@ def main():
             data = data.iloc[:,[int(i)-1 for i in args.cols.split(',')]]
     if len(data.columns) > 50:
         raise BaseException('Too many columns')
-    data = data[:100]
+    data = np.log2(data) if args.log_normalize else data
+    data[data==-1*np.inf] = data[data!=-1*np.inf].min().min()
     seaborn_map = sns.clustermap(data)
     seaborn_map.savefig('{}_heatmap.png'.format(os.path.split(args.tsv.name)[1]))
 

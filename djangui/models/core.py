@@ -149,7 +149,13 @@ class DjanguiJob(models.Model):
     def submit_to_celery(self, **kwargs):
         if kwargs.get('resubmit'):
             params = self.get_parameters()
+            user = kwargs.get('user')
             self.pk = None
+            self.user = user
+            # clear the output channels
+            self.celery_id = None
+            self.stdout = ''
+            self.stderr = ''
             self.save()
             with transaction.atomic():
                 for param in params:
@@ -357,7 +363,7 @@ class ScriptParameters(models.Model):
 
 
 class DjanguiFile(models.Model):
-    filepath = models.FileField()
+    filepath = models.FileField(max_length=500)
     job = models.ForeignKey('DjanguiJob')
     filepreview = models.TextField(null=True, blank=True)
     filetype = models.CharField(max_length=255, null=True, blank=True)

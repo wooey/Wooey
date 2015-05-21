@@ -49,9 +49,9 @@ def celery_task_command(request):
     valid = valid_user(job.script, request.user)
     if valid.get('valid') is True:
         user = request.user if request.user.is_authenticated() else None
-        if user == job.user:
+        if user == job.user or job.user == None:
             if command == 'resubmit':
-                new_job = job.submit_to_celery(resubmit=True)
+                new_job = job.submit_to_celery(resubmit=True, user=request.user)
                 response.update({'valid': True, 'extra': {'task_url': reverse('celery_results_info', kwargs={'job_id': new_job.pk})}})
             elif command == 'clone':
                 response.update({'valid': True, 'redirect': '{0}?job_id={1}'.format(reverse('djangui_task_launcher'), job_id)})

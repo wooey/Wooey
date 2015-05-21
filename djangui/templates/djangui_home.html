@@ -277,7 +277,6 @@
                     var djangui_dt = job_tables[table_key]['dt'];
                     var djangui_dt_api = job_tables[table_key]['dt_api'];
                     var job_data = data[table_key];
-                    console.log(job_data);
                     for (var i = 0; i < job_data.length; i++) {
                         if (!dt_jobs[job_data[i].job_id] || dt_jobs[job_data[i].job_id] != job_data[i].job_status) {
                             if (dt_jobs[job_data[i].job_id] && dt_jobs[job_data[i].job_id] != job_data[i].job_status) {

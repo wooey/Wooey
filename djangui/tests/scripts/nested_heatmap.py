@@ -22,8 +22,7 @@ def main():
     import seaborn as sns
     major_index = args.major_index
     minor_index = args.minor_index
-
-    df = pd.read_table('/home/chris/Downloads/Human Body Map.csv', sep='\t', index_col=[major_index, minor_index])
+    df = pd.read_table(args.tsv, index_col=[major_index, minor_index], sep=args.delimiter)
     df = np.log2(df) if args.log_normalize else df
     # set our undected samples to our lowest detection
     df[df==-1*np.inf] = df[df!=-1*np.inf].min().min()

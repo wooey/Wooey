@@ -44,6 +44,13 @@
             margin-top: 5px;
         }
 
+        .nav-tabs > li.no-hover > a:hover {
+            background-color: #fff;
+            border-top-color: #fff;
+            border-left-color: #fff;
+            border-right-color: #fff;
+        }
+
         #djangui-job-table a {
             display: block;
             width: 110px;
@@ -133,6 +140,7 @@
     <script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="//cdn.datatables.net/1.10.6/js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="//cdn.datatables.net/responsive/1.0.5/js/dataTables.responsive.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
     {% endblock js %}
     {% block extra_js %}
     {% endblock extra_js %}

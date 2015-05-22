@@ -85,7 +85,12 @@
             <li class="active"><a href="#user-jobs" data-toggle="pill">{% trans "Your Jobs" %}</a></li>
         {% endif %}
         <li{% if not request.user.is_authenticated %} class="active"{% endif %}><a href="#all-jobs" data-toggle="pill">{% trans "All Jobs" %}</a></li>
-        <li><a href="#" id="celery-refresh"><span class="glyphicon glyphicon-refresh"></span></a></li>
+        <li class="no-hover">
+            <a href="#" id="celery-refresh">
+                <span class="glyphicon glyphicon-refresh"></span>
+                <button class="btn btn-xs btn-link active" id="auto-refresh"> {% trans "Auto" %}</button>
+            </a>
+        </li>
     </ul>
     <div class="tab-content">
         {% if request.user.is_authenticated %}
@@ -270,6 +275,43 @@
         $('#celery-refresh').click(function(event){
             celeryRefresh();
         });
+        var tid, cid;
+        var $refreshBadge = $('<span id="refresh-badge" class="badge">9</span>');
+        $('#auto-refresh').click(function(event){
+            var btn = $(this);
+            if(btn.hasClass('btn-link')) {
+                $.cookie('auto-refresh', true, { expires: 365, path: '/' });
+                tid = setTimeout(celeryRefresh, 10000);
+                cid = setTimeout(updateRefreshBadge, 1000);
+                $refreshBadge.appendTo(btn);
+            }
+            else {
+                $.cookie('auto-refresh', false, { expires: 365, path: '/' });
+                clearTimeout(tid);
+                clearTimeout(cid);
+                $refreshBadge.remove();
+                $refreshBadge.text(9);
+            }
+            btn.toggleClass('btn-link');
+        });
+        var autoRefresh = $.cookie()['auto-refresh'] === 'true';
+        if(autoRefresh) {
+            $('#auto-refresh').trigger('click');
+        }
+        else{
+
+        }
+
+        function updateRefreshBadge(){
+            var val = parseInt($refreshBadge.text())-1;
+            if(val == -1){
+                celeryRefresh();
+                val=9;
+            }
+            $refreshBadge.text(val);
+            cid = setTimeout(updateRefreshBadge, 1000);
+        }
+
         function celeryRefresh() {
             $.get("{% url "celery_results" %}", function(data){
                 for(var table_key in data) {

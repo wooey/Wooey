@@ -75,8 +75,9 @@ def build_scripts():
     :return:
     '''
 
-    scripts = find_files(os.path.join('.', 'scripts'), '.py')
-    collect_argparses(scripts)
+    for f in app.config.get('SCRIPT_FOLDERS'):
+        scripts = find_files(f, '.py')
+        collect_argparses(scripts)
 
 
 @manager.command
@@ -88,34 +89,36 @@ def find_scripts():
     :return:
     '''
 
-    jsons = find_files(os.path.join('.', 'scripts'), '.json')
+    for f in app.config.get('SCRIPT_FOLDERS'):
 
-    for json_filename in jsons:
-        # Extract to dict structure, then interrogate the database to see if we already have this and update
-        with open(json_filename, 'r') as f:
-            jo = json.load(f)
+        jsons = find_files(f, '.json')
 
-        full_path = os.path.realpath(json_filename)
+        for json_filename in jsons:
+            # Extract to dict structure, then interrogate the database to see if we already have this and update
+            with open(json_filename, 'r') as f:
+                jo = json.load(f)
 
-        # Try query the db for object with the same (?hash)
-        script = Script.query.filter_by(config_path=full_path).first()  # Will be only one
-        if not script:
-            script = Script(config_path=full_path)  # Create it
+            full_path = os.path.realpath(json_filename)
 
-        # Amend the object
-        script.exec_path = jo['program']['path']
-        script.description = jo['program']['description']
-        script.name = jo['program']['name']
+            # Try query the db for object with the same (?hash)
+            script = Script.query.filter_by(config_path=full_path).first()  # Will be only one
+            if not script:
+                script = Script(config_path=full_path)  # Create it
 
-        if 'documentation' in jo['program']:
-            script.doc_path = jo['program']['documentation']
-        elif os.path.exists(os.path.splitext(script.exec_path)[0] + '.md'):
-            script.doc_path = os.path.splitext(script.exec_path)[0] + '.md'
-        elif os.path.exists(os.path.splitext(script.config_path)[0] + '.md'):
-            script.doc_path = os.path.splitext(script.config_path)[0] + '.md'
+            # Amend the object
+            script.exec_path = jo['program']['path']
+            script.description = jo['program']['description']
+            script.name = jo['program']['name']
 
-        db.session.add(script)
-        db.session.commit()
+            if 'documentation' in jo['program']:
+                script.doc_path = jo['program']['documentation']
+            elif os.path.exists(os.path.splitext(script.exec_path)[0] + '.md'):
+                script.doc_path = os.path.splitext(script.exec_path)[0] + '.md'
+            elif os.path.exists(os.path.splitext(script.config_path)[0] + '.md'):
+                script.doc_path = os.path.splitext(script.config_path)[0] + '.md'
+
+            db.session.add(script)
+            db.session.commit()
 
 
 def read_all_so_far(proc, out=''):
@@ -239,8 +242,8 @@ def start_daemon():
 
                         # On Windows we need to supply the python executable as a first argument
                         if sys.platform == 'win32':
-                            req_version = (3, 3)
-                            if sys.version_info >= req_version:
+
+                            if sys.version_info >= (3, 3):
                                 # On python 3.3+ use py launcher
                                 args.insert(0, 'py')
 

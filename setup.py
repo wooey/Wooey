@@ -6,14 +6,11 @@ with open(os.path.join(os.path.dirname(__file__), 'README.md')) as readme:
 
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
-DJANGUI_TEMPLATE_DIR = os.path.join('djangui', 'templates')
 
 setup(
     name='django-djangui',
     version='0.1.5',
     packages=find_packages(),
-    data_files=[(DJANGUI_TEMPLATE_DIR, [os.path.join(root, filename) for root, folders, files in os.walk(DJANGUI_TEMPLATE_DIR)
-                                        for filename in files])],
     scripts=['scripts/djanguify.py'],
     install_requires = ['Django>=1.8', 'django-autoslug', 'django-celery'],
     include_package_data=True,

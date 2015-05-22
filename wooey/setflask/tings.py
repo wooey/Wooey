@@ -30,6 +30,8 @@ class Config(object):
 
     DEFAULT_PROGRESS_REGEX = '^Progress ([0-9]*\.?[0-9]+.)%$'  # Line-wise regex search for progress
 
+    SCRIPT_FOLDERS = [os.path.join('.', 'scripts')]
+
 class ProdConfig(Config):
     """Production configuration."""
     ENV = 'prod'

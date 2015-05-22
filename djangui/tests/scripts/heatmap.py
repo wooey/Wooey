@@ -27,8 +27,12 @@ def main():
         raise BaseException('Too many columns')
     data = np.log2(data) if args.log_normalize else data
     data[data==-1*np.inf] = data[data!=-1*np.inf].min().min()
-    seaborn_map = sns.clustermap(data)
+    width = 5+0 if len(data.columns)<50 else (len(data.columns)-50)/100
+    row_cutoff = 1000
+    height = 15+0 if len(data)<row_cutoff else (len(data)-row_cutoff)/75.0
+    seaborn_map = sns.clustermap(data, figsize=(width, height))
     seaborn_map.savefig('{}_heatmap.png'.format(os.path.split(args.tsv.name)[1]))
+    seaborn_map.data2d.to_csv('{}_heatmap.tsv'.format(os.path.split(args.tsv.name)[1]), sep='\t')
 
 if __name__ == "__main__":
     sys.exit(main())

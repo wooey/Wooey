@@ -124,10 +124,11 @@ def add_djangui_script(script=None, group=None):
     from djangui.models import Script, ScriptGroup, ScriptParameter, ScriptParameterGroup
     # if we have a script, it will at this point be saved in the model pointing to our file system, which may be
     # ephemeral. So the path attribute may not be implemented
-    try:
-        script_path = script.script_path.path
-    except NotImplementedError:
-        script_path = script.script_path.name
+    if not isinstance(script, basestring):
+        try:
+            script_path = script.script_path.path
+        except NotImplementedError:
+            script_path = script.script_path.name
 
     script_obj, script = (script, get_storage_object(script_path, local=True).path) if isinstance(script, Script) else (False, script)
     if isinstance(group, ScriptGroup):

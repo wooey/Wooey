@@ -151,7 +151,7 @@ class DjanguiJob(models.Model):
             params = self.get_parameters()
             user = kwargs.get('user')
             self.pk = None
-            self.user = user
+            self.user = None if not user.is_authenticated() else user
             # clear the output channels
             self.celery_id = None
             self.stdout = ''

@@ -71,40 +71,42 @@ def submit_script(**kwargs):
     # fetch the job again in case the database connection was lost during the job or something else changed.
     job = DjanguiJob.objects.get(pk=job_id)
 
-    tar_out = get_valid_file(abscwd, get_valid_filename(job.job_name), 'tar.gz')
-    tar = tarfile.open(tar_out, "w:gz")
-    tar_name = os.path.splitext(os.path.splitext(os.path.split(tar_out)[1])[0])[0]
-    tar.add(abscwd, arcname=tar_name)
-    tar.close()
+    # if there are files generated, make zip/tar files for download
+    if len(os.listdir(abscwd)):
+        tar_out = get_valid_file(abscwd, get_valid_filename(job.job_name), 'tar.gz')
+        tar = tarfile.open(tar_out, "w:gz")
+        tar_name = os.path.splitext(os.path.splitext(os.path.split(tar_out)[1])[0])[0]
+        tar.add(abscwd, arcname=tar_name)
+        tar.close()
 
 
-    zip_out = get_valid_file(abscwd, get_valid_filename(job.job_name), 'zip')
-    zip = zipfile.ZipFile(zip_out, "w")
-    arcname = os.path.splitext(os.path.split(zip_out)[1])[0]
-    zip.write(abscwd, arcname=arcname)
-    for root, folders, filenames in os.walk(os.path.split(zip_out)[0]):
-        for filename in filenames:
-            path = os.path.join(root, filename)
-            if path == tar_out:
-                continue
-            if path == zip_out:
-                continue
-            zip.write(path, arcname=os.path.join(arcname, filename))
-    zip.close()
+        zip_out = get_valid_file(abscwd, get_valid_filename(job.job_name), 'zip')
+        zip = zipfile.ZipFile(zip_out, "w")
+        arcname = os.path.splitext(os.path.split(zip_out)[1])[0]
+        zip.write(abscwd, arcname=arcname)
+        for root, folders, filenames in os.walk(os.path.split(zip_out)[0]):
+            for filename in filenames:
+                path = os.path.join(root, filename)
+                if path == tar_out:
+                    continue
+                if path == zip_out:
+                    continue
+                zip.write(path, arcname=os.path.join(arcname, filename))
+        zip.close()
 
 
-    # save all the files generated as well to our default storage for ephemeral storage setups
-    if djangui_settings.DJANGUI_EPHEMERAL_FILES:
-        for root, folders, files in os.walk(abscwd):
-            for filename in files:
-                filepath = os.path.join(root, filename)
-                s3path = os.path.join(root[root.find(cwd):], filename)
-                exists = utils.get_storage(local=False).exists(s3path)
-                filesize = utils.get_storage(local=False).size(s3path)
-                if not exists or (exists and filesize == 0):
-                    if exists:
-                        utils.get_storage(local=False).delete(s3path)
-                    utils.get_storage(local=False).save(s3path, File(open(filepath, 'rb')))
+        # save all the files generated as well to our default storage for ephemeral storage setups
+        if djangui_settings.DJANGUI_EPHEMERAL_FILES:
+            for root, folders, files in os.walk(abscwd):
+                for filename in files:
+                    filepath = os.path.join(root, filename)
+                    s3path = os.path.join(root[root.find(cwd):], filename)
+                    exists = utils.get_storage(local=False).exists(s3path)
+                    filesize = utils.get_storage(local=False).size(s3path)
+                    if not exists or (exists and filesize == 0):
+                        if exists:
+                            utils.get_storage(local=False).delete(s3path)
+                        utils.get_storage(local=False).save(s3path, File(open(filepath, 'rb')))
 
     utils.create_job_fileinfo(job)
 

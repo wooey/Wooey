@@ -16,6 +16,7 @@ celery_app = app.app_or_default()
 
 from ..models import DjanguiJob
 from .. import settings as djangui_settings
+from ..backend.utils import valid_user, get_file_previews
 
 def celery_status(request):
     spanbase = "<span class='glyphicon {}' data-toggle='tooltip' data-trigger='hover' title='{}'></span>"
@@ -44,7 +45,6 @@ def celery_task_command(request):
     command = request.POST.get('celery-command')
     job_id = request.POST.get('job-id')
     job = DjanguiJob.objects.get(pk=job_id)
-    from ..backend.utils import valid_user
     response = {'valid': False,}
     valid = valid_user(job.script, request.user)
     if valid.get('valid') is True:
@@ -81,16 +81,20 @@ class CeleryTaskView(TemplateView):
         ctx['task_info'] = {'stdout': '', 'stderr': '', 'job': djangui_job,
                             'all_files': {},
                             'file_groups': {}}
-        from ..backend import utils
-        out_files = utils.get_file_previews(djangui_job)
-        all = out_files.pop('all', [])
-        archives = out_files.pop('archives', [])
-        ctx['task_info'].update({
-                'all_files': all,
-                'archives': archives,
-                'file_groups': out_files,
-                'status': djangui_job.status,
-                'last_modified': djangui_job.modified_date,
-            })
+        user = self.request.user
+        user = None if not user.is_authenticated() and djangui_settings.DJANGUI_ALLOW_ANONYMOUS else user
+        if djangui_job.user == user:
+            out_files = get_file_previews(djangui_job)
+            all = out_files.pop('all', [])
+            archives = out_files.pop('archives', [])
+            ctx['task_info'].update({
+                    'all_files': all,
+                    'archives': archives,
+                    'file_groups': out_files,
+                    'status': djangui_job.status,
+                    'last_modified': djangui_job.modified_date,
+                })
+        else:
+            ctx['task_error'] = _('You are not authenticated to view this job.')
         return ctx
 

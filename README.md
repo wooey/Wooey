@@ -3,11 +3,14 @@
 1. [Installation](#install)
     1. [A Djangui Only Project](#djonly)
     2. [Adding Djangui to Existing Projects](#existing)
-2. [Adding Scripts](#adding)
-3. [Script Organization](#organization)
-4. [Script Permissions](#permissions)
-5. [Configuration](#config)
-6. [Usage with S3/remote file systems](#s3)
+2. [Running Djangui](#running)
+    1. [A Procfile](#procfile)
+    2. [Two processes](#two-procs)
+3. [Adding Scripts](#adding)
+4. [Script Organization](#organization)
+5. [Script Permissions](#permissions)
+6. [Configuration](#config)
+7. [Usage with S3/remote file systems](#s3)
 
 Djangui is designed to take scripts implemented with a python command line argument parser (such as argparse), and convert them into a web interface.
  
@@ -51,6 +54,43 @@ There is a bootstrapper included with djangui, which will create a Django projec
         # Django 1.7 and above
         `./manage.py makemigrations`
         `./manage.py migrate`
+
+# <a name="running"></a>Running Djangui
+
+Djangui depends on a distributed worker to handle tasks, you can disable this by setting **DJANGUI_CELERY** to False in your settings, which will allow you to run Djangui through the simple command:
+
+```
+python manage.py runserver
+```
+
+However, this will cause the server to execute tasks, which will block the site.
+
+The recommended ways to run Djangui are:
+
+## <a name="procfile"></a>Through a Procfile
+
+The simplest way to run Djangui is to use a Procfile with [honcho](https://github.com/nickstenning/honcho), which can be installed via pip. Make a file, called Procfile in the root of your project (the same place as manage.py) with the following contents:
+
+```
+web:  python manage.py runserver
+worker: python manage.py celery worker -c 1 --beat -l info
+EOM
+```
+
+Your server can then be run by the simple command:
+```
+honcho start
+```
+
+## <a name="two-procs"></a>Through two separate processes
+
+You can also run djangui by invoking two commands (you will need a separate process for each):
+
+```
+python manage.py celery worker -c 1 --beat -l info
+python manage.py runserver
+```
+
         
 # <a name="adding"></a>Adding & Managing Scripts
 

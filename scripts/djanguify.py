@@ -29,10 +29,14 @@ def main():
     env['DJANGO_SETTINGS_MODULE'] = ''
     subprocess.call(['django-admin', 'startproject', project_name], env=env)
     project_root = project_name
-    project_base_dir = os.path.join(project_root, project_name)
+    project_base_dir = os.path.join(os.path.realpath(os.path.curdir), project_root, project_name)
 
-    djanguify_folder = os.path.split(os.path.realpath(__file__))[0]
-    project_template_dir = os.path.join(djanguify_folder, '..', 'conf', 'project_template')
+    # search down until we find the conf folder
+    djanguify_folder, folder_name = os.path.split(os.path.split(os.path.realpath(__file__))[0])
+    while 'djangui' not in folder_name:
+        djanguify_folder, folder_name = os.path.split(djanguify_folder)
+    # at this point we should be at the base
+    project_template_dir = os.path.join(djanguify_folder, folder_name, 'conf', 'project_template')
 
 
     context = Context(

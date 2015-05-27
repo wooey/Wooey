@@ -47,7 +47,7 @@ GLOBAL_ATTR_KWARGS = {
     'value': {'action_name': 'default'},
     'required': {'action_name': 'required'},
     'help': {'action_name': 'help'},
-    'param': {'callback': lambda x: x.option_strings[0]},
+    'param': {'callback': lambda x: x.option_strings[0] if x.option_strings else ''},
     'choices': {'callback': lambda x: x.choices},
     'choice_limit': {'callback': lambda x: CHOICE_LIMIT_MAP.get(x.nargs, x.nargs)}
     }
@@ -155,16 +155,20 @@ class ArgParseNode(object):
 class ArgParseNodeBuilder(object):
     def __init__(self, script_path=None, script_name=None):
         self.valid = True
+        self.error = ''
+        parsers = []
         try:
             module = imp.load_source(script_name, script_path)
+            main_module = module.main.__globals__ if hasattr(module, 'main') else globals()
+            parsers = [v for i, v in chain(main_module.iteritems(), vars(module).iteritems())
+                       if issubclass(type(v), argparse.ArgumentParser)]
         except:
             sys.stderr.write('Error while loading {0}:\n'.format(script_path))
             self.error = '{0}\n'.format(traceback.format_exc())
             sys.stderr.write(self.error)
             self.valid = False
             return
-        parsers = [v for i, v in chain(module.main.__globals__.iteritems(), vars(module).iteritems())
-                   if issubclass(type(v), argparse.ArgumentParser)]
+
         if not parsers:
             f = tempfile.NamedTemporaryFile()
             ast_source = source_parser.parse_source_file(script_path)
@@ -172,7 +176,8 @@ class ArgParseNodeBuilder(object):
             f.write('\n'.join(python_code))
             f.seek(0)
             module = imp.load_source(script_name, f.name)
-            parsers = [v for i, v in chain(module.main.__globals__.iteritems(), vars(module).iteritems())
+            main_module = module.main.__globals__ if hasattr(module, 'main') else globals()
+            parsers = [v for i, v in chain(main_module.iteritems(), vars(module).iteritems())
                    if issubclass(type(v), argparse.ArgumentParser)]
         if not parsers:
             sys.stderr.write('Unable to identify ArgParser for {0}:\n'.format(script_path))

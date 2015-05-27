@@ -267,9 +267,10 @@ class ScriptParameters(models.Model):
             return []
         field = self.parameter.form_field
         param = self.parameter.short_param
+        com = [param] if param != '' else []
         if field == self.BOOLEAN:
             if value:
-                return [param]
+                return com
         if field == self.FILE:
             if self.parameter.is_output:
                 try:
@@ -287,7 +288,8 @@ class ScriptParameters(models.Model):
                 else:
                     # return the string for processing
                     value = value.path
-        return [param, str(value)]
+        com.append(str(value))
+        return com
 
     def force_value(self, value):
         self._value = json.dumps(value)

@@ -368,3 +368,6 @@ class DjanguiFile(models.Model):
     filepreview = models.TextField(null=True, blank=True)
     filetype = models.CharField(max_length=255, null=True, blank=True)
     parameter = models.ForeignKey('ScriptParameters', null=True, blank=True)
+
+    def __unicode__(self):
+        return unicode('{}: {}'.format(self.job.job_name, self.filepath))

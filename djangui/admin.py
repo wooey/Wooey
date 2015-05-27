@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from django.contrib.admin import ModelAdmin, site
 
-from djangui.models import Script, ScriptGroup, ScriptParameter, DjanguiJob, ScriptParameterGroup
+from djangui.models import Script, ScriptGroup, ScriptParameter, DjanguiJob, ScriptParameterGroup, DjanguiFile
 
 class JobAdmin(ModelAdmin):
     list_display = ('user', 'job_name', 'script', 'status', 'created_date')
@@ -18,7 +18,11 @@ class GroupAdmin(ModelAdmin):
 class ParameterGroupAdmin(ModelAdmin):
     list_display = ('script', 'group_name')
 
+class FileAdmin(ModelAdmin):
+    pass
+
 site.register(DjanguiJob, JobAdmin)
+site.register(DjanguiFile, FileAdmin)
 site.register(Script, ScriptAdmin)
 site.register(ScriptParameter, ParameterAdmin)
 site.register(ScriptGroup, GroupAdmin)

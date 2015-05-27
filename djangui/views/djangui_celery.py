@@ -8,6 +8,7 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_unicode
 from django.db.models import Q
+from django.template.defaultfilters import escape
 
 from djcelery.models import TaskMeta
 from celery import app, states
@@ -19,6 +20,7 @@ from .. import settings as djangui_settings
 from ..backend.utils import valid_user, get_file_previews
 
 def celery_status(request):
+    # TODO: This function can use some sprucing up, design a better data structure for returning jobs
     spanbase = "<span class='glyphicon {}' data-toggle='tooltip' data-trigger='hover' title='{}'></span>"
     STATE_MAPPER = {
         DjanguiJob.COMPLETED: spanbase.format('glyphicon-ok', _('Success')),
@@ -27,16 +29,17 @@ def celery_status(request):
         states.REVOKED: spanbase.format('glyphicon-stop', _('Halted')),
         DjanguiJob.SUBMITTED: spanbase.format('glyphicon-hourglass', _('Waiting to be queued'))
     }
-    jobs = DjanguiJob.objects.filter(Q(user=None) | Q(user=request.user) if request.user.is_authenticated() else Q(user=None))
+    user = request.user
+    jobs = DjanguiJob.objects.filter(Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None))
     jobs = jobs.exclude(status=DjanguiJob.DELETED)
     # divide into user and anon jobs
     def get_job_list(job_query):
-        return [{'job_name': job.job_name, 'job_status': STATE_MAPPER.get(job.status, job.status),
+        return [{'job_name': escape(job.job_name), 'job_status': STATE_MAPPER.get(job.status, job.status),
                 'job_submitted': job.created_date.strftime('%b %d %Y, %H:%M:%S'),
-                'job_id': job.pk, 'job_description': 'Script: {}\n{}'.format(job.script.script_name, job.job_description),
+                'job_id': job.pk, 'job_description': escape('Script: {}\n{}'.format(job.script.script_name, job.job_description)),
                 'job_url': reverse('celery_results_info', kwargs={'job_id': job.pk})} for job in job_query]
-    d = {'user': get_job_list([i for i in jobs if i.user == request.user]),
-         'anon': get_job_list([i for i in jobs if i.user == None])}
+    d = {'user': get_job_list([i for i in jobs if i.user == user]),
+         'anon': get_job_list([i for i in jobs if i.user == None or (user.is_superuser and i.user != user)])}
     return JsonResponse(d, safe=False)
 
 
@@ -84,7 +87,7 @@ class CeleryTaskView(TemplateView):
         user = self.request.user
         user = None if not user.is_authenticated() and djangui_settings.DJANGUI_ALLOW_ANONYMOUS else user
         job_user = djangui_job.user
-        if job_user == None or job_user == user:
+        if job_user == None or job_user == user or user.is_superuser:
             out_files = get_file_previews(djangui_job)
             all = out_files.pop('all', [])
             archives = out_files.pop('archives', [])

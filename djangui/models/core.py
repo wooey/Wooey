@@ -216,8 +216,8 @@ class ScriptParameter(UpdateScriptsMixin, models.Model):
     slug = AutoSlugField(populate_from='script_param', unique=True)
     is_output = models.BooleanField(default=None)
     required = models.BooleanField(default=False)
-    output_path = models.FilePathField(path=settings.MEDIA_ROOT, allow_folders=True, allow_files=False,
-                                       recursive=True, max_length=255)
+    # output_path = models.FilePathField(path=settings.MEDIA_ROOT, allow_folders=True, allow_files=False,
+    #                                    recursive=True, max_length=255)
     choices = models.CharField(max_length=255, null=True, blank=True)
     choice_limit = models.PositiveSmallIntegerField(null=True, blank=True)
     form_field = models.CharField(max_length=255)

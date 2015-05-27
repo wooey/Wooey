@@ -30,8 +30,11 @@ def celery_status(request):
         DjanguiJob.SUBMITTED: spanbase.format('glyphicon-hourglass', _('Waiting to be queued'))
     }
     user = request.user
-    jobs = DjanguiJob.objects.filter(Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None))
-    jobs = jobs.exclude(status=DjanguiJob.DELETED)
+    if user.is_superuser:
+        jobs = DjanguiJob.objects.all()
+    else:
+        jobs = DjanguiJob.objects.filter(Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None))
+        jobs = jobs.exclude(status=DjanguiJob.DELETED)
     # divide into user and anon jobs
     def get_job_list(job_query):
         return [{'job_name': escape(job.job_name), 'job_status': STATE_MAPPER.get(job.status, job.status),

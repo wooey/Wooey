@@ -14,6 +14,7 @@ import tempfile
 from itertools import chain
 from argparse import ArgumentParser
 from django.template import Context, Engine
+import djangui
 
 
 def main():
@@ -31,12 +32,8 @@ def main():
     project_root = project_name
     project_base_dir = os.path.join(os.path.realpath(os.path.curdir), project_root, project_name)
 
-    # search down until we find the conf folder
-    djanguify_folder, folder_name = os.path.split(os.path.split(os.path.realpath(__file__))[0])
-    while 'djangui' not in folder_name:
-        djanguify_folder, folder_name = os.path.split(djanguify_folder)
-    # at this point we should be at the base
-    project_template_dir = os.path.join(djanguify_folder, folder_name, 'conf', 'project_template')
+    djanguify_folder = os.path.split(os.path.realpath(djangui.__file__))[0]
+    project_template_dir = os.path.join(djanguify_folder, 'conf', 'project_template')
 
 
     context = Context(

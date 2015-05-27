@@ -160,7 +160,7 @@ For a full migration command reference, run ``python manage.py db --help``.
 
 ### Isn't this terribly insecure?
 
-That largely depends on what you're scripts do. Wooey will perform some standard form-type checking and validation
+That largely depends on what your scripts do. Wooey will perform some standard form-type checking and validation
 before passing to your script as strings. The input is then re-parsed (for Python scripts) via ArgumentParser before being
 passed into variables in your script. Scripts are also run without invoking a shell (`exec(shell=False)`) which eliminates
 shell-interpretation risks.

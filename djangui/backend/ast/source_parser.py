@@ -123,9 +123,9 @@ def walk_tree(node):
     for key, value in d.items():
         if isinstance(value, list):
             for val in value:
-                for _ in walk_tree(val):
+                for _ in ast.walk(val):
                     yield _
-        elif 'ast' in str(type(value)):
+        elif issubclass(type(value), ast.AST):
             for _ in walk_tree(value):
                 yield _
         else:

@@ -1,13 +1,13 @@
 from __future__ import absolute_import
 from django.views.generic import CreateView
-from django.http import JsonResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.contrib.auth import login, authenticate, get_user_model
-from django.forms import modelform_factory
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_unicode
 
 from .. import settings as djangui_settings
+from ..django_compat import modelform_factory, JsonResponse
 
 class DjanguiRegister(CreateView):
     template_name = 'registration/register.html'

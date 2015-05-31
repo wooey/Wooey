@@ -1,15 +1,14 @@
 from __future__ import absolute_import
-from django.views.generic import DetailView, TemplateView, CreateView
-from django.http import JsonResponse
+from django.views.generic import DetailView, TemplateView
 from django.conf import settings
 from django.forms import FileField
-from django.core.files.storage import default_storage
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_unicode
 
 from djangui.backend import utils
 from ..models import DjanguiJob, Script
 from .. import settings as djangui_settings
+from ..django_compat import JsonResponse
 
 
 class DjanguiScriptJSON(DetailView):

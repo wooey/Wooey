@@ -1,7 +1,10 @@
 import traceback
 import sys
 
-from django.apps import AppConfig
+try:
+    from django.apps import AppConfig
+except ImportError:
+    AppConfig = object
 
 class DjanguiConfig(AppConfig):
     name = 'djangui'

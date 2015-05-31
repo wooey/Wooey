@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 import os
 
-from django.http import JsonResponse
 from django.core.urlresolvers import reverse
 from django.views.generic import TemplateView
 from django.conf import settings
@@ -18,6 +17,7 @@ celery_app = app.app_or_default()
 from ..models import DjanguiJob
 from .. import settings as djangui_settings
 from ..backend.utils import valid_user, get_file_previews
+from ..django_compat import JsonResponse
 
 def celery_status(request):
     # TODO: This function can use some sprucing up, design a better data structure for returning jobs

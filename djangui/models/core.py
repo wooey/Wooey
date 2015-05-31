@@ -23,6 +23,7 @@ from .. import settings as djangui_settings
 from .. backend import utils
 
 from . mixins import UpdateScriptsMixin, ModelDiffMixin
+from .. import django_compat
 
 
 # TODO: Handle cases where celery is not setup but specified to be used
@@ -41,6 +42,9 @@ class ScriptGroup(UpdateScriptsMixin, models.Model):
     is_active = models.BooleanField(default=True)
     user_groups = models.ManyToManyField(Group, blank=True)
 
+    class Meta:
+        app_label = 'djangui'
+
     def __unicode__(self):
         return unicode(self.group_name)
 
@@ -52,7 +56,7 @@ class Script(ModelDiffMixin, models.Model):
     script_order = models.PositiveSmallIntegerField(default=1)
     is_active = models.BooleanField(default=True)
     user_groups = models.ManyToManyField(Group, blank=True)
-    script_path = models.FileField()
+    script_path = models.FileField() if django_compat.DJANGO_VERSION >= django_compat.DJ17 else models.FileField(upload_to=djangui_settings.DJANGUI_SCRIPT_DIR)
     execute_full_path = models.BooleanField(default=True) # use full path for subprocess calls
     save_path = models.CharField(max_length=255, blank=True, null=True,
                                  help_text='By default save to the script name,'
@@ -63,6 +67,9 @@ class Script(ModelDiffMixin, models.Model):
 
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        app_label = 'djangui'
 
     def __unicode__(self):
         return unicode(self.script_name)
@@ -140,6 +147,9 @@ class DjanguiJob(models.Model):
     modified_date = models.DateTimeField(auto_now=True)
     script = models.ForeignKey('Script')
 
+    class Meta:
+        app_label = 'djangui'
+
     def __unicode__(self):
         return unicode(self.job_name)
 
@@ -202,6 +212,9 @@ class ScriptParameterGroup(UpdateScriptsMixin, models.Model):
     group_name = models.TextField()
     script = models.ForeignKey('Script')
 
+    class Meta:
+        app_label = 'djangui'
+
     def __unicode__(self):
         return unicode('{}: {}'.format(self.script.script_name, self.group_name))
 
@@ -226,6 +239,9 @@ class ScriptParameter(UpdateScriptsMixin, models.Model):
     param_help = models.TextField(verbose_name='help', null=True, blank=True)
     is_checked = models.BooleanField(default=False)
     parameter_group = models.ForeignKey('ScriptParameterGroup')
+
+    class Meta:
+        app_label = 'djangui'
 
     def __unicode__(self):
         return unicode('{}: {}'.format(self.script.script_name, self.script_param))
@@ -257,6 +273,9 @@ class ScriptParameters(models.Model):
         FLOAT: float,
         INTEGER: int,
     }
+
+    class Meta:
+        app_label = 'djangui'
 
     def __unicode__(self):
         return unicode('{}: {}'.format(self.parameter.script_param, self.value))
@@ -365,11 +384,14 @@ class ScriptParameters(models.Model):
 
 
 class DjanguiFile(models.Model):
-    filepath = models.FileField(max_length=500)
+    filepath = models.FileField(max_length=500) if django_compat.DJANGO_VERSION >= django_compat.DJ17 else models.FileField(max_length=500, upload_to=djangui_settings.DJANGUI_SCRIPT_DIR)
     job = models.ForeignKey('DjanguiJob')
     filepreview = models.TextField(null=True, blank=True)
     filetype = models.CharField(max_length=255, null=True, blank=True)
     parameter = models.ForeignKey('ScriptParameters', null=True, blank=True)
+
+    class Meta:
+        app_label = 'djangui'
 
     def __unicode__(self):
         return unicode('{}: {}'.format(self.job.job_name, self.filepath))

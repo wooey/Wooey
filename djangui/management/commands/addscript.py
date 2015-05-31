@@ -11,22 +11,25 @@ from ... import settings as djangui_settings
 
 
 class Command(BaseCommand):
-    help = 'Closes the specified poll for voting'
+    help = 'Adds a script to Djangui'
 
     def add_arguments(self, parser):
+        parser.add_argument('script', type=str, help='A script or folder of scripts to add to Djangui.')
         parser.add_argument('--group',
             dest='group',
             default='Djangui Scripts',
             help='The name of the group to create scripts under. Default: Djangui Scripts')
-        parser.add_argument('script', type=str, help='A script or folder of scripts to add to Djangui.')
 
     def handle(self, *args, **options):
-        script = options['script']
+        script = options.get('script')
         if not script:
-            raise CommandError('You must provide a script path or directory containing scripts.')
+            if len(args):
+                 script = args[0]
+            else:
+                raise CommandError('You must provide a script path or directory containing scripts.')
         if not os.path.exists(script):
             raise CommandError('{0} does not exist.'.format(script))
-        group = options['group'] if options['group'] else 'Djangui Scripts'
+        group = options.get('group', 'Djangui Scripts')
         scripts = [os.path.join(script, i) for i in os.listdir(script)] if os.path.isdir(script) else [script]
         converted = 0
         for script in scripts:

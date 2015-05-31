@@ -11,6 +11,7 @@
 5. [Script Permissions](#permissions)
 6. [Configuration](#config)
 7. [Usage with S3/remote file systems](#s3)
+8. [Script Guidelines](#script-guide)
 
 Djangui is designed to take scripts implemented with a python command line argument parser (such as argparse), and convert them into a web interface.
  
@@ -160,3 +161,26 @@ STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = 'djangui.djanguistorage.CachedS3Bot
 DJANGUI_EPHEMERAL_FILES = True
 
 </code>
+
+# <a name="script-guide"></a>Script Guidelines
+
+The easiest way to make your scripts compatible with Djangui is to define your ArgParse class in the global scope. For instance:
+
+```
+
+import argparse
+import sys
+
+parser = argparse.ArgumentParser(description="https://projecteuler.net/problem=1 -- Find the sum of all the multiples of 3 or 5 below a number.")
+parser.add_argument('--below', help='The number to find the sum of multiples below.', type=int, default=1000)
+
+def main():
+    args = parser.parse_args()
+    ...
+
+if __name__ == "__main__":
+    sys.exit(main())
+
+```
+
+If you have failing scripts, please open an issue with their contents so I can handle cases as they appear and try to make this as all-encompasing as possible. One known area which fails currently is defining your argparse instance inside the `if __name__ == "__main__" block`

@@ -13,8 +13,9 @@ import shutil
 import tempfile
 from itertools import chain
 from argparse import ArgumentParser
-from django.template import Context, Engine
+from django.template import Context
 import djangui
+from djangui import django_compat
 
 
 def main():
@@ -28,7 +29,7 @@ def main():
         sys.stderr.write('Project {0} already exists.\n'.format(project_name))
         return 1
     env['DJANGO_SETTINGS_MODULE'] = ''
-    subprocess.call(['django-admin', 'startproject', project_name], env=env)
+    subprocess.call(['django-admin.py', 'startproject', project_name], env=env)
     project_root = project_name
     project_base_dir = os.path.join(os.path.realpath(os.path.curdir), project_root, project_name)
 
@@ -60,7 +61,7 @@ def main():
         template_file = open(template_file)
         content = template_file.read()
         content = content.decode('utf-8')
-        template = Engine().from_string(content)
+        template = django_compat.Engine().from_string(content)
         content = template.render(context)
         content = content.encode('utf-8')
         to_name = os.path.join(dest_dir, os.path.split(template_file.name)[1])
@@ -76,8 +77,11 @@ def main():
     # do the same with urls
     shutil.move(os.path.join(project_base_dir, 'urls.py'), os.path.join(project_base_dir, 'urls', 'django_urls.py'))
     env['DJANGO_SETTINGS_MODULE'] = '.'.join([project_name, 'settings', 'user_settings'])
-    subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'makemigrations'], env=env)
-    subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'migrate'], env=env)
+    if django_compat.DJANGO_VERSION >= django_compat.DJ17:
+        subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'makemigrations'], env=env)
+        subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'migrate'], env=env)
+    else:
+        subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'syncdb'], env=env)
     subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'collectstatic', '--noinput'], env=env)
     sys.stdout.write("Please enter the project directory {0}, and run python manage.py createsuperuser and"
                      " python manage.py runserver to start. The admin can be found at localhost:8000/admin. You may also want to set your "

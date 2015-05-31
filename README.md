@@ -41,7 +41,7 @@ There is a bootstrapper included with djangui, which will create a Django projec
     
 ## <a name="existing"></a>Installation with existing Django Projects
 
-    1. Add 'djangui' to INSTALLED_APPS in settings.py
+    1. Add 'djangui' to INSTALLED_APPS in settings.py (and optionally, djcelery unless you wish to tie into an existing celery instance)
     2. Add the following to your urls.py:
        `url(r'^', include('djangui.urls')),`
        (Note: it does not need to be rooted at your site base,
@@ -54,6 +54,13 @@ There is a bootstrapper included with djangui, which will create a Django projec
         # Django 1.7 and above
         `./manage.py makemigrations`
         `./manage.py migrate`
+        
+    4. Ensure the following are in your TEMPLATE_CONTEXT_PROCSSORS variable:
+        TEMPLATE_CONTEXT_PROCESSORS = [
+        ...
+        'django.contrib.auth.context_processors.auth',
+        'django.core.context_processors.request'
+        ...]
 
 # <a name="running"></a>Running Djangui
 

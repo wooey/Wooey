@@ -12,11 +12,11 @@ setup(
     version='0.2.5',
     packages=find_packages(),
     scripts=['scripts/djanguify.py'],
-    install_requires = ['Django>=1.8', 'django-autoslug', 'django-celery'],
+    install_requires = ['Django>=1.6', 'django-autoslug', 'django-celery'],
     include_package_data=True,
     license='GPLv3',
     description='A Django app which creates a web GUI and task interface for argparse scripts',
-    url='http://www.github.com/chris7/djangui',
+    url='http://www.github.com/chris7/django-djangui',
     author='Chris Mitchell',
     author_email='chris.mit7@gmail.com',
     classifiers=[

@@ -41,4 +41,4 @@ class TestProject(TestCase):
         proc = subprocess.Popen([PYTHON_INTERPRETTER, DJANGUI_TEST_PROJECT_MANAGE, 'test', 'djangui.tests'],
                                 env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = proc.communicate()
-        assert ('ok' in stderr.lower()) is True, stderr
+        assert (b'ok' in stderr.lower()) is True, stderr

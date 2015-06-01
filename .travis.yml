@@ -1,16 +1,15 @@
 language: python
 env:
-  - DJANGO_SETTINGS_MODULE=
-  - DJANGO_VERSION=1.6
-  - DJANGO_VERSION=1.7
-  - DJANGO_VERSION=1.8
+  - DJANGO_VERSION=1.6 DJANGO_SETTINGS_MODULE=
+  - DJANGO_VERSION=1.7 DJANGO_SETTINGS_MODULE=
+  - DJANGO_VERSION=1.8 DJANGO_SETTINGS_MODULE=
 python:
   - "2.7"
   - "3.3"
   - "3.4"
 # command to install dependencies
 install:
-  - pip install -q Django==$DJANGO_VERSION
+  - pip install -q Django==$DJANGO_VERSION factory-boy
   - pip install -q .
   - pip install -q -r requirements.txt
 # command to run tests

@@ -81,7 +81,7 @@ def main():
         subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'makemigrations'], env=env)
         subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'migrate'], env=env)
     else:
-        subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'syncdb'], env=env)
+        subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'syncdb', '--noinput'], env=env)
     subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'collectstatic', '--noinput'], env=env)
     sys.stdout.write("Please enter the project directory {0}, and run python manage.py createsuperuser and"
                      " python manage.py runserver to start. The admin can be found at localhost:8000/admin. You may also want to set your "

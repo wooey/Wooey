@@ -16,4 +16,3 @@ class FormTestCase(TestCase):
         utils.validate_form(form=form, data=config.SCRIPT_DATA['translate'].get('data'),
                             files=config.SCRIPT_DATA['translate'].get('files'))
         assert(form.is_valid() is True)
-

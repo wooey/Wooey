@@ -5,5 +5,8 @@ import sys
 class ProcessExceptionMiddleware(object):
     def process_response(self, request, response):
         if response.status_code != 200:
-            print '\n'.join(traceback.format_exception(*sys.exc_info()))
+            try:
+                sys.stderr.write('{}'.format('\n'.join(traceback.format_exc())))
+            except AttributeError:
+                pass
         return response

@@ -3,6 +3,7 @@ __author__ = 'chris'
 import argparse
 import sys
 import copy
+import six
 import traceback
 import os
 from django.db.models import Model
@@ -151,7 +152,7 @@ class ArgParseNode(object):
             self.kwargs.update({'help_text': '"{0}"'.format(utils.sanitize_string(action.help))})
             getattr_kwargs = copy.deepcopy(UNIVERSAL_KWARGS)
             getattr_kwargs.update(model_field.get('getattr_kwargs', {}))
-            for attr, attr_dict in getattr_kwargs.iteritems():
+            for attr, attr_dict in six.iteritems(getattr_kwargs):
                 cb = attr_dict.get('callback', None)
                 if cb is not None:
                     cb(self.kwargs, attr, attr_dict, action, extra={'class_name': class_name})
@@ -166,8 +167,7 @@ class ArgParseNode(object):
             #     import pdb; pdb.set_trace();
         except:
             import traceback
-            print traceback.format_exc()
-            import pdb; pdb.set_trace();
+            sys.stderr.write('{}'.format(traceback.format_exc()))
 
     def get_valid_name(self, name):
         add = 0
@@ -179,7 +179,7 @@ class ArgParseNode(object):
 
     def __unicode__(self):
         return u'{0} = {3}.{1}({2})'.format(self.name, self.field,
-                                               ', '.join(['{0}={1}'.format(i,v) for i,v in self.kwargs.iteritems()]),
+                                               ', '.join(['{0}={1}'.format(i,v) for i,v in six.iteritems(self.kwargs)]),
                                                self.field_module)
 
     def __str__(self):
@@ -241,4 +241,4 @@ class ArgParseNodeBuilder(object):
         return {'class_name': self.class_name, 'fields': fields, 'djangui_options': self.djangui_options,
                 'djangui_output_defaults': self.djangui_output_defaults,
                 'djangui_model_description': self.model_description, 'optional_fields': self.optional_nodes,
-                'djangui_groups': dict([(i, sorted(v)) for i,v in self.containers.iteritems()])}
+                'djangui_groups': dict([(i, sorted(v)) for i,v in six.iteritems(self.containers)])}

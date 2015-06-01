@@ -4,6 +4,7 @@ import json
 import errno
 import os
 import sys
+import six
 import traceback
 from operator import itemgetter
 from collections import OrderedDict
@@ -51,7 +52,7 @@ def create_djangui_job(data):
                      script=script)
     job.save()
     parameters = {i.slug: i for i in ScriptParameter.objects.filter(slug__in=data.keys())}
-    for i, v in data.iteritems():
+    for i, v in six.iteritems(data):
         param = parameters.get(i)
         if param is not None:
             new_param = ScriptParameters(job=job, parameter=param)
@@ -102,7 +103,7 @@ def load_scripts():
             except:
                 sys.stdout.write('Traceback while loading {0}:\n {1}\n'.format(script, traceback.format_exc()))
                 continue
-    for group_pk, group_info in dj_scripts.iteritems():
+    for group_pk, group_info in six.iteritems(dj_scripts):
         # order scripts
         group_info['scripts'].sort(key=itemgetter(0))
         group_info['scripts'] = [i[1] for i in group_info['scripts']]
@@ -124,7 +125,7 @@ def add_djangui_script(script=None, group=None):
     from djangui.models import Script, ScriptGroup, ScriptParameter, ScriptParameterGroup
     # if we have a script, it will at this point be saved in the model pointing to our file system, which may be
     # ephemeral. So the path attribute may not be implemented
-    if not isinstance(script, basestring):
+    if not isinstance(script, six.string_types):
         try:
             script_path = script.script_path.path
         except NotImplementedError:
@@ -223,7 +224,7 @@ def create_job_fileinfo(job):
                 value = field.value
                 if value is None:
                     continue
-                if isinstance(value, basestring):
+                if isinstance(value, six.string_types):
                     # check if this was ever created and make a fileobject if so
                     if get_storage(local=True).exists(value):
                         if not get_storage(local=False).exists(value):
@@ -258,8 +259,7 @@ def create_job_fileinfo(job):
             else:
                 files.append(d)
         except IOError:
-            print absbase, filename, new_name
-            print traceback.format_exc()
+            sys.stderr.format('{}'.format(traceback.format_exc()))
             continue
 
 
@@ -313,7 +313,7 @@ def create_job_fileinfo(job):
                     sequences[header] = seq
             if sequences:
                 rows = []
-                [rows.extend([i, v]) for i,v in sequences.iteritems()]
+                [rows.extend([i, v]) for i,v in six.iteritems(sequences)]
                 return True, rows
         return False, None
 
@@ -329,8 +329,8 @@ def create_job_fileinfo(job):
     # Create our DjanguiFile models
 
     # mark things that are in groups so we don't add this to the 'all' category too to reduce redundancy
-    grouped = set([i['file'].path for file_type, groups in file_groups.iteritems() for i in groups if file_type != 'all'])
-    for file_type, group_files in file_groups.iteritems():
+    grouped = set([i['file'].path for file_type, groups in six.iteritems(file_groups) for i in groups if file_type != 'all'])
+    for file_type, group_files in six.iteritems(file_groups):
         for group_file in group_files:
             if file_type == 'all' and group_file['file'].path in grouped:
                 continue

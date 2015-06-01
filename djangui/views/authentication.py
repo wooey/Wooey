@@ -5,7 +5,7 @@ from django.core.urlresolvers import reverse
 from django.forms.models import modelform_factory
 from django.contrib.auth import login, authenticate, get_user_model
 from django.utils.translation import gettext_lazy as _
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_text
 
 from .. import settings as djangui_settings
 from ..django_compat import JsonResponse
@@ -61,7 +61,8 @@ def djangui_login(request):
         data = form.cleaned_data
         user = authenticate(username=data['username'], password=data['password'])
         if user is None:
-            return JsonResponse({'valid': False, 'errors': {'__all__': [force_unicode(_('You have entered an invalid username or password.'))]}})
+            pass
+        return JsonResponse({'valid': False, 'errors': {'__all__': [force_text(_('You have entered an invalid username or password.'))]}})
         login(request, user)
         return JsonResponse({'valid': True, 'redirect': request.POST['next']})
     else:

@@ -5,7 +5,7 @@ from django.core.urlresolvers import reverse
 from django.views.generic import TemplateView
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_text
 from django.db.models import Q
 from django.template.defaultfilters import escape
 
@@ -71,9 +71,9 @@ def celery_task_command(request):
                 job.save()
                 response.update({'valid': True, 'redirect': reverse('celery_results_info', kwargs={'job_id': job_id})})
             else:
-                response.update({'errors': {'__all__': [force_unicode(_("Unknown Command"))]}})
+                response.update({'errors': {'__all__': [force_text(_("Unknown Command"))]}})
     else:
-        response.update({'errors': {'__all__': [force_unicode(valid.get('error'))]}})
+        response.update({'errors': {'__all__': [force_text(valid.get('error'))]}})
     return JsonResponse(response)
 
 

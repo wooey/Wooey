@@ -12,7 +12,7 @@ setup(
     version='0.2.5',
     packages=find_packages(),
     scripts=['scripts/djanguify.py'],
-    install_requires = ['Django>=1.6', 'django-autoslug', 'django-celery'],
+    install_requires = ['Django>=1.6', 'django-autoslug', 'django-celery', 'six'],
     include_package_data=True,
     license='GPLv3',
     description='A Django app which creates a web GUI and task interface for argparse scripts',

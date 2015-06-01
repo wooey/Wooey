@@ -269,7 +269,6 @@ class ScriptParameters(models.Model):
         BOOLEAN: lambda x: str(x).lower() == 'true',
         CHAR: str,
         CHOICE: str,
-        FILE: file,
         FLOAT: float,
         INTEGER: int,
     }

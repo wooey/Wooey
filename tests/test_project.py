@@ -13,6 +13,9 @@ PYTHON_INTERPRETTER = 'python'
 DJANGUI_PROCESS = None
 CELERY_PROCESS = None
 
+env = os.environ
+env['DJANGO_SETTINGS_MODULE'] = '{}.settings'.format(DJANGUI_TEST_PROJECT_NAME)
+
 class TestProject(TestCase):
     def setUp(self):
         # start the project
@@ -21,10 +24,10 @@ class TestProject(TestCase):
             shutil.rmtree(DJANGUI_TEST_PROJECT_PATH)
         global DJANGUI_PROCESS
         global CELERY_PROCESS
-        proc = subprocess.Popen([PYTHON_INTERPRETTER, DJANGUI_SCRIPT_PATH, '-p', DJANGUI_TEST_PROJECT_NAME], cwd=BASE_DIR)
+        proc = subprocess.Popen([PYTHON_INTERPRETTER, DJANGUI_SCRIPT_PATH, '-p', DJANGUI_TEST_PROJECT_NAME], cwd=BASE_DIR, env=env)
         proc.wait()
-        DJANGUI_PROCESS = subprocess.Popen([PYTHON_INTERPRETTER, DJANGUI_TEST_PROJECT_MANAGE, 'runserver'])
-        CELERY_PROCESS = subprocess.Popen([PYTHON_INTERPRETTER, DJANGUI_TEST_PROJECT_MANAGE, 'celery', 'worker'])
+        DJANGUI_PROCESS = subprocess.Popen([PYTHON_INTERPRETTER, DJANGUI_TEST_PROJECT_MANAGE, 'runserver'], env=env)
+        CELERY_PROCESS = subprocess.Popen([PYTHON_INTERPRETTER, DJANGUI_TEST_PROJECT_MANAGE, 'celery', 'worker'], env=env)
 
     def tearDown(self):
         global DJANGUI_PROCESS
@@ -33,5 +36,9 @@ class TestProject(TestCase):
         CELERY_PROCESS.kill()
         shutil.rmtree(DJANGUI_TEST_PROJECT_PATH)
 
-    def test_simple(self):
-        assert(True) == True
+    def test_project(self):
+        # TODO: this is a hack, figure out a better way to do an integrated test
+        proc = subprocess.Popen([PYTHON_INTERPRETTER, DJANGUI_TEST_PROJECT_MANAGE, 'test', 'djangui.tests'],
+                                env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = proc.communicate()
+        assert (b'ok' in stderr.lower()) is True, stderr

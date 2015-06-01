@@ -1,4 +1,4 @@
-{% extends "djangui_home.html" %}
+{% extends "djangui/djangui_home.html" %}
 {% load i18n %}
 {% load djangui_tags %}
 {% block extra_js %}
@@ -22,7 +22,7 @@
 {% if task_error %}
     <h1 class="text-center">{{ task_error }}</h1>
 {% else %}
-    {% include "modals/resubmit_modal.html" %}
+    {% include "djangui/modals/resubmit_modal.html" %}
     <h1 class="text-center">{{ task_info.job.job_name }}</h1>
     <div role="tabpanel">
 

@@ -78,7 +78,7 @@ def celery_task_command(request):
 
 
 class CeleryTaskView(TemplateView):
-    template_name = 'tasks/task_view.html'
+    template_name = 'djangui/tasks/task_view.html'
 
     def get_context_data(self, **kwargs):
         ctx = super(CeleryTaskView, self).get_context_data(**kwargs)

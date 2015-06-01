@@ -11,7 +11,7 @@ from .. import settings as djangui_settings
 from ..django_compat import JsonResponse
 
 class DjanguiRegister(CreateView):
-    template_name = 'registration/register.html'
+    template_name = 'djangui/registration/register.html'
     model = get_user_model()
     fields = ('username', 'email', 'password')
 

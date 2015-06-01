@@ -69,7 +69,7 @@ class DjanguiScriptJSON(DetailView):
 
 
 class DjanguiHomeView(TemplateView):
-    template_name = 'djangui_home.html'
+    template_name = 'djangui/djangui_home.html'
 
     def get_context_data(self, **kwargs):
         job_id = self.request.GET.get('job_id')

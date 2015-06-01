@@ -103,7 +103,7 @@
                         <li><a href="#"><span class="glyphicon glyphicon-user"> </span>{{ request.user.username|title }}</a></li>
                       <li><a href="{% url "logout" %}?next={{ request.path }}">Logout</a></li>
                   {% else %}
-                      <li>{% include "registration/login_header.html" %}</li>
+                      <li>{% include "djangui/registration/login_header.html" %}</li>
                   {% endif %}
               </ul>
         </div><!-- /.navbar-collapse -->

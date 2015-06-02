@@ -154,7 +154,7 @@ class DjanguiJob(models.Model):
         return unicode(self.job_name)
 
     def get_parameters(self):
-        return ScriptParameters.objects.filter(job=self)
+        return ScriptParameters.objects.filter(job=self).order_by('pk')
 
     def submit_to_celery(self, **kwargs):
         if kwargs.get('resubmit'):
@@ -244,7 +244,10 @@ class ScriptParameter(UpdateScriptsMixin, models.Model):
         app_label = 'djangui'
 
     def __unicode__(self):
-        return unicode('{}: {}'.format(self.script.script_name, self.script_param))
+        return unicode(self.__str__)
+
+    def __str__(self):
+        return '{}: {}'.format(self.script.script_name, self.script_param)
 
 
 # TODO: find a better name for this class
@@ -277,7 +280,10 @@ class ScriptParameters(models.Model):
         app_label = 'djangui'
 
     def __unicode__(self):
-        return unicode('{}: {}'.format(self.parameter.script_param, self.value))
+        return unicode(self.__str__)
+
+    def __str__(self):
+        return '{}: {}'.format(self.parameter.script_param, self.value)
 
     def get_subprocess_value(self):
         value = self.value

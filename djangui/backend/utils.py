@@ -51,12 +51,10 @@ def create_djangui_job(data):
                      script=script)
     job.save()
     parameters = OrderedDict([(i.slug, i) for i in ScriptParameter.objects.filter(slug__in=data.keys()).order_by('pk')])
-    for i, v in six.iteritems(data):
-        param = parameters.get(i)
-        if param is not None:
-            new_param = ScriptParameters(job=job, parameter=param)
-            new_param.value = v
-            new_param.save()
+    for slug, param in six.iteritems(parameters):
+        new_param = ScriptParameters(job=job, parameter=param)
+        new_param.value = data.get(slug)
+        new_param.save()
     return job
 
 

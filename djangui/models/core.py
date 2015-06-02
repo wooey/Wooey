@@ -22,14 +22,14 @@ from celery import states
 from .. import settings as djangui_settings
 from .. backend import utils
 
-from . mixins import UpdateScriptsMixin, ModelDiffMixin
+from . mixins import UpdateScriptsMixin, ModelDiffMixin, DjanguiPy2Mixin
 from .. import django_compat
 
 
 # TODO: Handle cases where celery is not setup but specified to be used
 tasks = importlib.import_module(djangui_settings.DJANGUI_CELERY_TASKS)
 
-class ScriptGroup(UpdateScriptsMixin, models.Model):
+class ScriptGroup(UpdateScriptsMixin, DjanguiPy2Mixin, models.Model):
     """
         This is a group of scripts, it holds general information
         about a collection of scripts, and allows for custom descriptions
@@ -45,10 +45,10 @@ class ScriptGroup(UpdateScriptsMixin, models.Model):
     class Meta:
         app_label = 'djangui'
 
-    def __unicode__(self):
-        return unicode(self.group_name)
+    def __str__(self):
+        return self.group_name
 
-class Script(ModelDiffMixin, models.Model):
+class Script(ModelDiffMixin, DjanguiPy2Mixin, models.Model):
     script_name = models.CharField(max_length=255)
     slug = AutoSlugField(populate_from='script_name', unique=True)
     script_group = models.ForeignKey('ScriptGroup')
@@ -71,8 +71,8 @@ class Script(ModelDiffMixin, models.Model):
     class Meta:
         app_label = 'djangui'
 
-    def __unicode__(self):
-        return unicode(self.script_name)
+    def __str__(self):
+        return self.script_name
 
     def get_url(self):
         return reverse('djangui_script', kwargs={'script_group': self.script_group.slug,
@@ -115,7 +115,7 @@ class Script(ModelDiffMixin, models.Model):
 
 
 
-class DjanguiJob(models.Model):
+class DjanguiJob(DjanguiPy2Mixin, models.Model):
     """
     This model serves to link the submitted celery tasks to a script submitted
     """
@@ -150,8 +150,8 @@ class DjanguiJob(models.Model):
     class Meta:
         app_label = 'djangui'
 
-    def __unicode__(self):
-        return unicode(self.job_name)
+    def __str__(self):
+        return self.job_name
 
     def get_parameters(self):
         return ScriptParameters.objects.filter(job=self).order_by('pk')
@@ -208,18 +208,18 @@ class DjanguiJob(models.Model):
         return path
 
 
-class ScriptParameterGroup(UpdateScriptsMixin, models.Model):
+class ScriptParameterGroup(UpdateScriptsMixin, DjanguiPy2Mixin, models.Model):
     group_name = models.TextField()
     script = models.ForeignKey('Script')
 
     class Meta:
         app_label = 'djangui'
 
-    def __unicode__(self):
-        return unicode('{}: {}'.format(self.script.script_name, self.group_name))
+    def __str__(self):
+        return '{}: {}'.format(self.script.script_name, self.group_name)
 
 
-class ScriptParameter(UpdateScriptsMixin, models.Model):
+class ScriptParameter(UpdateScriptsMixin, DjanguiPy2Mixin, models.Model):
     """
         This holds the parameter mapping for each script, and enforces uniqueness by each script via a FK.
     """
@@ -243,15 +243,13 @@ class ScriptParameter(UpdateScriptsMixin, models.Model):
     class Meta:
         app_label = 'djangui'
 
-    def __unicode__(self):
-        return unicode(self.__str__)
 
     def __str__(self):
         return '{}: {}'.format(self.script.script_name, self.script_param)
 
 
 # TODO: find a better name for this class
-class ScriptParameters(models.Model):
+class ScriptParameters(DjanguiPy2Mixin, models.Model):
     """
         This holds the actual parameters sent with the submission
     """
@@ -278,9 +276,6 @@ class ScriptParameters(models.Model):
 
     class Meta:
         app_label = 'djangui'
-
-    def __unicode__(self):
-        return unicode(self.__str__)
 
     def __str__(self):
         return '{}: {}'.format(self.parameter.script_param, self.value)
@@ -388,7 +383,7 @@ class ScriptParameters(models.Model):
         self._value = json.dumps(value)
 
 
-class DjanguiFile(models.Model):
+class DjanguiFile(DjanguiPy2Mixin, models.Model):
     filepath = models.FileField(max_length=500) if django_compat.DJANGO_VERSION >= django_compat.DJ17 else models.FileField(max_length=500, upload_to=djangui_settings.DJANGUI_SCRIPT_DIR)
     job = models.ForeignKey('DjanguiJob')
     filepreview = models.TextField(null=True, blank=True)
@@ -398,5 +393,5 @@ class DjanguiFile(models.Model):
     class Meta:
         app_label = 'djangui'
 
-    def __unicode__(self):
-        return unicode('{}: {}'.format(self.job.job_name, self.filepath))
+    def __str__(self):
+        return '{}: {}'.format(self.job.job_name, self.filepath)

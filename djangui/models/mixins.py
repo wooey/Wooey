@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 __author__ = 'chris'
 from django.forms.models import model_to_dict
+import six
 
 class UpdateScriptsMixin(object):
     def save(self, **kwargs):
@@ -9,6 +10,9 @@ class UpdateScriptsMixin(object):
         load_scripts()
 
 
+class DjanguiPy2Mixin(object):
+    def __unicode__(self):
+        return six.u(str(self))
 
 # from
 # http://stackoverflow.com/questions/1355150/django-when-saving-how-can-you-check-if-a-field-has-changed

@@ -61,8 +61,7 @@ def djangui_login(request):
         data = form.cleaned_data
         user = authenticate(username=data['username'], password=data['password'])
         if user is None:
-            pass
-        return JsonResponse({'valid': False, 'errors': {'__all__': [force_text(_('You have entered an invalid username or password.'))]}})
+            return JsonResponse({'valid': False, 'errors': {'__all__': [force_text(_('You have entered an invalid username or password.'))]}})
         login(request, user)
         return JsonResponse({'valid': True, 'redirect': request.POST['next']})
     else:

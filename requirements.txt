@@ -1,3 +1,5 @@
-Django
-django-celery
 django-autoslug
+django-celery
+nose
+factory-boy
+coveralls

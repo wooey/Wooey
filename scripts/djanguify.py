@@ -87,6 +87,7 @@ def main():
     sys.stdout.write("Please enter the project directory {0}, and run python manage.py createsuperuser and"
                      " python manage.py runserver to start. The admin can be found at localhost:8000/admin. You may also want to set your "
                      "DJANGO_SETTINGS_MODULE environment variable to {0}.settings \n".format(project_name))
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main())

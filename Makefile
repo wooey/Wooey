@@ -1,7 +1,7 @@
 testenv:
-	pip install -e .
 	pip install -r requirements.txt
 	pip install Django
+	pip install -e .
 
 test:
 	nosetests tests

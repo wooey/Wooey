@@ -4,20 +4,15 @@ description = """
 Create a Django app with Djangui setup.
 """
 import sys
-import traceback
 import six
 import os
-env = os.environ
-import imp
 import subprocess
 import shutil
-import tempfile
-from itertools import chain
 from argparse import ArgumentParser
 from django.template import Context
 import djangui
 from djangui import django_compat
-
+env = os.environ
 
 def main():
     parser = ArgumentParser(description=description)

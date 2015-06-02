@@ -13,6 +13,7 @@ PYTHON_INTERPRETTER = 'python'
 
 env = os.environ
 env['DJANGO_SETTINGS_MODULE'] = '{}.settings'.format(DJANGUI_TEST_PROJECT_NAME)
+env['TESTING'] = 'True'
 
 class TestProject(TestCase):
     def setUp(self):

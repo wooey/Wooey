@@ -38,8 +38,7 @@ def get_storage(local=True):
 def get_job_commands(job=None):
     script = job.script
     com = ['python', script.get_script_path()]
-    from ..models import ScriptParameters
-    parameters = ScriptParameters.objects.filter(job=job)
+    parameters = job.get_parameters()
     for param in parameters:
         com.extend(param.get_subprocess_value())
     return com
@@ -51,7 +50,7 @@ def create_djangui_job(data):
     job = DjanguiJob(user=data.get('user'), job_name=data.get('job_name'), job_description=data.get('job_description'),
                      script=script)
     job.save()
-    parameters = {i.slug: i for i in ScriptParameter.objects.filter(slug__in=data.keys())}
+    parameters = OrderedDict([(i.slug, i) for i in ScriptParameter.objects.filter(slug__in=data.keys()).order_by('pk')])
     for i, v in six.iteritems(data):
         param = parameters.get(i)
         if param is not None:
@@ -212,6 +211,54 @@ def mkdirs(path):
         else:
             raise
 
+def test_delimited(filepath):
+    import csv
+    if six.PY3:
+        handle = open(filepath, 'r', newline='')
+    else:
+        handle = open(filepath, 'rb')
+    with handle as csv_file:
+        try:
+            dialect = csv.Sniffer().sniff(csv_file.read(1024*16), delimiters=',\t')
+        except Exception as e:
+            return False, None
+        csv_file.seek(0)
+        reader = csv.reader(csv_file, dialect)
+        rows = []
+        try:
+            for index, entry in enumerate(reader):
+                if index == 5:
+                    break
+                rows.append(entry)
+        except Exception as e:
+            return False, None
+        return True, rows
+
+def test_fastx(filepath):
+    # if we can be delimited by + or > we're maybe a fasta/q
+    with open(filepath) as fastx_file:
+        sequences = OrderedDict()
+        seq = []
+        header = ''
+        for row_index, row in enumerate(fastx_file, 1):
+            if row_index > 30:
+                break
+            if row and row[0] == '>':
+                if seq:
+                    sequences[header] = ''.join(seq)
+                    seq = []
+                header = row
+            elif row:
+                # we bundle the fastq stuff in here since it's just a visual
+                seq.append(row)
+        if seq and header:
+            sequences[header] = ''.join(seq)
+        if sequences:
+            rows = []
+            [rows.extend([i, v]) for i,v in six.iteritems(sequences)]
+            return True, rows
+    return False, None
+
 @transaction.atomic
 def create_job_fileinfo(job):
     parameters = job.get_parameters()
@@ -239,7 +286,6 @@ def create_job_fileinfo(job):
         except ValueError:
             continue
 
-
     known_files = {i['file'].name for i in files}
     # add the user_output files, these are things which may be missed by the model fields because the script
     # generated them without an explicit arguments reference in the script
@@ -262,7 +308,6 @@ def create_job_fileinfo(job):
             sys.stderr.format('{}'.format(traceback.format_exc()))
             continue
 
-
     # establish grouping by inferring common things
     file_groups['all'] = files
     import imghdr
@@ -272,50 +317,6 @@ def create_job_fileinfo(job):
             file_groups['images'].append(filemodel)
     file_groups['tabular'] = []
     file_groups['fasta'] = []
-
-    def test_delimited(filepath):
-        import csv
-        with open(filepath, 'rb') as csv_file:
-            try:
-                dialect = csv.Sniffer().sniff(csv_file.read(1024*16), delimiters=',\t')
-            except Exception as e:
-                return False, None
-            csv_file.seek(0)
-            reader = csv.reader(csv_file, dialect)
-            rows = []
-            try:
-                for index, entry in enumerate(reader):
-                    if index == 5:
-                        break
-                    rows.append(entry)
-            except Exception as e:
-                return False, None
-            return True, rows
-
-    def test_fastx(filepath):
-        # if we can be delimited by + or > we're maybe a fasta/q
-        with open(filepath, 'rb') as fastx_file:
-            sequences = OrderedDict()
-            seq = ''
-            header = ''
-            for row_index, row in enumerate(fastx_file, 1):
-                if row_index > 30:
-                    break
-                if row and row[0] == '>':
-                    if seq:
-                        sequences[header] = seq
-                        seq = ''
-                    header = row
-                elif row:
-                    # we bundle the fastq stuff in here since it's just a visual
-                    seq += row
-                if seq and header:
-                    sequences[header] = seq
-            if sequences:
-                rows = []
-                [rows.extend([i, v]) for i,v in six.iteritems(sequences)]
-                return True, rows
-        return False, None
 
     for filemodel in files:
         is_delimited, first_rows = test_delimited(filemodel['file'].path)

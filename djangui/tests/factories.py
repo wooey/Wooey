@@ -5,8 +5,6 @@ from ..models import DjanguiJob, ScriptGroup, Script, ScriptParameter, ScriptPar
 
 from . import config
 
-
-
 class ScriptGroupFactory(factory.DjangoModelFactory):
     class Meta:
         model = ScriptGroup

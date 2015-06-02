@@ -20,3 +20,16 @@ class TestUtils(TestCase):
         pass
         # TODO: fix me
         # utils.add_djangui_script(script=os.path.join(config.DJANGUI_TEST_SCRIPTS, 'translate.py'))
+
+class TestFileDetectors(TestCase):
+    def test_detector(self):
+        self.file = os.path.join(config.DJANGUI_TEST_DATA, 'fasta.fasta')
+        res, preview = utils.test_fastx(self.file)
+        self.assertEqual(res, True, 'Fastx parser fail')
+        self.assertEqual(preview, open(self.file).readlines(), 'Fastx Preview Fail')
+
+    def test_delimited(self):
+        self.file = os.path.join(config.DJANGUI_TEST_DATA, 'delimited.tsv')
+        res, preview = utils.test_delimited(self.file)
+        self.assertEqual(res, True, 'Delimited parser fail')
+        self.assertEqual(preview, [i.strip().split('\t') for i in open(self.file).readlines()], 'Delimited Preview Fail')

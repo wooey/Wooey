@@ -7,6 +7,7 @@ import traceback
 import tempfile
 import six
 import copy
+from collections import OrderedDict
 from .ast import source_parser
 from itertools import chain
 
@@ -200,11 +201,11 @@ class ArgParseNodeBuilder(object):
         self.script_path = script_path
         self.script_description = getattr(parser, 'description', None)
         self.script_groups = []
-        self.nodes = {}
+        self.nodes = OrderedDict()
         self.script_groups = []
         non_req = set([i.dest for i in parser._get_optional_actions()])
         self.optional_nodes = set([])
-        self.containers = {}
+        self.containers = OrderedDict()
         for action in parser._actions:
             # This is the help message of argparse
             if action.default == argparse.SUPPRESS:

@@ -21,6 +21,7 @@ class TestJob(TestCase):
         script = factories.TranslateScriptFactory()
         from ..backend import utils
         from .. import settings
+        # the test server doesn't have celery running
         settings.DJANGUI_CELERY = False
         job = utils.create_djangui_job({'djangui_type': script.pk, 'user': None, 'job_name': 'abc', 'sequence': 'aaa', 'out': 'abc'})
         job = job.submit_to_celery()

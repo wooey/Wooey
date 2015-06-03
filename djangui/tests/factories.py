@@ -1,5 +1,6 @@
 import factory
 import os
+import six
 
 from django.contrib.auth import get_user_model
 
@@ -33,3 +34,11 @@ class UserFactory(factory.DjangoModelFactory):
     username = 'user'
     email = 'a@a.com'
     password = 'testuser'
+
+class JobFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = DjanguiJob
+
+    script = factory.SubFactory(TranslateScriptFactory)
+    job_name = six.u('\xd0\xb9\xd1\x86\xd1\x83')
+    job_description = six.u('\xd0\xb9\xd1\x86\xd1\x83\xd0\xb5\xd0\xba\xd0\xb5')

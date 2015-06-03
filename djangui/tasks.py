@@ -72,13 +72,12 @@ def submit_script(**kwargs):
     job = DjanguiJob.objects.get(pk=job_id)
 
     # if there are files generated, make zip/tar files for download
-    if len(os.listdir(abscwd)):
+    if os.environ.get('TESTING') != 'True' and len(os.listdir(abscwd)):
         tar_out = get_valid_file(abscwd, get_valid_filename(job.job_name), 'tar.gz')
         tar = tarfile.open(tar_out, "w:gz")
         tar_name = os.path.splitext(os.path.splitext(os.path.split(tar_out)[1])[0])[0]
         tar.add(abscwd, arcname=tar_name)
         tar.close()
-
 
         zip_out = get_valid_file(abscwd, get_valid_filename(job.job_name), 'zip')
         zip = zipfile.ZipFile(zip_out, "w")
@@ -93,7 +92,6 @@ def submit_script(**kwargs):
                     continue
                 zip.write(path, arcname=os.path.join(arcname, filename))
         zip.close()
-
 
         # save all the files generated as well to our default storage for ephemeral storage setups
         if djangui_settings.DJANGUI_EPHEMERAL_FILES:

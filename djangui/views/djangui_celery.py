@@ -40,7 +40,8 @@ def celery_status(request):
     def get_job_list(job_query):
         return [{'job_name': escape(job.job_name), 'job_status': STATE_MAPPER.get(job.status, job.status),
                 'job_submitted': job.created_date.strftime('%b %d %Y, %H:%M:%S'),
-                'job_id': job.pk, 'job_description': escape(six.u('Script: {}\n{}').format(job.script.script_name, job.job_description)),
+                'job_id': job.pk,
+                 'job_description': escape(six.u('Script: {}\n{}').format(job.script.script_name, job.job_description)),
                 'job_url': reverse('celery_results_info', kwargs={'job_id': job.pk})} for job in job_query]
     d = {'user': get_job_list([i for i in jobs if i.user == user]),
          'anon': get_job_list([i for i in jobs if i.user == None or (user.is_superuser and i.user != user)])}

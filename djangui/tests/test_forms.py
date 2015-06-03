@@ -16,3 +16,8 @@ class FormTestCase(TestCase):
         utils.validate_form(form=form, data=config.SCRIPT_DATA['translate'].get('data'),
                             files=config.SCRIPT_DATA['translate'].get('files'))
         assert(form.is_valid() is True)
+
+    def test_group_form(self):
+        script = factories.TranslateScriptFactory()
+        form = utils.get_form_groups(model=script)
+        self.assertEqual(len(form['groups']), 1)

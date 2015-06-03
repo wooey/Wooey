@@ -19,3 +19,6 @@ class ScriptAdditionTests(TestCase):
         # These are the params shown to the user, we want them returning their destination
         # This also checks that we maintain the expected order
         self.assertEqual(['link', 'name'], [i.parameter.script_param for i in job.get_parameters()])
+        # Check the job command
+        commands = utils.get_job_commands(job=job)[2:]
+        self.assertEqual(['alink', 'aname'], commands)

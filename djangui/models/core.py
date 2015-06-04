@@ -314,7 +314,7 @@ class ScriptParameters(DjanguiPy2Mixin, models.Model):
                 else:
                     # return the string for processing
                     value = value.path
-        com.append(str(value))
+        com.append(value if isinstance(value, six.string_types) else six.u(value))
         return com
 
     def force_value(self, value):

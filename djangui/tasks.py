@@ -3,6 +3,8 @@ import subprocess
 import tarfile
 import os
 import zipfile
+import six
+
 from django.utils.text import get_valid_filename
 from django.core.files.storage import default_storage
 from django.core.files import File
@@ -63,10 +65,10 @@ def submit_script(**kwargs):
     def get_valid_file(cwd, name, ext):
         out = os.path.join(cwd, name)
         index = 0
-        while os.path.exists('{}.{}'.format(out, ext)):
+        while os.path.exists(six.u('{}.{}').format(out, ext)):
             index += 1
-            out = os.path.join(cwd, '{}_{}'.format(name, index))
-        return '{}.{}'.format(out, ext)
+            out = os.path.join(cwd, six.u('{}_{}').format(name, index))
+        return six.u('{}.{}').format(out, ext)
 
     # fetch the job again in case the database connection was lost during the job or something else changed.
     job = DjanguiJob.objects.get(pk=job_id)

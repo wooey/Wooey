@@ -92,7 +92,7 @@ class CeleryTaskView(TemplateView):
         user = self.request.user
         user = None if not user.is_authenticated() and djangui_settings.DJANGUI_ALLOW_ANONYMOUS else user
         job_user = djangui_job.user
-        if job_user == None or job_user == user or user.is_superuser:
+        if job_user == None or job_user == user or (user != None and user.is_superuser):
             out_files = get_file_previews(djangui_job)
             all = out_files.pop('all', [])
             archives = out_files.pop('archives', [])

@@ -74,7 +74,7 @@ def submit_script(**kwargs):
     job = DjanguiJob.objects.get(pk=job_id)
 
     # if there are files generated, make zip/tar files for download
-    if os.environ.get('TESTING') != 'True' and len(os.listdir(abscwd)):
+    if len(os.listdir(abscwd)):
         tar_out = get_valid_file(abscwd, get_valid_filename(job.job_name), 'tar.gz')
         tar = tarfile.open(tar_out, "w:gz")
         tar_name = os.path.splitext(os.path.splitext(os.path.split(tar_out)[1])[0])[0]

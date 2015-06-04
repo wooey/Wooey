@@ -4,6 +4,7 @@ import os
 import errno
 import importlib
 import json
+import six
 
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -222,7 +223,7 @@ class ScriptParameterGroup(UpdateScriptsMixin, DjanguiPy2Mixin, models.Model):
         app_label = 'djangui'
 
     def __str__(self):
-        return '{}: {}'.format(self.script.script_name, self.group_name)
+        return six.u('{}: {}').format(self.script.script_name, self.group_name)
 
 
 class ScriptParameter(UpdateScriptsMixin, DjanguiPy2Mixin, models.Model):
@@ -251,7 +252,7 @@ class ScriptParameter(UpdateScriptsMixin, DjanguiPy2Mixin, models.Model):
 
 
     def __str__(self):
-        return '{}: {}'.format(self.script.script_name, self.script_param)
+        return six.u('{}: {}').format(self.script.script_name, self.script_param)
 
 
 # TODO: find a better name for this class
@@ -284,7 +285,7 @@ class ScriptParameters(DjanguiPy2Mixin, models.Model):
         app_label = 'djangui'
 
     def __str__(self):
-        return '{}: {}'.format(self.parameter.script_param, self.value)
+        return six.u('{}: {}').format(self.parameter.script_param, self.value)
 
     def get_subprocess_value(self):
         value = self.value
@@ -400,4 +401,4 @@ class DjanguiFile(DjanguiPy2Mixin, models.Model):
         app_label = 'djangui'
 
     def __str__(self):
-        return '{}: {}'.format(self.job.job_name, self.filepath)
+        return six.u('{}: {}').format(self.job.job_name, self.filepath)

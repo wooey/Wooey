@@ -12,7 +12,7 @@ class UpdateScriptsMixin(object):
 
 class DjanguiPy2Mixin(object):
     def __unicode__(self):
-        return six.u(str(self))
+        return unicode(self.__str__())
 
 # from
 # http://stackoverflow.com/questions/1355150/django-when-saving-how-can-you-check-if-a-field-has-changed

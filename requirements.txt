@@ -3,3 +3,4 @@ django-celery
 nose
 factory-boy
 coveralls
+six

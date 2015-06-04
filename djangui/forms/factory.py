@@ -45,7 +45,7 @@ class DjanguiFormFactory(object):
         if pk is not None and pk in self.djangui_forms:
             if 'groups' in self.djangui_forms[pk]:
                 return copy.deepcopy(self.djangui_forms[pk]['groups'])
-        params = ScriptParameter.objects.filter(script=model)
+        params = ScriptParameter.objects.filter(script=model).order_by('pk')
         # set a reference to the object type for POST methods to use
         script_id_field = forms.CharField(widget=forms.HiddenInput)
         group_map = {}
@@ -88,7 +88,7 @@ class DjanguiFormFactory(object):
             if 'master' in self.djangui_forms[pk]:
                 return copy.deepcopy(self.djangui_forms[pk]['master'])
         master_form = DjanguiForm()
-        params = ScriptParameter.objects.filter(script=model)
+        params = ScriptParameter.objects.filter(script=model).order_by('pk')
         # set a reference to the object type for POST methods to use
         pk = model.pk
         script_id_field = forms.CharField(widget=forms.HiddenInput)

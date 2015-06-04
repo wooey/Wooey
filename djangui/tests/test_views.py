@@ -3,10 +3,10 @@ import json
 from django.test import TestCase, RequestFactory
 from django.core.urlresolvers import reverse
 
-from . import factories
+from . import factories, mixins
 from ..views import djangui_celery
 
-class CeleryViews(TestCase):
+class CeleryViews(mixins.ScriptFactoryMixin, TestCase):
     def setUp(self):
         self.factory = RequestFactory()
 

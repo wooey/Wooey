@@ -90,7 +90,9 @@ class Script(ModelDiffMixin, DjanguiPy2Mixin, models.Model):
         # if uploading from the admin, fix its path
         # we do this to avoid having migrations specific to various users with different DJANGUI_SCRIPT_DIR settings
         if new_script or djangui_settings.DJANGUI_SCRIPT_DIR not in self.script_path.file.name:
-            new_name = os.path.join(djangui_settings.DJANGUI_SCRIPT_DIR, self.script_path.file.name)
+            old_path = self.script_path.file.name
+            old_name = os.path.split(old_path)[1]
+            new_name = os.path.join(djangui_settings.DJANGUI_SCRIPT_DIR, old_name)
             # TODO -- versioning of old scripts
             remote_store = utils.get_storage(local=False)
             if remote_store.exists(new_name):
@@ -99,11 +101,15 @@ class Script(ModelDiffMixin, DjanguiPy2Mixin, models.Model):
             if local_storage.exists(new_name):
                 local_storage.delete(new_name)
             remote_store.save(new_name, self.script_path.file)
+
             # save it locally as well, check if it exists because for some setups remote=local
             if not local_storage.exists(new_name):
                 local_storage.save(new_name, self.script_path.file)
             self.script_path.save(new_name, self.script_path.file, save=False)
             self.script_path.name = new_name
+            if old_name != new_name:
+                if local_storage.exists(old_name):
+                    local_storage.delete(old_name)
         super(Script, self).save(**kwargs)
         if new_script:
             if getattr(self, '_add_script', True):

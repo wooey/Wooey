@@ -5,9 +5,10 @@ from ..forms import DjanguiForm
 
 from . import factories
 from . import config
+from . import mixins
 
 
-class FormTestCase(TestCase):
+class FormTestCase(mixins.ScriptFactoryMixin, TestCase):
 
     def test_master_form(self):
         script = factories.TranslateScriptFactory()

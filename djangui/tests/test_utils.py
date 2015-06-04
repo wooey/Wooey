@@ -6,8 +6,9 @@ from ..backend import utils
 
 from . import factories
 from . import config
+from . import mixins
 
-class TestUtils(TestCase):
+class TestUtils(mixins.ScriptFactoryMixin, TestCase):
     def test_sanitize_name(self):
         assert(utils.sanitize_name('abc')) == 'abc'
         assert(utils.sanitize_name('ab c')) == 'ab_c'

@@ -2,9 +2,9 @@ import os
 
 from django.test import TestCase
 
-from . import factories, config
+from . import factories, config, mixins
 
-class ScriptTestCase(TestCase):
+class ScriptTestCase(mixins.ScriptFactoryMixin, TestCase):
 
     def test_script_creation(self):
         script = factories.TranslateScriptFactory()
@@ -16,7 +16,7 @@ class ScriptGroupTestCase(TestCase):
         group = factories.ScriptGroupFactory()
 
 
-class TestJob(TestCase):
+class TestJob(mixins.ScriptFactoryMixin, TestCase):
     def test_jobs(self):
         script = factories.TranslateScriptFactory()
         from ..backend import utils

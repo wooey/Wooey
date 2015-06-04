@@ -9,7 +9,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='django-djangui',
-    version='0.2.5',
+    version='0.2.6.dev0',
     packages=find_packages(),
     scripts=['scripts/djanguify.py'],
     install_requires = ['Django>=1.6', 'django-autoslug', 'django-celery', 'six'],

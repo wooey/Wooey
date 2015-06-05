@@ -1,11 +1,12 @@
 from __future__ import absolute_import
 import os
+import six
 
 from django.core.urlresolvers import reverse
 from django.views.generic import TemplateView
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_text
 from django.db.models import Q
 from django.template.defaultfilters import escape
 
@@ -39,7 +40,8 @@ def celery_status(request):
     def get_job_list(job_query):
         return [{'job_name': escape(job.job_name), 'job_status': STATE_MAPPER.get(job.status, job.status),
                 'job_submitted': job.created_date.strftime('%b %d %Y, %H:%M:%S'),
-                'job_id': job.pk, 'job_description': escape('Script: {}\n{}'.format(job.script.script_name, job.job_description)),
+                'job_id': job.pk,
+                 'job_description': escape(six.u('Script: {}\n{}').format(job.script.script_name, job.job_description)),
                 'job_url': reverse('celery_results_info', kwargs={'job_id': job.pk})} for job in job_query]
     d = {'user': get_job_list([i for i in jobs if i.user == user]),
          'anon': get_job_list([i for i in jobs if i.user == None or (user.is_superuser and i.user != user)])}
@@ -71,9 +73,9 @@ def celery_task_command(request):
                 job.save()
                 response.update({'valid': True, 'redirect': reverse('celery_results_info', kwargs={'job_id': job_id})})
             else:
-                response.update({'errors': {'__all__': [force_unicode(_("Unknown Command"))]}})
+                response.update({'errors': {'__all__': [force_text(_("Unknown Command"))]}})
     else:
-        response.update({'errors': {'__all__': [force_unicode(valid.get('error'))]}})
+        response.update({'errors': {'__all__': [force_text(valid.get('error'))]}})
     return JsonResponse(response)
 
 
@@ -90,7 +92,7 @@ class CeleryTaskView(TemplateView):
         user = self.request.user
         user = None if not user.is_authenticated() and djangui_settings.DJANGUI_ALLOW_ANONYMOUS else user
         job_user = djangui_job.user
-        if job_user == None or job_user == user or user.is_superuser:
+        if job_user == None or job_user == user or (user != None and user.is_superuser):
             out_files = get_file_previews(djangui_job)
             all = out_files.pop('all', [])
             archives = out_files.pop('archives', [])

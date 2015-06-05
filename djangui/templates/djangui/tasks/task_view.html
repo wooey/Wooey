@@ -119,7 +119,7 @@
               <!-- Nav tabs -->
               <ul class="nav nav-tabs" role="tablist">
                 <li role="presentation" class="active"><a href="#task-output-all" aria-controls="task-output-all" role="tab" data-toggle="tab">{% trans "All Files" %}</a></li>
-                {% for output_group, output in task_info.file_groups.iteritems %}
+                {% for output_group, output in task_info.file_groups.items %}
                     <li role="presentation"><a href="#task-output-{{ output_group }}" aria-controls="task-output-{{ output_group }}" role="tab" data-toggle="tab">{{ output_group|title }}</a></li>
                 {% endfor %}
               </ul>
@@ -134,7 +134,7 @@
                     {% endfor %}
                     </dl>
                 </div>
-                {% for output_group, output_files in task_info.file_groups.iteritems %}
+                {% for output_group, output_files in task_info.file_groups.items %}
                     <div role="tabpanel" class="tab-pane" id="task-output-{{ output_group }}">
                         {% if output_group == 'tabular' %}
                             {% for output_file_content in output_files %}

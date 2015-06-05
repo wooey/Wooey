@@ -2,6 +2,7 @@ from __future__ import absolute_import
 __author__ = 'chris'
 import copy
 import json
+import six
 from collections import OrderedDict
 
 from django import forms
@@ -44,7 +45,7 @@ class DjanguiFormFactory(object):
         if pk is not None and pk in self.djangui_forms:
             if 'groups' in self.djangui_forms[pk]:
                 return copy.deepcopy(self.djangui_forms[pk]['groups'])
-        params = ScriptParameter.objects.filter(script=model)
+        params = ScriptParameter.objects.filter(script=model).order_by('pk')
         # set a reference to the object type for POST methods to use
         script_id_field = forms.CharField(widget=forms.HiddenInput)
         group_map = {}
@@ -63,13 +64,13 @@ class DjanguiFormFactory(object):
         d = {'action': model.get_url()}
         d['groups'] = []
         pk = model.pk
-        for group_index, group in enumerate(group_map.iteritems()):
+        for group_index, group in enumerate(six.iteritems(group_map)):
             group_pk, group_info = group
             form = DjanguiForm()
             if group_index == 0:
                 form.fields['djangui_type'] = script_id_field
                 form.fields['djangui_type'].initial = pk
-            for field_pk, field in group_info['fields'].iteritems():
+            for field_pk, field in six.iteritems(group_info['fields']):
                 form.fields[field_pk] = field
             d['groups'].append({'group_name': group_info['group'], 'form': str(form)})
         try:
@@ -87,7 +88,7 @@ class DjanguiFormFactory(object):
             if 'master' in self.djangui_forms[pk]:
                 return copy.deepcopy(self.djangui_forms[pk]['master'])
         master_form = DjanguiForm()
-        params = ScriptParameter.objects.filter(script=model)
+        params = ScriptParameter.objects.filter(script=model).order_by('pk')
         # set a reference to the object type for POST methods to use
         pk = model.pk
         script_id_field = forms.CharField(widget=forms.HiddenInput)

@@ -4,6 +4,7 @@ import json
 import errno
 import os
 import sys
+import six
 import traceback
 from operator import itemgetter
 from collections import OrderedDict
@@ -37,8 +38,7 @@ def get_storage(local=True):
 def get_job_commands(job=None):
     script = job.script
     com = ['python', script.get_script_path()]
-    from ..models import ScriptParameters
-    parameters = ScriptParameters.objects.filter(job=job)
+    parameters = job.get_parameters()
     for param in parameters:
         com.extend(param.get_subprocess_value())
     return com
@@ -50,13 +50,11 @@ def create_djangui_job(data):
     job = DjanguiJob(user=data.get('user'), job_name=data.get('job_name'), job_description=data.get('job_description'),
                      script=script)
     job.save()
-    parameters = {i.slug: i for i in ScriptParameter.objects.filter(slug__in=data.keys())}
-    for i, v in data.iteritems():
-        param = parameters.get(i)
-        if param is not None:
-            new_param = ScriptParameters(job=job, parameter=param)
-            new_param.value = v
-            new_param.save()
+    parameters = OrderedDict([(i.slug, i) for i in ScriptParameter.objects.filter(slug__in=data.keys()).order_by('pk')])
+    for slug, param in six.iteritems(parameters):
+        new_param = ScriptParameters(job=job, parameter=param)
+        new_param.value = data.get(slug)
+        new_param.save()
     return job
 
 
@@ -102,7 +100,7 @@ def load_scripts():
             except:
                 sys.stdout.write('Traceback while loading {0}:\n {1}\n'.format(script, traceback.format_exc()))
                 continue
-    for group_pk, group_info in dj_scripts.iteritems():
+    for group_pk, group_info in six.iteritems(dj_scripts):
         # order scripts
         group_info['scripts'].sort(key=itemgetter(0))
         group_info['scripts'] = [i[1] for i in group_info['scripts']]
@@ -124,7 +122,7 @@ def add_djangui_script(script=None, group=None):
     from djangui.models import Script, ScriptGroup, ScriptParameter, ScriptParameterGroup
     # if we have a script, it will at this point be saved in the model pointing to our file system, which may be
     # ephemeral. So the path attribute may not be implemented
-    if not isinstance(script, basestring):
+    if not isinstance(script, six.string_types):
         try:
             script_path = script.script_path.path
         except NotImplementedError:
@@ -187,18 +185,19 @@ def valid_user(obj, user):
     groups = obj.user_groups.all()
     from ..models import Script
     ret = {'valid': False, 'error': '', 'display': ''}
-    if isinstance(obj, Script):
-        from itertools import chain
-        groups = list(chain(groups, obj.script_group.user_groups.all()))
-    if not user.is_authenticated() and djangui_settings.DJANGUI_ALLOW_ANONYMOUS and len(groups) == 0:
-        ret['valid'] = True
-    elif groups:
-        ret['error'] = _('You are not permitted to use this script')
-    if not groups and obj.is_active:
-        ret['valid'] = True
-    if obj.is_active is True:
-        if set(list(user.groups.all())) & set(list(groups)):
+    if djangui_settings.DJANGUI_ALLOW_ANONYMOUS or user.is_authenticated():
+        if isinstance(obj, Script):
+            from itertools import chain
+            groups = list(chain(groups, obj.script_group.user_groups.all()))
+        if not user.is_authenticated() and djangui_settings.DJANGUI_ALLOW_ANONYMOUS and len(groups) == 0:
             ret['valid'] = True
+        elif groups:
+            ret['error'] = _('You are not permitted to use this script')
+        if not groups and obj.is_active:
+            ret['valid'] = True
+        if obj.is_active is True:
+            if set(list(user.groups.all())) & set(list(groups)):
+                ret['valid'] = True
     ret['display'] = 'disabled' if djangui_settings.DJANGUI_SHOW_LOCKED_SCRIPTS else 'hide'
     return ret
 
@@ -210,6 +209,54 @@ def mkdirs(path):
             pass
         else:
             raise
+
+def test_delimited(filepath):
+    import csv
+    if six.PY3:
+        handle = open(filepath, 'r', newline='')
+    else:
+        handle = open(filepath, 'rb')
+    with handle as csv_file:
+        try:
+            dialect = csv.Sniffer().sniff(csv_file.read(1024*16), delimiters=',\t')
+        except Exception as e:
+            return False, None
+        csv_file.seek(0)
+        reader = csv.reader(csv_file, dialect)
+        rows = []
+        try:
+            for index, entry in enumerate(reader):
+                if index == 5:
+                    break
+                rows.append(entry)
+        except Exception as e:
+            return False, None
+        return True, rows
+
+def test_fastx(filepath):
+    # if we can be delimited by + or > we're maybe a fasta/q
+    with open(filepath) as fastx_file:
+        sequences = OrderedDict()
+        seq = []
+        header = ''
+        for row_index, row in enumerate(fastx_file, 1):
+            if row_index > 30:
+                break
+            if row and row[0] == '>':
+                if seq:
+                    sequences[header] = ''.join(seq)
+                    seq = []
+                header = row
+            elif row:
+                # we bundle the fastq stuff in here since it's just a visual
+                seq.append(row)
+        if seq and header:
+            sequences[header] = ''.join(seq)
+        if sequences:
+            rows = []
+            [rows.extend([i, v]) for i,v in six.iteritems(sequences)]
+            return True, rows
+    return False, None
 
 @transaction.atomic
 def create_job_fileinfo(job):
@@ -223,7 +270,7 @@ def create_job_fileinfo(job):
                 value = field.value
                 if value is None:
                     continue
-                if isinstance(value, basestring):
+                if isinstance(value, six.string_types):
                     # check if this was ever created and make a fileobject if so
                     if get_storage(local=True).exists(value):
                         if not get_storage(local=False).exists(value):
@@ -237,7 +284,6 @@ def create_job_fileinfo(job):
                 files.append(d)
         except ValueError:
             continue
-
 
     known_files = {i['file'].name for i in files}
     # add the user_output files, these are things which may be missed by the model fields because the script
@@ -258,10 +304,8 @@ def create_job_fileinfo(job):
             else:
                 files.append(d)
         except IOError:
-            print absbase, filename, new_name
-            print traceback.format_exc()
+            sys.stderr.format('{}'.format(traceback.format_exc()))
             continue
-
 
     # establish grouping by inferring common things
     file_groups['all'] = files
@@ -272,50 +316,6 @@ def create_job_fileinfo(job):
             file_groups['images'].append(filemodel)
     file_groups['tabular'] = []
     file_groups['fasta'] = []
-
-    def test_delimited(filepath):
-        import csv
-        with open(filepath, 'rb') as csv_file:
-            try:
-                dialect = csv.Sniffer().sniff(csv_file.read(1024*16), delimiters=',\t')
-            except Exception as e:
-                return False, None
-            csv_file.seek(0)
-            reader = csv.reader(csv_file, dialect)
-            rows = []
-            try:
-                for index, entry in enumerate(reader):
-                    if index == 5:
-                        break
-                    rows.append(entry)
-            except Exception as e:
-                return False, None
-            return True, rows
-
-    def test_fastx(filepath):
-        # if we can be delimited by + or > we're maybe a fasta/q
-        with open(filepath, 'rb') as fastx_file:
-            sequences = OrderedDict()
-            seq = ''
-            header = ''
-            for row_index, row in enumerate(fastx_file, 1):
-                if row_index > 30:
-                    break
-                if row and row[0] == '>':
-                    if seq:
-                        sequences[header] = seq
-                        seq = ''
-                    header = row
-                elif row:
-                    # we bundle the fastq stuff in here since it's just a visual
-                    seq += row
-                if seq and header:
-                    sequences[header] = seq
-            if sequences:
-                rows = []
-                [rows.extend([i, v]) for i,v in sequences.iteritems()]
-                return True, rows
-        return False, None
 
     for filemodel in files:
         is_delimited, first_rows = test_delimited(filemodel['file'].path)
@@ -329,8 +329,8 @@ def create_job_fileinfo(job):
     # Create our DjanguiFile models
 
     # mark things that are in groups so we don't add this to the 'all' category too to reduce redundancy
-    grouped = set([i['file'].path for file_type, groups in file_groups.iteritems() for i in groups if file_type != 'all'])
-    for file_type, group_files in file_groups.iteritems():
+    grouped = set([i['file'].path for file_type, groups in six.iteritems(file_groups) for i in groups if file_type != 'all'])
+    for file_type, group_files in six.iteritems(file_groups):
         for group_file in group_files:
             if file_type == 'all' and group_file['file'].path in grouped:
                 continue

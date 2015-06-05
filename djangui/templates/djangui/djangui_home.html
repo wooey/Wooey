@@ -8,7 +8,7 @@
 
 {% block left_sidebar_content %}
 <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
-    {% for group_id, group in djangui_scripts.iteritems %}
+    {% for group_id, group in djangui_scripts.items %}
 {#        check the user has access to the group#}
         {% with group_show=group.group|valid_user:request.user %}
             {% if group_show != 'hide' %}

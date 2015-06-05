@@ -5,9 +5,10 @@ from ..forms import DjanguiForm
 
 from . import factories
 from . import config
+from . import mixins
 
 
-class FormTestCase(TestCase):
+class FormTestCase(mixins.ScriptFactoryMixin, TestCase):
 
     def test_master_form(self):
         script = factories.TranslateScriptFactory()
@@ -17,3 +18,7 @@ class FormTestCase(TestCase):
                             files=config.SCRIPT_DATA['translate'].get('files'))
         assert(form.is_valid() is True)
 
+    def test_group_form(self):
+        script = factories.TranslateScriptFactory()
+        form = utils.get_form_groups(model=script)
+        self.assertEqual(len(form['groups']), 1)

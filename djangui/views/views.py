@@ -3,7 +3,7 @@ from django.views.generic import DetailView, TemplateView
 from django.conf import settings
 from django.forms import FileField
 from django.utils.translation import gettext_lazy as _
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_text
 
 from djangui.backend import utils
 from ..models import DjanguiJob, Script
@@ -64,7 +64,7 @@ class DjanguiScriptJSON(DetailView):
                     job = form.save()
                     job.submit_to_celery()
                     return JsonResponse({'valid': True})
-            return JsonResponse({'valid': False, 'errors': {'__all__': [force_unicode(_('You are not permitted to access this script.'))]}})
+            return JsonResponse({'valid': False, 'errors': {'__all__': [force_text(_('You are not permitted to access this script.'))]}})
         return JsonResponse({'valid': False, 'errors': form.errors})
 
 

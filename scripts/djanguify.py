@@ -4,19 +4,15 @@ description = """
 Create a Django app with Djangui setup.
 """
 import sys
-import traceback
+import six
 import os
-env = os.environ
-import imp
 import subprocess
 import shutil
-import tempfile
-from itertools import chain
 from argparse import ArgumentParser
 from django.template import Context
 import djangui
 from djangui import django_compat
-
+env = os.environ
 
 def main():
     parser = ArgumentParser(description=description)
@@ -60,7 +56,7 @@ def main():
     for template_file, dest_dir in template_files:
         template_file = open(template_file)
         content = template_file.read()
-        content = content.decode('utf-8')
+        content = six.u(content)
         template = django_compat.Engine().from_string(content)
         content = template.render(context)
         content = content.encode('utf-8')
@@ -81,11 +77,12 @@ def main():
         subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'makemigrations'], env=env)
         subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'migrate'], env=env)
     else:
-        subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'syncdb'], env=env)
+        subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'syncdb', '--noinput'], env=env)
     subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'collectstatic', '--noinput'], env=env)
     sys.stdout.write("Please enter the project directory {0}, and run python manage.py createsuperuser and"
                      " python manage.py runserver to start. The admin can be found at localhost:8000/admin. You may also want to set your "
                      "DJANGO_SETTINGS_MODULE environment variable to {0}.settings \n".format(project_name))
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -3,6 +3,8 @@ import subprocess
 import tarfile
 import os
 import zipfile
+import six
+
 from django.utils.text import get_valid_filename
 from django.core.files.storage import default_storage
 from django.core.files import File
@@ -63,10 +65,10 @@ def submit_script(**kwargs):
     def get_valid_file(cwd, name, ext):
         out = os.path.join(cwd, name)
         index = 0
-        while os.path.exists('{}.{}'.format(out, ext)):
+        while os.path.exists(six.u('{}.{}').format(out, ext)):
             index += 1
-            out = os.path.join(cwd, '{}_{}'.format(name, index))
-        return '{}.{}'.format(out, ext)
+            out = os.path.join(cwd, six.u('{}_{}').format(name, index))
+        return six.u('{}.{}').format(out, ext)
 
     # fetch the job again in case the database connection was lost during the job or something else changed.
     job = DjanguiJob.objects.get(pk=job_id)
@@ -78,7 +80,6 @@ def submit_script(**kwargs):
         tar_name = os.path.splitext(os.path.splitext(os.path.split(tar_out)[1])[0])[0]
         tar.add(abscwd, arcname=tar_name)
         tar.close()
-
 
         zip_out = get_valid_file(abscwd, get_valid_filename(job.job_name), 'zip')
         zip = zipfile.ZipFile(zip_out, "w")
@@ -93,7 +94,6 @@ def submit_script(**kwargs):
                     continue
                 zip.write(path, arcname=os.path.join(arcname, filename))
         zip.close()
-
 
         # save all the files generated as well to our default storage for ephemeral storage setups
         if djangui_settings.DJANGUI_EPHEMERAL_FILES:

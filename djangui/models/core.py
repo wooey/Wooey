@@ -4,6 +4,7 @@ import os
 import errno
 import importlib
 import json
+import six
 
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -22,14 +23,14 @@ from celery import states
 from .. import settings as djangui_settings
 from .. backend import utils
 
-from . mixins import UpdateScriptsMixin, ModelDiffMixin
+from . mixins import UpdateScriptsMixin, ModelDiffMixin, DjanguiPy2Mixin
 from .. import django_compat
 
 
 # TODO: Handle cases where celery is not setup but specified to be used
 tasks = importlib.import_module(djangui_settings.DJANGUI_CELERY_TASKS)
 
-class ScriptGroup(UpdateScriptsMixin, models.Model):
+class ScriptGroup(UpdateScriptsMixin, DjanguiPy2Mixin, models.Model):
     """
         This is a group of scripts, it holds general information
         about a collection of scripts, and allows for custom descriptions
@@ -45,10 +46,10 @@ class ScriptGroup(UpdateScriptsMixin, models.Model):
     class Meta:
         app_label = 'djangui'
 
-    def __unicode__(self):
-        return unicode(self.group_name)
+    def __str__(self):
+        return self.group_name
 
-class Script(ModelDiffMixin, models.Model):
+class Script(ModelDiffMixin, DjanguiPy2Mixin, models.Model):
     script_name = models.CharField(max_length=255)
     slug = AutoSlugField(populate_from='script_name', unique=True)
     script_group = models.ForeignKey('ScriptGroup')
@@ -71,8 +72,8 @@ class Script(ModelDiffMixin, models.Model):
     class Meta:
         app_label = 'djangui'
 
-    def __unicode__(self):
-        return unicode(self.script_name)
+    def __str__(self):
+        return self.script_name
 
     def get_url(self):
         return reverse('djangui_script', kwargs={'script_group': self.script_group.slug,
@@ -90,7 +91,9 @@ class Script(ModelDiffMixin, models.Model):
         # if uploading from the admin, fix its path
         # we do this to avoid having migrations specific to various users with different DJANGUI_SCRIPT_DIR settings
         if new_script or djangui_settings.DJANGUI_SCRIPT_DIR not in self.script_path.file.name:
-            new_name = os.path.join(djangui_settings.DJANGUI_SCRIPT_DIR, self.script_path.file.name)
+            old_path = self.script_path.file.name
+            old_name = os.path.split(old_path)[1]
+            new_name = os.path.join(djangui_settings.DJANGUI_SCRIPT_DIR, old_name)
             # TODO -- versioning of old scripts
             remote_store = utils.get_storage(local=False)
             if remote_store.exists(new_name):
@@ -99,11 +102,15 @@ class Script(ModelDiffMixin, models.Model):
             if local_storage.exists(new_name):
                 local_storage.delete(new_name)
             remote_store.save(new_name, self.script_path.file)
+
             # save it locally as well, check if it exists because for some setups remote=local
             if not local_storage.exists(new_name):
                 local_storage.save(new_name, self.script_path.file)
             self.script_path.save(new_name, self.script_path.file, save=False)
             self.script_path.name = new_name
+            if old_name != new_name:
+                if local_storage.exists(old_name):
+                    local_storage.delete(old_name)
         super(Script, self).save(**kwargs)
         if new_script:
             if getattr(self, '_add_script', True):
@@ -115,7 +122,7 @@ class Script(ModelDiffMixin, models.Model):
 
 
 
-class DjanguiJob(models.Model):
+class DjanguiJob(DjanguiPy2Mixin, models.Model):
     """
     This model serves to link the submitted celery tasks to a script submitted
     """
@@ -150,18 +157,18 @@ class DjanguiJob(models.Model):
     class Meta:
         app_label = 'djangui'
 
-    def __unicode__(self):
-        return unicode(self.job_name)
+    def __str__(self):
+        return self.job_name
 
     def get_parameters(self):
-        return ScriptParameters.objects.filter(job=self)
+        return ScriptParameters.objects.filter(job=self).order_by('pk')
 
     def submit_to_celery(self, **kwargs):
         if kwargs.get('resubmit'):
             params = self.get_parameters()
             user = kwargs.get('user')
             self.pk = None
-            self.user = None if not user.is_authenticated() else user
+            self.user = None if user is None or not user.is_authenticated() else user
             # clear the output channels
             self.celery_id = None
             self.stdout = ''
@@ -208,18 +215,18 @@ class DjanguiJob(models.Model):
         return path
 
 
-class ScriptParameterGroup(UpdateScriptsMixin, models.Model):
+class ScriptParameterGroup(UpdateScriptsMixin, DjanguiPy2Mixin, models.Model):
     group_name = models.TextField()
     script = models.ForeignKey('Script')
 
     class Meta:
         app_label = 'djangui'
 
-    def __unicode__(self):
-        return unicode('{}: {}'.format(self.script.script_name, self.group_name))
+    def __str__(self):
+        return six.u('{}: {}').format(self.script.script_name, self.group_name)
 
 
-class ScriptParameter(UpdateScriptsMixin, models.Model):
+class ScriptParameter(UpdateScriptsMixin, DjanguiPy2Mixin, models.Model):
     """
         This holds the parameter mapping for each script, and enforces uniqueness by each script via a FK.
     """
@@ -243,12 +250,13 @@ class ScriptParameter(UpdateScriptsMixin, models.Model):
     class Meta:
         app_label = 'djangui'
 
-    def __unicode__(self):
-        return unicode('{}: {}'.format(self.script.script_name, self.script_param))
+
+    def __str__(self):
+        return six.u('{}: {}').format(self.script.script_name, self.script_param)
 
 
 # TODO: find a better name for this class
-class ScriptParameters(models.Model):
+class ScriptParameters(DjanguiPy2Mixin, models.Model):
     """
         This holds the actual parameters sent with the submission
     """
@@ -269,7 +277,6 @@ class ScriptParameters(models.Model):
         BOOLEAN: lambda x: str(x).lower() == 'true',
         CHAR: str,
         CHOICE: str,
-        FILE: file,
         FLOAT: float,
         INTEGER: int,
     }
@@ -277,8 +284,8 @@ class ScriptParameters(models.Model):
     class Meta:
         app_label = 'djangui'
 
-    def __unicode__(self):
-        return unicode('{}: {}'.format(self.parameter.script_param, self.value))
+    def __str__(self):
+        return six.u('{}: {}').format(self.parameter.script_param, self.value)
 
     def get_subprocess_value(self):
         value = self.value
@@ -307,7 +314,12 @@ class ScriptParameters(models.Model):
                 else:
                     # return the string for processing
                     value = value.path
-        com.append(str(value))
+        try:
+            float(value)
+            value = str(value)
+        except ValueError:
+            pass
+        com.append(value if isinstance(value, six.string_types) else six.u(value))
         return com
 
     def force_value(self, value):
@@ -383,7 +395,7 @@ class ScriptParameters(models.Model):
         self._value = json.dumps(value)
 
 
-class DjanguiFile(models.Model):
+class DjanguiFile(DjanguiPy2Mixin, models.Model):
     filepath = models.FileField(max_length=500) if django_compat.DJANGO_VERSION >= django_compat.DJ17 else models.FileField(max_length=500, upload_to=djangui_settings.DJANGUI_SCRIPT_DIR)
     job = models.ForeignKey('DjanguiJob')
     filepreview = models.TextField(null=True, blank=True)
@@ -393,5 +405,5 @@ class DjanguiFile(models.Model):
     class Meta:
         app_label = 'djangui'
 
-    def __unicode__(self):
-        return unicode('{}: {}'.format(self.job.job_name, self.filepath))
+    def __str__(self):
+        return six.u('{}: {}').format(self.job.job_name, self.filepath)

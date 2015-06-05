@@ -103,7 +103,7 @@ class Migration(migrations.Migration):
             name='ScriptParameters',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('_value', models.TextField(db_column=b'value')),
+                ('_value', models.TextField(db_column='value')),
                 ('job', models.ForeignKey(to='djangui.DjanguiJob')),
                 ('parameter', models.ForeignKey(to='djangui.ScriptParameter')),
             ],

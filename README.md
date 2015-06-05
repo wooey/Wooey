@@ -1,5 +1,7 @@
 # Djangui
 
+[![Build Status](https://travis-ci.org/Chris7/django-djangui.svg?branch=master)](https://travis-ci.org/Chris7/django-djangui)  [![Coverage Status](https://coveralls.io/repos/Chris7/django-djangui/badge.svg?branch=master)](https://coveralls.io/r/Chris7/django-djangui?branch=master)
+
 1. [Installation](#install)
     1. [A Djangui Only Project](#djonly)
     2. [Adding Djangui to Existing Projects](#existing)

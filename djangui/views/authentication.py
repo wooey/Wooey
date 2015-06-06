@@ -44,7 +44,7 @@ class DjanguiRegister(CreateView):
         self.object.save()
         auser = authenticate(username=self.object.username, password=self.request.POST['password'])
         login(self.request, auser)
-        return reverse(next_url) if next_url else reverse('djangui_home')
+        return reverse(next_url) if next_url else reverse('djangui:djangui_home')
 
 def djangui_login(request):
     if djangui_settings.DJANGUI_AUTH is False:

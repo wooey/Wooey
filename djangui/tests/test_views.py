@@ -13,7 +13,7 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         self.factory = RequestFactory()
 
     def test_celery_results(self):
-        request = self.factory.get(reverse('celery_results'))
+        request = self.factory.get(reverse('djangui:celery_results'))
         user = factories.UserFactory()
         request.user = user
         response = djangui_celery.celery_status(request)

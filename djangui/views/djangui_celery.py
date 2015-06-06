@@ -42,7 +42,7 @@ def celery_status(request):
                 'job_submitted': job.created_date.strftime('%b %d %Y, %H:%M:%S'),
                 'job_id': job.pk,
                  'job_description': escape(six.u('Script: {}\n{}').format(job.script.script_name, job.job_description)),
-                'job_url': reverse('celery_results_info', kwargs={'job_id': job.pk})} for job in job_query]
+                'job_url': reverse('djangui:celery_results_info', kwargs={'job_id': job.pk})} for job in job_query]
     d = {'user': get_job_list([i for i in jobs if i.user == user]),
          'anon': get_job_list([i for i in jobs if i.user == None or (user.is_superuser and i.user != user)])}
     return JsonResponse(d, safe=False)
@@ -60,18 +60,18 @@ def celery_task_command(request):
         if user == job.user or job.user == None:
             if command == 'resubmit':
                 new_job = job.submit_to_celery(resubmit=True, user=request.user)
-                response.update({'valid': True, 'extra': {'task_url': reverse('celery_results_info', kwargs={'job_id': new_job.pk})}})
+                response.update({'valid': True, 'extra': {'task_url': reverse('djangui:celery_results_info', kwargs={'job_id': new_job.pk})}})
             elif command == 'clone':
-                response.update({'valid': True, 'redirect': '{0}?job_id={1}'.format(reverse('djangui_task_launcher'), job_id)})
+                response.update({'valid': True, 'redirect': '{0}?job_id={1}'.format(reverse('djangui:djangui_task_launcher'), job_id)})
             elif command == 'delete':
                 job.status = DjanguiJob.DELETED
                 job.save()
-                response.update({'valid': True, 'redirect': reverse('djangui_home')})
+                response.update({'valid': True, 'redirect': reverse('djangui:djangui_home')})
             elif command == 'stop':
                 celery_app.control.revoke(job.celery_id, signal='SIGKILL', terminate=True)
                 job.status = states.REVOKED
                 job.save()
-                response.update({'valid': True, 'redirect': reverse('celery_results_info', kwargs={'job_id': job_id})})
+                response.update({'valid': True, 'redirect': reverse('djangui:celery_results_info', kwargs={'job_id': job_id})})
             else:
                 response.update({'errors': {'__all__': [force_text(_("Unknown Command"))]}})
     else:

@@ -76,7 +76,7 @@ class Script(ModelDiffMixin, DjanguiPy2Mixin, models.Model):
         return self.script_name
 
     def get_url(self):
-        return reverse('djangui_script', kwargs={'script_group': self.script_group.slug,
+        return reverse('djangui:djangui_script', kwargs={'script_group': self.script_group.slug,
                                                   'script_name': self.slug})
 
     def get_script_path(self):
@@ -189,7 +189,7 @@ class DjanguiJob(DjanguiPy2Mixin, models.Model):
         return self
 
     def get_resubmit_url(self):
-        return reverse('djangui_script_clone', kwargs={'script_group': self.script.script_group.slug,
+        return reverse('djangui:djangui_script_clone', kwargs={'script_group': self.script.script_group.slug,
                                                       'script_name': self.script.slug, 'job_id': self.pk})
 
     @staticmethod

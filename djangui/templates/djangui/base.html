@@ -95,12 +95,12 @@
             <span class="icon-bar"></span>
           </button>
         </div>
-        <div class="navbar-center"><a href="{% url 'djangui_home' %}"><img src="{% static 'djangui/djangui_logo.png' %}"/></a></div>
+        <div class="navbar-center"><a href="{% url 'djangui:djangui_home' %}"><img src="{% static 'djangui/djangui_logo.png' %}"/></a></div>
             <!-- Collect the nav links, forms, and other content for toggling -->
             <div class="collapse navbar-collapse" id="navbar-collapse-1">
               <ul class="nav navbar-nav navbar-right">
                   {% if request.user.is_authenticated %}
-                        <li><a href="#"><span class="glyphicon glyphicon-user"> </span>{{ request.user.username|title }}</a></li>
+                        <li><a href="{% url 'djangui:profile_home' %}"><span class="glyphicon glyphicon-user"> </span>{{ request.user.username|title }}</a></li>
                       <li><a href="{% url "logout" %}?next={{ request.path }}">Logout</a></li>
                   {% else %}
                       <li>{% include "djangui/registration/login_header.html" %}</li>

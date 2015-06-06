@@ -47,7 +47,7 @@
                     {% endfor %}
                 </ul>
             {% endif %}
-                <form action="{% url 'celery_task_command' %}" id="djangui-task-submit" method="post">
+                <form action="{% url 'djangui:celery_task_command' %}" id="djangui-task-submit" method="post">
                     {% csrf_token %}
                     <input name="job-id" value="{{ task_info.job.pk }}" type="hidden">
                     {% if not task_info.job.status|complete_job %}

@@ -1,5 +1,5 @@
 {% load i18n %}
-<form class="navbar-form" method="post" action="{% url 'djangui_login' %}">
+<form class="navbar-form" method="post" action="{% url 'djangui:djangui_login' %}">
     {% csrf_token %}
   <div class="form-group form-group-sm">
     <input name="username" type="username" class="form-control" id="username" placeholder="{% trans "Username" %}">
@@ -10,5 +10,5 @@
     <input type="hidden" name="next" value="{{ request.path }}" />
   <button type="submit" class="btn btn-default btn-sm" id="djangui-login">{% trans "Login" %}</button>
 {#    This is a hack but it gets register aligned properly without any work#}
-    <div class="form-group"><li>&nbsp;&nbsp;<a href="{% url "djangui_register" %}">{% trans "Register" %}</a></li></div>
+    <div class="form-group"><li>&nbsp;&nbsp;<a href="{% url "djangui:djangui_register" %}">{% trans "Register" %}</a></li></div>
 </form>

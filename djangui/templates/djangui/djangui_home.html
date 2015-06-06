@@ -313,7 +313,7 @@
         }
 
         function celeryRefresh() {
-            $.get("{% url "celery_results" %}", function(data){
+            $.get("{% url "djangui:celery_results" %}", function(data){
                 for(var table_key in data) {
                     var dt_jobs = job_tables[table_key]['jobs'];
                     var djangui_dt = job_tables[table_key]['dt'];

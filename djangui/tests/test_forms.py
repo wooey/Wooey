@@ -8,7 +8,7 @@ from . import config
 from . import mixins
 
 
-class FormTestCase(mixins.ScriptFactoryMixin, TestCase):
+class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
 
     def test_master_form(self):
         script = factories.TranslateScriptFactory()

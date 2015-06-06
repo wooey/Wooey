@@ -16,7 +16,7 @@ class ScriptGroupTestCase(TestCase):
         group = factories.ScriptGroupFactory()
 
 
-class TestJob(mixins.ScriptFactoryMixin, TestCase):
+class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     def test_jobs(self):
         script = factories.TranslateScriptFactory()
         from ..backend import utils

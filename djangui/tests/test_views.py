@@ -1,3 +1,5 @@
+# TODO: Test for viewing a user's job as an anonymous user (fail case)
+
 import json
 
 from django.test import TestCase, RequestFactory
@@ -6,7 +8,7 @@ from django.core.urlresolvers import reverse
 from . import factories, mixins
 from ..views import djangui_celery
 
-class CeleryViews(mixins.ScriptFactoryMixin, TestCase):
+class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     def setUp(self):
         self.factory = RequestFactory()
 

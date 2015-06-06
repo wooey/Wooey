@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 __author__ = 'chris'
 import os
 import errno
@@ -365,6 +365,7 @@ class ScriptParameters(DjanguiPy2Mixin, models.Model):
         # coerce the value to the proper type and store as json to make it persistent as well as have json
         #  handle type conversion on the way back out
         field = self.parameter.form_field
+        add_file = False
         if field == self.CHAR:
             if value is None:
                 value = None
@@ -392,8 +393,20 @@ class ScriptParameters(DjanguiPy2Mixin, models.Model):
                     remote_storage = utils.get_storage(local=False)
                     if not remote_storage.exists(path):
                         remote_storage.save(local_path, value)
+                    add_file = True
                     value = local_path
         self._value = json.dumps(value)
+        if add_file:
+            # make a DjanguiFile so the user can share it/etc.
+            fileinfo = utils.get_file_info(local_path)
+            # save ourself first, we have to do this because we are referenced in DjanguiFile
+            self.save()
+            dj_file = DjanguiFile(job=self.job, filetype=fileinfo.get('type'),
+                                  filepreview=fileinfo.get('preview'), parameter=self)
+            save_file = utils.get_storage().open(local_path)
+            dj_file.filepath.save(local_path, save_file, save=False)
+            dj_file.filepath.name = local_path
+            dj_file.save()
 
 
 class DjanguiFile(DjanguiPy2Mixin, models.Model):

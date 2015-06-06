@@ -210,6 +210,25 @@ def mkdirs(path):
         else:
             raise
 
+
+def get_file_info(filepath):
+    # returns info about the file
+    filetype, preview = False, None
+    tests = [('tabular', test_delimited), ('fasta', test_fastx)]
+    while filetype is False and tests:
+        ptype, pmethod = tests.pop()
+        filetype, preview = pmethod(filepath)
+        filetype = ptype if filetype else filetype
+    preview = None if filetype is False else preview
+    filetype = None if filetype is False else filetype
+    try:
+        json_preview = json.dumps(preview)
+    except:
+        sys.stderr.write('Error encountered in file preview:\n {}\n'.format(traceback.format_exc()))
+        json_preview = json.dumps(None)
+    return {'type': filetype, 'preview': json_preview}
+
+
 def test_delimited(filepath):
     import csv
     if six.PY3:
@@ -318,13 +337,10 @@ def create_job_fileinfo(job):
     file_groups['fasta'] = []
 
     for filemodel in files:
-        is_delimited, first_rows = test_delimited(filemodel['file'].path)
-        if is_delimited:
-            file_groups['tabular'].append(dict(filemodel, **{'preview': first_rows}))
-        else:
-            is_fasta, first_rows = test_fastx(filemodel['file'].path)
-            if is_fasta:
-                file_groups['fasta'].append(dict(filemodel, **{'preview': first_rows}))
+        fileinfo = get_file_info(filemodel['file'].path)
+        filetype = fileinfo.get('type')
+        if filetype is not None:
+            file_groups[filetype].append(dict(filemodel, **{'preview': fileinfo.get('preview')}))
 
     # Create our DjanguiFile models
 
@@ -335,13 +351,8 @@ def create_job_fileinfo(job):
             if file_type == 'all' and group_file['file'].path in grouped:
                 continue
             try:
-                try:
-                    preview = group_file.get('preview')
-                    json_preview = json.dumps(preview)
-                except:
-                    sys.stderr.write('Error encountered in file preview:\n {}\n'.format(traceback.format_exc()))
-                    json_preview = json.dumps(None)
-                dj_file = DjanguiFile(job=job, filetype=file_type, filepreview=json_preview,
+                preview = group_file.get('preview')
+                dj_file = DjanguiFile(job=job, filetype=file_type, filepreview=preview,
                                     parameter=group_file.get('parameter'))
                 filepath = group_file['file'].path
                 # We make the filename relative to the root, this is for filesystems that can change between

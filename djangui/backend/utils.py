@@ -337,10 +337,11 @@ def create_job_fileinfo(job):
             try:
                 try:
                     preview = group_file.get('preview')
+                    json_preview = json.dumps(preview)
                 except:
                     sys.stderr.write('Error encountered in file preview:\n {}\n'.format(traceback.format_exc()))
-                    preview = None
-                dj_file = DjanguiFile(job=job, filetype=file_type, filepreview=json.dumps(preview),
+                    json_preview = json.dumps(None)
+                dj_file = DjanguiFile(job=job, filetype=file_type, filepreview=json_preview,
                                     parameter=group_file.get('parameter'))
                 filepath = group_file['file'].path
                 # We make the filename relative to the root, this is for filesystems that can change between

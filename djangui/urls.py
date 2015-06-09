@@ -5,7 +5,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 # from djangui.admin import
-from djangui.views import celery_status, CeleryTaskView, celery_task_command, DjanguiScriptJSON, DjanguiHomeView, DjanguiRegister, djangui_login
+from .views import (celery_status, CeleryTaskView, celery_task_command, DjanguiScriptJSON,
+                           DjanguiHomeView, DjanguiRegister, djangui_login, DjanguiProfileView)
 
 from . import settings as djangui_settings
 
@@ -17,7 +18,7 @@ djangui_patterns = [
     url(r'^djscript/(?P<script_group>[a-zA-Z0-9\-\_]+)/(?P<script_name>[a-zA-Z0-9\-\_]+)/(?P<job_id>[a-zA-Z0-9\-]+)$',
         DjanguiScriptJSON.as_view(), name='djangui_script_clone'),
     url(r'^djscript/(?P<script_group>[a-zA-Z0-9\-\_]+)/(?P<script_name>[a-zA-Z0-9\-\_]+)/$', DjanguiScriptJSON.as_view(), name='djangui_script'),
-    url(r'^profile/$', DjanguiScriptJSON.as_view(), name='profile_home'),
+    url(r'^profile/$', DjanguiProfileView.as_view(), name='profile_home'),
     url(r'^$', DjanguiHomeView.as_view(), name='djangui_home'),
     url(r'^$', DjanguiHomeView.as_view(), name='djangui_task_launcher'),
     url('^{}'.format(djangui_settings.DJANGUI_LOGIN_URL.lstrip('/')), djangui_login, name='djangui_login'),

@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from django.contrib.admin import ModelAdmin, site
 
-from djangui.models import Script, ScriptGroup, ScriptParameter, DjanguiJob, ScriptParameterGroup, DjanguiFile
+from .models import Script, ScriptGroup, ScriptParameter, DjanguiJob, ScriptParameterGroup, DjanguiFile
 
 class JobAdmin(ModelAdmin):
     list_display = ('user', 'job_name', 'script', 'status', 'created_date')

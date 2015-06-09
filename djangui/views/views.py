@@ -5,7 +5,7 @@ from django.forms import FileField
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_text
 
-from djangui.backend import utils
+from ..backend import utils
 from ..models import DjanguiJob, Script
 from .. import settings as djangui_settings
 from ..django_compat import JsonResponse
@@ -80,3 +80,6 @@ class DjanguiHomeView(TemplateView):
             if job.user is None or (self.request.user.is_authenticated() and job.user == self.request.user):
                 ctx['clone_job'] = {'job_id': job_id, 'url': job.get_resubmit_url(), 'data_url': job.script.get_url()}
         return ctx
+
+class DjanguiProfileView(TemplateView):
+    template_name = 'djangui/profile/profile_base.html'

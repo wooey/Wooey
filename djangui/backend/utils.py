@@ -119,7 +119,7 @@ def get_storage_object(path, local=False):
     return obj
 
 def add_djangui_script(script=None, group=None):
-    from djangui.models import Script, ScriptGroup, ScriptParameter, ScriptParameterGroup
+    from ..models import Script, ScriptGroup, ScriptParameter, ScriptParameterGroup
     # if we have a script, it will at this point be saved in the model pointing to our file system, which may be
     # ephemeral. So the path attribute may not be implemented
     if not isinstance(script, six.string_types):

@@ -30,7 +30,7 @@ def reload_scripts(**kwargs):
     utils.load_scripts()
 
 # TODO: Figure out why relative imports fail here
-from djangui.models import Script, ScriptGroup, ScriptParameter, ScriptParameterGroup
+from .models import Script, ScriptGroup, ScriptParameter, ScriptParameterGroup
 post_delete.connect(reload_scripts, sender=Script)
 post_delete.connect(reload_scripts, sender=ScriptGroup)
 post_delete.connect(reload_scripts, sender=ScriptParameter)

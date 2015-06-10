@@ -329,19 +329,20 @@ class ScriptParameters(DjanguiPy2Mixin, models.Model):
         # we want to change filefields to reflect whatever is the current job's path. This is currently used for
         # job resubmission
         value = json.loads(self._value)
-        field = self.parameter.form_field
-        if field == self.FILE:
-            # we are perfectly fine using old input files instead of recreating them, so only check output files
-            if self.parameter.is_output:
-                new_path = self.job.get_output_path()
-                new_root, new_id = os.path.split(new_path)
-                # we want to remove the root + the old job's pk
-                value = value[value.find(new_root)+len(new_root)+1:]
-                value = value[value.find(os.path.sep)+1:]
-                # we want to create a new path for the current job
-                path = os.path.join(new_path, self.parameter.slug if not value else value)
-                value = path
-                self._value = json.dumps(value)
+        if value is not None:
+            field = self.parameter.form_field
+            if field == self.FILE:
+                # we are perfectly fine using old input files instead of recreating them, so only check output files
+                if self.parameter.is_output:
+                    new_path = self.job.get_output_path()
+                    new_root, new_id = os.path.split(new_path)
+                    # we want to remove the root + the old job's pk
+                    value = value[value.find(new_root)+len(new_root)+1:]
+                    value = value[value.find(os.path.sep)+1:]
+                    # we want to create a new path for the current job
+                    path = os.path.join(new_path, self.parameter.slug if not value else value)
+                    value = path
+                    self._value = json.dumps(value)
 
     @property
     def value(self):

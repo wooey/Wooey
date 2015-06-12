@@ -1,4 +1,4 @@
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 __author__ = 'chris'
 import os
 import errno
@@ -398,6 +398,8 @@ class ScriptParameters(DjanguiPy2Mixin, models.Model):
         self._value = json.dumps(value)
         if add_file:
             # make a DjanguiFile so the user can share it/etc.
+            # get the system path for the file
+            local_path = utils.get_storage(local=True).path(local_path)
             fileinfo = utils.get_file_info(local_path)
             # save ourself first, we have to do this because we are referenced in DjanguiFile
             self.save()

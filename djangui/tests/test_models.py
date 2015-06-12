@@ -23,12 +23,12 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         from .. import settings
         # the test server doesn't have celery running
         settings.DJANGUI_CELERY = False
-        job = utils.create_djangui_job({'djangui_type': script.pk, 'user': None, 'job_name': 'abc', 'sequence': 'aaa', 'out': 'abc'})
+        job = utils.create_djangui_job(script_pk=script.pk, data={'job_name': 'abc', 'sequence': 'aaa', 'out': 'abc'})
         job = job.submit_to_celery()
         old_pk = job.pk
         new_job = job.submit_to_celery(resubmit=True)
         self.assertNotEqual(old_pk, new_job.pk)
         # test job with a file
-        job = utils.create_djangui_job({'djangui_type': script.pk, 'user': None, 'job_name': 'abc',
-                                        'fasta': open(os.path.join(config.DJANGUI_TEST_DATA, 'fasta.fasta')),
-                                        'out': 'abc'})
+        job = utils.create_djangui_job(script_pk=script.pk,
+                                        data={'fasta': open(os.path.join(config.DJANGUI_TEST_DATA, 'fasta.fasta')),
+                                        'out': 'abc', 'job_name': 'abc'})

@@ -33,8 +33,9 @@ class DjanguiScriptJSON(DetailView):
 
     def post(self, request, *args, **kwargs):
         post = request.POST.copy()
-        if request.user.is_authenticated() or not djangui_settings.DJANGUI_ALLOW_ANONYMOUS:
-            post['user'] = request.user
+        user = request.user if request.user.is_authenticated else None
+        if not djangui_settings.DJANGUI_ALLOW_ANONYMOUS and user is None:
+            return JsonResponse({'valid': False, 'errors': {'__all__': [force_text(_('You are not permitted to access this script.'))]}})
         form = utils.get_master_form(pk=post['djangui_type'])
         # TODO: Check with people who know more if there's a smarter way to do this
         utils.validate_form(form=form, data=post, files=request.FILES)
@@ -56,12 +57,13 @@ class DjanguiScriptJSON(DetailView):
 
         if not form.errors:
             # data = form.cleaned_data
-            script = Script.objects.get(pk=form.cleaned_data.get('djangui_type'))
+            script_pk = form.cleaned_data.get('djangui_type')
+            script = Script.objects.get(pk=script_pk)
             valid = utils.valid_user(script, request.user).get('valid')
             if valid is True:
                 group_valid = utils.valid_user(script.script_group, request.user).get('valid')
                 if valid is True and group_valid is True:
-                    job = form.save()
+                    job = utils.create_djangui_job(script_pk=script_pk, user=user, data=form.cleaned_data)
                     job.submit_to_celery()
                     return JsonResponse({'valid': True})
             return JsonResponse({'valid': False, 'errors': {'__all__': [force_text(_('You are not permitted to access this script.'))]}})

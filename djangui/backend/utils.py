@@ -44,10 +44,12 @@ def get_job_commands(job=None):
     return com
 
 @transaction.atomic
-def create_djangui_job(data):
+def create_djangui_job(user=None, script_pk=None, data=None):
     from ..models import Script, DjanguiJob, ScriptParameter, ScriptParameters
-    script = Script.objects.get(pk=data.get('djangui_type'))
-    job = DjanguiJob(user=data.get('user'), job_name=data.get('job_name'), job_description=data.get('job_description'),
+    script = Script.objects.get(pk=script_pk)
+    if data is None:
+        data = {}
+    job = DjanguiJob(user=user, job_name=data.pop('job_name', None), job_description=data.pop('job_description', None),
                      script=script)
     job.save()
     parameters = OrderedDict([(i.slug, i) for i in ScriptParameter.objects.filter(slug__in=data.keys()).order_by('pk')])

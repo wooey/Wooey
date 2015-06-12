@@ -17,7 +17,7 @@ parser.add_argument('--log-normalize', help='Whether to log normalize data.', ac
 
 def main():
     args = parser.parse_args()
-    data = pd.read_table(args.tsv, index_col=args.row if args.row else 0, sep=args.delimiter)
+    data = pd.read_table(args.tsv, index_col=args.row if args.row else 0, sep=args.delimiter, encoding='utf-8')
     if args.cols:
         try:
             data = data.loc[:,args.cols.split(',')]

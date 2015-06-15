@@ -101,12 +101,13 @@ def submit_script(**kwargs):
                 for filename in files:
                     filepath = os.path.join(root, filename)
                     s3path = os.path.join(root[root.find(cwd):], filename)
-                    exists = utils.get_storage(local=False).exists(s3path)
-                    filesize = utils.get_storage(local=False).size(s3path)
+                    remote = utils.get_storage(local=False)
+                    exists = remote.exists(s3path)
+                    filesize = remote.size(s3path)
                     if not exists or (exists and filesize == 0):
                         if exists:
-                            utils.get_storage(local=False).delete(s3path)
-                        utils.get_storage(local=False).save(s3path, File(open(filepath, 'rb')))
+                            remote.delete(s3path)
+                        remote.save(s3path, File(open(filepath, 'rb')))
 
     utils.create_job_fileinfo(job)
 

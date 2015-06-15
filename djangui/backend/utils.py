@@ -343,6 +343,8 @@ def create_job_fileinfo(job):
         filetype = fileinfo.get('type')
         if filetype is not None:
             file_groups[filetype].append(dict(filemodel, **{'preview': fileinfo.get('preview')}))
+        else:
+            filemodel['preview'] = json.dumps(None)
 
     # Create our DjanguiFile models
 
@@ -373,7 +375,7 @@ def get_file_previews(job):
     files = DjanguiFile.objects.filter(job=job)
     groups = {'all': []}
     for file_info in files:
-        filedict = {'name': file_info.filepath.name, 'preview': json.loads(file_info.filepreview),
+        filedict = {'name': file_info.filepath.name, 'preview': json.loads(file_info.filepreview) if file_info.filepreview else None,
                     'url': get_storage(local=False).url(file_info.filepath.name),
                     'slug': file_info.parameter.parameter.script_param if file_info.parameter else None}
         try:

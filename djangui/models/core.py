@@ -5,6 +5,7 @@ import errno
 import importlib
 import json
 import six
+from io import IOBase
 
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -389,9 +390,21 @@ class ScriptParameters(DjanguiPy2Mixin, models.Model):
             else:
                 if value:
                     path = os.path.join(self.job.get_upload_path(), os.path.split(value.name)[1])
-                    local_path = utils.get_storage(local=True).save(path, value)
+                    local_storage = utils.get_storage(local=True)
+                    if hasattr(value, 'size'):
+                        filesize = value.size
+                    elif issubclass(type(value), IOBase):
+                        value.seek(0,2)
+                        filesize = value.tell()
+                        value.seek(0)
+                    else:
+                        filesize = None
+                    if not local_storage.exists(path) or (filesize is not None and local_storage.size(path) != filesize):
+                        local_path = local_storage.save(path, value)
+                    else:
+                        local_path = local_storage.path(path)
                     remote_storage = utils.get_storage(local=False)
-                    if not remote_storage.exists(path):
+                    if not remote_storage.exists(path) or (filesize is not None and remote_storage.size(path) != filesize):
                         remote_storage.save(local_path, value)
                     add_file = True
                     value = local_path

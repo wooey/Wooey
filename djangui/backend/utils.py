@@ -359,10 +359,10 @@ def create_job_fileinfo(job):
                 dj_file = DjanguiFile(job=job, filetype=file_type, filepreview=preview,
                                     parameter=group_file.get('parameter'))
                 filepath = group_file['file'].path
-                # We make the filename relative to the root, this is for filesystems that can change between
+                # We make the filename relative to the MEDIA_ROOT, this is for filesystems that can change between
                 # machines. We also want to omit any leading path separators so we can join the path to whatever
                 # MEDIA_ROOT is currently at work instead of giving a path from a root
-                save_path = filepath[filepath.find(settings.MEDIA_ROOT)+len(settings.MEDIA_ROOT):].lstrip(os.path.sep)
+                save_path = filepath[filepath.find(absbase):].lstrip(os.path.sep)
                 dj_file.filepath.name = save_path
                 dj_file.save()
             except:

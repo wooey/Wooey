@@ -62,7 +62,7 @@ def celery_task_command(request):
                 new_job = job.submit_to_celery(resubmit=True, user=request.user)
                 response.update({'valid': True, 'extra': {'task_url': reverse('djangui:celery_results_info', kwargs={'job_id': new_job.pk})}})
             elif command == 'rerun':
-                job.submit_to_celery(user=request.user)
+                job.submit_to_celery(user=request.user, rerun=True)
                 response.update({'valid': True, 'redirect': reverse('celery_results_info', kwargs={'job_id': job_id})})
             elif command == 'clone':
                 response.update({'valid': True, 'redirect': '{0}?job_id={1}'.format(reverse('djangui:djangui_task_launcher'), job_id)})

@@ -112,6 +112,8 @@ class Script(ModelDiffMixin, DjanguiPy2Mixin, models.Model):
             if old_name != new_name:
                 if local_storage.exists(old_name):
                     local_storage.delete(old_name)
+            # clone ourselves if we are updating a script
+            self.pk = None
         super(Script, self).save(**kwargs)
         if new_script:
             if getattr(self, '_add_script', True):
@@ -120,7 +122,6 @@ class Script(ModelDiffMixin, DjanguiPy2Mixin, models.Model):
                     # TODO: Make a better error
                     raise BaseException(error)
         utils.load_scripts()
-
 
 
 class DjanguiJob(DjanguiPy2Mixin, models.Model):
@@ -183,10 +184,11 @@ class DjanguiJob(DjanguiPy2Mixin, models.Model):
                     param.save()
         self.status = self.SUBMITTED
         self.save()
+        task_kwargs = {'djangui_job': self.pk, 'rerun': kwargs.pop('rerun', False)}
         if djangui_settings.DJANGUI_CELERY:
-            results = tasks.submit_script.delay(djangui_job=self.pk)
+            results = tasks.submit_script.delay(**task_kwargs)
         else:
-            results = tasks.submit_script(djangui_job=self.pk)
+            results = tasks.submit_script(**task_kwargs)
         return self
 
     def get_resubmit_url(self):
@@ -224,7 +226,7 @@ class ScriptParameterGroup(UpdateScriptsMixin, DjanguiPy2Mixin, models.Model):
         app_label = 'djangui'
 
     def __str__(self):
-        return six.u('{}: {}').format(self.script.script_name, self.group_name)
+        return '{}: {}'.format(self.script.script_name, self.group_name)
 
 
 class ScriptParameter(UpdateScriptsMixin, DjanguiPy2Mixin, models.Model):
@@ -253,7 +255,7 @@ class ScriptParameter(UpdateScriptsMixin, DjanguiPy2Mixin, models.Model):
 
 
     def __str__(self):
-        return six.u('{}: {}').format(self.script.script_name, self.script_param)
+        return '{}: {}'.format(self.script.script_name, self.script_param)
 
 
 # TODO: find a better name for this class
@@ -286,7 +288,7 @@ class ScriptParameters(DjanguiPy2Mixin, models.Model):
         app_label = 'djangui'
 
     def __str__(self):
-        return six.u('{}: {}').format(self.parameter.script_param, self.value)
+        return '{}: {}'.format(self.parameter.script_param, self.value)
 
     def get_subprocess_value(self):
         value = self.value
@@ -435,4 +437,4 @@ class DjanguiFile(DjanguiPy2Mixin, models.Model):
         app_label = 'djangui'
 
     def __str__(self):
-        return six.u('{}: {}').format(self.job.job_name, self.filepath)
+        return '{}: {}'.format(self.job.job_name, self.filepath)

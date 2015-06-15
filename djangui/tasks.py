@@ -9,6 +9,7 @@ from django.utils.text import get_valid_filename
 from django.core.files.storage import default_storage
 from django.core.files import File
 from django.conf import settings
+from django.db.transaction import atomic
 
 
 from celery import Task
@@ -31,8 +32,9 @@ class DjanguiTask(Task):
 def submit_script(**kwargs):
     job_id = kwargs.pop('djangui_job')
     resubmit = kwargs.pop('djangui_resubmit', False)
+    rerun = kwargs.pop('rerun', False)
     from .backend import utils
-    from .models import DjanguiJob
+    from .models import DjanguiJob, DjanguiFile
     job = DjanguiJob.objects.get(pk=job_id)
 
     command = utils.get_job_commands(job=job)
@@ -47,6 +49,23 @@ def submit_script(**kwargs):
     abscwd = os.path.abspath(os.path.join(settings.MEDIA_ROOT, cwd))
     job.command = ' '.join(command)
     job.save_path = cwd
+
+    if rerun:
+        # cleanup the old files, we need to be somewhat aggressive here.
+        local_storage = utils.get_storage(local=True)
+        remote_storage = utils.get_storage(local=False)
+        to_delete = []
+        with atomic():
+            for dj_file in DjanguiFile.objects.filter(job=job):
+                if dj_file.parameter is None or dj_file.parameter.parameter.is_output:
+                    to_delete.append(dj_file)
+                    path = local_storage.path(dj_file.filepath.name)
+                    dj_file.filepath.delete(False)
+                    if local_storage.exists(path):
+                        local_storage.delete(path)
+                    if remote_storage.exists(path):
+                        remote_storage.delete(path)
+            [i.delete() for i in to_delete]
 
     utils.mkdirs(abscwd)
     # make sure we have the script, otherwise download it. This can happen if we have an ephemeral file system or are

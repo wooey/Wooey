@@ -33,7 +33,7 @@ class DjanguiScriptJSON(DetailView):
 
     def post(self, request, *args, **kwargs):
         post = request.POST.copy()
-        user = request.user if request.user.is_authenticated else None
+        user = request.user if request.user.is_authenticated() else None
         if not djangui_settings.DJANGUI_ALLOW_ANONYMOUS and user is None:
             return JsonResponse({'valid': False, 'errors': {'__all__': [force_text(_('You are not permitted to access this script.'))]}})
         form = utils.get_master_form(pk=post['djangui_type'])

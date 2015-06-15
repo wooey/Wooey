@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from django.db.models.signals import post_delete
-from django.db.utils import InterfaceError
+from django.db.utils import InterfaceError, DatabaseError
 from django import db
 
 from celery.signals import task_postrun, task_prerun, task_revoked
@@ -16,7 +16,7 @@ def task_completed(sender=None, **kwargs):
     from celery import states
     try:
         job = DjanguiJob.objects.get(pk=job_id)
-    except InterfaceError:
+    except (InterfaceError, DatabaseError) as e:
         db.connection.close()
         job = DjanguiJob.objects.get(pk=job_id)
     state = kwargs.get('state')

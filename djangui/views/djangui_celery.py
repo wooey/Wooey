@@ -88,25 +88,26 @@ class CeleryTaskView(TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super(CeleryTaskView, self).get_context_data(**kwargs)
         job_id = ctx.get('job_id')
-        djangui_job = DjanguiJob.objects.get(pk=job_id)
-        ctx['task_info'] = {'stdout': '', 'stderr': '', 'job': djangui_job,
-                            'all_files': {},
-                            'file_groups': {}}
-        user = self.request.user
-        user = None if not user.is_authenticated() and djangui_settings.DJANGUI_ALLOW_ANONYMOUS else user
-        job_user = djangui_job.user
-        if job_user == None or job_user == user or (user != None and user.is_superuser):
-            out_files = get_file_previews(djangui_job)
-            all = out_files.pop('all', [])
-            archives = out_files.pop('archives', [])
-            ctx['task_info'].update({
-                    'all_files': all,
-                    'archives': archives,
-                    'file_groups': out_files,
-                    'status': djangui_job.status,
-                    'last_modified': djangui_job.modified_date,
-                })
+        try:
+            djangui_job = DjanguiJob.objects.get(pk=job_id)
+        except DjanguiJob.DoesNotExist:
+            ctx['task_error'] = _('This task does not exist.')
         else:
-            ctx['task_error'] = _('You are not authenticated to view this job.')
+            user = self.request.user
+            user = None if not user.is_authenticated() and djangui_settings.DJANGUI_ALLOW_ANONYMOUS else user
+            job_user = djangui_job.user
+            if job_user == None or job_user == user or (user != None and user.is_superuser):
+                out_files = get_file_previews(djangui_job)
+                all = out_files.pop('all', [])
+                archives = out_files.pop('archives', [])
+                ctx['task_info'] = {
+                        'all_files': all,
+                        'archives': archives,
+                        'file_groups': out_files,
+                        'status': djangui_job.status,
+                        'last_modified': djangui_job.modified_date,
+                    }
+            else:
+                ctx['task_error'] = _('You are not authenticated to view this job.')
         return ctx
 

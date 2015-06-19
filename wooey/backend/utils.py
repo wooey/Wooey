@@ -362,7 +362,7 @@ def create_job_fileinfo(job):
                 # We make the filename relative to the MEDIA_ROOT, this is for filesystems that can change between
                 # machines. We also want to omit any leading path separators so we can join the path to whatever
                 # MEDIA_ROOT is currently at work instead of giving a path from a root
-                save_path = filepath[filepath.find(absbase):].lstrip(os.path.sep)
+                save_path = filepath[filepath.find(job.save_path):].lstrip(os.path.sep)
                 dj_file.filepath.name = save_path
                 dj_file.save()
             except:

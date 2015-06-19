@@ -8,8 +8,9 @@ class FileCleanupMixin(object):
         for i in WooeyFile.objects.all():
             utils.get_storage().delete(i.filepath.path)
         # delete job dirs
+        local_storage = utils.get_storage(local=True)
         for i in WooeyJob.objects.all():
-            shutil.rmtree(i.get_output_path())
+            shutil.rmtree(local_storage.path(i.get_output_path()))
         super(FileCleanupMixin, self).tearDown()
 
 class ScriptFactoryMixin(object):

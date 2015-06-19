@@ -195,26 +195,19 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         return reverse('wooey:wooey_script_clone', kwargs={'script_group': self.script.script_group.slug,
                                                       'script_name': self.script.slug, 'job_id': self.pk})
 
-    @staticmethod
-    def mkdirs(path):
-        try:
-            os.makedirs(path)
-        except OSError as exc:
-            if exc.errno == errno.EEXIST and os.path.isdir(path):
-                pass
-            else:
-                raise
+    @property
+    def output_path(self):
+        return os.path.join(djangui_settings.DJANGUI_FILE_DIR, get_valid_filename(self.user.username if self.user is not None else ''),
+                            get_valid_filename(self.script.slug if not self.script.save_path else self.script.save_path), str(self.pk))
 
     def get_output_path(self):
-        path = os.path.join(wooey_settings.WOOEY_FILE_DIR, get_valid_filename(self.user.username if self.user is not None else ''),
-                            get_valid_filename(self.script.slug if not self.script.save_path else self.script.save_path), str(self.pk))
-        self.mkdirs(os.path.join(settings.MEDIA_ROOT, path))
+        path = self.output_path
+        utils.mkdirs(os.path.join(settings.MEDIA_ROOT, path))
         return path
 
     def get_upload_path(self):
-        path = os.path.join(wooey_settings.WOOEY_FILE_DIR, get_valid_filename(self.user.username if self.user is not None else ''),
-                            get_valid_filename(self.script.slug if not self.script.save_path else self.script.save_path))
-        self.mkdirs(os.path.join(settings.MEDIA_ROOT, path))
+        path = self.output_path
+        utils.mkdirs(os.path.join(settings.MEDIA_ROOT, path))
         return path
 
 
@@ -308,6 +301,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
                     value = utils.get_storage(local=True).path(value)
                     # trim the output path, we don't want to be adding our platform specific paths to the output
                     op = self.job.get_output_path()
+                    #TODO : use os.path.sep
                     value = value[value.find(op)+len(op)+1:]
             else:
                 # make sure we have it locally otherwise download it

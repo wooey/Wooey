@@ -1,0 +1,33 @@
+{% extends "wooey/base.html" %}
+{% load i18n %}
+{% block center_content %}
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>
+    {% endif %}
+    <form class="form-horizontal col-sm-offset-2" method="post">
+    {% csrf_token %}
+      <div class="form-group {% if 'username' in form.errors %}has-error{% endif %}">
+        <label for="username" class="col-sm-2 control-label">{% trans "Username" %}</label>
+        <div class="col-sm-4">
+          <input name="username" type="username" class="form-control" id="username" placeholder="{% trans "Username" %}" value="{% if form.username.value %}{{ form.username.value }}{% endif %}">
+            {% if 'username' in form.errors %}
+                <div class="alert-danger" role="alert">{{ form.errors.username }}</div>
+            {% endif %}
+        </div>
+      </div>
+      <div class="form-group {% if 'password' in form.errors %}has-error{% endif %}">
+        <label for="password" class="col-sm-2 control-label">Password</label>
+        <div class="col-sm-4">
+          <input name="password" type="password" class="form-control" id="password" placeholder="Password">
+            {% if 'password' in form.errors %}
+                <div class="alert-danger" role="alert">{{ form.errors.password }}</div>
+            {% endif %}
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-10">
+          <button type="submit" class="btn btn-default">Sign in</button>
+        </div>
+      </div>
+    </form>
+{% endblock center_content %}

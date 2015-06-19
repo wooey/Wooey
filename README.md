@@ -1,11 +1,14 @@
-# Djangui
+![Wooey!](wooey-banner.png)
 
-[![Build Status](https://travis-ci.org/Chris7/django-djangui.svg?branch=master)](https://travis-ci.org/Chris7/django-djangui)  [![Coverage Status](https://coveralls.io/repos/Chris7/django-djangui/badge.svg?branch=master)](https://coveralls.io/r/Chris7/django-djangui?branch=master)
+Wooey is a simple web interface to run command line Python scripts. Think of it as an easy way to get your scripts up on the web for routine data analysis, file processing, or anything else.
+
+
+[![Build Status](https://travis-ci.org/wooey/Wooey.svg?branch=master)](https://travis-ci.org/wooey/Wooey)  [![Coverage Status](https://coveralls.io/repos/wooey/Wooey/badge.svg?branch=master)](https://coveralls.io/r/wooey/Wooey?branch=master)
 
 1. [Installation](#install)
-    1. [A Djangui Only Project](#djonly)
-    2. [Adding Djangui to Existing Projects](#existing)
-2. [Running Djangui](#running)
+    1. [A Wooey Only Project](#djonly)
+    2. [Adding Wooey to Existing Projects](#existing)
+2. [Running Wooey](#running)
     1. [A Procfile](#procfile)
     2. [Two processes](#two-procs)
 3. [Adding Scripts](#adding)
@@ -15,12 +18,16 @@
 7. [Usage with S3/remote file systems](#s3)
 8. [Script Guidelines](#script-guide)
 
-Djangui is designed to take scripts implemented with a python command line argument parser (such as argparse), and convert them into a web interface.
  
-This project was inspired by how simply and powerfully [sandman](https://github.com/jeffknupp/sandman) could expose users to a database. 
-It was also based on my own needs as a data scientist to have a system that could:
+The project was inspired by how simply and powerfully [sandman](https://github.com/jeffknupp/sandman) 
+could expose users to a database and by how [Gooey](https://github.com/chriskiehl/Gooey) turns 
+ArgumentParser-based command-line scripts into WxWidgets GUIs. Originally two separate
+projects (Django-based djangui by [Chris Mitchell](https://github.com/Chris7) and Flask-based Wooey by [Martin Fitzpatrick](https://github/mfitzp)) it has been merged to combine our efforts.
+
+
+Both of our tools were based on our needs as data scientists to have a system that could:
     
-    1. Autodocument my workflows for data analysis
+    1. Autodocument workflows for data analysis
         (simple model saving).
     2. Enable fellow lab members with no command line
         experience to utilize python scripts.
@@ -30,13 +37,13 @@ It was also based on my own needs as a data scientist to have a system that coul
 
 # <a name="install"></a>Installation
 
-    pip install django-djangui
+    pip install wooey
     
-## <a name="djonly"></a>A Djangui only project
+## <a name="djonly"></a>A Wooey only project
 
-There is a bootstrapper included with djangui, which will create a Django project and setup most of the needed settings automagically for you.
+There is a bootstrapper included with wooey, which will create a Django project and setup most of the needed settings automagically for you.
 
-    1. djanguify.py -p ProjectName
+    1. wooify.py -p ProjectName
     2. Follow the instructions at the end of the bootstrapper
        to create the admin user and access the admin page
     3. Login to the admin page wherever the project is
@@ -44,11 +51,11 @@ There is a bootstrapper included with djangui, which will create a Django projec
     
 ## <a name="existing"></a>Installation with existing Django Projects
 
-    1. Add 'djangui' to INSTALLED_APPS in settings.py (and optionally, djcelery unless you wish to tie into an existing celery instance)
+    1. Add 'wooey' to INSTALLED_APPS in settings.py (and optionally, djcelery unless you wish to tie into an existing celery instance)
     2. Add the following to your urls.py:
-       `url(r'^', include('djangui.urls')),`
+       `url(r'^', include('wooey.urls')),`
        (Note: it does not need to be rooted at your site base,
-        you can have r'^djangui/'... as your router):
+        you can have r'^wooey/'... as your router):
        
     3. Migrate your database:
         # Django 1.6 and below:
@@ -65,9 +72,9 @@ There is a bootstrapper included with djangui, which will create a Django projec
         'django.core.context_processors.request'
         ...]
 
-# <a name="running"></a>Running Djangui
+# <a name="running"></a>Running Wooey
 
-Djangui depends on a distributed worker to handle tasks, you can disable this by setting **DJANGUI_CELERY** to False in your settings, which will allow you to run Djangui through the simple command:
+Wooey depends on a distributed worker to handle tasks, you can disable this by setting **WOOEY_CELERY** to False in your settings, which will allow you to run Wooey through the simple command:
 
 ```
 python manage.py runserver
@@ -75,11 +82,11 @@ python manage.py runserver
 
 However, this will cause the server to execute tasks, which will block the site.
 
-The recommended ways to run Djangui are:
+The recommended ways to run Wooey are:
 
 ## <a name="procfile"></a>Through a Procfile
 
-The simplest way to run Djangui is to use a Procfile with [honcho](https://github.com/nickstenning/honcho), which can be installed via pip. Make a file, called Procfile in the root of your project (the same place as manage.py) with the following contents:
+The simplest way to run Wooey is to use a Procfile with [honcho](https://github.com/nickstenning/honcho), which can be installed via pip. Make a file, called Procfile in the root of your project (the same place as manage.py) with the following contents:
 
 ```
 web:  python manage.py runserver
@@ -94,7 +101,7 @@ honcho start
 
 ## <a name="two-procs"></a>Through two separate processes
 
-You can also run djangui by invoking two commands (you will need a separate process for each):
+You can also run wooey by invoking two commands (you will need a separate process for each):
 
 ```
 python manage.py celery worker -c 1 --beat -l info
@@ -116,12 +123,12 @@ will be automatically populated by the description from argparse if available).
 
 `./manage.py addscript`
 
-This will add a script or a folder of scripts to Djangui (if a folder is passed instead of a file).
- By default, scripts will be created in the 'Djangui Scripts' group.
+This will add a script or a folder of scripts to Wooey (if a folder is passed instead of a file).
+ By default, scripts will be created in the 'Wooey Scripts' group.
  
 # <a name="organization"></a>Script Organization
  
-Scripts can be viewed at the root url of Djangui. The ordering of scripts, and groupings of scripts can be altered by
+Scripts can be viewed at the root url of Wooey. The ordering of scripts, and groupings of scripts can be altered by
 changing the 'Script order' or 'Group order' options within the admin.
 
 # <a name="permissions"></a>Script Permissions
@@ -133,40 +140,40 @@ Scripts and groups may also be shutoff to all users by unchecked the 'script/gro
        
 # <a name="config"></a>Configuration
 
-**DJANGUI_FILE_DIR**: String, where the files uploaded by the user will be saved (Default: djangui_files)
+**WOOEY_FILE_DIR**: String, where the files uploaded by the user will be saved (Default: wooey_files)
 
-**DJANGUI_CELERY**: Boolean, whether or not celery is enabled. If disabled, tasks will run locally and block execution. (Default: True)
+**WOOEY_CELERY**: Boolean, whether or not celery is enabled. If disabled, tasks will run locally and block execution. (Default: True)
 
-**DJANGUI_CELERY_TASKS**: String, the name of the celery tasks for Djangui. (Default: 'djangui.tasks')
+**WOOEY_CELERY_TASKS**: String, the name of the celery tasks for Wooey. (Default: 'wooey.tasks')
 
-**DJANGUI_ALLOW_ANONYMOUS**: Boolean, whether to allow submission of jobs by anonymous users. (Default: True)
+**WOOEY_ALLOW_ANONYMOUS**: Boolean, whether to allow submission of jobs by anonymous users. (Default: True)
 
-By default, Djangui has a basic user account system. It is very basic, and doesn't confirm registrations via email.
+By default, Wooey has a basic user account system. It is very basic, and doesn't confirm registrations via email.
 
-**DJANGUI_AUTH**: Boolean, whether to use the authorization system of Djangui for simple login/registration. (Default: True)
+**WOOEY_AUTH**: Boolean, whether to use the authorization system of Wooey for simple login/registration. (Default: True)
 
-**DJANGUI_LOGIN_URL**: String, if you have an existing authorization system, the login url: (Default: settings.LOGIN_URL
+**WOOEY_LOGIN_URL**: String, if you have an existing authorization system, the login url: (Default: settings.LOGIN_URL
 
-**DJANGUI_REGISTER_URL**: String, if you have an existing authorization system, the registration url: (Default: /accounts/register/)
+**WOOEY_REGISTER_URL**: String, if you have an existing authorization system, the registration url: (Default: /accounts/register/)
 
-**DJANGUI_EPHEMERAL_FILES**: Boolean, if your file system changes with each restart. (Default: False)
+**WOOEY_EPHEMERAL_FILES**: Boolean, if your file system changes with each restart. (Default: False)
 
-**DJANGUI_SHOW_LOCKED_SCRIPTS**: Boolean, whether to show locked scripts as disabled or hide them entirely. (Defalt: True -- show as disabled)
+**WOOEY_SHOW_LOCKED_SCRIPTS**: Boolean, whether to show locked scripts as disabled or hide them entirely. (Defalt: True -- show as disabled)
 
 # <a name="s3"></a>Remote File Systems
 
-Djangui has been tested on heroku with S3 as a file storage system. Settings for this can be seen in the user_settings.py, which give you a starting point for a non-local server. In short, you need to change your storage settings like such:
+Wooey has been tested on heroku with S3 as a file storage system. Settings for this can be seen in the user_settings.py, which give you a starting point for a non-local server. In short, you need to change your storage settings like such:
 
 <code>
 
-STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = 'djangui.djanguistorage.CachedS3BotoStorage'
-DJANGUI_EPHEMERAL_FILES = True
+STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = 'wooey.wooeystorage.CachedS3BotoStorage'
+WOOEY_EPHEMERAL_FILES = True
 
 </code>
 
 # <a name="script-guide"></a>Script Guidelines
 
-The easiest way to make your scripts compatible with Djangui is to define your ArgParse class in the global scope. For instance:
+The easiest way to make your scripts compatible with Wooey is to define your ArgParse class in the global scope. For instance:
 
 ```
 
@@ -185,4 +192,4 @@ if __name__ == "__main__":
 
 ```
 
-If you have failing scripts, please open an issue with their contents so I can handle cases as they appear and try to make this as all-encompasing as possible. One known area which fails currently is defining your argparse instance inside the `if __name__ == "__main__" block`
+If you have failing scripts, please open an issue with their contents so we can handle cases as they appear and try to make this as all-encompasing as possible. One known area which fails currently is defining your argparse instance inside the `if __name__ == "__main__" block`

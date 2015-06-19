@@ -8,15 +8,15 @@ with open(os.path.join(os.path.dirname(__file__), 'README.md')) as readme:
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
-    name='django-djangui',
+    name='wooey',
     version='0.2.6',
     packages=find_packages(),
-    scripts=['scripts/djanguify.py'],
+    scripts=['scripts/wooify.py'],
     install_requires = ['Django>=1.6', 'django-autoslug', 'django-celery', 'six'],
     include_package_data=True,
     license='GPLv3',
     description='A Django app which creates a web GUI and task interface for argparse scripts',
-    url='http://www.github.com/chris7/django-djangui',
+    url='http://www.github.com/chris7/wooey',
     author='Chris Mitchell',
     author_email='chris.mit7@gmail.com',
     classifiers=[

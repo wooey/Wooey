@@ -1,6 +1,6 @@
 include LICENSE
 include README.md
-recursive-include djangui/templates *
-recursive-include djangui/static *
-recursive-include djangui/conf *
+recursive-include wooey/templates *
+recursive-include wooey/static *
+recursive-include wooey/conf *
 recursive-exclude * *.pyc

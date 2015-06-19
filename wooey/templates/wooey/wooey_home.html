@@ -1,0 +1,351 @@
+{% extends "wooey/base.html" %}
+{% load i18n %}
+{% load wooey_tags %}
+
+{% block extra_style %}
+
+{% endblock extra_style %}
+
+{% block left_sidebar_content %}
+<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+    {% for group_id, group in wooey_scripts.items %}
+{#        check the user has access to the group#}
+        {% with group_show=group.group|valid_user:request.user %}
+            {% if group_show != 'hide' %}
+              <div class="panel panel-primary">
+                <div class="panel-heading" role="tab" id="{{ group_id }}">
+                  <h4 class="panel-title">
+                    <a data-toggle="collapse" data-parent="#accordion" href="#{{ group_id }}_accordion" aria-expanded="true" aria-controls="{{ group_id }}_accordion">
+                      {{ group.group.group_name }}
+                    </a>
+                  </h4>
+                </div>
+                <div id="{{ group_id }}_accordion" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="{{ group_id }}">
+                    <div class="panel-body">
+                        <p><em>{{ group.group.group_description }}</em></p>
+                        <div class="list-group">
+                        {% for script in group.scripts %}
+                            {% with script_show=script|valid_user:request.user %}
+                                {% if script_show != 'hide' %}
+                                  <a href="#" data-href="{{ script.get_url }}" class="list-group-item wooey-script-url {% if script_show == 'disabled' or group_show == 'disabled' %}disabled{% endif %}">
+                                    <h4 class="list-group-item-heading wooey-script-title">{{ script.script_name }}</h4>
+                                    <p class="list-group-item-text wooey-script-description">{{ script.script_description }}</p>
+                                  </a>
+                                {% endif %}
+                            {% endwith %}
+                        {% endfor %}
+                        </div>
+                    </div>
+                </div>
+              </div>
+            {% endif %}
+        {% endwith %}
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block center_content %}
+    <div class="page-header">
+        <em><h3 id="wooey-script-title"></h3></em>
+        <p id="wooey-script-description"></p>
+    </div>
+    <form id="wooey-job-form" method="POST" action="" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group row">
+            <label for="job-name">{% trans "Job Name" %}</label>
+            <input class="form-control" id="wooey_job_name" type="text" name="job_name" placeholder="{% trans "Job Name" %}"/>
+        </div>
+        <div class="form-group row">
+            <label for="job-description">{% trans "Job Description" %}</label>
+            <textarea class="form-control" id="wooey_job_description" cols="30" rows="5" name="job_description" placeholder="{% trans "Enter job description here..." %}"></textarea>
+        </div>
+        <div role="tabpanel">
+          <!-- Nav tabs -->
+          <ul class="nav nav-tabs" role="tablist" id="wooey-script-tabs">
+{#            <li role="presentation" class="active"><a href="#required" aria-controls="home" role="tab" data-toggle="tab">{% trans "Required" %}</a></li>#}
+          </ul>
+
+          <!-- Tab panes -->
+          <div class="tab-content" id="wooey-script-content">
+            <div role="tabpanel" class="tab-pane active" id="required"></div>
+          </div>
+
+        </div>
+        <input name="wooey_clone_task_id" id="wooey_clone_task_id" type="hidden">
+        <div class="pull-right">
+            <button id="wooey-form-submit" type="submit" class="btn btn-primary">{% trans "Submit" %}</button>
+        </div>
+    </form>
+{% endblock center_content %}
+
+{% block right_sidebar_content %}
+<div class="panel panel-default tabpanel">
+    <ul class="nav nav-tabs">
+        {% if request.user.is_authenticated %}
+            <li class="active"><a href="#user-jobs" data-toggle="pill">{% trans "Your Jobs" %}</a></li>
+        {% endif %}
+        <li{% if not request.user.is_authenticated %} class="active"{% endif %}><a href="#all-jobs" data-toggle="pill">{% trans "All Jobs" %}</a></li>
+        <li class="no-hover">
+            <a href="#" id="celery-refresh">
+                <span class="glyphicon glyphicon-refresh"></span>
+                <button class="btn btn-xs btn-link active" id="auto-refresh"> {% trans "Auto" %}</button>
+            </a>
+        </li>
+    </ul>
+    <div class="tab-content">
+        {% if request.user.is_authenticated %}
+            <div role="tabpanel" id="user-jobs" class="panel panel-body tab-pane active table-responsive">
+                <table id="wooey-job-table-user" class="table-responsive table hover stripe" width="100%">
+                <thead>
+                    <th>{% trans "Id" %}</th>
+                    <th>{% trans "Name" %}</th>
+                    <th>{% trans "Status" %}</th>
+                    <th>{% trans "Submitted" %}</th>
+                </thead>
+                <tbody>
+
+                </tbody>
+
+                </table>
+              </div>
+        {% endif %}
+
+      <div role="tabpanel" id="all-jobs" class="panel panel-body tab-pane {% if not request.user.is_authenticated %}active{% endif %} table-responsive">
+        <table id="wooey-job-table-anon" class="table-responsive table hover stripe" width="100%">
+        <thead>
+            <th>{% trans "Id" %}</th>
+            <th>{% trans "Name" %}</th>
+            <th>{% trans "Status" %}</th>
+            <th>{% trans "Submitted" %}</th>
+        </thead>
+        <tbody>
+
+        </tbody>
+
+        </table>
+      </div>
+    </div>
+</div>
+{% endblock right_sidebar_content %}
+
+{% block inline_js %}
+{{ block.super }}
+<script type="text/javascript">
+
+    $(document).ready(function(){
+        var filesUploaded = {};
+
+        var loadWooeyScript = function(url, params, form){
+            $.get(url, params, function(data){
+                form.attr('action', data.action);
+                var $wooey_tabs = form.find('#wooey-script-tabs');
+                var $wooey_content = form.find('#wooey-script-content');
+                for(var i=0;i<data.groups.length;i++){
+                    $wooey_tabs.append('<li class="wooey-dynamic-tabs" role="presentation"><a href="#wooey_dynamic_tab'+i+'" aria-controls="profile" role="tab" data-toggle="tab">'+data.groups[i].group_name+'</a></li>');
+                    var new_panel = $('<div role="tabpanel" class="tab-pane wooey-dynamic-tabs" id="wooey_dynamic_tab'+i+'"></div>');
+                    new_panel.html(data.groups[i].form);
+                    $wooey_content.append(new_panel);
+                }
+                var $first = $('a[href="#wooey_dynamic_tab0"]');
+                if($first.length)
+                    $first.trigger('click');
+            }, "json");
+
+        };
+
+        var updateScriptInfo = function(url){
+            // set the details of what script we clicked
+            $('.wooey-dynamic-tabs').remove();
+            var $scriptBox = $("a[data-href='"+url+"']");
+            var title = $scriptBox.find('.wooey-script-title').text();
+            var desc = $scriptBox.find('.wooey-script-description').text();
+            $('#wooey-script-description').text(desc);
+            var $title = $('#wooey-script-title');
+            $title.text(title);
+            var currentTop = $(document).scrollTop();
+            var scriptTop = $title.closest('.center-div').offset().top;
+            if (currentTop > scriptTop)
+                window.scrollTo(0, scriptTop);
+        };
+
+        $('.wooey-script-url').click(function(event){
+            event.preventDefault();
+            if($(this).hasClass('disabled'))
+                return;
+            filesUploaded = {};
+            var $jobform = $('#wooey-job-form');
+            clearErrors($jobform);
+            updateScriptInfo($(this).data('href'));
+            loadWooeyScript($(this).data('href'), {}, $jobform);
+        });
+
+        {% if clone_job %}
+            // Track file changes
+            $("input:file").change(function (){
+               var fileName = $(this).val();
+               filesUploaded[$(this).attr('name')] = fileName;
+             });
+            var $jobform = $('#wooey-job-form');
+            updateScriptInfo('{{ clone_job.data_url }}');
+            loadWooeyScript('{{ clone_job.url }}', {job_id: '{{ clone_job.job_id }}'}, $jobform);
+            $jobform.find('#wooey_clone_task_id').val("{{ clone_job.job_id }}");
+        {% endif %}
+
+
+
+
+
+        $('#wooey-form-submit').click(function(event){
+            event.preventDefault();
+            var $form = $(this).closest('form');
+            // if we are cloning a job, we need to specify the fields as the files because the file type input
+            // will be blank
+            var formData = new FormData($form[0]);
+            $('input[type="file"]').each(function(index, value){
+                if(filesUploaded[$(this).attr('name')] === undefined){
+                    // the user has not selected a file to replace this one
+                    formData.append($(this).attr('name'), $(this).siblings('a').text());
+                }
+            });
+            $.ajax({
+                url: $form.attr('action'),
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                async: false,
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function(data){
+                    clearErrors($form);
+                    if(data.valid){
+                        // clear form
+                        $form[0].reset();
+                        celeryRefresh();
+                    }
+                    else{
+                        processErrors($form, data.errors)
+                    }
+                }
+            });
+        });
+
+        // TODO: Make this nice
+        var $jobtable = $('#wooey-job-table-anon');
+        var $jobtable_user = $('#wooey-job-table-user');
+        var wooey_dt = $jobtable.dataTable({
+            "columnDefs": [
+                { "visible": false,  "targets": [ 0 ] },
+            ],
+            "order": [[ 3, "desc" ]]
+        });
+        var wooey_dt_user = $jobtable_user.dataTable({
+            "columnDefs": [
+                { "visible": false,  "targets": [ 0 ] },
+            ],
+            "order": [[ 3, "desc" ]]
+        });
+        $('#wooey-job-table-anon,#wooey-job-table-user').on( 'draw.dt', function () {
+            $('[data-toggle="popover"]').popover({
+                trigger: 'hover',
+                container: 'body',
+                placement: 'auto left',
+            });
+        });
+        $('#wooey-job-table-anon_wrapper,#wooey-job-table-user_wrapper').addClass('col-md-12');
+
+
+        var job_tables = {
+            anon: {
+                table: $jobtable,
+                dt: wooey_dt,
+                dt_api: wooey_dt.api(),
+                jobs: {}
+            },
+            user: {
+                table: $jobtable_user,
+                dt: wooey_dt_user,
+                dt_api: wooey_dt_user.api(),
+                jobs: {}
+            }
+        };
+
+        var task_reloaded = false;
+
+        $('#celery-refresh').click(function(event){
+            celeryRefresh();
+        });
+        var tid, cid;
+        var $refreshBadge = $('<span id="refresh-badge" class="badge">9</span>');
+        $('#auto-refresh').click(function(event){
+            var btn = $(this);
+            if(btn.hasClass('btn-link')) {
+                $.cookie('auto-refresh', true, { expires: 365, path: '/' });
+                tid = setTimeout(celeryRefresh, 10000);
+                cid = setTimeout(updateRefreshBadge, 1000);
+                $refreshBadge.appendTo(btn);
+            }
+            else {
+                $.cookie('auto-refresh', false, { expires: 365, path: '/' });
+                clearTimeout(tid);
+                clearTimeout(cid);
+                $refreshBadge.remove();
+                $refreshBadge.text(9);
+            }
+            btn.toggleClass('btn-link');
+        });
+        var autoRefresh = $.cookie()['auto-refresh'] === 'true';
+        if(autoRefresh) {
+            $('#auto-refresh').trigger('click');
+        }
+        else{
+
+        }
+
+        function updateRefreshBadge(){
+            var val = parseInt($refreshBadge.text())-1;
+            if(val == -1){
+                celeryRefresh();
+                val=9;
+            }
+            $refreshBadge.text(val);
+            cid = setTimeout(updateRefreshBadge, 1000);
+        }
+
+        function celeryRefresh() {
+            $.get("{% url "wooey:celery_results" %}", function(data){
+                for(var table_key in data) {
+                    var dt_jobs = job_tables[table_key]['jobs'];
+                    var wooey_dt = job_tables[table_key]['dt'];
+                    var wooey_dt_api = job_tables[table_key]['dt_api'];
+                    var job_data = data[table_key];
+                    for (var i = 0; i < job_data.length; i++) {
+                        if (!dt_jobs[job_data[i].job_id] || dt_jobs[job_data[i].job_id] != job_data[i].job_status) {
+                            if (dt_jobs[job_data[i].job_id] && dt_jobs[job_data[i].job_id] != job_data[i].job_status) {
+                                var indexes = wooey_dt_api.rows().eq(0).filter(function (rowIdx) {
+                                    return wooey_dt_api.cell(rowIdx, 0).data() === job_data[i].job_id ? true : false;
+                                });
+                                if (window.location.href.indexOf(job_data[i].job_id) != -1) {
+                                    // job update while on task page, stdout/etc will be updated, so just reload the page
+                                    if (!task_reloaded)
+                                        location.reload();
+                                    task_reloaded = true;
+                                    return;
+                                }
+                                wooey_dt.fnUpdate(job_data[i].job_status, indexes[0], 2);
+                            }
+                            else {
+                                var node = wooey_dt_api.row.add([job_data[i].job_id, '<a href="' + job_data[i].job_url + '" data-title="' + job_data[i].job_name + '" data-toggle="popover" data-content="' + job_data[i].job_description + '">' + job_data[i].job_name + '</a>', job_data[i].job_status, job_data[i].job_submitted]);
+                            }
+                            dt_jobs[job_data[i].job_id] = job_data[i].job_status;
+                        }
+                    }
+                    wooey_dt_api.draw();
+
+                }
+            }, "json");
+        }
+        celeryRefresh();
+    });
+</script>
+{% endblock inline_js %}

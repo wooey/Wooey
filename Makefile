@@ -5,5 +5,5 @@ testenv:
 
 test:
 	nosetests tests
-	coverage run --branch --source=djangui --omit=djangui/conf*,djangui/migrations*,djangui/tests*,djangui/backend/ast* `which django-admin.py` test --settings=djangui.test_settings djangui.tests
+	coverage run --branch --source=wooey --omit=wooey/conf*,wooey/migrations*,wooey/tests*,wooey/backend/ast* `which django-admin.py` test --settings=wooey.test_settings wooey.tests
 	coverage report

@@ -210,6 +210,12 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         utils.mkdirs(os.path.join(settings.MEDIA_ROOT, path))
         return path
 
+    def get_relative_path(self, path):
+        # We make the filename relative to the MEDIA_ROOT, this is for filesystems that can change between
+        # machines. We also want to omit any leading path separators so we can join the path to whatever
+        # MEDIA_ROOT is currently at work instead of giving a path from a root
+        return path[path.find(self.get_output_path()):].lstrip(os.path.sep)
+
 
 class ScriptParameterGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     group_name = models.TextField()
@@ -415,8 +421,9 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
             dj_file = WooeyFile(job=self.job, filetype=fileinfo.get('type'),
                                   filepreview=fileinfo.get('preview'), parameter=self)
             save_file = utils.get_storage().open(local_path)
-            dj_file.filepath.save(local_path, save_file, save=False)
-            dj_file.filepath.name = local_path
+            save_path = self.job.get_relative_path(local_path)
+            dj_file.filepath.save(save_path, save_file, save=False)
+            dj_file.filepath.name = save_path
             dj_file.save()
 
 

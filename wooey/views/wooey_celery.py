@@ -63,7 +63,7 @@ def celery_task_command(request):
                 response.update({'valid': True, 'extra': {'task_url': reverse('wooey:celery_results_info', kwargs={'job_id': new_job.pk})}})
             elif command == 'rerun':
                 job.submit_to_celery(user=request.user, rerun=True)
-                response.update({'valid': True, 'redirect': reverse('celery_results_info', kwargs={'job_id': job_id})})
+                response.update({'valid': True, 'redirect': reverse('djangui:celery_results_info', kwargs={'job_id': job_id})})
             elif command == 'clone':
                 response.update({'valid': True, 'redirect': '{0}?job_id={1}'.format(reverse('wooey:wooey_task_launcher'), job_id)})
             elif command == 'delete':

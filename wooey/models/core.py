@@ -197,7 +197,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
 
     @property
     def output_path(self):
-        return os.path.join(djangui_settings.DJANGUI_FILE_DIR, get_valid_filename(self.user.username if self.user is not None else ''),
+        return os.path.join(wooey_settings.WOOEY_FILE_DIR, get_valid_filename(self.user.username if self.user is not None else ''),
                             get_valid_filename(self.script.slug if not self.script.save_path else self.script.save_path), str(self.pk))
 
     def get_output_path(self):

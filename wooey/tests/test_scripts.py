@@ -11,6 +11,7 @@ class ScriptAdditionTests(mixins.ScriptFactoryMixin, TestCase):
     def test_command_order(self):
         script = os.path.join(config.WOOEY_TEST_SCRIPTS, 'command_order.py')
         new_file = utils.get_storage(local=True).save(os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, 'command_order.py'), open(script))
+        new_file = utils.get_storage(local=True).path(new_file)
         added, errors = utils.add_wooey_script(script=new_file, group=None)
         self.assertEqual(added, True, errors)
         job = utils.create_wooey_job(script_pk=1, data={'job_name': 'abc', 'link': 'alink', 'name': 'aname'})

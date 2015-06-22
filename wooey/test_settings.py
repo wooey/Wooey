@@ -1,6 +1,7 @@
 # copied from django-compressor since I like their style
 import os
 import django
+DEBUG = True
 
 TEST_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'tests')
 
@@ -39,6 +40,9 @@ STATIC_URL = '/static/'
 
 
 STATIC_ROOT = os.path.join(TEST_DIR, 'static')
+
+MEDIA_URL = '/files/'
+MEDIA_ROOT = os.path.join(TEST_DIR, 'media')
 
 if django.VERSION[:2] < (1, 6):
     TEST_RUNNER = 'discover_runner.DiscoverRunner'

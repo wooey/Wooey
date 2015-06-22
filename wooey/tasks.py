@@ -63,6 +63,7 @@ def submit_script(**kwargs):
                     dj_file.filepath.delete(False)
                     if local_storage.exists(path):
                         local_storage.delete(path)
+                    # TODO: This needs to be tested to make sure it's being nuked
                     if remote_storage.exists(path):
                         remote_storage.delete(path)
             [i.delete() for i in to_delete]

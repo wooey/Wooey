@@ -4,7 +4,6 @@ description = """
 Create a Django app with Wooey setup.
 """
 import sys
-import six
 import os
 import subprocess
 import shutil
@@ -56,7 +55,6 @@ def main():
     for template_file, dest_dir in template_files:
         template_file = open(template_file)
         content = template_file.read()
-        content = six.u(content)
         template = django_compat.Engine().from_string(content)
         content = template.render(context)
         content = content.encode('utf-8')

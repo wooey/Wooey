@@ -43,7 +43,7 @@ Both of our tools were based on our needs as data scientists to have a system th
 
 There is a bootstrapper included with wooey, which will create a Django project and setup most of the needed settings automagically for you.
 
-    1. wooify.py -p ProjectName
+    1. wooify -p ProjectName
     2. Follow the instructions at the end of the bootstrapper
        to create the admin user and access the admin page
     3. Login to the admin page wherever the project is

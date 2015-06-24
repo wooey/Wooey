@@ -4,6 +4,6 @@ testenv:
 	pip install -e .
 
 test:
-	nosetests tests
-	coverage run --branch --source=wooey --omit=wooey/conf*,wooey/migrations*,wooey/tests*,wooey/backend/ast* `which django-admin.py` test --settings=wooey.test_settings wooey.tests
+	nosetests --with-coverage --cover-erase --cover-package=wooey tests
+	coverage run --branch --source=wooey `which django-admin.py` test --settings=wooey.test_settings wooey.tests
 	coverage report

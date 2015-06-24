@@ -11,6 +11,7 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.db import models
 from django.conf import settings
+from django.core.files.storage import SuspiciousFileOperation
 from django.core.urlresolvers import reverse_lazy, reverse
 from django.contrib.auth.models import Group
 from django.utils.translation import gettext_lazy as _
@@ -287,7 +288,13 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
         app_label = 'wooey'
 
     def __str__(self):
-        return '{}: {}'.format(self.parameter.script_param, self.value)
+        try:
+            value = self.value
+        except IOError:
+            value = _('FILE NOT FOUND')
+        except SuspiciousFileOperation:
+            value = _('File outside of project')
+        return '{}: {}'.format(self.parameter.script_param, value)
 
     def get_subprocess_value(self):
         value = self.value

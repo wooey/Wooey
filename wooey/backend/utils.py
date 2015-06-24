@@ -94,18 +94,28 @@ def load_scripts():
                 'group': script.script_group, 'scripts': []
             })
             dj_scripts[key] = group
-            try:
-                # make sure we can load the form
-                get_master_form(script)
-                # the url mapping is script_group/script_name
-                group['scripts'].append((script.script_order, script))
-            except:
-                sys.stdout.write('Traceback while loading {0}:\n {1}\n'.format(script, traceback.format_exc()))
-                continue
+            group['scripts'].append((script.script_order, script))
+
     for group_pk, group_info in six.iteritems(dj_scripts):
         # order scripts
         group_info['scripts'].sort(key=itemgetter(0))
-        group_info['scripts'] = [i[1] for i in group_info['scripts']]
+        latest_scripts = OrderedDict()
+        for i in group_info['scripts']:
+            script = i[1]
+            script_name = script.script_name
+            if script_name not in latest_scripts or latest_scripts[script_name].script_version < script.script_version:
+                latest_scripts[script_name] = script
+        valid_scripts = []
+        for i in latest_scripts.values():
+            try:
+                # make sure we can load the form
+                get_master_form(script)
+            except:
+                sys.stdout.write('Traceback while loading {0}:\n {1}\n'.format(script, traceback.format_exc()))
+            else:
+                valid_scripts.append(i)
+        group_info['scripts'] = valid_scripts
+        # keep only the latest version of scripts
     # order groups
     ordered_scripts = OrderedDict()
     for key in sorted(dj_scripts.keys(), key=itemgetter(0)):

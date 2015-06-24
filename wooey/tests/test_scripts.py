@@ -1,9 +1,11 @@
 import os
 
 from django.test import TestCase
+from django.conf import settings
 
 from . import config, mixins
 from ..backend import utils
+from ..models import Script
 from .. import settings as wooey_settings
 
 class ScriptAdditionTests(mixins.ScriptFactoryMixin, TestCase):
@@ -23,3 +25,26 @@ class ScriptAdditionTests(mixins.ScriptFactoryMixin, TestCase):
         # Check the job command
         commands = utils.get_job_commands(job=job)[2:]
         self.assertEqual(['alink', 'aname'], commands)
+
+    def test_script_upgrade(self):
+        script_path = os.path.join(config.WOOEY_TEST_SCRIPTS, 'command_order.py')
+        new_file = utils.get_storage(local=True).save(os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, 'command_order.py'), open(script_path))
+        new_file = utils.get_storage(local=True).path(new_file)
+        added, errors = utils.add_wooey_script(script=new_file, group=None)
+        self.assertEqual(added, True, errors)
+        # upgrade script
+        script = Script.objects.get(pk=1)
+        new_script = utils.get_storage(local=True).save(os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, 'command_order.py'), open(script_path))
+        new_script = utils.get_storage(local=True).path(new_script)
+        script.script_path = new_script
+        # we are going to be cloning this, so we lose the old object
+        old_pk, old_version = script.pk, script.script_version
+        script.save()
+        self.assertNotEqual(old_pk, script.pk)
+        self.assertNotEqual(old_version, script.script_version)
+        # asset we are using the latest script in the frontend
+        # this is kind of hacky, we should have a better class for WOOEY_SCRIPTS to handle this
+        for group_index, group in settings.WOOEY_SCRIPTS.items():
+            for group_script in group['scripts']:
+                # we should have only 1 script
+                self.assertEqual(group_script.pk, script.pk)

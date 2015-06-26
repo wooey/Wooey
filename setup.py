@@ -12,11 +12,11 @@ setup(
     version='0.2.6',
     packages=find_packages(),
     scripts=['scripts/wooify.py'],
-    install_requires = ['Django>=1.6', 'django-autoslug', 'django-celery', 'six'],
+    install_requires = ['Django>=1.6', 'django-autoslug', 'django-celery', 'six', 'clinto'],
     include_package_data=True,
     license='GPLv3',
     description='A Django app which creates a web GUI and task interface for argparse scripts',
-    url='http://www.github.com/chris7/wooey',
+    url='http://www.github.com/wooey/django-djangui',
     author='Chris Mitchell',
     author_email='chris.mit7@gmail.com',
     classifiers=[

@@ -17,7 +17,7 @@ class WooeyFormFactory(object):
 
     @staticmethod
     def get_field(param, initial=None):
-        field = param.form_field
+        form_field = param.form_field
         choices = json.loads(param.choices)
         field_kwargs = {'label': param.script_param.title(),
                         'required': param.required,
@@ -25,12 +25,12 @@ class WooeyFormFactory(object):
                         }
         multiple_choices = param.multiple_choice
         if choices:
-            field = 'MultipleChoiceField' if multiple_choices else 'ChoiceField'
+            form_field = 'MultipleChoiceField' if multiple_choices else 'ChoiceField'
             base_choices = [(None, '----')] if not param.required and not multiple_choices else []
             field_kwargs['choices'] = base_choices+[(str(i), str(i).title()) for i in choices]
-        if field == 'FileField':
+        if form_field == 'FileField':
             if param.is_output:
-                field = 'CharField'
+                form_field = 'CharField'
                 initial = None
             else:
                 if initial is not None:
@@ -38,9 +38,12 @@ class WooeyFormFactory(object):
                     field_kwargs['widget'] = forms.ClearableFileInput()
         if initial is not None:
             field_kwargs['initial'] = initial
-        field = getattr(forms, field)
+        field = getattr(forms, form_field)
         field = field(**field_kwargs)
-        field._wooey_multi_field = multiple_choices if field != 'MultipleChoiceField' else False
+        if form_field != 'MultipleChoiceField' and multiple_choices:
+            field.widget.attrs.update({
+                'data-wooey-multiple': True,
+            })
         return field
 
     def get_group_forms(self, model=None, pk=None, initial=None):
@@ -75,8 +78,7 @@ class WooeyFormFactory(object):
                 form.fields['wooey_type'].initial = pk
             for field_pk, field in six.iteritems(group_info['fields']):
                 form.fields[field_pk] = field
-            d['groups'].append({'group_name': group_info['group'], 'form': str(form), 'multi-input-fields':
-                [field_name for field_name, field in six.iteritems(form.fields) if getattr(field, '_wooey_multi_field', False)]})
+            d['groups'].append({'group_name': group_info['group'], 'form': str(form)})
         try:
             self.wooey_forms[pk]['groups'] = d
         except KeyError:

@@ -137,9 +137,15 @@
 
         var multi_selector = 'a[href=#wooey-multi-input]';
         var all_multi_selectors = 'a[href=#wooey-multi-input], a[href=#wooey-multi-input-remove]';
-        var input_selector = 'input, select'
+        var input_selector = 'input, select';
+        var wooey_multiple_choice = '[data-wooey-multiple]';
 
         var initializeWooeyScript = function(){
+            $(wooey_multiple_choice).each(function(index){
+                var $multi_field = $(this);
+                var $multi_input = getMultiInput('#'+$multi_field.attr('id'), 0);
+                $multi_input.insertAfter($multi_field);
+            });
             var $multi_selector = $(multi_selector);
             $multi_selector.click(function(event){
                 event.preventDefault();
@@ -207,13 +213,6 @@
                     var new_panel = $('<div role="tabpanel" class="tab-pane wooey-dynamic-tabs" id="wooey_dynamic_tab'+i+'"></div>');
                     new_panel.html(data.groups[i].form);
                     $wooey_content.append(new_panel);
-                    // TODO: See if there is a better way to achieve this
-                    var multi_fields = data.groups[i]['multi-input-fields'];
-                    for(var i=0;i<multi_fields.length;i++){
-                        var multi_field = '#id_' + multi_fields[i];
-                        var $multi_input = getMultiInput(multi_field, 0);
-                        $multi_input.insertAfter($(multi_field));
-                    }
                 }
                 var $first = $('a[href="#wooey_dynamic_tab0"]');
                 if($first.length)

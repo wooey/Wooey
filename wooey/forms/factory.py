@@ -23,9 +23,10 @@ class WooeyFormFactory(object):
                         'required': param.required,
                         'help_text': param.param_help,
                         }
+        multiple_choices = param.multiple_choice
         if choices:
-            field = 'ChoiceField'
-            base_choices = [(None, '----')] if not param.required else []
+            field = 'MultipleChoiceField' if multiple_choices else 'ChoiceField'
+            base_choices = [(None, '----')] if not param.required and not multiple_choices else []
             field_kwargs['choices'] = base_choices+[(str(i), str(i).title()) for i in choices]
         if field == 'FileField':
             if param.is_output:
@@ -38,7 +39,9 @@ class WooeyFormFactory(object):
         if initial is not None:
             field_kwargs['initial'] = initial
         field = getattr(forms, field)
-        return field(**field_kwargs)
+        field = field(**field_kwargs)
+        field._wooey_multi_field = multiple_choices if field != 'MultipleChoiceField' else False
+        return field
 
     def get_group_forms(self, model=None, pk=None, initial=None):
         pk = int(pk) if pk is not None else pk
@@ -72,7 +75,8 @@ class WooeyFormFactory(object):
                 form.fields['wooey_type'].initial = pk
             for field_pk, field in six.iteritems(group_info['fields']):
                 form.fields[field_pk] = field
-            d['groups'].append({'group_name': group_info['group'], 'form': str(form)})
+            d['groups'].append({'group_name': group_info['group'], 'form': str(form), 'multi-input-fields':
+                [field_name for field_name, field in six.iteritems(form.fields) if getattr(field, '_wooey_multi_field', False)]})
         try:
             self.wooey_forms[pk]['groups'] = d
         except KeyError:

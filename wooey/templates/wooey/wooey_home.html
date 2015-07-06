@@ -135,6 +135,68 @@
     $(document).ready(function(){
         var filesUploaded = {};
 
+        var multi_selector = 'a[href=#wooey-multi-input]';
+        var all_multi_selectors = 'a[href=#wooey-multi-input], a[href=#wooey-multi-input-remove]';
+        var input_selector = 'input, select'
+
+        var initializeWooeyScript = function(){
+            var $multi_selector = $(multi_selector);
+            $multi_selector.click(function(event){
+                event.preventDefault();
+                var target = $(this).data('target');
+                var $target = $(target);
+                var $multi_input = $(this);
+                var $container = $(this).closest('tr');
+                var $new_target = $container.clone();
+                $new_target.find(all_multi_selectors).remove();
+                var $new_input = $new_target.find(input_selector).last();
+                // See if we have made this a multi field yet
+                var target_id = $target.attr('id');
+                var count = $multi_input.data('count');
+                if(count === 0){
+                    $target.attr('id', target_id+"_0");
+                    $multi_input.data('target', '#'+target_id+"_0");
+                }
+                else{
+                    target_id = target_id.replace(/_0$/, '');
+                }
+                count += 1;
+                var new_target_id = target_id+'_'+count;
+                $new_input.attr('id', new_target_id);
+                $new_target.insertAfter($container);
+                // update our add a new input button
+                $multi_input.data('count', count);
+                $multi_input.detach();
+
+
+                // add a way to delete the field
+                var $remove_multi = removeMultiInput($multi_input.data('target'));
+                $remove_multi.insertAfter($new_input);
+
+                // Insert our add a new field after we add the minus;
+                $multi_input.insertAfter($new_input);
+            });
+        };
+
+        var getMultiInput = function(multi_field, multi_count){
+            return $('<a href="#wooey-multi-input" data-target="'+multi_field+'" data-count='+multi_count+'><span class="glyphicon glyphicon-plus"></span></a>')
+        };
+
+        var removeMultiInput = function(multi_field){
+            var $remove_input = $('<a href="#wooey-multi-input-remove" data-target="'+multi_field+'"><span class="glyphicon glyphicon-minus"></span></a>');
+            $remove_input.click(function(event){
+                event.preventDefault();
+                // move the multi-input to the above container. When we reach the initial element, there is no removal
+                // so this approach will always work
+                var $multi_input = $(this).parent().find(multi_selector);
+                $multi_input.detach();
+                var $parent_container = $(this).closest('tr').prev('tr');
+                $multi_input.insertAfter($parent_container.find(input_selector).last());
+                $(this).closest('tr').remove();
+            });
+            return $remove_input;
+        };
+
         var loadWooeyScript = function(url, params, form){
             $.get(url, params, function(data){
                 form.attr('action', data.action);
@@ -145,12 +207,19 @@
                     var new_panel = $('<div role="tabpanel" class="tab-pane wooey-dynamic-tabs" id="wooey_dynamic_tab'+i+'"></div>');
                     new_panel.html(data.groups[i].form);
                     $wooey_content.append(new_panel);
+                    // TODO: See if there is a better way to achieve this
+                    var multi_fields = data.groups[i]['multi-input-fields'];
+                    for(var i=0;i<multi_fields.length;i++){
+                        var multi_field = '#id_' + multi_fields[i];
+                        var $multi_input = getMultiInput(multi_field, 0);
+                        $multi_input.insertAfter($(multi_field));
+                    }
                 }
                 var $first = $('a[href="#wooey_dynamic_tab0"]');
                 if($first.length)
                     $first.trigger('click');
+                initializeWooeyScript();
             }, "json");
-
         };
 
         var updateScriptInfo = function(url){

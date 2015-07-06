@@ -39,8 +39,20 @@ def get_job_commands(job=None):
     script = job.script
     com = ['python', script.get_script_path()]
     parameters = job.get_parameters()
+    param_dict = OrderedDict()
     for param in parameters:
-        com.extend(param.get_subprocess_value())
+        subproc_dict = param.get_subprocess_value()
+        if subproc_dict is None:
+            continue
+        subproc_param = subproc_dict['parameter']
+        if subproc_param not in param_dict:
+            param_dict[subproc_param] = []
+        subproc_value = subproc_dict.get('value', None)
+        if subproc_value:
+            param_dict[subproc_param].append(subproc_value)
+    for param, values in param_dict.items():
+        com.extend([param])
+        com.extend(values)
     return com
 
 @transaction.atomic
@@ -54,9 +66,12 @@ def create_wooey_job(user=None, script_pk=None, data=None):
     job.save()
     parameters = OrderedDict([(i.slug, i) for i in ScriptParameter.objects.filter(slug__in=data.keys()).order_by('pk')])
     for slug, param in six.iteritems(parameters):
-        new_param = ScriptParameters(job=job, parameter=param)
-        new_param.value = data.get(slug)
-        new_param.save()
+        slug_values = data.get(slug)
+        slug_values = slug_values if isinstance(slug_values, list) else [slug_values]
+        for slug_value in slug_values:
+            new_param = ScriptParameters(job=job, parameter=param)
+            new_param.value = slug_value
+            new_param.save()
     return job
 
 
@@ -173,20 +188,15 @@ def add_wooey_script(script=None, group=None):
     if script_obj:
         wooey_script = script_obj
     # make our parameters
-    CHOICE_MAPPING = {
-
-    }
     for param_group_info in d['inputs']:
         param_group, created = ScriptParameterGroup.objects.get_or_create(group_name=param_group_info.get('group'), script=wooey_script)
         for param in param_group_info.get('nodes'):
-            # TODO: fix choice limits
-            #choice_limit = CHOICE_MAPPING[param.get('choice_limit')]
             # TODO: fix 'file' to be global in argparse
             is_out = True if param.get('upload', None) is False and param.get('type') == 'file' else not param.get('upload', False)
             script_param, created = ScriptParameter.objects.get_or_create(script=wooey_script, short_param=param['param'], script_param=param['name'],
                                                                           is_output=is_out, required=param.get('required', False),
                                                                           form_field=param['model'], default=param.get('default'), input_type=param.get('type'),
-                                                                          choices=json.dumps(param.get('choices')), choice_limit=None,
+                                                                          choices=json.dumps(param.get('choices')), choice_limit=json.dumps(param.get('choice_limit', 1)),
                                                                           param_help=param.get('help'), is_checked=param.get('checked', False),
                                                                           parameter_group=param_group)
     # update our loaded scripts

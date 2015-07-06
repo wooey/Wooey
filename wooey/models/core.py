@@ -256,6 +256,8 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     @property
     def multiple_choice(self):
         choice_limit = json.loads(self.choice_limit)
+        if choice_limit is None:
+            return False
         try:
             choice_limit = int(choice_limit)
         except ValueError:

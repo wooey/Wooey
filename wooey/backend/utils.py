@@ -51,8 +51,10 @@ def get_job_commands(job=None):
         if subproc_value:
             param_dict[subproc_param].append(subproc_value)
     for param, values in param_dict.items():
-        com.extend([param])
-        com.extend(values)
+        if param:
+            com.extend([param])
+        if values:
+            com.extend(values)
     return com
 
 @transaction.atomic

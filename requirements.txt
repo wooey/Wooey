@@ -4,3 +4,4 @@ nose
 factory-boy
 coveralls
 six
+clinto

@@ -17,7 +17,7 @@ from django.core.files import File
 from django.utils.translation import gettext_lazy as _
 from celery.contrib import rdb
 
-from .argparse_specs import ArgParseNodeBuilder
+from clinto.argparse_specs import ArgParseNodeBuilder
 
 from .. import settings as wooey_settings
 

@@ -289,7 +289,6 @@ def test_fastx(filepath):
             return True, rows
     return False, None
 
-@transaction.atomic
 def create_job_fileinfo(job):
     parameters = job.get_parameters()
     from ..models import WooeyFile
@@ -309,7 +308,11 @@ def create_job_fileinfo(job):
                         value = field.value
                     else:
                         field.force_value(None)
-                        field.save()
+                        try:
+                            with transaction.atomic():
+                                field.save()
+                        except:
+                            sys.stderr.write('{}\n'.format(traceback.format_exc()))
                         continue
                 d = {'parameter': field, 'file': value}
                 files.append(d)
@@ -371,7 +374,11 @@ def create_job_fileinfo(job):
                 filepath = group_file['file'].path
                 save_path = job.get_relative_path(filepath)
                 dj_file.filepath.name = save_path
-                dj_file.save()
+                try:
+                    with transaction.atomic():
+                        dj_file.save()
+                except:
+                    sys.stderr.write('Error in saving DJFile: {}\n'.format(traceback.format_exc()))
             except:
                 sys.stderr.write('Error in saving DJFile: {}\n'.format(traceback.format_exc()))
                 continue

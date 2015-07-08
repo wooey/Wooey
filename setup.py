@@ -13,7 +13,7 @@ setup(
     packages=find_packages(),
     scripts=['scripts/wooify'],
     entry_points={'console_scripts': ['wooify = wooey.backend.command_line:bootstrap',]},
-    install_requires = ['Django>=1.6', 'django-autoslug', 'django-celery', 'six'],
+    install_requires = ['Django>=1.6', 'django-autoslug', 'django-celery', 'six', 'clinto'],
     include_package_data=True,
     license='GPLv3',
     description='A Django app which creates a web GUI and task interface for argparse scripts',

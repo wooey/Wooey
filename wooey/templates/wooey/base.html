@@ -185,6 +185,48 @@
 
         .jobs-badge { display: none; }
 
+        .console {
+            background-color:#222;
+            font-family:"Courier New",Courier,monospace
+        }
+
+        .console-body {
+            background: none;
+            border: none;
+        }
+
+        .console-stdout { color: #0f0; }
+        .console-stderr { color: #f00; }
+        .console-command { color: #fff; }
+
+
+        .thumbnail.panel {
+            padding: 0;
+            border-radius: 0;
+            box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.05)
+        }
+
+        . thumbnail.panel .panel-heading { font-weight: bold; }
+
+
+        .panel-heading a:after {
+            font-family:'Glyphicons Halflings';
+            content:"\e114";
+            float: right;
+            color: grey;
+        }
+        .panel-heading a.collapsed:after {
+            content:"\e080";
+        }
+
+        .task-metadata {
+            font-size: 0.9em;
+        }
+
+        .task-metadata .label {
+            font-size: 1em;
+        }
+
         {% block extra_style %}
         {% endblock extra_style %}
     </style>
@@ -214,10 +256,6 @@
                   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Queue <span class="badge jobs-badge" id="jobs-badge-anon">8</span> <span class="caret"></span></a>
 
                   <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-anon-list">
-                    <li><a href="#">Action</a></li>
-                    <li><a href="#">Another action</a></li>
-                    <li><a href="#">Something else here</a></li>
-                    <li><a href="#">Separated link</a></li>
                   </ul>
 
               </li>
@@ -229,10 +267,6 @@
                   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">My Jobs <span class="badge jobs-badge" id="jobs-badge-user">8</span> <span class="caret"></span></a>
 
                   <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-user-list">
-                    <li><a href="#">Action</a></li>
-                    <li><a href="#">Another action</a></li>
-                    <li><a href="#">Something else here</a></li>
-                    <li><a href="#">Separated link</a></li>
                   </ul>
 
               </li>
@@ -259,7 +293,7 @@
 
     {% block center %}
 
-        <div class="center-div {% block center_content_class %}col-md-8 col-xs-6{% endblock center_content_class %}">
+        <div class="center-div {% block center_content_class %}col-md-10 col-xs-6{% endblock center_content_class %}">
 {#                <div{% block center_content_affix %} class="wooey-affix col-md-5" data-spy="affix" data-offset-bottom="0"{% endblock center_content_affix %}>#}
                 {% block center_content %}
                 {% endblock center_content %}
@@ -267,12 +301,6 @@
         </div>
     {% endblock center %}
 
-    {% block right_sidebar %}
-        <div class="col-md-2 col-xs-12">
-        {% block right_sidebar_content %}
-        {% endblock right_sidebar_content %}
-        </div>
-    {% endblock right_sidebar %}
 
 </body>
     {% block js %}

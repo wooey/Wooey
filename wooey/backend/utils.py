@@ -401,9 +401,11 @@ def get_file_previews(job):
     files = WooeyFile.objects.filter(job=job)
     groups = {'all': []}
     for file_info in files:
-        filedict = {'name': file_info.filepath.name, 'preview': json.loads(file_info.filepreview) if file_info.filepreview else None,
+        filedict = {'name': file_info.filepath.name,
+                    'preview': json.loads(file_info.filepreview) if file_info.filepreview else None,
                     'url': get_storage(local=False).url(file_info.filepath.name),
-                    'slug': file_info.parameter.parameter.script_param if file_info.parameter else None}
+                    'slug': file_info.parameter.parameter.script_param if file_info.parameter else None,
+                    'basename': os.path.basename(file_info.filepath.name)}
         try:
             groups[file_info.filetype].append(filedict)
         except KeyError:

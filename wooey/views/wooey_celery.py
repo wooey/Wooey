@@ -22,14 +22,16 @@ from ..django_compat import JsonResponse
 
 def celery_status(request):
     # TODO: This function can use some sprucing up, design a better data structure for returning jobs
-    spanbase = "<span class='label {}' data-toggle='tooltip' data-trigger='hover'>{} <span class='glyphicon {}'></span></span>"
+    #spanbase = "<span class='label {}' data-toggle='tooltip' data-trigger='hover'>{} <span class='glyphicon {}'></span></span>"
+    spanbase = "<span title='{}' class='glyphicon {}'></span> "
+
     STATE_MAPPER = {
         #  Default Primary Success Info Warning Danger
-        WooeyJob.COMPLETED: spanbase.format('label-success', _('Success'), 'glyphicon-ok'),
-        WooeyJob.RUNNING: spanbase.format('label-success',  _('Executing'), 'glyphicon-refresh spinning'),
-        states.PENDING: spanbase.format('label-default', _('Queued'), 'glyphicon-time'),
-        states.REVOKED: spanbase.format('label-danger', _('Halted'), 'glyphicon-stop'),
-        WooeyJob.SUBMITTED: spanbase.format('label-default', _('Waiting'), 'glyphicon-hourglass')
+        WooeyJob.COMPLETED: spanbase.format(_('Success'), 'success glyphicon-ok'),
+        WooeyJob.RUNNING: spanbase.format(_('Executing'), 'success glyphicon-refresh spinning'),
+        states.PENDING: spanbase.format(_('Queued'), 'glyphicon-time'),
+        states.REVOKED: spanbase.format(_('Halted'), 'danger glyphicon-stop'),
+        WooeyJob.SUBMITTED: spanbase.format(_('Waiting'), 'glyphicon-hourglass')
     }
     user = request.user
     if user.is_superuser:

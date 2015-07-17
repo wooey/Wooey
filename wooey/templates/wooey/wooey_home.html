@@ -13,8 +13,8 @@
 </div>
 {% endblock %}
 
-{% block left_sidebar_content %}
-{% endblock %}
+{% block left_sidebar %}{% endblock left_sidebar %}
+{% block center_content_class %}col-md-12 col-xs-12{% endblock center_content_class %}
 
 {% block center_content %}
 
@@ -30,22 +30,23 @@
         {% with group_show=script.script_group|valid_user:request.user %}
             {% if group_show != 'hide' %}
 
-            <div class="thumbnail wooey_script_thumbnail {% if not script.is_active %}wooey_script_disabled {% endif %}">
-            <div class="wooey-script-icons"><span class="glyphicon glyphicon-lock" aria-hidden="true"></span></div>
+            <div class="panel panel-default thumbnail wooey_script_thumbnail {% if not script.is_active %}wooey_script_disabled {% endif %}">
+            <div class="panel-heading">
             {% if script_show == 'disabled' or group_show == 'disabled' %}disabled{% endif %}
 
-            <h4 class="woeey-script-title">
                 {% if script.is_active %}
                     <a href="{% url 'wooey:wooey_script' slug=script.slug %}">{{ script.script_name }}</a>
                 {% else %}
                     {{ script.script_name }}
                 {% endif %}
-            </h4>
-            <p class="wooey-script-description">{{ script.script_description }}</p>
+
+                <a class="icon icon-locked" href="#"></a>
+                <a class="icon icon-favorite" href="#"></a>
+            </div>
+            <div class="panel-body">{{ script.script_description }}</div>
             <div class="wooey-script-group">{{ script.script_group.group_name }}</div>
 
             </div>
-            </a>
             {% endif %}
         {% endwith %}
   </div>

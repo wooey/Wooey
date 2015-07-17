@@ -25,23 +25,15 @@
 
         }
 
-        .wooey_script_thumbnail .wooey-script-icons {
+        .wooey_script_thumbnail .wooey_script_icons {
             position: absolute;
-            top: 2px;
-            right: 2px;
+            top: 5px;
+            right: 5px;
         }
 
-        .wooey_script_thumbail p {
-            color: #333 !important;
-        }
 
         .wooey_script_thumbnail {
-            padding: 0.5em 1em;
             position: relative;
-        }
-
-        .wooey_script_thumbnail:hover {
-            background-color: #f8f8f8;
         }
 
         .wooey_script_disabled:hover {
@@ -202,22 +194,47 @@
 
         .thumbnail.panel {
             padding: 0;
-            border-radius: 0;
-            box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.05)
+            aborder-width: 0;
+            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.05);
         }
 
-        . thumbnail.panel .panel-heading { font-weight: bold; }
+        .panel-body .form-group {
+            margin-left: 1em;
+            margin-right: 1em;
 
+        }
 
-        .panel-heading a:after {
+        .panel-heading {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .page-header {
+            margin: -40px -15px 30px;
+            padding: 60px 20px 10px;
+        }
+
+        .panel-heading h4 { margin: 0px; }
+
+        .glyphicon { font-weight: normal; }
+
+        a.icon:after {
             font-family:'Glyphicons Halflings';
-            content:"\e114";
+            color: rgba(0,0,0,0.3);
             float: right;
-            color: grey;
+            font-weight: normal;
+            padding-left: 5px;
         }
-        .panel-heading a.collapsed:after {
-            content:"\e080";
-        }
+
+        a.icon-collapse:after { content:"\e114"; }
+        a.icon-collapse.collapsed:after { content:"\e080"; }
+
+        a.icon-download:after { content:"\e025"; }
+        a.icon-download:hover:after { color: #337AB7 !important; }
+
+        a.icon-locked:after { content:"\e033"; }
+        a.icon-favorite:after { content:"\e006"; }
+        a.icon-favorite:hover:after { color: #F0AD4E !important; }
 
         .task-metadata {
             font-size: 0.9em;
@@ -226,6 +243,14 @@
         .task-metadata .label {
             font-size: 1em;
         }
+
+        .success { color: #5CB85C }
+        .warning { color: #F0AD4E }
+        .danger { color: #D9534F }
+
+        .center-div { background: url('/static/wooey/pinstripe.png'); }
+
+        .page-header { background: #fff; }
 
         {% block extra_style %}
         {% endblock extra_style %}
@@ -299,6 +324,7 @@
                 {% endblock center_content %}
 {#                </div>#}
         </div>
+
     {% endblock center %}
 
 
@@ -414,7 +440,7 @@
                     for (var i = 0; i < job_data.length; i++) {
                         console.log( job_data[i] );
                         job = job_data[i]
-                        items.push('<li><a href="' + job['job_url'] + '">' + job['job_name'] + ' ' + job['job_status'] + '</a></li>')
+                        items.push('<li><a href="' + job['job_url'] + '">' + job['job_status'] + '&nbsp;' + job['job_name'] + '</a></li>')
 
                     }
                     /* Empty the list: might be nicer to replace, edit, more intelligently */

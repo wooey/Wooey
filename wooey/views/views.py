@@ -2,10 +2,14 @@ from __future__ import absolute_import, unicode_literals
 from collections import defaultdict
 
 from django.views.generic import DetailView, TemplateView
+from django.http import HttpResponse, HttpResponseRedirect
+from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.forms import FileField
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_text
+
+from django.shortcuts import render, redirect
 
 from ..backend import utils
 from ..models import WooeyJob, Script
@@ -13,12 +17,16 @@ from .. import settings as wooey_settings
 from ..django_compat import JsonResponse
 
 
-class WooeyScriptJSON(DetailView):
+class WooeyScriptBase(DetailView):
     model = Script
     slug_field = 'slug'
-    slug_url_kwarg = 'script_name'
+    slug_url_kwarg = 'slug'
 
-    def render_to_response(self, context, **response_kwargs):
+    render_fn = None
+
+    def get_context_data(self, **kwargs):
+        context = super(WooeyScriptBase, self).get_context_data(**kwargs)
+
         # returns the models required and optional fields as html
         job_id = self.kwargs.get('job_id')
         initial = None
@@ -31,14 +39,16 @@ class WooeyScriptJSON(DetailView):
                     value = i.value
                     if value is not None:
                         initial[i.parameter.slug].append(value)
-        d = utils.get_form_groups(model=self.object, initial_dict=initial)
-        return JsonResponse(d)
+
+        context['form'] = utils.get_form_groups(model=self.object, initial=initial, render_fn=self.render_fn)
+        return context
 
     def post(self, request, *args, **kwargs):
         post = request.POST.copy()
         user = request.user if request.user.is_authenticated() else None
         if not wooey_settings.WOOEY_ALLOW_ANONYMOUS and user is None:
-            return JsonResponse({'valid': False, 'errors': {'__all__': [force_text(_('You are not permitted to access this script.'))]}})
+            return {'valid': False, 'errors': {'__all__': [force_text(_('You are not permitted to access this script.'))]}}
+
         form = utils.get_master_form(pk=post['wooey_type'])
         # TODO: Check with people who know more if there's a smarter way to do this
         utils.validate_form(form=form, data=post, files=request.FILES)
@@ -81,9 +91,41 @@ class WooeyScriptJSON(DetailView):
                 if valid is True and group_valid is True:
                     job = utils.create_wooey_job(script_pk=script_pk, user=user, data=form.cleaned_data)
                     job.submit_to_celery()
-                    return JsonResponse({'valid': True})
-            return JsonResponse({'valid': False, 'errors': {'__all__': [force_text(_('You are not permitted to access this script.'))]}})
-        return JsonResponse({'valid': False, 'errors': form.errors})
+                    return {'valid': True, 'job_id': job.id}
+
+            return {'valid': False, 'errors': {'__all__': [force_text(_('You are not permitted to access this script.'))]}}
+
+        return {'valid': False, 'errors': form.errors}
+
+
+class WooeyScriptJSON(WooeyScriptBase):
+
+    # FIXME: the form data is returned as form objects so can be passed to templates
+    # this render_fn allows us to pass the return through a stringify method for JSON
+    render_fn = lambda form: form.as_table()
+
+    def render_to_response(self, *args, **kwargs):
+        data = super(WooeyScriptJSON, self).render_to_response(*args, **kwargs)
+        return JsonResponse(data)
+
+
+    def post(self, *args, **kwargs):
+        data = super(WooeyScriptJSON, self).post(*args, **kwargs)
+        return JsonResponse(data)
+
+class WooeyScriptView(WooeyScriptBase):
+
+    template_name = 'wooey/scripts/script_view.html'
+
+    def post(self, *args, **kwargs):
+        data = super(WooeyScriptView, self).post(*args, **kwargs)
+        if data['valid']:
+            return HttpResponseRedirect( reverse('wooey:celery_results_info', kwargs={'job_id': data['job_id'] }) )
+        else:
+            # FIXME: This works but the form handling here should return the submitted data
+            # may need to refactor the JSON stuff a little bit to make this work
+            return self.get(*args, **kwargs)
+
 
 
 class WooeyHomeView(TemplateView):
@@ -105,23 +147,4 @@ class WooeyHomeView(TemplateView):
 
 class WooeyProfileView(TemplateView):
     template_name = 'wooey/profile/profile_base.html'
-
-
-class WooeyScriptView(TemplateView):
-    template_name = 'wooey/scripts/script_view.html'
-
-    def get_context_data(self, **kwargs):
-        ctx = super(WooeyScriptView, self).get_context_data(**kwargs)
-
-        try:
-            wooey_script = Script.objects.get(slug=ctx.get('slug'))
-        except WooeyJob.DoesNotExist:
-            ctx['script_error'] = _('This script does not exist.')
-        else:
-            user = self.request.user
-            user = None if not user.is_authenticated() and wooey_settings.WOOEY_ALLOW_ANONYMOUS else user
-
-            ctx['script'] = wooey_script
-
-        return ctx
 

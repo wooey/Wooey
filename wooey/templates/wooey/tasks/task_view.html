@@ -37,7 +37,7 @@
             </button>
             <ul class="dropdown-menu" role="menu">
                 {% for archive in task_info.archives %}
-                    <li><a href="{{ archive.url }}">{% if archive.url|endswith:"zip" %}{% trans "As Zip" %}{% else %}{% trans "As tar.gz" %}{% endif %}</a></li>
+                    <li><a href="{{ archive.url }}"><span class="glyphicon glyphicon-compressed"></span>{% if archive.url|endswith:"zip" %} .zip{% else %} .tar.gz{% endif %}</a></li>
                 {% endfor %}
             </ul>
         {% endif %}
@@ -71,7 +71,8 @@
 
 
   <div class="task-metadata">
-      Job <a href="{{ task_info.job.job_url }}">#{{ task_info.job.id }}</a>
+      <a href="{{ task_info.job.script.get_url }}">{{ task_info.job.script.script_name }}</a>
+      • Job <a href="{{ task_info.job.job_url }}">#{{ task_info.job.id }}</a>
       • Priority 1
       • Submitted {{ task_info.job.created_date|timesince }} ago by {{ task_info.job.user }}
       • Updated {{ task_info.last_modified|timesince }} ago
@@ -142,7 +143,10 @@
                       {% for output_file_content in output_files %}
                       <div class="col-sm-6 col-md-4">
                             <div class="thumbnail panel panel-default">
-                                <div class="panel-heading"><span class="glyphicon glyphicon-picture"></span> {{ output_file_content.basename }}</div>
+                                <div class="panel-heading"><span class="glyphicon glyphicon-picture"></span> {{ output_file_content.basename }}
+
+                                <a class="icon icon-download" href="{{ output_file_content.url }}" download></a>
+                                </div>
                                 <div class="panel-body">
                                     <a href="{{ output_file_content.url }}" data-toggle="lightbox" data-gallery="task-images" data-type="image"><img src="{{ output_file_content.url }}" alt="{{ output_file_content.name }}" class="img-responsive"></a>
                                   </div>
@@ -168,7 +172,7 @@
         <!-- Output command and stderr, stdout in console-style view -->
         <div class="col-sm-12 col-md-12">
           <div class="thumbnail panel panel-{% if task_info.job.stderr %}danger{% else %}default{% endif %}">
-                <div class="panel-heading"><span class="glyphicon glyphicon-console"></span> {% trans "Console" %} <a data-toggle="collapse" data-target="#collapse-console" href="#collapse-console"></a></div>
+                <div class="panel-heading"><span class="glyphicon glyphicon-console"></span> {% trans "Console" %} <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-console" href="#collapse-console"></a></div>
 
                 <div id="collapse-console" class="panel-collapse collapse in">
                 <div class="panel-body console">
@@ -189,7 +193,7 @@
         <!-- List all files -->
         <div class="col-sm-12 col-md-12">
             <div class="thumbnail panel panel-default">
-                <div class="panel-heading"> <span class="glyphicon glyphicon-file"></span> {% trans "All Files" %} <a data-toggle="collapse" data-target="#collapse-files" href="#collapse-files"></a></div>
+                <div class="panel-heading"> <span class="glyphicon glyphicon-file"></span> {% trans "All Files" %} <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-files" href="#collapse-files"></a></div>
 
                 <div id="collapse-files" class="panel-collapse collapse in">
                 <div class="panel-body">

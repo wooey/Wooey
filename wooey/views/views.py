@@ -90,14 +90,38 @@ class WooeyHomeView(TemplateView):
     template_name = 'wooey/wooey_home.html'
 
     def get_context_data(self, **kwargs):
-        job_id = self.request.GET.get('job_id')
+        #job_id = self.request.GET.get('job_id')
         ctx = super(WooeyHomeView, self).get_context_data(**kwargs)
-        ctx['wooey_scripts'] = getattr(settings, 'WOOEY_SCRIPTS', {})
-        if job_id:
-            job = WooeyJob.objects.get(pk=job_id)
-            if job.user is None or (self.request.user.is_authenticated() and job.user == self.request.user):
-                ctx['clone_job'] = {'job_id': job_id, 'url': job.get_resubmit_url(), 'data_url': job.script.get_url()}
+        ctx['scripts'] = Script.objects.all()
+        #ctx['wooey_scripts'] = getattr(settings, 'WOOEY_SCRIPTS', {})
+
+        #if job_id:
+        #    job = WooeyJob.objects.get(pk=job_id)
+        #    if job.user is None or (self.request.user.is_authenticated() and job.user == self.request.user):
+        #        ctx['clone_job'] = {'job_id': job_id, 'url': job.get_resubmit_url(), 'data_url': job.script.get_url()}
+
+
         return ctx
 
 class WooeyProfileView(TemplateView):
     template_name = 'wooey/profile/profile_base.html'
+
+
+class WooeyScriptView(TemplateView):
+    template_name = 'wooey/scripts/script_view.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super(WooeyScriptView, self).get_context_data(**kwargs)
+
+        try:
+            wooey_script = Script.objects.get(slug=ctx.get('slug'))
+        except WooeyJob.DoesNotExist:
+            ctx['script_error'] = _('This script does not exist.')
+        else:
+            user = self.request.user
+            user = None if not user.is_authenticated() and wooey_settings.WOOEY_ALLOW_ANONYMOUS else user
+
+            ctx['script'] = wooey_script
+
+        return ctx
+

@@ -78,8 +78,7 @@ class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
         return self.script_name
 
     def get_url(self):
-        return reverse('wooey:wooey_script', kwargs={'script_group': self.script_group.slug,
-                                                  'script_name': self.slug})
+        return reverse('wooey:wooey_script', kwargs={'slug': self.slug})
 
     def get_script_path(self):
         path = self.script_path.path

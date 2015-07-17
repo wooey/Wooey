@@ -1,0 +1,42 @@
+{% extends "wooey/base.html" %}
+{% load i18n %}
+{% load wooey_tags %}
+
+{% block breadcrumbs %} / {{ script.script_name }}{% endblock %}
+
+{% block center_content %}
+
+    <div class="page-header">
+        <h3 id="wooey-script-title">{{ script.script_name }}</h3>
+        <p id="wooey-script-description">{{ script.script_description }}</p>
+    </div>
+    <form id="wooey-job-form" method="POST" action="" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group row">
+            <label for="job-name">{% trans "Job Name" %}</label>
+            <input class="form-control" id="wooey_job_name" type="text" name="job_name" placeholder="{% trans "Job Name" %}"/>
+        </div>
+        <div class="form-group row">
+            <label for="job-description">{% trans "Job Description" %}</label>
+            <textarea class="form-control" id="wooey_job_description" cols="30" rows="5" name="job_description" placeholder="{% trans "Enter job description here..." %}"></textarea>
+        </div>
+        <div role="tabpanel">
+          <!-- Nav tabs -->
+          <ul class="nav nav-tabs" role="tablist" id="wooey-script-tabs">
+{#            <li role="presentation" class="active"><a href="#required" aria-controls="home" role="tab" data-toggle="tab">{% trans "Required" %}</a></li>#}
+          </ul>
+
+          <!-- Tab panes -->
+          <div class="tab-content" id="wooey-script-content">
+            <div role="tabpanel" class="tab-pane active" id="required"></div>
+          </div>
+
+        </div>
+        <input name="wooey_clone_task_id" id="wooey_clone_task_id" type="hidden">
+        <div class="pull-right">
+            <button id="wooey-form-submit" type="submit" class="btn btn-primary">{% trans "Submit" %}</button>
+        </div>
+    </form>
+
+
+{% endblock center_content %}

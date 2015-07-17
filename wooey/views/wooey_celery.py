@@ -22,13 +22,14 @@ from ..django_compat import JsonResponse
 
 def celery_status(request):
     # TODO: This function can use some sprucing up, design a better data structure for returning jobs
-    spanbase = "<span class='glyphicon {}' data-toggle='tooltip' data-trigger='hover' title='{}'></span>"
+    spanbase = "<span class='label {}' data-toggle='tooltip' data-trigger='hover'>{} <span class='glyphicon {}'></span></span>"
     STATE_MAPPER = {
-        WooeyJob.COMPLETED: spanbase.format('glyphicon-ok', _('Success')),
-        WooeyJob.RUNNING: spanbase.format('glyphicon-refresh spinning', _('Executing')),
-        states.PENDING: spanbase.format('glyphicon-time', _('In queue')),
-        states.REVOKED: spanbase.format('glyphicon-stop', _('Halted')),
-        WooeyJob.SUBMITTED: spanbase.format('glyphicon-hourglass', _('Waiting to be queued'))
+        #  Default Primary Success Info Warning Danger
+        WooeyJob.COMPLETED: spanbase.format('label-success', _('Success'), 'glyphicon-ok'),
+        WooeyJob.RUNNING: spanbase.format('label-success',  _('Executing'), 'glyphicon-refresh spinning'),
+        states.PENDING: spanbase.format('label-default', _('Queued'), 'glyphicon-time'),
+        states.REVOKED: spanbase.format('label-danger', _('Halted'), 'glyphicon-stop'),
+        WooeyJob.SUBMITTED: spanbase.format('label-default', _('Waiting'), 'glyphicon-hourglass')
     }
     user = request.user
     if user.is_superuser:

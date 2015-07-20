@@ -19,21 +19,78 @@ from ..models import WooeyJob
 from .. import settings as wooey_settings
 from ..backend.utils import valid_user, get_file_previews
 from ..django_compat import JsonResponse
+from django.db.models import Q
+
+SPANBASE = "<span title='{}' class='glyphicon {}'></span> "
+STATE_MAPPER = {
+    #  Default Primary Success Info Warning Danger
+    WooeyJob.COMPLETED: SPANBASE.format(_('Success'), 'success glyphicon-ok'),
+    WooeyJob.RUNNING: SPANBASE.format(_('Executing'), 'success glyphicon-refresh spinning'),
+    states.PENDING: SPANBASE.format(_('Queued'), 'glyphicon-time'),
+    states.REVOKED: SPANBASE.format(_('Halted'), 'danger glyphicon-stop'),
+    states.FAILURE: SPANBASE.format(_('Failure'), 'danger glyphicon-exclamation-sign'),
+    WooeyJob.SUBMITTED: SPANBASE.format(_('Waiting'), 'glyphicon-hourglass'),
+}
+
+
+
+def generate_job_list(job_query):
+
+    if job_query is None:
+        return []
+
+    jobs = []
+
+    for job in job_query:
+        jobs.append({
+            'id': job.pk,
+            'name': escape(job.job_name),
+            'description': escape(six.u('Script: {}\n{}').format(job.script.script_name, job.job_description)),
+            'url': reverse('wooey:celery_results_info', kwargs={'job_id': job.pk}),
+            'submitted': job.created_date.strftime('%b %d %Y, %H:%M:%S'),
+            'status': STATE_MAPPER.get(job.status, job.status),
+        })
+    return jobs
+
+def get_global_queue(request):
+    jobs = WooeyJob.objects.filter( Q(status=WooeyJob.RUNNING) | Q(status=WooeyJob.SUBMITTED) )
+    return jobs
+
+def global_queue_json(request):
+    jobs = get_global_queue(request)
+    return JsonResponse(generate_job_list(jobs), safe=False)
+
+def get_user_queue(request):
+    user = request.user
+    jobs = WooeyJob.objects.filter(Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None))
+    jobs = jobs.exclude(Q(status=WooeyJob.DELETED) | Q(status=WooeyJob.COMPLETED))
+    return jobs
+
+def user_queue_json(request):
+    jobs = get_user_queue(request)
+    return JsonResponse(generate_job_list(jobs), safe=False)
+
+def get_user_results(request):
+    user = request.user
+    jobs = WooeyJob.objects.filter(Q(status=WooeyJob.COMPLETED) & ( Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None)) )
+    jobs = jobs.exclude(status=WooeyJob.DELETED)
+    return jobs
+
+def user_results_json(request):
+    jobs = get_user_results(request)
+    return JsonResponse(generate_job_list(jobs), safe=False)
+
+def all_queues_json(request):
+    return JsonResponse({
+        'global': generate_job_list(get_global_queue(request)),
+        'user': generate_job_list(get_user_queue(request)),
+        'results': generate_job_list(get_user_results(request)),
+    }, safe=False)
+
+
 
 def celery_status(request):
-    # TODO: This function can use some sprucing up, design a better data structure for returning jobs
-    #spanbase = "<span class='label {}' data-toggle='tooltip' data-trigger='hover'>{} <span class='glyphicon {}'></span></span>"
-    spanbase = "<span title='{}' class='glyphicon {}'></span> "
 
-    STATE_MAPPER = {
-        #  Default Primary Success Info Warning Danger
-        WooeyJob.COMPLETED: spanbase.format(_('Success'), 'success glyphicon-ok'),
-        WooeyJob.RUNNING: spanbase.format(_('Executing'), 'success glyphicon-refresh spinning'),
-        states.PENDING: spanbase.format(_('Queued'), 'glyphicon-time'),
-        states.REVOKED: spanbase.format(_('Halted'), 'danger glyphicon-stop'),
-        states.FAILURE: spanbase.format(_('Failure'), 'danger glyphicon-exclamation-sign'),
-        WooeyJob.SUBMITTED: spanbase.format(_('Waiting'), 'glyphicon-hourglass')
-    }
     user = request.user
     if user.is_superuser:
         jobs = WooeyJob.objects.all()
@@ -42,13 +99,6 @@ def celery_status(request):
         jobs = WooeyJob.objects.filter(Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None))
         jobs = jobs.exclude(status=WooeyJob.DELETED)
     # divide into user and anon jobs
-    def get_job_list(job_query):
-
-        return [{'job_name': escape(job.job_name), 'job_status': STATE_MAPPER.get(job.status, job.status),
-                'job_submitted': job.created_date.strftime('%b %d %Y, %H:%M:%S'),
-                'job_id': job.pk,
-                 'job_description': escape(six.u('Script: {}\n{}').format(job.script.script_name, job.job_description)),
-                'job_url': reverse('wooey:celery_results_info', kwargs={'job_id': job.pk})} for job in job_query]
     d = {'user': get_job_list([i for i in jobs if i.user == user]),
          'anon': get_job_list([i for i in jobs if i.user == None or (user.is_superuser and i.user != user)])}
     return JsonResponse(d, safe=False)

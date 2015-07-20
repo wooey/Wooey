@@ -289,10 +289,10 @@
         <div class="collapse navbar-collapse" id="navbar-collapse-1">
           <ul class="nav navbar-nav navbar-right">
               <!-- List global job queue active, waiting (limit N) -->
-              <li class="dropdown" id="job-list-anon">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Queue <span class="badge jobs-badge" id="jobs-badge-anon">8</span> <span class="caret"></span></a>
+              <li class="dropdown" id="job-list-global">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Queue <span class="badge jobs-badge" id="jobs-badge-global">8</span> <span class="caret"></span></a>
 
-                  <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-anon-list">
+                  <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-global-list">
                   </ul>
 
               </li>
@@ -309,19 +309,18 @@
               </li>
 
               <!-- List latest N completed jobs -->
-              <li class="dropdown" id="job-list-user">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Results <span class="badge jobs-badge" id="jobs-badge-user">8</span> <span class="caret"></span></a>
+              <li class="dropdown" id="job-list-results">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Results <span class="badge jobs-badge" id="jobs-badge-results">8</span> <span class="caret"></span></a>
 
-                  <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-user-list">
+                  <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-results-list">
                   </ul>
 
               </li>
 
-              <!-- Scrapbook link -->
+              <!-- Scrapbook link
               <li class="dropdown" id="job-list-user">
                   <a href="#" role="button" aria-haspopup="true" aria-expanded="false">Scrapbook <span class="badge scrapbook-badge" id="scrapbook-badge-user">8</span></a>
-
-              </li>
+              </li> -->
 
               <li><a href="{% url 'wooey:profile_home' %}"><span class="glyphicon glyphicon-user"> </span> {{ request.user.username }}</a></li>
               <li><a href="{% url "logout" %}?next={{ request.path }}">Logout</a></li>
@@ -445,7 +444,7 @@
 
         function celeryRefresh() {
             /* Update the script status lists (navbar) and count pills */
-            $.get("{% url "wooey:celery_results" %}", function(data){
+            $.get("{% url "wooey:all_queues_json" %}", function(data){
 
                 for(var table_key in data) {
 
@@ -456,7 +455,7 @@
                         $('#jobs-badge-' + table_key).show()
                     } else {
                         / * Disable button */
-
+                        $('#jobs-badge-' + table_key).hide()
                     }
 
 
@@ -466,47 +465,12 @@
                     for (var i = 0; i < job_data.length; i++) {
                         console.log( job_data[i] );
                         job = job_data[i]
-                        items.push('<li><a href="' + job['job_url'] + '">' + job['job_status'] + '&nbsp;' + job['job_name'] + '</a></li>')
+                        items.push('<li><a href="' + job['url'] + '">' + job['status'] + '&nbsp;' + job['name'] + '</a></li>')
 
                     }
                     /* Empty the list: might be nicer to replace, edit, more intelligently */
                     $("#job-list-" + table_key + "-list").empty();
                     $("#job-list-" + table_key + "-list").append(items);
-
-
-
-                }
-
-
-                for(var table_key in data) {
-                    console.log(table_key);
-
-                    var dt_jobs = job_tables[table_key]['jobs'];
-                    var wooey_dt = job_tables[table_key]['dt'];
-                    var wooey_dt_api = job_tables[table_key]['dt_api'];
-                    var job_data = data[table_key];
-                    for (var i = 0; i < job_data.length; i++) {
-                        if (!dt_jobs[job_data[i].job_id] || dt_jobs[job_data[i].job_id] != job_data[i].job_status) {
-                            if (dt_jobs[job_data[i].job_id] && dt_jobs[job_data[i].job_id] != job_data[i].job_status) {
-                                var indexes = wooey_dt_api.rows().eq(0).filter(function (rowIdx) {
-                                    return wooey_dt_api.cell(rowIdx, 0).data() === job_data[i].job_id ? true : false;
-                                });
-                                if (window.location.href.indexOf(job_data[i].job_id) != -1) {
-                                    // job update while on task page, stdout/etc will be updated, so just reload the page
-                                    if (!task_reloaded)
-                                        location.reload();
-                                    task_reloaded = true;
-                                    return;
-                                }
-                                wooey_dt.fnUpdate(job_data[i].job_status, indexes[0], 2);
-                            }
-                            else {
-                                var node = wooey_dt_api.row.add([job_data[i].job_id, '<a href="' + job_data[i].job_url + '" data-title="' + job_data[i].job_name + '" data-toggle="popover" data-content="' + job_data[i].job_description + '">' + job_data[i].job_name + '</a>', job_data[i].job_status, job_data[i].job_submitted]);
-                            }
-                            dt_jobs[job_data[i].job_id] = job_data[i].job_status;
-                        }
-                    }
-                    wooey_dt_api.draw();
 
                 }
             }, "json");
@@ -514,6 +478,8 @@
 
 
         celeryRefresh();
+        /* Update the interface ~15 secs */
+        window.setInterval(celeryRefresh, 15 * 1000);
 
 
         })

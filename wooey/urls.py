@@ -9,7 +9,13 @@ from . import settings as wooey_settings
 
 wooey_patterns = [
     url(r'^jobs/command$', views.celery_task_command, name='celery_task_command'),
-    url(r'^jobs/status$', views.celery_status, name='celery_results'),
+
+    url(r'^jobs/queue/global/json', views.global_queue_json, name='global_queue_json'),
+    url(r'^profile/queue/json$', views.user_queue_json, name='user_queue_json'),
+    url(r'^profile/results/json$', views.user_results_json, name='user_results_json'),
+
+    url(r'^jobs/queue/all/json', views.all_queues_json, name='all_queues_json'),
+
     url(r'^jobs/(?P<job_id>[a-zA-Z0-9\-]+)/$', views.CeleryTaskView.as_view(), name='celery_results_info'),
 
     url(r'^scripts/(?P<slug>[a-zA-Z0-9\-]+)/$', views.WooeyScriptView.as_view(), name='wooey_script'),

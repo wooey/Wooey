@@ -16,7 +16,6 @@ from django.core.files.storage import default_storage
 from django.core.files import File
 from django.utils.translation import gettext_lazy as _
 from celery.contrib import rdb
-from django.template.loader import render_to_string
 
 from clinto.argparse_specs import ArgParseNodeBuilder
 

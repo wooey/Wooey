@@ -1,6 +1,7 @@
 from __future__ import division, absolute_import
 from django import template
 from .. import settings as wooey_settings
+from django.utils.safestring import mark_safe
 
 register = template.Library()
 @register.filter
@@ -25,3 +26,16 @@ def complete_job(status):
     from ..models import WooeyJob
     from celery import states
     return status in (WooeyJob.COMPLETED, states.REVOKED)
+
+@register.filter
+def numericalign(s):
+    """
+    Takes an input string of "number units" splits it
+    and outputs it with each half wrapped in 50% width
+    span. Has the effect of centering numbers on the unit part.
+    :param s:
+    :return: s
+    """
+    print(s)
+    number, units = s.split()
+    return mark_safe('<span class="numericalign numericpart">%s</span><span class="numericalign">&nbsp;%s</span>' % (number, units))

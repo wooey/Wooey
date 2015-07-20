@@ -204,6 +204,10 @@
 
         }
 
+        .panel-nopad {
+            padding: 0;
+        }
+
         .panel-heading {
             font-weight: bold;
             font-size: 1.5rem;
@@ -212,6 +216,7 @@
         .page-header {
             margin: -40px -15px 30px;
             padding: 60px 20px 10px;
+            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         .panel-heading h4 { margin: 0px; }
@@ -252,6 +257,13 @@
 
         .page-header { background: #fff; }
 
+        .numericalign { width: 49%; display: inline-block; }
+        .numericalign.numericpart { text-align:right; }
+
+        .preview-table tr, .preview-table th, .preview-table td { text-overflow: ellipsis; white-space: nowrap; }
+
+        .ellided-continuation > td { padding: 0 8px 8px 8px !important; }
+
         {% block extra_style %}
         {% endblock extra_style %}
     </style>
@@ -276,7 +288,7 @@
         <!-- Collect the nav links, forms, and other content for toggling -->
         <div class="collapse navbar-collapse" id="navbar-collapse-1">
           <ul class="nav navbar-nav navbar-right">
-              <!-- Include job queue listings -->
+              <!-- List global job queue active, waiting (limit N) -->
               <li class="dropdown" id="job-list-anon">
                   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Queue <span class="badge jobs-badge" id="jobs-badge-anon">8</span> <span class="caret"></span></a>
 
@@ -285,17 +297,31 @@
 
               </li>
 
-                <!-- List global job queue active, waiting, completely (latest N) -->
-
               {% if request.user.is_authenticated %}
+
+              <!-- List all currently active, waiting jobs for current user -->
               <li class="dropdown" id="job-list-user">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">My Jobs <span class="badge jobs-badge" id="jobs-badge-user">8</span> <span class="caret"></span></a>
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Jobs <span class="badge jobs-badge" id="jobs-badge-user">8</span> <span class="caret"></span></a>
 
                   <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-user-list">
                   </ul>
 
               </li>
-                <!-- List currently active, waiting and completed jobs (latest N) -->
+
+              <!-- List latest N completed jobs -->
+              <li class="dropdown" id="job-list-user">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Results <span class="badge jobs-badge" id="jobs-badge-user">8</span> <span class="caret"></span></a>
+
+                  <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-user-list">
+                  </ul>
+
+              </li>
+
+              <!-- Scrapbook link -->
+              <li class="dropdown" id="job-list-user">
+                  <a href="#" role="button" aria-haspopup="true" aria-expanded="false">Scrapbook <span class="badge scrapbook-badge" id="scrapbook-badge-user">8</span></a>
+
+              </li>
 
               <li><a href="{% url 'wooey:profile_home' %}"><span class="glyphicon glyphicon-user"> </span> {{ request.user.username }}</a></li>
               <li><a href="{% url "logout" %}?next={{ request.path }}">Logout</a></li>

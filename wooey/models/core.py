@@ -464,6 +464,7 @@ class WooeyFile(WooeyPy2Mixin, models.Model):
     job = models.ForeignKey('WooeyJob')
     filepreview = models.TextField(null=True, blank=True)
     filetype = models.CharField(max_length=255, null=True, blank=True)
+    size_bytes = models.IntegerField(null=True)
     parameter = models.ForeignKey('ScriptParameters', null=True, blank=True)
 
     class Meta:

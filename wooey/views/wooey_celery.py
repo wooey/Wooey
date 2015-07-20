@@ -31,16 +31,19 @@ def celery_status(request):
         WooeyJob.RUNNING: spanbase.format(_('Executing'), 'success glyphicon-refresh spinning'),
         states.PENDING: spanbase.format(_('Queued'), 'glyphicon-time'),
         states.REVOKED: spanbase.format(_('Halted'), 'danger glyphicon-stop'),
+        states.FAILURE: spanbase.format(_('Failure'), 'danger glyphicon-exclamation-sign'),
         WooeyJob.SUBMITTED: spanbase.format(_('Waiting'), 'glyphicon-hourglass')
     }
     user = request.user
     if user.is_superuser:
         jobs = WooeyJob.objects.all()
+        jobs = jobs.exclude(status=WooeyJob.DELETED)
     else:
         jobs = WooeyJob.objects.filter(Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None))
         jobs = jobs.exclude(status=WooeyJob.DELETED)
     # divide into user and anon jobs
     def get_job_list(job_query):
+
         return [{'job_name': escape(job.job_name), 'job_status': STATE_MAPPER.get(job.status, job.status),
                 'job_submitted': job.created_date.strftime('%b %d %Y, %H:%M:%S'),
                 'job_id': job.pk,

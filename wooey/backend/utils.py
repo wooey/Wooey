@@ -16,6 +16,7 @@ from django.core.files.storage import default_storage
 from django.core.files import File
 from django.utils.translation import gettext_lazy as _
 from celery.contrib import rdb
+from django.template.loader import render_to_string
 
 from clinto.argparse_specs import ArgParseNodeBuilder
 
@@ -271,12 +272,25 @@ def test_delimited(filepath):
         rows = []
         try:
             for index, entry in enumerate(reader):
-                if index == 5:
-                    break
                 rows.append(entry)
+
         except Exception as e:
             return False, None
-        return True, rows
+
+        # If > 10 rows, generate preview by slicing top and bottom 5
+        # ? this might not be a great idea for massive files
+        if len(rows) > 10:
+            rows = rows[:5] + [None] + rows[-5:]
+
+        # FIXME: This should be more intelligent:
+        # for small files (<1000 rows?) we should take top and bottom preview 10
+        # for large files we should give up and present top 10 (11)
+        # same rules should apply to columns: this will require us to discard them as they're read
+
+    return True, rows
+
+
+
 
 def test_fastx(filepath):
     # if we can be delimited by + or > we're maybe a fasta/q
@@ -346,7 +360,7 @@ def create_job_fileinfo(job):
             filepath = os.path.join(absbase, filename)
             if os.path.isdir(filepath):
                 continue
-            d = {'name': filename, 'file': get_storage_object(os.path.join(job.save_path, filename))}
+            d = {'name': filename, 'file': get_storage_object(os.path.join(job.save_path, filename)), 'size_bytes': os.path.getsize(filepath)}
             if filename.endswith('.tar.gz') or filename.endswith('.zip'):
                 file_groups['archives'].append(d)
             else:
@@ -383,7 +397,9 @@ def create_job_fileinfo(job):
                 continue
             try:
                 preview = group_file.get('preview')
-                dj_file = WooeyFile(job=job, filetype=file_type, filepreview=preview,
+                size_bytes = group_file.get('size_bytes')
+
+                dj_file = WooeyFile(job=job, filetype=file_type, filepreview=preview, size_bytes=size_bytes,
                                     parameter=group_file.get('parameter'))
                 filepath = group_file['file'].path
                 save_path = job.get_relative_path(filepath)
@@ -403,11 +419,15 @@ def get_file_previews(job):
     files = WooeyFile.objects.filter(job=job)
     groups = {'all': []}
     for file_info in files:
+
         filedict = {'name': file_info.filepath.name,
                     'preview': json.loads(file_info.filepreview) if file_info.filepreview else None,
                     'url': get_storage(local=False).url(file_info.filepath.name),
                     'slug': file_info.parameter.parameter.script_param if file_info.parameter else None,
-                    'basename': os.path.basename(file_info.filepath.name)}
+                    'basename': os.path.basename(file_info.filepath.name),
+                    'filetype': file_info.filetype,
+                    'size_bytes': file_info.size_bytes,
+                    }
         try:
             groups[file_info.filetype].append(filedict)
         except KeyError:

@@ -26,14 +26,14 @@ def multi_value_from_datadict(func):
     return value_from_datadict
 
 def multi_value_clean(func):
-    def clean(*args):
+    def clean(*args, **kwargs):
         args = list(args)
         values = args[0]
         ret = []
         for value in values:
             value_args = args
             value_args[0] = value
-            ret.append(func(*value_args))
+            ret.append(func(*value_args, **kwargs))
         return ret
     return clean
 

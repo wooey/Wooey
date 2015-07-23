@@ -136,69 +136,72 @@
         var filesUploaded = {};
 
         var multi_selector = 'a[href=#wooey-multi-input]';
+        var wooey_remove_selector = 'a[href=#wooey-multi-input-remove]';
         var all_multi_selectors = 'a[href=#wooey-multi-input], a[href=#wooey-multi-input-remove]';
         var input_selector = 'input, select';
-        var wooey_multiple_choice = '[data-wooey-multiple]';
+        var wooey_multiple_selector = '[data-wooey-multiple]';
 
         var initializeWooeyScript = function(){
-            $(wooey_multiple_choice).each(function(index){
-                var $multi_field = $(this);
-                var $multi_input = getMultiInput('#'+$multi_field.attr('id'), 0);
+            // initial instances that are multiples (like files) will be wrapped in a tag with the 'data-wooey-multi-start'
+            // and instances without initial data will have the 'django-wooey-multiple' attribute set.
+            var wooey_multipe_choice = [];
+            // Because we set data-wooey-multiple on the widget attribute, every input will receive it. We don't want
+            // to have several add/remove buttons for each clone of the datas
+            $(wooey_multiple_selector).parent().each(
+                    function(element, value){
+                        var $wooey_multiples = $(value).find(wooey_multiple_selector);
+                        var $last = $wooey_multiples.last();
+                        wooey_multipe_choice.push($last);
+                        if($wooey_multiples.length != 1) {
+                            for (var i = 0; i < $wooey_multiples.length; i++) {
+                                var $remove_button = removeMultiInput();
+                                $remove_button.appendTo($wooey_multiples[i]);
+                            }
+                        }
+                    }
+            );
+            for(var i=0;i<wooey_multipe_choice.length;i++) {
+                var $multi_field = wooey_multipe_choice[i];
+                var $multi_input = getMultiInput();
                 $multi_input.insertAfter($multi_field);
-            });
+            }
             var $multi_selector = $(multi_selector);
             $multi_selector.click(function(event){
                 event.preventDefault();
-                var target = $(this).data('target');
-                var $target = $(target);
-                var $multi_input = $(this);
-                var $container = $(this).closest('tr');
+                var $this = $(this);
+                var $container = $this.siblings(wooey_multiple_selector).first();
+                // if the container doesn't have a remove button since it's the first one, add one
+                if($container.find(wooey_remove_selector).length == 0){
+                    removeMultiInput().appendTo($container);
+                }
                 var $new_target = $container.clone();
-                $new_target.find(all_multi_selectors).remove();
-                var $new_input = $new_target.find(input_selector).last();
-                // See if we have made this a multi field yet
-                var target_id = $target.attr('id');
-                var count = $multi_input.data('count');
-                if(count === 0){
-                    $target.attr('id', target_id+"_0");
-                    $multi_input.data('target', '#'+target_id+"_0");
-                }
-                else{
-                    target_id = target_id.replace(/_0$/, '');
-                }
-                count += 1;
-                var new_target_id = target_id+'_'+count;
-                $new_input.attr('id', new_target_id);
                 $new_target.insertAfter($container);
-                // update our add a new input button
-                $multi_input.data('count', count);
-                $multi_input.detach();
-
-
-                // add a way to delete the field
-                var $remove_multi = removeMultiInput($multi_input.data('target'));
-                $remove_multi.insertAfter($new_input);
-
-                // Insert our add a new field after we add the minus;
-                $multi_input.insertAfter($new_input);
+                // remove any existing removal buttons from the container
+                $new_target.find(all_multi_selectors).remove();
+                // add a way to remove the new container
+                var $remove_button = removeMultiInput();
+                $remove_button.appendTo($new_target);
             });
         };
 
-        var getMultiInput = function(multi_field, multi_count){
-            return $('<a href="#wooey-multi-input" data-target="'+multi_field+'" data-count='+multi_count+'><span class="glyphicon glyphicon-plus"></span></a>')
+        var getMultiInput = function(){
+            return $('<a href="#wooey-multi-input"><span class="glyphicon glyphicon-plus"></span></a>')
         };
 
-        var removeMultiInput = function(multi_field){
-            var $remove_input = $('<a href="#wooey-multi-input-remove" data-target="'+multi_field+'"><span class="glyphicon glyphicon-minus"></span></a>');
+        var removeMultiInput = function(){
+            var $remove_input = $('<a href="#wooey-multi-input-remove"><span class="glyphicon glyphicon-minus"></span></a>');
             $remove_input.click(function(event){
                 event.preventDefault();
-                // move the multi-input to the above container. When we reach the initial element, there is no removal
-                // so this approach will always work
-                var $multi_input = $(this).parent().find(multi_selector);
-                $multi_input.detach();
-                var $parent_container = $(this).closest('tr').prev('tr');
-                $multi_input.insertAfter($parent_container.find(input_selector).last());
-                $(this).closest('tr').remove();
+                var $multi_input = $(this).parent(wooey_multiple_selector);
+
+                // all other containers with multi-selections for this parameter
+                var $others = $multi_input.siblings(wooey_multiple_selector);
+                // remove us
+                $multi_input.remove();
+                // if there is only 1 container left, remove the button to remove it
+                if($others.length == 1){
+                    $others.find(wooey_remove_selector).remove();
+                }
             });
             return $remove_input;
         };

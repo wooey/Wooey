@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from collections import defaultdict
+
 from django.views.generic import DetailView, TemplateView
 from django.conf import settings
 from django.forms import FileField
@@ -22,13 +24,14 @@ class WooeyScriptJSON(DetailView):
         initial = None
         if job_id:
             job = WooeyJob.objects.get(pk=job_id)
+            # import pdb; pdb.set_trace();
             if job.user is None or (self.request.user.is_authenticated() and job.user == self.request.user):
-                initial = {}
+                initial = defaultdict(list)
                 for i in job.get_parameters():
                     value = i.value
                     if value is not None:
-                        initial[i.parameter.slug] = value
-        d = utils.get_form_groups(model=self.object, initial=initial)
+                        initial[i.parameter.slug].append(value)
+        d = utils.get_form_groups(model=self.object, initial_dict=initial)
         return JsonResponse(d)
 
     def post(self, request, *args, **kwargs):

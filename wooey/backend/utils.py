@@ -82,9 +82,9 @@ def get_master_form(model=None, pk=None):
     return DJ_FORM_FACTORY.get_master_form(model=model, pk=pk)
 
 
-def get_form_groups(model=None, pk=None, initial=None):
+def get_form_groups(model=None, pk=None, initial_dict=None):
     from ..forms.factory import DJ_FORM_FACTORY
-    return DJ_FORM_FACTORY.get_group_forms(model=model, pk=pk, initial=initial)
+    return DJ_FORM_FACTORY.get_group_forms(model=model, pk=pk, initial_dict=initial_dict)
 
 def validate_form(form=None, data=None, files=None):
     form.add_wooey_fields()

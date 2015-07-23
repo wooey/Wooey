@@ -11,12 +11,26 @@ from .scripts import WooeyForm
 from ..backend import utils
 from ..models import ScriptParameter
 
+def mutli_render(render_func, field=None):
+    def render(name, values, attrs=None):
+        if not isinstance(values, (list, tuple)):
+            values = [values]
+        # The tag is a marker for our javascript to reshuffle the elements. This is because some widgets have complex rendering with multiple fields
+        return '\n'.join(['<{tag} data-wooey-multiple>{widget}</{tag}>'.format(tag='div', widget=render_func(name, value, attrs)) for value in values])
+    return render
+
 
 class WooeyFormFactory(object):
     wooey_forms = {}
 
     @staticmethod
     def get_field(param, initial=None):
+        """
+        Any extra field attributes for the widget for customization of Wooey at the field level
+         can be added to the widget dictionary, widget_data_dict
+
+        :return: a field class
+        """
         form_field = param.form_field
         choices = json.loads(param.choices)
         field_kwargs = {'label': param.script_param.title(),
@@ -31,23 +45,29 @@ class WooeyFormFactory(object):
         if form_field == 'FileField':
             if param.is_output:
                 form_field = 'CharField'
+        if form_field == 'FieldField':
+            if param.is_output:
                 initial = None
-            else:
-                if initial is not None:
+            elif filter(None, initial):
+                if isinstance(initial, (list, tuple)):
+                    initial = [utils.get_storage_object(value) if not hasattr(value, 'path') else value for value in initial if value is not None]
+                else:
                     initial = utils.get_storage_object(initial) if not hasattr(initial, 'path') else initial
-                    field_kwargs['widget'] = forms.ClearableFileInput()
-        if initial is not None:
-            field_kwargs['initial'] = initial
+                field_kwargs['widget'] = forms.ClearableFileInput()
+        # if not isinstance(initial, (list, tuple)):
+        field_kwargs['initial'] = initial
         field = getattr(forms, form_field)
         field = field(**field_kwargs)
+        widget_data_dict = {}
         if form_field != 'MultipleChoiceField' and multiple_choices:
-            field.widget.attrs.update({
-                'data-wooey-multiple': True,
-            })
+            field.widget.render = mutli_render(field.widget.render, field=field)
+            field.widget.attrs.update(widget_data_dict)
         return field
 
-    def get_group_forms(self, model=None, pk=None, initial=None):
+    def get_group_forms(self, model=None, pk=None, initial_dict=None):
         pk = int(pk) if pk is not None else pk
+        if initial_dict is None:
+            initial_dict = {}
         if pk is not None and pk in self.wooey_forms:
             if 'groups' in self.wooey_forms[pk]:
                 return copy.deepcopy(self.wooey_forms[pk]['groups'])
@@ -56,7 +76,9 @@ class WooeyFormFactory(object):
         script_id_field = forms.CharField(widget=forms.HiddenInput)
         group_map = {}
         for param in params:
-            field = self.get_field(param, initial=initial.get(param.slug) if initial else None)
+            initial_values = initial_dict.get(param.slug, None)
+            field = self.get_field(param, initial=initial_values)
+            field.name = param.slug
             group_id = -1 if param.required else param.parameter_group.pk
             group_name = 'Required' if param.required else param.parameter_group.group_name
             group = group_map.get(group_id, {

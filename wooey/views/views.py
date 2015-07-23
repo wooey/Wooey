@@ -48,13 +48,16 @@ class WooeyScriptJSON(DetailView):
         for i in post:
             if isinstance(form.fields.get(i), FileField):
                 # if we have a value set, reassert this
-                # TODO: Fix this in cloning jobs with multiple files pre-set
-                new_value = post.get(i)
-                if i not in request.FILES and (i not in form.cleaned_data or (not form.cleaned_data[i] and new_value)):
-                    # this is a previously set field, so a cloned job
-                    if new_value is not None:
-                        form.cleaned_data[i] = utils.get_storage(local=False).open(new_value)
-                    to_delete.append(i)
+                new_values = filter(lambda x: x, post.getlist(i))
+                cleaned_values = []
+                for new_value in new_values:
+                    if i not in request.FILES and (i not in form.cleaned_data or (not form.cleaned_data[i] and new_value)):
+                        # this is a previously set field, so a cloned job
+                        if new_value is not None:
+                            cleaned_values.append(utils.get_storage(local=False).open(new_value))
+                        to_delete.append(i)
+                if cleaned_values:
+                    form.cleaned_data[i] = cleaned_values
         for i in to_delete:
             if i in form.errors:
                 del form.errors[i]

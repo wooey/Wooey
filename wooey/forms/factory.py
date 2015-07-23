@@ -6,18 +6,36 @@ import six
 from collections import OrderedDict
 
 from django import forms
+from django.http.request import QueryDict
 
 from .scripts import WooeyForm
 from ..backend import utils
 from ..models import ScriptParameter
 
-def mutli_render(render_func, field=None):
+def mutli_render(render_func):
     def render(name, values, attrs=None):
         if not isinstance(values, (list, tuple)):
             values = [values]
         # The tag is a marker for our javascript to reshuffle the elements. This is because some widgets have complex rendering with multiple fields
         return '\n'.join(['<{tag} data-wooey-multiple>{widget}</{tag}>'.format(tag='div', widget=render_func(name, value, attrs)) for value in values])
     return render
+
+def multi_value_from_datadict(func):
+    def value_from_datadict(data, files, name):
+        return [func(QueryDict('{name}={value}'.format(name=name, value=i)), files, name) for i in data.getlist(name)]
+    return value_from_datadict
+
+def multi_value_clean(func):
+    def clean(*args):
+        args = list(args)
+        values = args[0]
+        ret = []
+        for value in values:
+            value_args = args
+            value_args[0] = value
+            ret.append(func(*value_args))
+        return ret
+    return clean
 
 
 class WooeyFormFactory(object):
@@ -60,7 +78,9 @@ class WooeyFormFactory(object):
         field = field(**field_kwargs)
         widget_data_dict = {}
         if form_field != 'MultipleChoiceField' and multiple_choices:
-            field.widget.render = mutli_render(field.widget.render, field=field)
+            field.widget.render = mutli_render(field.widget.render)
+            field.widget.value_from_datadict = multi_value_from_datadict(field.widget.value_from_datadict)
+            field.clean = multi_value_clean(field.clean)
             field.widget.attrs.update(widget_data_dict)
         return field
 

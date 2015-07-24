@@ -140,36 +140,45 @@
         var all_multi_selectors = 'a[href=#wooey-multi-input], a[href=#wooey-multi-input-remove]';
         var input_selector = 'input, select';
         var wooey_multiple_selector = '[data-wooey-multiple]';
+        var wooey_choice_limit = 'wooey-choice-limit';
+
+        var maxChoices = function($element){
+            $element.popover({
+                content: "{% trans "No more choices may be added for this selection" %}",
+                trigger: 'manual'
+            }).popover('show');
+            setTimeout(function(){$element.popover('destroy')}, 1000);
+        };
 
         var initializeWooeyScript = function(){
-            // initial instances that are multiples (like files) will be wrapped in a tag with the 'data-wooey-multi-start'
-            // and instances without initial data will have the 'django-wooey-multiple' attribute set.
-            var wooey_multipe_choice = [];
-            // Because we set data-wooey-multiple on the widget attribute, every input will receive it. We don't want
-            // to have several add/remove buttons for each clone of the datas
+            // Add the - button so users can remove elements from cloned jobs
             $(wooey_multiple_selector).parent().each(
-                    function(element, value){
-                        var $wooey_multiples = $(value).find(wooey_multiple_selector);
-                        var $last = $wooey_multiples.last();
-                        wooey_multipe_choice.push($last);
-                        if($wooey_multiples.length != 1) {
-                            for (var i = 0; i < $wooey_multiples.length; i++) {
-                                var $remove_button = removeMultiInput();
-                                $remove_button.appendTo($wooey_multiples[i]);
-                            }
+                function(element, value){
+                    var $wooey_multiples = $(value).find(wooey_multiple_selector);
+                    if($wooey_multiples.length != 1) {
+                        for (var i = 0; i < $wooey_multiples.length; i++) {
+                            var $remove_button = removeMultiInput();
+                            $remove_button.appendTo($wooey_multiples[i]);
                         }
                     }
+                }
             );
-            for(var i=0;i<wooey_multipe_choice.length;i++) {
-                var $multi_field = wooey_multipe_choice[i];
-                var $multi_input = getMultiInput();
-                $multi_input.insertAfter($multi_field);
-            }
+
             var $multi_selector = $(multi_selector);
             $multi_selector.click(function(event){
                 event.preventDefault();
                 var $this = $(this);
-                var $container = $this.siblings(wooey_multiple_selector).first();
+
+                var $containers = $this.siblings(wooey_multiple_selector);
+                // check the choice limit, are we at it?
+                var choice_limit = $this.data(wooey_choice_limit);
+                if(choice_limit && ($containers.length == choice_limit)){
+                    // give a notice
+                    maxChoices($this);
+                    return;
+                }
+
+                var $container = $containers.first();
                 // if the container doesn't have a remove button since it's the first one, add one
                 if($container.find(wooey_remove_selector).length == 0){
                     removeMultiInput().appendTo($container);
@@ -182,11 +191,21 @@
                 var $remove_button = removeMultiInput();
                 $remove_button.appendTo($new_target);
             });
+
+            // setup the choice limits for select fields
+            $('select[data-wooey-choice-limit] option').click(function(event){
+                var $this = $(this);
+                var $select = $this.parent();
+                var choice_limit = $select.data(wooey_choice_limit);
+                var selected = $select.find(':selected').length;
+                if(choice_limit && (selected > choice_limit)){
+                    $this.prop("selected", false);
+                    maxChoices($select);
+                    return;
+                }
+            })
         };
 
-        var getMultiInput = function(){
-            return $('<a href="#wooey-multi-input"><span class="glyphicon glyphicon-plus"></span></a>')
-        };
 
         var removeMultiInput = function(){
             var $remove_input = $('<a href="#wooey-multi-input-remove"><span class="glyphicon glyphicon-minus"></span></a>');

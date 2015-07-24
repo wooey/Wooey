@@ -7,17 +7,28 @@ from collections import OrderedDict
 
 from django import forms
 from django.http.request import QueryDict
+from django.forms.utils import flatatt, format_html
+from django.utils.safestring import mark_safe
 
 from .scripts import WooeyForm
 from ..backend import utils
 from ..models import ScriptParameter
 
-def mutli_render(render_func):
+
+def mutli_render(render_func, appender_data_dict=None):
     def render(name, values, attrs=None):
         if not isinstance(values, (list, tuple)):
             values = [values]
         # The tag is a marker for our javascript to reshuffle the elements. This is because some widgets have complex rendering with multiple fields
-        return '\n'.join(['<{tag} data-wooey-multiple>{widget}</{tag}>'.format(tag='div', widget=render_func(name, value, attrs)) for value in values])
+        pieces = ['<{tag} data-wooey-multiple>{widget}</{tag}>'.format(tag='div', widget=render_func(name, value, attrs)) for value in values]
+
+        # we add a final piece that is our button to click for adding. It's useful to have it here instead of the template so we don't
+        # have to reverse-engineer who goes with what
+
+        # build the attribute dict
+        data_attrs = flatatt(appender_data_dict if appender_data_dict is not None else {})
+        pieces.append(format_html('<a href="#wooey-multi-input"{}><span class="glyphicon glyphicon-plus"></span></a>', data_attrs))
+        return mark_safe('\n'.join(pieces))
     return render
 
 def multi_value_from_datadict(func):
@@ -45,17 +56,23 @@ class WooeyFormFactory(object):
     def get_field(param, initial=None):
         """
         Any extra field attributes for the widget for customization of Wooey at the field level
-         can be added to the widget dictionary, widget_data_dict
+         can be added to the widget dictionary, widget_data_dict, or to the appender_data_dict, which
+         is the little plus button. This is useful since there isn't only a single copy of the plus,
+         whereas we can have multiple widgets.
 
         :return: a field class
         """
         form_field = param.form_field
+        widget_data_dict = {}
+        appender_data_dict = {}
+        WOOEY_CHOICE_LIMIT = 'data-wooey-choice-limit'
         choices = json.loads(param.choices)
         field_kwargs = {'label': param.script_param.title(),
                         'required': param.required,
                         'help_text': param.param_help,
                         }
         multiple_choices = param.multiple_choice
+        choice_limit = param.max_choices
         if choices:
             form_field = 'MultipleChoiceField' if multiple_choices else 'ChoiceField'
             base_choices = [(None, '----')] if not param.required and not multiple_choices else []
@@ -76,12 +93,16 @@ class WooeyFormFactory(object):
         field_kwargs['initial'] = initial
         field = getattr(forms, form_field)
         field = field(**field_kwargs)
-        widget_data_dict = {}
+
         if form_field != 'MultipleChoiceField' and multiple_choices:
-            field.widget.render = mutli_render(field.widget.render)
+            field.widget.render = mutli_render(field.widget.render, appender_data_dict=appender_data_dict)
             field.widget.value_from_datadict = multi_value_from_datadict(field.widget.value_from_datadict)
             field.clean = multi_value_clean(field.clean)
-            field.widget.attrs.update(widget_data_dict)
+            if choice_limit > 0:
+                appender_data_dict[WOOEY_CHOICE_LIMIT] = choice_limit
+        elif multiple_choices and choice_limit>0:
+            widget_data_dict[WOOEY_CHOICE_LIMIT] = choice_limit
+        field.widget.attrs.update(widget_data_dict)
         return field
 
     def get_group_forms(self, model=None, pk=None, initial_dict=None):

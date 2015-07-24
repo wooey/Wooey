@@ -4,6 +4,7 @@ import tarfile
 import os
 import zipfile
 import six
+import traceback
 
 from django.utils.text import get_valid_filename
 from django.core.files.storage import default_storage
@@ -112,8 +113,14 @@ def submit_script(**kwargs):
                     continue
                 if path == zip_out:
                     continue
-                zip.write(path, arcname=os.path.join(arcname, filename))
-        zip.close()
+                try:
+                    zip.write(path, arcname=os.path.join(arcname, filename))
+                except:
+                    stderr = '{}\n{}'.format(stderr, traceback.format_exc())
+        try:
+            zip.close()
+        except:
+            stderr = '{}\n{}'.format(stderr, traceback.format_exc())
 
         # save all the files generated as well to our default storage for ephemeral storage setups
         if wooey_settings.WOOEY_EPHEMERAL_FILES:

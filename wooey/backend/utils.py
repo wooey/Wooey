@@ -21,6 +21,7 @@ from clinto.argparse_specs import ArgParseNodeBuilder
 
 from .. import settings as wooey_settings
 
+
 def sanitize_name(name):
     return name.replace(' ', '_').replace('-', '_')
 
@@ -371,10 +372,10 @@ def create_job_fileinfo(job):
     # establish grouping by inferring common things
     file_groups['all'] = files
     import imghdr
-    file_groups['images'] = []
+    file_groups['image'] = []
     for filemodel in files:
         if imghdr.what(filemodel['file'].path):
-            file_groups['images'].append(filemodel)
+            file_groups['image'].append(filemodel)
     file_groups['tabular'] = []
     file_groups['fasta'] = []
 
@@ -413,13 +414,13 @@ def create_job_fileinfo(job):
                 continue
 
 
-def get_file_previews(job):
-    from ..models import WooeyFile
-    files = WooeyFile.objects.filter(job=job)
+def get_grouped_file_previews(files):
     groups = {'all': []}
     for file_info in files:
 
-        filedict = {'name': file_info.filepath.name,
+        filedict = {'id': file_info.id,
+                    'object': file_info,
+                    'name': file_info.filepath.name,
                     'preview': json.loads(file_info.filepreview) if file_info.filepreview else None,
                     'url': get_storage(local=False).url(file_info.filepath.name),
                     'slug': file_info.parameter.parameter.script_param if file_info.parameter else None,
@@ -434,3 +435,15 @@ def get_file_previews(job):
         if file_info.filetype != 'all':
             groups['all'].append(filedict)
     return groups
+
+
+def get_file_previews(job):
+    from ..models import WooeyFile
+    files = WooeyFile.objects.filter(job=job)
+    return get_grouped_file_previews(files)
+
+
+def get_file_previews_by_ids(ids):
+    from ..models import WooeyFile
+    files = WooeyFile.objects.filter(pk__in=ids)
+    return get_grouped_file_previews(files)

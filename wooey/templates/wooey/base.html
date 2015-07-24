@@ -215,8 +215,12 @@
 
         .page-header {
             margin: -40px -15px 30px;
-            padding: 60px 20px 10px;
+            padding: 20px 20px 20px;
             box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .center-div {
+            margin-top: 40px;
         }
 
         .panel-heading h4 { margin: 0px; }
@@ -238,8 +242,13 @@
         a.icon-download:hover:after { color: #337AB7 !important; }
 
         a.icon-locked:after { content:"\e033"; }
+
         a.icon-favorite:after { content:"\e006"; }
         a.icon-favorite:hover:after { color: #F0AD4E !important; }
+        a.icon-favorite:hover:after, .is-favorite a.icon-favorite:after { color: #F0AD4E !important; }
+
+        a.icon-pushpin:after { content:"\e146"; }
+        a.icon-pushpin:hover:after, .is-favorite a.icon-pushpin:after { color: #F0AD4E !important; }
 
         .task-metadata {
             font-size: 0.9em;
@@ -289,8 +298,8 @@
         <div class="collapse navbar-collapse" id="navbar-collapse-1">
           <ul class="nav navbar-nav navbar-right">
               <!-- List global job queue active, waiting (limit N) -->
-              <li class="dropdown" id="job-list-global">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Queue <span class="badge jobs-badge" id="jobs-badge-global">8</span> <span class="caret"></span></a>
+              <li class="dropdown disabled" id="job-list-global">
+                  <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Queue <span class="badge jobs-badge" id="jobs-badge-global">8</span> <span class="caret"></span></a>
 
                   <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-global-list">
                   </ul>
@@ -300,8 +309,8 @@
               {% if request.user.is_authenticated %}
 
               <!-- List all currently active, waiting jobs for current user -->
-              <li class="dropdown" id="job-list-user">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Jobs <span class="badge jobs-badge" id="jobs-badge-user">8</span> <span class="caret"></span></a>
+              <li class="dropdown disabled" id="job-list-user">
+                  <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Jobs <span class="badge jobs-badge" id="jobs-badge-user">8</span> <span class="caret"></span></a>
 
                   <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-user-list">
                   </ul>
@@ -309,18 +318,17 @@
               </li>
 
               <!-- List latest N completed jobs -->
-              <li class="dropdown" id="job-list-results">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Results <span class="badge jobs-badge" id="jobs-badge-results">8</span> <span class="caret"></span></a>
+              <li class="dropdown disabled" id="job-list-results">
+                  <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Results <span class="badge jobs-badge" id="jobs-badge-results">8</span> <span class="caret"></span></a>
 
                   <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-results-list">
                   </ul>
 
               </li>
 
-              <!-- Scrapbook link
               <li class="dropdown" id="job-list-user">
-                  <a href="#" role="button" aria-haspopup="true" aria-expanded="false">Scrapbook <span class="badge scrapbook-badge" id="scrapbook-badge-user">8</span></a>
-              </li> -->
+                  <a href="{% url 'wooey:scrapbook' %}" role="button" aria-haspopup="true" aria-expanded="false">Scrapbook<!-- <span class="badge scrapbook-badge" id="scrapbook-badge-user">0</span>--></a>
+              </li>
 
               <li><a href="{% url 'wooey:profile_home' %}"><span class="glyphicon glyphicon-user"> </span> {{ request.user.username }}</a></li>
               <li><a href="{% url "logout" %}?next={{ request.path }}">Logout</a></li>
@@ -334,20 +342,12 @@
 
 {% block outer_content %}{% endblock %}
 
-    {% block left_sidebar %}
-        <div class="col-md-2 col-xs-6">
-            {% block left_sidebar_content %}
-            {% endblock left_sidebar_content %}
-        </div>
-    {% endblock left_sidebar %}
 
     {% block center %}
 
         <div class="center-div {% block center_content_class %}col-md-10 col-xs-6{% endblock center_content_class %}">
-{#                <div{% block center_content_affix %} class="wooey-affix col-md-5" data-spy="affix" data-offset-bottom="0"{% endblock center_content_affix %}>#}
-                {% block center_content %}
-                {% endblock center_content %}
-{#                </div>#}
+            {% block center_content %}
+            {% endblock center_content %}
         </div>
 
     {% endblock center %}
@@ -366,7 +366,6 @@
     {% block inline_js %}
 
         <script type="text/javascript">
-
 
             function clearErrors($form){
                 $form.find('.errorlist').remove();
@@ -437,52 +436,127 @@
                     else{
                         processErrors($form, data.errors)
                     }
-                }
+                    }
+                });
             });
+
+
+            function celeryRefresh() {
+                /* Update the script status lists (navbar) and count pills */
+                $.get("{% url "wooey:all_queues_json" %}", function(data){
+
+                    for(var table_key in data) {
+
+                        /* Do total counts first */
+                        var total_jobs = data[table_key].length
+                        $('#jobs-badge-' + table_key).text( total_jobs )
+                        if( total_jobs > 0){
+                            $('#jobs-badge-' + table_key).show()
+                            $('#job-list-' + table_key).removeClass('disabled')
+                            $('#job-list-' + table_key + ' > a').removeClass('disabled')
+                        } else {
+                            / * Disable button */
+                            $('#jobs-badge-' + table_key).hide()
+                            $('#job-list-' + table_key).addClass('disabled')
+                            $('#job-list-' + table_key + ' > a').addClass('disabled')
+                        }
+
+
+                        var items = [];
+                        /* Now add the jobs to the dropdown lists */
+                        var job_data = data[table_key];
+                        for (var i = 0; i < job_data.length; i++) {
+                            job = job_data[i]
+                            items.push('<li><a href="' + job['url'] + '">' + job['status'] + '&nbsp;' + job['name'] + '</a></li>')
+
+                        }
+                        /* Empty the list: might be nicer to replace, edit, more intelligently */
+                        $("#job-list-" + table_key + "-list").empty();
+                        $("#job-list-" + table_key + "-list").append(items);
+
+                    }
+                }, "json");
+            }
+
+
+            celeryRefresh();
+            /* Update the interface ~15 secs */
+            window.setInterval(celeryRefresh, 15 * 1000);
+
+
         });
 
-
-        function celeryRefresh() {
-            /* Update the script status lists (navbar) and count pills */
-            $.get("{% url "wooey:all_queues_json" %}", function(data){
-
-                for(var table_key in data) {
-
-                    /* Do total counts first */
-                    var total_jobs = data[table_key].length
-                    $('#jobs-badge-' + table_key).text( total_jobs )
-                    if( total_jobs > 0){
-                        $('#jobs-badge-' + table_key).show()
-                    } else {
-                        / * Disable button */
-                        $('#jobs-badge-' + table_key).hide()
+        // using jQuery
+        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie != '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = jQuery.trim(cookies[i]);
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
                     }
-
-
-                    var items = [];
-                    /* Now add the jobs to the dropdown lists */
-                    var job_data = data[table_key];
-                    for (var i = 0; i < job_data.length; i++) {
-                        console.log( job_data[i] );
-                        job = job_data[i]
-                        items.push('<li><a href="' + job['url'] + '">' + job['status'] + '&nbsp;' + job['name'] + '</a></li>')
-
-                    }
-                    /* Empty the list: might be nicer to replace, edit, more intelligently */
-                    $("#job-list-" + table_key + "-list").empty();
-                    $("#job-list-" + table_key + "-list").append(items);
-
                 }
-            }, "json");
+            }
+            return cookieValue;
         }
+        var csrftoken = getCookie('csrftoken');
 
+        function csrfSafeMethod(method) {
+            // these HTTP methods do not require CSRF protection
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+        $.ajaxSetup({
+            crossDomain: false, // obviates need for sameOrigin test
+            beforeSend: function(xhr, settings) {
+                if (!csrfSafeMethod(settings.type)) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
 
-        celeryRefresh();
-        /* Update the interface ~15 secs */
-        window.setInterval(celeryRefresh, 15 * 1000);
+        $(document).ready(function(){
 
+            $("a[data-favorite]").click(function(event) {
+                /* Submit JSON favorite request and act on result */
 
-        })
+                favorite_item = $(event.target);
+                var data = new Object();
+                identifer = $(event.target).data('favorite');
+                identifiers = identifer.split('-');
+
+                data.app_label = identifiers[0];
+                data.model = identifiers[1];
+                data.pk = identifiers[2];
+
+                console.log(data);
+                $.ajax({
+                    url: '/favorite/toggle',
+                    data: data,
+                    type: 'post',
+                    dataType: 'json',
+                    cache: false,
+                    success: function(data){
+                        /* Act on result */
+                            console.log('#favorite-' + identifer)
+                            if(data.is_favorite){
+                                $('#favorite-' + identifer).addClass('panel-warning is-favorite');
+                                $('#favorite-' + identifer).removeClass('panel-default');
+                            } else {
+                                $('#favorite-' + identifer).addClass('panel-default');
+                                $('#favorite-' + identifer).removeClass('panel-warning is-favorite');
+                            }
+
+                        }
+                    });
+
+                return false;
+                });
+
+        });
+
         </script>
     {% endblock inline_js %}
 </html>

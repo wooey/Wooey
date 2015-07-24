@@ -72,9 +72,10 @@ class WooeyFormFactory(object):
         appender_data_dict = {}
         WOOEY_CHOICE_LIMIT = 'data-wooey-choice-limit'
         choices = json.loads(param.choices)
-        field_kwargs = {'label': param.script_param.title(),
+        field_kwargs = {'label': param.script_param.replace('_', ' ').title(),
                         'required': param.required,
                         'help_text': param.param_help,
+                        'initial': param.default,
                         }
         multiple_choices = param.multiple_choice
         choice_limit = param.max_choices

@@ -1,21 +1,19 @@
 from __future__ import absolute_import
-import os
 import six
 
 from django.core.urlresolvers import reverse
 from django.views.generic import TemplateView
-from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_text
-from django.db.models import Q
 from django.template.defaultfilters import escape
 
-from djcelery.models import TaskMeta
 from celery import app, states
 
 celery_app = app.app_or_default()
 
-from ..models import WooeyJob
+from django.contrib.contenttypes.models import ContentType
+
+from ..models import WooeyJob, WooeyFile, Favorite
 from .. import settings as wooey_settings
 from ..backend.utils import valid_user, get_file_previews
 from ..django_compat import JsonResponse
@@ -156,15 +154,28 @@ class CeleryTaskView(TemplateView):
                 out_files = get_file_previews(wooey_job)
                 all = out_files.pop('all', [])
                 archives = out_files.pop('archives', [])
+
+                # Get the favorite (scrapbook) status for each file
+                ctype = ContentType.objects.get_for_model(WooeyFile)
+                favorite_file_ids = Favorite.objects.filter(content_type=ctype, object_id__in=[f['id'] for f in all],
+                                                            user=user).values_list('object_id', flat=True)
+
                 ctx['task_info'] = {
                         'all_files': all,
                         'archives': archives,
                         'file_groups': out_files,
                         'status': wooey_job.status,
                         'last_modified': wooey_job.modified_date,
-                        'job': wooey_job
+                        'job': wooey_job,
+
                     }
+
+                ctx['favorite_file_ids'] = favorite_file_ids
+
+
             else:
                 ctx['task_error'] = _('You are not authenticated to view this job.')
+
+
         return ctx
 

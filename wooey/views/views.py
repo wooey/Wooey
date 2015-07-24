@@ -9,10 +9,10 @@ from django.forms import FileField
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_text
 
-from django.shortcuts import render, redirect
+from django.contrib.contenttypes.models import ContentType
 
 from ..backend import utils
-from ..models import WooeyJob, Script
+from ..models import WooeyJob, Script, WooeyFile, Favorite
 from .. import settings as wooey_settings
 from ..django_compat import JsonResponse
 
@@ -129,7 +129,7 @@ class WooeyScriptView(WooeyScriptBase):
 
 
 class WooeyHomeView(TemplateView):
-    template_name = 'wooey/wooey_home.html'
+    template_name = 'wooey/home.html'
 
     def get_context_data(self, **kwargs):
         #job_id = self.request.GET.get('job_id')
@@ -142,9 +142,29 @@ class WooeyHomeView(TemplateView):
         #    if job.user is None or (self.request.user.is_authenticated() and job.user == self.request.user):
         #        ctx['clone_job'] = {'job_id': job_id, 'url': job.get_resubmit_url(), 'data_url': job.script.get_url()}
 
-
         return ctx
 
 class WooeyProfileView(TemplateView):
     template_name = 'wooey/profile/profile_base.html'
 
+
+class WooeyScrapbookView(TemplateView):
+    template_name = 'wooey/scrapbook.html'
+
+
+    def get_context_data(self, **kwargs):
+        ctx = super(WooeyScrapbookView, self).get_context_data(**kwargs)
+
+        # Get the id of every favorite (scrapbook) file
+        ctype = ContentType.objects.get_for_model(WooeyFile)
+        favorite_file_ids = Favorite.objects.filter(content_type=ctype, user=self.request.user).values_list('object_id', flat=True)
+
+        out_files = utils.get_file_previews_by_ids(favorite_file_ids)
+
+        all = out_files.pop('all', [])
+        archives = out_files.pop('archives', [])
+
+        ctx['file_groups'] = out_files
+        ctx['favorite_file_ids'] = favorite_file_ids
+
+        return ctx

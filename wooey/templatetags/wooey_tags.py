@@ -2,6 +2,7 @@ from __future__ import division, absolute_import
 from django import template
 from .. import settings as wooey_settings
 from django.utils.safestring import mark_safe
+from django.contrib.contenttypes.models import ContentType
 
 register = template.Library()
 @register.filter
@@ -39,3 +40,15 @@ def numericalign(s):
     print(s)
     number, units = s.split()
     return mark_safe('<span class="numericalign numericpart">%s</span><span class="numericalign">&nbsp;%s</span>' % (number, units))
+
+
+@register.filter
+def app_model_id(obj):
+    """
+    Returns a app-model-id string for a given object
+    :param obj:
+    :return:
+    """
+    ct = ContentType.objects.get_for_model(obj)
+
+    return '%s-%s-%s' % (ct.app_label, ct.model, obj.id)

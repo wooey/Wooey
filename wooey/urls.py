@@ -10,7 +10,7 @@ from . import settings as wooey_settings
 wooey_patterns = [
     url(r'^jobs/command$', views.celery_task_command, name='celery_task_command'),
 
-    url(r'^jobs/queue/global/json', views.global_queue_json, name='global_queue_json'),
+    url(r'^jobs/queue/global/json$', views.global_queue_json, name='global_queue_json'),
     url(r'^profile/queue/json$', views.user_queue_json, name='user_queue_json'),
     url(r'^profile/results/json$', views.user_results_json, name='user_results_json'),
 
@@ -27,6 +27,11 @@ wooey_patterns = [
     url(r'^$', views.WooeyHomeView.as_view(), name='wooey_task_launcher'),
     url('^{}'.format(wooey_settings.WOOEY_LOGIN_URL.lstrip('/')), views.wooey_login, name='wooey_login'),
     url('^{}'.format(wooey_settings.WOOEY_REGISTER_URL.lstrip('/')), views.WooeyRegister.as_view(), name='wooey_register'),
+
+    url(r'^favorite/toggle$', views.toggle_favorite, name='toggle_favorite'),
+
+    url(r'^scrapbook$', views.WooeyScrapbookView.as_view(), name='scrapbook'),
+
 ]
 
 urlpatterns = [

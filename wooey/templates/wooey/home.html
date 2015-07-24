@@ -32,7 +32,6 @@
 
             <div class="panel panel-default thumbnail wooey_script_thumbnail {% if not script.is_active %}wooey_script_disabled {% endif %}">
             <div class="panel-heading">
-            {% if script_show == 'disabled' or group_show == 'disabled' %}disabled{% endif %}
 
                 {% if script.is_active %}
                     <a href="{% url 'wooey:wooey_script' slug=script.slug %}">{{ script.script_name }}</a>
@@ -40,7 +39,7 @@
                     {{ script.script_name }}
                 {% endif %}
 
-                <a class="icon icon-locked" href="#"></a>
+                {% if not script.is_active %}<a class="icon icon-locked" href="#" title="This script is unavailable."></a>{% endif %}
                 <a class="icon icon-favorite" href="#"></a>
             </div>
             <div class="panel-body">{{ script.script_description }}</div>

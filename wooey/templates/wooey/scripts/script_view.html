@@ -34,6 +34,9 @@
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {% endif %}
                 {{ field }}
+                {% if not field.is_hidden %}
+                <p class="help-block">{{ field.help_text }}</p>
+                {% endif %}
             </div>
             {% endfor %}
             </div>

@@ -1,6 +1,7 @@
 {% extends "wooey/base.html" %}
 {% load i18n %}
 {% load wooey_tags %}
+
 {% block extra_js %}
     {{ js.super }}
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/ekko-lightbox/3.3.0/ekko-lightbox.min.js"></script>
@@ -55,10 +56,17 @@
             </button>
             <ul class="dropdown-menu" role="menu">
                 <!-- <li><a href="""><span class="glyphicon glyphicon-figshare"></span> Figshare</a></li> -->
-                <li><a href=""><span class="glyphicon glyphicon-link"></span> Permalink</a></li>
+                {% with request.build_absolute_uri as permalink %}
+                <li><a href="{{ permalink }}" onclick="$('#modal-permalink').modal(); return false;"><span class="glyphicon glyphicon-link"></span> Permalink</a></li>
+                {% endwith %}
                 <li><a href="mailto:?subject=Wooey Job #{{ task_info.job.id }} is {{ task_info.job.status }}&body=You can see the result and any outputs at the following link:%0D%0A{{ request.build_absolute_uri }}"><span class="glyphicon glyphicon-envelope"></span> Email</a></li>
             </ul>
             </div>
+
+
+        {% with request.build_absolute_uri as permalink %}
+        {% include 'wooey/modals/permalink_modal.html' %}
+        {% endwith %}
 
 
         {% endif %}
@@ -130,64 +138,17 @@
     <div class="row">
 
         {% for output_group, output_files in task_info.file_groups.items %}
-                {% if output_group == 'tabular' %}
-                    {% for output_file_content in output_files %}
+                {% for output_file_content in output_files %}
 
-                      <!-- Default panel contents -->
-                      <div class="col-sm-6 col-md-4">
-                            <div class="thumbnail panel panel-default">
-                                <div class="panel-heading"><span class="glyphicon glyphicon-list-alt"></span> {{ output_file_content.basename }}
-
-                                <a class="icon icon-download" href="{{ output_file_content.url }}" download></a>
-                                <a class="icon icon-favorite" href="#"></a>
-                                </div>
-                                <div class="panel-body panel-nopad table-responsive">
-                                {% with output_file_content.preview as table %}
-                                {% include 'wooey/preview/table.html' %}
-                                {% endwith %}
-                                </div>
-                    </div>
-                    </div>
-                    {% endfor %}
-
-                {% elif output_group == 'images' %}
-                    {% if output_files %}
-
-                      {% for output_file_content in output_files %}
-                      <div class="col-sm-6 col-md-4">
-                            <div class="thumbnail panel panel-default">
-                                <div class="panel-heading"><span class="glyphicon glyphicon-picture"></span> {{ output_file_content.basename }}
-
-                                <a class="icon icon-download" href="{{ output_file_content.url }}" download></a>
-                                <a class="icon icon-favorite" href="#"></a>
-                                </div>
-                                <div class="panel-body">
-                                    <a href="{{ output_file_content.url }}" data-toggle="lightbox" data-gallery="task-images" data-type="image"><img src="{{ output_file_content.url }}" alt="{{ output_file_content.name }}" class="img-responsive"></a>
-                                  </div>
-                            </div>
-                      </div>
-
-                      {% endfor %}
-
+                    {% if output_group == 'tabular' %}
+                        {% include 'wooey/preview/tabular.html' %}
+                    {% elif output_group == 'image' %}
+                        {% include 'wooey/preview/image.html' %}
+                    {% elif output_group == 'fasta' %}
+                        {% include 'wooey/preview/fasta.html' %}
                     {% endif %}
-                {% elif output_group == 'fasta' %}
-                     {% for output_file_content in output_files %}
-                      <div class="col-sm-6 col-md-4">
-                            <div class="thumbnail panel panel-default">
-                                <div class="panel-heading"><span class="glyphicon glyphicon-list-alt"></span> {{ output_file_content.basename }}
 
-                                <a class="icon icon-download" href="{{ output_file_content.url }}" download></a>
-                                <a class="icon icon-favorite" href="#"></a>
-                                </div>
-                                <div class="panel-body">
-                                {% for entry in output_file_content.preview %}
-                                    {{ entry }}<br>
-                                {% endfor %}
-                                  </div>
-                            </div>
-                      </div>
-                    {% endfor %}
-                {% endif %}
+                {% endfor %}
         {% endfor %}
 
 
@@ -277,7 +238,7 @@
                         else{
                             // the only way we end here is from a resubmission at the moment
                             $('#new-task-url').attr('href', data.extra.task_url);
-                            $('#myModal').modal();
+                            $('#modal-resubmit').modal();
                         }
                     }
                     else{

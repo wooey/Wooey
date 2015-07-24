@@ -7,12 +7,12 @@ from collections import OrderedDict
 
 from django import forms
 from django.http.request import QueryDict
-from django.forms.utils import flatatt, format_html
 from django.utils.safestring import mark_safe
 
 from .scripts import WooeyForm
 from ..backend import utils
 from ..models import ScriptParameter
+from ..django_compat import flatatt, format_html
 
 
 def mutli_render(render_func, appender_data_dict=None):

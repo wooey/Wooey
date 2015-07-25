@@ -1,4 +1,10 @@
 from . version import DJANGO_VERSION, DJ18, DJ17, DJ16
+from django.conf import settings
+
+try:
+    settings.configure()
+except RuntimeError:
+    pass
 
 if DJANGO_VERSION < DJ17:
     import json
@@ -17,29 +23,31 @@ if DJANGO_VERSION < DJ17:
                 content_type=content_type,
             )
 
-    from django.contrib.contenttypes.generic import GenericForeignKey
 
 else:
     from django.http import JsonResponse
-    from django.contrib.contenttypes.fields import GenericForeignKey
 
 if DJANGO_VERSION >= DJ18:
     from django.template import Engine
+
 else:
     from django.template import Template
-    from django.conf import settings
-    try:
-        settings.configure()
-    except RuntimeError:
-        pass
 
     class Engine(object):
-
         @staticmethod
         def from_string(code):
             return Template(code)
 
+
+if DJANGO_VERSION >= DJ18:
+    from django.contrib.contenttypes.generic import GenericForeignKey
+
+else:
+    from django.contrib.contenttypes.fields import GenericForeignKey
+
+
 if DJANGO_VERSION < DJ17:
     from django.forms.util import flatatt, format_html
+    
 else:
     from django.forms.utils import flatatt, format_html

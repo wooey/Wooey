@@ -52,3 +52,8 @@ def app_model_id(obj):
     ct = ContentType.objects.get_for_model(obj)
 
     return '%s-%s-%s' % (ct.app_label, ct.model, obj.id)
+
+@register.filter
+def concat(arg1, arg2):
+    """concatenate arg1 & arg2"""
+    return str(arg1) + str(arg2)

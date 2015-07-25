@@ -135,12 +135,11 @@ class WooeyHomeView(TemplateView):
         #job_id = self.request.GET.get('job_id')
         ctx = super(WooeyHomeView, self).get_context_data(**kwargs)
         ctx['scripts'] = Script.objects.all()
-        #ctx['wooey_scripts'] = getattr(settings, 'WOOEY_SCRIPTS', {})
 
-        #if job_id:
-        #    job = WooeyJob.objects.get(pk=job_id)
-        #    if job.user is None or (self.request.user.is_authenticated() and job.user == self.request.user):
-        #        ctx['clone_job'] = {'job_id': job_id, 'url': job.get_resubmit_url(), 'data_url': job.script.get_url()}
+
+        # Get the id of every favorite (scrapbook) file
+        ctype = ContentType.objects.get_for_model(Script)
+        ctx['favorite_script_ids'] = Favorite.objects.filter(content_type=ctype, user=self.request.user).values_list('object_id', flat=True)
 
         return ctx
 

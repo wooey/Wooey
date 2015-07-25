@@ -21,16 +21,13 @@
 
 <div class="row">
 
-
-
-
     {% for script in scripts %}
     <div class="col-sm-6 col-md-4">
 
         {% with group_show=script.script_group|valid_user:request.user %}
             {% if group_show != 'hide' %}
 
-            <div class="panel panel-default thumbnail wooey_script_thumbnail {% if not script.is_active %}wooey_script_disabled {% endif %}">
+            <div class="panel {% if script.id in favorite_script_ids %}panel-warning is-favorite{% else %}panel-default{% endif %} thumbnail wooey_script_thumbnail {% if not script.is_active %}wooey_script_disabled {% endif %}"  id="favorite-{{ script|app_model_id }}">
             <div class="panel-heading">
 
                 {% if script.is_active %}
@@ -40,7 +37,7 @@
                 {% endif %}
 
                 {% if not script.is_active %}<a class="icon icon-locked" href="#" title="This script is unavailable."></a>{% endif %}
-                <a class="icon icon-favorite" href="#"></a>
+                <a class="icon icon-favorite" data-favorite="{{ script|app_model_id }}"  href="#"></a>
             </div>
             <div class="panel-body">{{ script.script_description }}</div>
             <div class="wooey-script-group">{{ script.script_group.group_name }}</div>

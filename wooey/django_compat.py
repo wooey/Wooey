@@ -16,8 +16,12 @@ if DJANGO_VERSION < DJ17:
                 status=status,
                 content_type=content_type,
             )
+
+    from django.contrib.contenttypes.generic import GenericForeignKey
+
 else:
     from django.http import JsonResponse
+    from django.contrib.contenttypes.fields import GenericForeignKey
 
 if DJANGO_VERSION >= DJ18:
     from django.template import Engine

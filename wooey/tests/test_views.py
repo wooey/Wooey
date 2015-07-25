@@ -107,6 +107,7 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     @raises(Http404)
     def test_celery_nonexistent_task(self):
         # test request for non-existent job, should raise 404
+        view = wooey_celery.CeleryTaskView.as_view()
         request = self.factory.get(reverse('wooey:celery_results', kwargs={'job_id': '-1'}))
         response = view(request, job_id=-1)
 

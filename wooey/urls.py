@@ -16,7 +16,8 @@ wooey_patterns = [
 
     url(r'^jobs/queue/all/json', views.all_queues_json, name='all_queues_json'),
 
-    url(r'^jobs/(?P<job_id>[a-zA-Z0-9\-]+)/$', views.CeleryTaskView.as_view(), name='celery_results_info'),
+    url(r'^jobs/(?P<job_id>[a-zA-Z0-9\-]+)/$', views.CeleryTaskView.as_view(), name='celery_results'),
+    url(r'^jobs/(?P<job_id>[a-zA-Z0-9\-]+)/json$', views.CeleryTaskJSON.as_view(), name='celery_results_json'),
 
     url(r'^scripts/(?P<slug>[a-zA-Z0-9\-\_]+)/$', views.WooeyScriptView.as_view(), name='wooey_script'),
     url(r'^scripts/(?P<slug>[a-zA-Z0-9\-\_]+)/jobs/(?P<job_id>[a-zA-Z0-9\-]+)$', views.WooeyScriptJSON.as_view(), name='wooey_script_json_clone'),

@@ -2,7 +2,7 @@ from __future__ import absolute_import
 import six
 
 from django.core.urlresolvers import reverse
-from django.views.generic import TemplateView
+from django.views.generic import DetailView, TemplateView
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_text
 from django.template.defaultfilters import escape
@@ -44,7 +44,7 @@ def generate_job_list(job_query):
             'id': job.pk,
             'name': escape(job.job_name),
             'description': escape(six.u('Script: {}\n{}').format(job.script.script_name, job.job_description)),
-            'url': reverse('wooey:celery_results_info', kwargs={'job_id': job.pk}),
+            'url': reverse('wooey:celery_results', kwargs={'job_id': job.pk}),
             'submitted': job.created_date.strftime('%b %d %Y, %H:%M:%S'),
             'status': STATE_MAPPER.get(job.status, job.status),
         })
@@ -87,21 +87,6 @@ def all_queues_json(request):
 
 
 
-def celery_status(request):
-
-    user = request.user
-    if user.is_superuser:
-        jobs = WooeyJob.objects.all()
-        jobs = jobs.exclude(status=WooeyJob.DELETED)
-    else:
-        jobs = WooeyJob.objects.filter(Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None))
-        jobs = jobs.exclude(status=WooeyJob.DELETED)
-    # divide into user and anon jobs
-    d = {'user': get_job_list([i for i in jobs if i.user == user]),
-         'anon': get_job_list([i for i in jobs if i.user == None or (user.is_superuser and i.user != user)])}
-    return JsonResponse(d, safe=False)
-
-
 def celery_task_command(request):
 
     command = request.POST.get('celery-command')
@@ -114,10 +99,10 @@ def celery_task_command(request):
         if user == job.user or job.user == None:
             if command == 'resubmit':
                 new_job = job.submit_to_celery(resubmit=True, user=request.user)
-                response.update({'valid': True, 'extra': {'task_url': reverse('wooey:celery_results_info', kwargs={'job_id': new_job.pk})}})
+                response.update({'valid': True, 'extra': {'task_url': reverse('wooey:celery_results', kwargs={'job_id': new_job.pk})}})
             elif command == 'rerun':
                 job.submit_to_celery(user=request.user, rerun=True)
-                response.update({'valid': True, 'redirect': reverse('wooey:celery_results_info', kwargs={'job_id': job_id})})
+                response.update({'valid': True, 'redirect': reverse('wooey:celery_results', kwargs={'job_id': job_id})})
             elif command == 'clone':
                 response.update({'valid': True, 'redirect': '{0}?job_id={1}'.format(reverse('wooey:wooey_task_launcher'), job_id)})
             elif command == 'delete':
@@ -128,7 +113,7 @@ def celery_task_command(request):
                 celery_app.control.revoke(job.celery_id, signal='SIGKILL', terminate=True)
                 job.status = states.REVOKED
                 job.save()
-                response.update({'valid': True, 'redirect': reverse('wooey:celery_results_info', kwargs={'job_id': job_id})})
+                response.update({'valid': True, 'redirect': reverse('wooey:celery_results', kwargs={'job_id': job_id})})
             else:
                 response.update({'errors': {'__all__': [force_text(_("Unknown Command"))]}})
     else:
@@ -136,46 +121,56 @@ def celery_task_command(request):
     return JsonResponse(response)
 
 
-class CeleryTaskView(TemplateView):
-    template_name = 'wooey/tasks/task_view.html'
+class CeleryTaskBase(DetailView):
+
+    model = WooeyJob
+
+    def get_object(self):
+        # FIXME: Update urls to use PK
+        self.kwargs['pk'] = self.kwargs.get('job_id')
+        return super(CeleryTaskBase, self).get_object()
 
     def get_context_data(self, **kwargs):
-        ctx = super(CeleryTaskView, self).get_context_data(**kwargs)
-        job_id = ctx.get('job_id')
-        try:
-            wooey_job = WooeyJob.objects.get(pk=job_id)
-        except WooeyJob.DoesNotExist:
-            ctx['task_error'] = _('This task does not exist.')
+        ctx = super(CeleryTaskBase, self).get_context_data(**kwargs)
+        wooey_job = ctx['wooeyjob']
+
+        user = self.request.user
+        user = None if not user.is_authenticated() and wooey_settings.WOOEY_ALLOW_ANONYMOUS else user
+        job_user = wooey_job.user
+        if job_user == None or job_user == user or (user != None and user.is_superuser):
+            out_files = get_file_previews(wooey_job)
+            all = out_files.pop('all', [])
+            archives = out_files.pop('archives', [])
+
+            # Get the favorite (scrapbook) status for each file
+            ctype = ContentType.objects.get_for_model(WooeyFile)
+            favorite_file_ids = Favorite.objects.filter(content_type=ctype, object_id__in=[f['id'] for f in all],
+                                                        user=user).values_list('object_id', flat=True)
+
+            ctx['task_info'] = {
+                    'all_files': all,
+                    'archives': archives,
+                    'file_groups': out_files,
+                    'status': wooey_job.status,
+                    'last_modified': wooey_job.modified_date,
+                    'job': wooey_job,
+
+                }
+
+            ctx['favorite_file_ids'] = favorite_file_ids
+
+
         else:
-            user = self.request.user
-            user = None if not user.is_authenticated() and wooey_settings.WOOEY_ALLOW_ANONYMOUS else user
-            job_user = wooey_job.user
-            if job_user == None or job_user == user or (user != None and user.is_superuser):
-                out_files = get_file_previews(wooey_job)
-                all = out_files.pop('all', [])
-                archives = out_files.pop('archives', [])
-
-                # Get the favorite (scrapbook) status for each file
-                ctype = ContentType.objects.get_for_model(WooeyFile)
-                favorite_file_ids = Favorite.objects.filter(content_type=ctype, object_id__in=[f['id'] for f in all],
-                                                            user=user).values_list('object_id', flat=True)
-
-                ctx['task_info'] = {
-                        'all_files': all,
-                        'archives': archives,
-                        'file_groups': out_files,
-                        'status': wooey_job.status,
-                        'last_modified': wooey_job.modified_date,
-                        'job': wooey_job,
-
-                    }
-
-                ctx['favorite_file_ids'] = favorite_file_ids
-
-
-            else:
-                ctx['task_error'] = _('You are not authenticated to view this job.')
-
-
+            ctx['task_error'] = _('You are not authenticated to view this job.')
         return ctx
 
+
+
+class CeleryTaskView(CeleryTaskBase):
+    template_name = 'wooey/tasks/task_view.html'
+
+
+class CeleryTaskJSON(CeleryTaskBase):
+
+    def render_to_response(self, context, *args, **kwargs):
+        return JsonResponse(context)

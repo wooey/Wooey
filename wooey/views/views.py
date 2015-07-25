@@ -104,10 +104,8 @@ class WooeyScriptJSON(WooeyScriptBase):
     # this render_fn allows us to pass the return through a stringify method for JSON
     render_fn = lambda form: form.as_table()
 
-    def render_to_response(self, *args, **kwargs):
-        data = super(WooeyScriptJSON, self).render_to_response(*args, **kwargs)
-        return JsonResponse(data)
-
+    def render_to_response(self, context, *args, **kwargs):
+        return JsonResponse(context)
 
     def post(self, *args, **kwargs):
         data = super(WooeyScriptJSON, self).post(*args, **kwargs)
@@ -120,7 +118,7 @@ class WooeyScriptView(WooeyScriptBase):
     def post(self, *args, **kwargs):
         data = super(WooeyScriptView, self).post(*args, **kwargs)
         if data['valid']:
-            return HttpResponseRedirect( reverse('wooey:celery_results_info', kwargs={'job_id': data['job_id'] }) )
+            return HttpResponseRedirect( reverse('wooey:celery_results', kwargs={'job_id': data['job_id'] }) )
         else:
             # FIXME: This works but the form handling here should return the submitted data
             # may need to refactor the JSON stuff a little bit to make this work
@@ -142,6 +140,7 @@ class WooeyHomeView(TemplateView):
         ctx['favorite_script_ids'] = Favorite.objects.filter(content_type=ctype, user=self.request.user).values_list('object_id', flat=True)
 
         return ctx
+
 
 class WooeyProfileView(TemplateView):
     template_name = 'wooey/profile/profile_base.html'

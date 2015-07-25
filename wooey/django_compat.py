@@ -48,6 +48,6 @@ else:
 
 if DJANGO_VERSION < DJ17:
     from django.forms.util import flatatt, format_html
-    
+
 else:
     from django.forms.utils import flatatt, format_html

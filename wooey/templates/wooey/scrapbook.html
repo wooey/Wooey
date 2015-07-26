@@ -22,20 +22,15 @@
 {% block center_content %}
 
 <div class="row">
+    {% with True as show_preview_metadata %}
 
     {% for output_group, output_files in file_groups.items %}
             {% for output_file_content in output_files %}
-
-                {% if output_group == 'tabular' %}
-                    {% include 'wooey/preview/tabular.html' %}
-                {% elif output_group == 'image' %}
-                    {% include 'wooey/preview/image.html' %}
-                {% elif output_group == 'fasta' %}
-                    {% include 'wooey/preview/fasta.html' %}
-                {% endif %}
-
+                {% include 'wooey/preview/'|concat:output_group|concat:'.html' %}
             {% endfor %}
     {% endfor %}
+
+    {% endwith %}
 
 </div>
 

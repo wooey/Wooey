@@ -269,6 +269,7 @@
         .numericalign.numericpart { text-align:right; }
 
         .preview-table tr, .preview-table th, .preview-table td { text-overflow: ellipsis; white-space: nowrap; }
+        .preview-metadata { font-size: 0.8em; }
 
         .ellided-continuation > td { padding: 0 8px 8px 8px !important; }
 
@@ -326,7 +327,7 @@
               </li>
 
               <li class="dropdown" id="job-list-user">
-                  <a href="{% url 'wooey:scrapbook' %}" role="button" aria-haspopup="true" aria-expanded="false">Scrapbook<!-- <span class="badge scrapbook-badge" id="scrapbook-badge-user">0</span>--></a>
+                  <a href="{% url 'wooey:scrapbook' %}" role="button" aria-haspopup="true" aria-expanded="false">Scrapbook <span class="badge scrapbook-badge" id="favorite-wooey-wooeyfile-count">0</span></a>
               </li>
 
               <li><a href="{% url 'wooey:profile_home' %}"><span class="glyphicon glyphicon-user"> </span> {{ request.user.username }}</a></li>
@@ -526,7 +527,7 @@
                 identifer = $(event.target).data('favorite');
                 identifiers = identifer.split('-');
 
-                data.app_label = identifiers[0];
+                data.app = identifiers[0];
                 data.model = identifiers[1];
                 data.pk = identifiers[2];
 
@@ -548,13 +549,25 @@
                                 $('#favorite-' + identifer).removeClass('panel-warning is-favorite');
                             }
 
+                        console.log('#favorite-' + data.app_label + '-' + data.model + '-count')
+                        $('#favorite-' + data.app + '-' + data.model + '-count').text(data.count);
+
                         }
                     });
 
                 return false;
                 });
 
+
+            $(document).delegate('*[data-toggle="lightbox"]', 'click', function(event) {
+                event.preventDefault();
+                $(this).ekkoLightbox();
+            });
+
         });
+
+
+
 
         </script>
     {% endblock inline_js %}

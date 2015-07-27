@@ -20,7 +20,7 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         response = wooey_celery.celery_status(request)
         d = response.content.decode("utf-8")
         self.assertEqual({'anon': [], 'user': []}, json.loads(d))
-        job = factories.JobFactory()
+        job = factories.TranslateJobFactory()
         job.save()
         response = wooey_celery.celery_status(request)
         d = json.loads(response.content.decode("utf-8"))
@@ -40,7 +40,7 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
 
     def test_celery_commands(self):
         user = factories.UserFactory()
-        job = factories.JobFactory()
+        job = factories.TranslateJobFactory()
         job.user = user
         job.save()
         celery_command = {'celery-command': ['delete'], 'job-id': [job.pk]}
@@ -69,7 +69,7 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
 
     def test_celery_task_view(self):
         user = factories.UserFactory()
-        job = factories.JobFactory()
+        job = factories.TranslateJobFactory()
         job.user = user
         job.save()
         # test that an anonymous user cannot view a user's job

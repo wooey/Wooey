@@ -10,6 +10,7 @@ from django.http.request import QueryDict
 from django.utils.safestring import mark_safe
 
 from .scripts import WooeyForm
+from . import config
 from ..backend import utils
 from ..models import ScriptParameter
 from ..django_compat import flatatt, format_html
@@ -20,14 +21,16 @@ def mutli_render(render_func, appender_data_dict=None):
         if not isinstance(values, (list, tuple)):
             values = [values]
         # The tag is a marker for our javascript to reshuffle the elements. This is because some widgets have complex rendering with multiple fields
-        pieces = ['<{tag} data-wooey-multiple>{widget}</{tag}>'.format(tag='div', widget=render_func(name, value, attrs)) for value in values]
+        pieces = ['<{tag} {multi_attr}>{widget}</{tag}>'.format(tag='div', multi_attr=config.WOOEY_MULTI_WIDGET_ATTR,
+                                                                widget=render_func(name, value, attrs)) for value in values]
 
         # we add a final piece that is our button to click for adding. It's useful to have it here instead of the template so we don't
         # have to reverse-engineer who goes with what
 
         # build the attribute dict
         data_attrs = flatatt(appender_data_dict if appender_data_dict is not None else {})
-        pieces.append(format_html('<a href="#wooey-multi-input"{}><span class="glyphicon glyphicon-plus"></span></a>', data_attrs))
+        pieces.append(format_html('<a href="#{anchor}"{data}><span class="glyphicon glyphicon-plus"></span></a>', anchor=config.WOOEY_MULTI_WIDGET_ANCHOR
+                                  ,data=data_attrs))
         return mark_safe('\n'.join(pieces))
     return render
 

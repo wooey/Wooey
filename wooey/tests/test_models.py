@@ -10,6 +10,30 @@ class ScriptTestCase(mixins.ScriptFactoryMixin, TestCase):
     def test_script_creation(self):
         script = factories.TranslateScriptFactory()
 
+    def test_multiple_choices(self):
+        # load our choice script
+        script = factories.ChoiceScriptFactory()
+
+        multiple_choice_param = 'two_choices'
+        single_choice_param = 'one_choice'
+        optional_choice_param = 'all_choices'
+        # test that we are a multiple choice entry
+        from ..models import ScriptParameter
+        param = ScriptParameter.objects.get(slug=multiple_choice_param)
+        self.assertTrue(param.multiple_choice)
+
+        # test our limit
+        self.assertEqual(param.max_choices, 2)
+
+        # test with a singular case
+        param = ScriptParameter.objects.get(slug=single_choice_param)
+        self.assertFalse(param.multiple_choice)
+        self.assertEqual(param.max_choices, 1)
+
+        # test cases that have variable requirements
+        param = ScriptParameter.objects.get(slug=optional_choice_param)
+        self.assertTrue(param.multiple_choice)
+        self.assertEqual(param.max_choices, -1)
 
 class ScriptGroupTestCase(TestCase):
 
@@ -20,12 +44,14 @@ class ScriptGroupTestCase(TestCase):
 class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     urls = 'wooey.test_urls'
 
-    def test_jobs(self):
-        script = factories.TranslateScriptFactory()
-        from ..backend import utils
+    def setUp(self):
         from .. import settings
         # the test server doesn't have celery running
         settings.WOOEY_CELERY = False
+
+    def test_jobs(self):
+        script = factories.TranslateScriptFactory()
+        from ..backend import utils
         job = utils.create_wooey_job(script_pk=script.pk, data={'job_name': 'abc', 'sequence': 'aaa', 'out': 'abc'})
         job = job.submit_to_celery()
         old_pk = job.pk
@@ -63,3 +89,15 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
             for fileinfo in files:
                 response = Client().get(fileinfo.get('url'))
                 self.assertEqual(response.status_code, 200)
+
+    def test_multiplechoices(self):
+        script = factories.ChoiceScriptFactory()
+        choices = ['2', '1', '3']
+        choice_param = 'two_choices'
+
+        from ..backend import utils
+        job = utils.create_wooey_job(script_pk=script.pk, data={'job_name': 'abc', choice_param: choices})
+        # make sure we have our choices in the parameters
+        choice_params = [i.value for i in job.get_parameters() if i.parameter.slug == choice_param]
+        self.assertEqual(choices, choice_params)
+        job = job.submit_to_celery()

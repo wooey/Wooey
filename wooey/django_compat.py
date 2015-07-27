@@ -6,6 +6,7 @@ try:
 except RuntimeError:
     pass
 
+# JSON compatibility fixes
 if DJANGO_VERSION < DJ17:
     import json
     from django.http import HttpResponse
@@ -39,7 +40,8 @@ else:
             return Template(code)
 
 
-if DJANGO_VERSION >= DJ18:
+# GenericForeignKey compatibility fixes
+if DJANGO_VERSION < DJ18:
     from django.contrib.contenttypes.generic import GenericForeignKey
 
 else:

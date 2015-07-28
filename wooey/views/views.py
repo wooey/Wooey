@@ -51,7 +51,7 @@ class WooeyScriptJSON(DetailView):
                 new_values = filter(lambda x: x, post.getlist(i))
                 cleaned_values = []
                 for new_value in new_values:
-                    if i not in request.FILES and (i not in form.cleaned_data or (not form.cleaned_data[i] and new_value)):
+                    if i not in request.FILES and (i not in form.cleaned_data or (not filter(lambda x: x, form.cleaned_data[i]) and new_value)):
                         # this is a previously set field, so a cloned job
                         if new_value is not None:
                             cleaned_values.append(utils.get_storage(local=False).open(new_value))

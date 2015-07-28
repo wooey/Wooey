@@ -34,3 +34,8 @@ else:
         @staticmethod
         def from_string(code):
             return Template(code)
+
+if DJANGO_VERSION < DJ17:
+    from django.forms.util import flatatt, format_html
+else:
+    from django.forms.utils import flatatt, format_html

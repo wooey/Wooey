@@ -1,4 +1,6 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
+from collections import defaultdict
+
 from django.views.generic import DetailView, TemplateView
 from django.conf import settings
 from django.forms import FileField
@@ -22,13 +24,14 @@ class WooeyScriptJSON(DetailView):
         initial = None
         if job_id:
             job = WooeyJob.objects.get(pk=job_id)
+            # import pdb; pdb.set_trace();
             if job.user is None or (self.request.user.is_authenticated() and job.user == self.request.user):
-                initial = {}
+                initial = defaultdict(list)
                 for i in job.get_parameters():
                     value = i.value
                     if value is not None:
-                        initial[i.parameter.slug] = value
-        d = utils.get_form_groups(model=self.object, initial=initial)
+                        initial[i.parameter.slug].append(value)
+        d = utils.get_form_groups(model=self.object, initial_dict=initial)
         return JsonResponse(d)
 
     def post(self, request, *args, **kwargs):
@@ -45,16 +48,29 @@ class WooeyScriptJSON(DetailView):
         for i in post:
             if isinstance(form.fields.get(i), FileField):
                 # if we have a value set, reassert this
-                new_value = post.get(i)
-                if i not in request.FILES and (i not in form.cleaned_data or (not form.cleaned_data[i] and new_value)):
-                    # this is a previously set field, so a cloned job
-                    if new_value is not None:
-                        form.cleaned_data[i] = utils.get_storage(local=False).open(new_value)
-                    to_delete.append(i)
+                new_values = list(filter(lambda x: x, post.getlist(i)))
+                cleaned_values = []
+                for new_value in new_values:
+                    if i not in request.FILES and (i not in form.cleaned_data or (not [j for j in form.cleaned_data[i] if j] and new_value)):
+                        # this is a previously set field, so a cloned job
+                        if new_value is not None:
+                            cleaned_values.append(utils.get_storage(local=False).open(new_value))
+                        to_delete.append(i)
+                if cleaned_values:
+                    form.cleaned_data[i] = cleaned_values
         for i in to_delete:
             if i in form.errors:
                 del form.errors[i]
 
+        # because we can have multiple files for a field, we need to update our form.cleaned_data to be a list of files
+        for i in request.FILES:
+            v = request.FILES.getlist(i)
+            if i in form.cleaned_data:
+                cleaned = form.cleaned_data[i]
+                cleaned = cleaned if isinstance(cleaned, list) else [cleaned]
+                if len(cleaned) != len(v):
+                    form.cleaned_data[i] = v
+                    
         if not form.errors:
             # data = form.cleaned_data
             script_pk = form.cleaned_data.get('wooey_type')

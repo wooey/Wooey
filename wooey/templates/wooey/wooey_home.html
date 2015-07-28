@@ -135,6 +135,96 @@
     $(document).ready(function(){
         var filesUploaded = {};
 
+        var multi_selector = 'a[href=#wooey-multi-input]';
+        var wooey_remove_selector = 'a[href=#wooey-multi-input-remove]';
+        var all_multi_selectors = 'a[href=#wooey-multi-input], a[href=#wooey-multi-input-remove]';
+        var input_selector = 'input, select';
+        var wooey_multiple_selector = '[data-wooey-multiple]';
+        var wooey_choice_limit = 'wooey-choice-limit';
+
+        var maxChoices = function($element){
+            $element.popover({
+                content: "{% trans "No more choices may be added for this selection" %}",
+                trigger: 'manual'
+            }).popover('show');
+            setTimeout(function(){$element.popover('destroy')}, 1000);
+        };
+
+        var initializeWooeyScript = function(){
+            // Add the - button so users can remove elements from cloned jobs
+            $(wooey_multiple_selector).parent().each(
+                function(element, value){
+                    var $wooey_multiples = $(value).find(wooey_multiple_selector);
+                    if($wooey_multiples.length != 1) {
+                        for (var i = 0; i < $wooey_multiples.length; i++) {
+                            var $remove_button = removeMultiInput();
+                            $remove_button.appendTo($wooey_multiples[i]);
+                        }
+                    }
+                }
+            );
+
+            var $multi_selector = $(multi_selector);
+            $multi_selector.click(function(event){
+                event.preventDefault();
+                var $this = $(this);
+
+                var $containers = $this.siblings(wooey_multiple_selector);
+                // check the choice limit, are we at it?
+                var choice_limit = $this.data(wooey_choice_limit);
+                if(choice_limit && ($containers.length == choice_limit)){
+                    // give a notice
+                    maxChoices($this);
+                    return;
+                }
+
+                var $container = $containers.first();
+                // if the container doesn't have a remove button since it's the first one, add one
+                if($container.find(wooey_remove_selector).length == 0){
+                    removeMultiInput().appendTo($container);
+                }
+                var $new_target = $container.clone();
+                $new_target.insertAfter($container);
+                // remove any existing removal buttons from the container
+                $new_target.find(all_multi_selectors).remove();
+                // add a way to remove the new container
+                var $remove_button = removeMultiInput();
+                $remove_button.appendTo($new_target);
+            });
+
+            // setup the choice limits for select fields
+            $('select[data-wooey-choice-limit] option').click(function(event){
+                var $this = $(this);
+                var $select = $this.parent();
+                var choice_limit = $select.data(wooey_choice_limit);
+                var selected = $select.find(':selected').length;
+                if(choice_limit && (selected > choice_limit)){
+                    $this.prop("selected", false);
+                    maxChoices($select);
+                    return;
+                }
+            })
+        };
+
+
+        var removeMultiInput = function(){
+            var $remove_input = $('<a href="#wooey-multi-input-remove"><span class="glyphicon glyphicon-minus"></span></a>');
+            $remove_input.click(function(event){
+                event.preventDefault();
+                var $multi_input = $(this).parent(wooey_multiple_selector);
+
+                // all other containers with multi-selections for this parameter
+                var $others = $multi_input.siblings(wooey_multiple_selector);
+                // remove us
+                $multi_input.remove();
+                // if there is only 1 container left, remove the button to remove it
+                if($others.length == 1){
+                    $others.find(wooey_remove_selector).remove();
+                }
+            });
+            return $remove_input;
+        };
+
         var loadWooeyScript = function(url, params, form){
             $.get(url, params, function(data){
                 form.attr('action', data.action);
@@ -149,8 +239,8 @@
                 var $first = $('a[href="#wooey_dynamic_tab0"]');
                 if($first.length)
                     $first.trigger('click');
+                initializeWooeyScript();
             }, "json");
-
         };
 
         var updateScriptInfo = function(url){

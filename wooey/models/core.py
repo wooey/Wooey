@@ -242,7 +242,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     # output_path = models.FilePathField(path=settings.MEDIA_ROOT, allow_folders=True, allow_files=False,
     #                                    recursive=True, max_length=255)
     choices = models.CharField(max_length=255, null=True, blank=True)
-    choice_limit = models.PositiveSmallIntegerField(null=True, blank=True)
+    choice_limit = models.CharField(max_length=10, null=True, blank=True)
     form_field = models.CharField(max_length=255)
     default = models.CharField(max_length=255, null=True, blank=True)
     input_type = models.CharField(max_length=255)
@@ -253,6 +253,32 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     class Meta:
         app_label = 'wooey'
 
+    @property
+    def multiple_choice(self):
+        choice_limit = json.loads(self.choice_limit)
+        if choice_limit is None:
+            return False
+        try:
+            choice_limit = int(choice_limit)
+        except ValueError:
+            # it's not a set # of choices that is a max, it's either >=0, or >=1, which are the same for a front-end
+            # since validation of >=0 or >=1 is performed outside of the form.
+            return True
+        else:
+            return choice_limit > 1
+
+    @property
+    def max_choices(self):
+        choice_limit = json.loads(self.choice_limit)
+        if choice_limit is None:
+            return 1
+        try:
+            choice_limit = int(choice_limit)
+        except ValueError:
+            # for this, it's either >=0 or >=1 so as many as they want.
+            return -1
+        else:
+            return choice_limit
 
     def __str__(self):
         return '{}: {}'.format(self.script.script_name, self.script_param)
@@ -299,10 +325,10 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
     def get_subprocess_value(self):
         value = self.value
         if self.value is None:
-            return []
+            return None
         field = self.parameter.form_field
         param = self.parameter.short_param
-        com = [param] if param != '' else []
+        com = {'parameter': param}
         if field == self.BOOLEAN:
             if value:
                 return com
@@ -329,7 +355,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
             value = str(value)
         except ValueError:
             pass
-        com.append(value if isinstance(value, six.string_types) else six.u(value))
+        com['value'] = value if isinstance(value, six.string_types) else six.u(value)
         return com
 
     def force_value(self, value):

@@ -9,10 +9,13 @@ from django.contrib.auth.models import AnonymousUser
 from . import factories, mixins, config
 from ..views import wooey_celery
 from .. import views as wooey_views
+from .. import settings
 
 class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     def setUp(self):
         self.factory = RequestFactory()
+        # the test server doesn't have celery running
+        settings.WOOEY_CELERY = False
 
     def test_celery_results(self):
         request = self.factory.get(reverse('wooey:celery_results'))
@@ -99,6 +102,8 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.script_view_func = wooey_views.WooeyScriptJSON.as_view()
+        # the test server doesn't have celery running
+        settings.WOOEY_CELERY = False
 
     def test_multiple_choice_clone(self):
         from ..backend import utils

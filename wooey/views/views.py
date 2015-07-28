@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 from collections import defaultdict
 
 from django.views.generic import DetailView, TemplateView
@@ -48,10 +48,10 @@ class WooeyScriptJSON(DetailView):
         for i in post:
             if isinstance(form.fields.get(i), FileField):
                 # if we have a value set, reassert this
-                new_values = filter(lambda x: x, post.getlist(i))
+                new_values = list(filter(lambda x: x, post.getlist(i)))
                 cleaned_values = []
                 for new_value in new_values:
-                    if i not in request.FILES and (i not in form.cleaned_data or (not filter(lambda x: x, form.cleaned_data[i]) and new_value)):
+                    if i not in request.FILES and (i not in form.cleaned_data or (not [j for j in form.cleaned_data[i] if j] and new_value)):
                         # this is a previously set field, so a cloned job
                         if new_value is not None:
                             cleaned_values.append(utils.get_storage(local=False).open(new_value))
@@ -70,7 +70,7 @@ class WooeyScriptJSON(DetailView):
                 cleaned = cleaned if isinstance(cleaned, list) else [cleaned]
                 if len(cleaned) != len(v):
                     form.cleaned_data[i] = v
-
+                    
         if not form.errors:
             # data = form.cleaned_data
             script_pk = form.cleaned_data.get('wooey_type')

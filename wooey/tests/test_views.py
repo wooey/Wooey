@@ -11,6 +11,9 @@ from ..views import wooey_celery
 from .. import views as wooey_views
 from .. import settings
 
+def load_JSON_dict(d):
+    return json.loads(d.decode('utf-8'))
+
 class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     def setUp(self):
         self.factory = RequestFactory()
@@ -129,7 +132,8 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         request = self.factory.post(url, data=data)
         request.user = user
         response = self.script_view_func(request)
-        self.assertTrue(json.loads(response.content)['valid'])
+        d = load_JSON_dict(response.content)
+        self.assertTrue(d['valid'], d)
         self.assertEqual(sum([len(request.FILES.getlist(i)) for i in request.FILES.keys()]), filecount)
 
         # test submitting this in the 'currently' field
@@ -142,7 +146,8 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         request.user = user
         response = self.script_view_func(request)
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(json.loads(response.content)['valid'])
+        d = load_JSON_dict(response.content)
+        self.assertTrue(d['valid'], d)
 
         # check the files are actually with the new model
         job = WooeyJob.objects.latest('created_date')

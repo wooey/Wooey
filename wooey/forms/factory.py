@@ -60,8 +60,10 @@ class WooeyFormFactory(object):
         """
         Any extra field attributes for the widget for customization of Wooey at the field level
          can be added to the widget dictionary, widget_data_dict, or to the appender_data_dict, which
-         is the little plus button. This is useful since there isn't only a single copy of the plus,
-         whereas we can have multiple widgets.
+         is the little plus button. This is useful since there is only a single copy of the plus,
+         whereas we can have multiple widgets. Thus, javascript attributes we want to add per parameter
+         can be added to appender_data_dict, and attributes we want to add to the widget input itself
+         can be added to the widget_data_dict.
 
         :return: a field class
         """

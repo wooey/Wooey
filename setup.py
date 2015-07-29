@@ -17,8 +17,7 @@ setup(
     include_package_data=True,
     description='A Django app which creates a web GUI and task interface for argparse scripts',
     url='http://www.github.com/wooey/django-djangui',
-    author='Chris Mitchell',
-    author_email='chris.mit7@gmail.com',
+    author='Chris Mitchell <chris.mit7@gmail.com>, Martin Fitzpatrick <martin.fitzpatrick@gmail.com>',
     classifiers=[
         'Environment :: Web Environment',
         'Framework :: Django',

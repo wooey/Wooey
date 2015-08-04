@@ -3,6 +3,7 @@ __author__ = 'chris'
 import json
 import errno
 import os
+import re
 import sys
 import six
 import traceback
@@ -15,6 +16,8 @@ from django.db.utils import OperationalError
 from django.core.files.storage import default_storage
 from django.core.files import File
 from django.utils.translation import gettext_lazy as _
+from django.db.models import Q
+
 from celery.contrib import rdb
 
 from clinto.argparse_specs import ArgParseNodeBuilder
@@ -447,3 +450,44 @@ def get_file_previews_by_ids(ids):
     from ..models import WooeyFile
     files = WooeyFile.objects.filter(pk__in=ids)
     return get_grouped_file_previews(files)
+
+
+def normalize_query(query_string,
+                    findterms=re.compile(r'"([^"]+)"|(\S+)').findall,
+                    normspace=re.compile(r'\s{2,}').sub):
+    """
+    Split the query string into individual keywords, discarding spaces
+    and grouping quoted words together.
+
+    >>> normalize_query('  some random  words "with   quotes  " and   spaces')
+    ['some', 'random', 'words', 'with quotes', 'and', 'spaces']
+    """
+
+    return [normspace(' ', (t[0] or t[1]).strip()) for t in findterms(query_string)]
+
+
+def get_query(query_string, search_fields):
+    """
+    Returns a query as a combination of Q objects that query the specified
+    search fields.
+    """
+
+    query = None # Query to search for every search term
+    terms = normalize_query(query_string)
+    for term in terms:
+        or_query = None # Query to search for a given term in each field
+        for field_name in search_fields:
+            q = Q(**{"%s__icontains" % field_name: term})
+            if or_query is None:
+                or_query = q
+            else:
+                or_query = or_query | q
+        if query is None:
+            query = or_query
+        else:
+            query = query & or_query
+
+    if query is None:
+        query = Q()
+
+    return query

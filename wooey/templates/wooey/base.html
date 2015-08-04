@@ -517,46 +517,50 @@
             }
         });
 
+
+        function toggleFavorite(event) {
+            /* Submit JSON favorite request and act on result */
+
+            favorite_item = $(event.target);
+            var data = new Object();
+            identifer = $(event.target).data('favorite');
+            identifiers = identifer.split('-');
+
+            data.app = identifiers[0];
+            data.model = identifiers[1];
+            data.pk = identifiers[2];
+
+            console.log(data);
+            $.ajax({
+                url: '/favorite/toggle',
+                data: data,
+                type: 'post',
+                dataType: 'json',
+                cache: false,
+                success: function(data){
+                    /* Act on result */
+                        console.log('#favorite-' + identifer)
+                        if(data.is_favorite){
+                            $('#favorite-' + identifer).addClass('panel-warning is-favorite');
+                            $('#favorite-' + identifer).removeClass('panel-default');
+                        } else {
+                            $('#favorite-' + identifer).addClass('panel-default');
+                            $('#favorite-' + identifer).removeClass('panel-warning is-favorite');
+                        }
+
+                    console.log('#favorite-' + data.app_label + '-' + data.model + '-count')
+                    $('#favorite-' + data.app + '-' + data.model + '-count').text(data.count);
+
+                    }
+                });
+
+            return false;
+            }
+
+
         $(document).ready(function(){
 
-            $("a[data-favorite]").click(function(event) {
-                /* Submit JSON favorite request and act on result */
-
-                favorite_item = $(event.target);
-                var data = new Object();
-                identifer = $(event.target).data('favorite');
-                identifiers = identifer.split('-');
-
-                data.app = identifiers[0];
-                data.model = identifiers[1];
-                data.pk = identifiers[2];
-
-                console.log(data);
-                $.ajax({
-                    url: '/favorite/toggle',
-                    data: data,
-                    type: 'post',
-                    dataType: 'json',
-                    cache: false,
-                    success: function(data){
-                        /* Act on result */
-                            console.log('#favorite-' + identifer)
-                            if(data.is_favorite){
-                                $('#favorite-' + identifer).addClass('panel-warning is-favorite');
-                                $('#favorite-' + identifer).removeClass('panel-default');
-                            } else {
-                                $('#favorite-' + identifer).addClass('panel-default');
-                                $('#favorite-' + identifer).removeClass('panel-warning is-favorite');
-                            }
-
-                        console.log('#favorite-' + data.app_label + '-' + data.model + '-count')
-                        $('#favorite-' + data.app + '-' + data.model + '-count').text(data.count);
-
-                        }
-                    });
-
-                return false;
-                });
+            $("a[data-favorite]").click(toggleFavorite);
 
 
             $(document).delegate('*[data-toggle="lightbox"]', 'click', function(event) {

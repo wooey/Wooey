@@ -1,13 +1,16 @@
 from __future__ import absolute_import, unicode_literals
 from collections import defaultdict
 
-from django.views.generic import DetailView, TemplateView
+from django.views.generic import DetailView, TemplateView, View
+from django.template.loader import render_to_string
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.forms import FileField
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_text
+from django.template import RequestContext
+
 
 from django.contrib.contenttypes.models import ContentType
 
@@ -22,7 +25,9 @@ class WooeyScriptBase(DetailView):
     slug_field = 'slug'
     slug_url_kwarg = 'slug'
 
-    render_fn = None
+    @staticmethod
+    def render_fn(s):
+        return s
 
     def get_context_data(self, **kwargs):
         context = super(WooeyScriptBase, self).get_context_data(**kwargs)
@@ -40,7 +45,7 @@ class WooeyScriptBase(DetailView):
                     if value is not None:
                         initial[i.parameter.slug].append(value)
 
-        context['form'] = utils.get_form_groups(model=self.object, initial=initial, render_fn=self.render_fn)
+        context['form'] = utils.get_form_groups(model=self.object, initial_dict=initial, render_fn=self.render_fn)
         return context
 
     def post(self, request, *args, **kwargs):
@@ -102,7 +107,9 @@ class WooeyScriptJSON(WooeyScriptBase):
 
     # FIXME: the form data is returned as form objects so can be passed to templates
     # this render_fn allows us to pass the return through a stringify method for JSON
-    render_fn = lambda form: form.as_table()
+    @staticmethod
+    def render_fn(form):
+        return form.as_table()
 
     def render_to_response(self, context, *args, **kwargs):
         return JsonResponse(context)
@@ -134,10 +141,13 @@ class WooeyHomeView(TemplateView):
         ctx = super(WooeyHomeView, self).get_context_data(**kwargs)
         ctx['scripts'] = Script.objects.all()
 
-
-        # Get the id of every favorite (scrapbook) file
-        ctype = ContentType.objects.get_for_model(Script)
-        ctx['favorite_script_ids'] = Favorite.objects.filter(content_type=ctype, user=self.request.user).values_list('object_id', flat=True)
+        # Check for logged in user
+        if self.request.user.is_authenticated():
+            # Get the id of every favorite (scrapbook) file
+            ctype = ContentType.objects.get_for_model(Script)
+            ctx['favorite_script_ids'] = Favorite.objects.filter(content_type=ctype, user__id=self.request.user.id).values_list('object_id', flat=True)
+        else:
+            ctx['favorite_script_ids'] = []
 
         return ctx
 
@@ -166,3 +176,43 @@ class WooeyScrapbookView(TemplateView):
         ctx['favorite_file_ids'] = favorite_file_ids
 
         return ctx
+
+
+class WooeySearchBase(View):
+
+    model = None
+    search_fields = []
+
+    def get(self, request, *args, **kwargs):
+
+        self.search_results = None
+        if 'q' in request.GET:
+            query_string = request.GET['q'].strip()
+
+            query = utils.get_query(query_string, self.search_fields)
+            self.search_results = self.model.objects.filter(query)
+
+            return self.search(request, *args, **kwargs)
+
+
+class WooeyScriptSearchBase(WooeySearchBase):
+
+    model = Script
+    search_fields = ['script_name', 'script_description']
+
+
+class WooeyScriptSearchJSONHTML(WooeyScriptSearchBase):
+    """
+    Returns the result of the script search as JSON containing rendered template
+    elements for display in the original page. This is a temporary function
+    until the handling is moved to client side rendering.
+    """
+
+    def search(self, request):
+        results = []
+        for script in self.search_results:
+            results.append( render_to_string('wooey/scripts/script_panel.html', {'script': script}, context_instance=RequestContext(request)) )
+        return JsonResponse({'results': results})
+
+
+

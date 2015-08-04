@@ -23,6 +23,9 @@ wooey_patterns = [
     url(r'^scripts/(?P<slug>[a-zA-Z0-9\-\_]+)/jobs/(?P<job_id>[a-zA-Z0-9\-]+)$', views.WooeyScriptJSON.as_view(), name='wooey_script_json_clone'),
     url(r'^scripts/(?P<slug>[a-zA-Z0-9\-\_]+)/$', views.WooeyScriptJSON.as_view(), name='wooey_script_json'),
 
+    url(r'^scripts/search/jsonhtml$', views.WooeyScriptSearchJSONHTML.as_view(), name='wooey_search_script_jsonhtml'),
+
+
     url(r'^profile/$', views.WooeyProfileView.as_view(), name='profile_home'),
     url(r'^$', views.WooeyHomeView.as_view(), name='wooey_home'),
     url(r'^$', views.WooeyHomeView.as_view(), name='wooey_task_launcher'),

@@ -7,15 +7,17 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.models import AnonymousUser
 from django.http import Http404
 
+from nose.tools import raises
+
 from . import factories, mixins, config
 from ..views import wooey_celery
 from .. import views as wooey_views
 from .. import settings
 
+
 def load_JSON_dict(d):
     return json.loads(d.decode('utf-8'))
 
-from nose.tools import raises
 
 class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     def setUp(self):
@@ -31,7 +33,7 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         d = response.content.decode("utf-8")
         self.assertEqual({u'global': [], u'results': [], u'user': []}, json.loads(d))
 
-        job = ffactories.TranslateJobFactory()
+        job = factories.TranslateJobFactory()
         job.save()
         response = wooey_celery.all_queues_json(request)
         d = json.loads(response.content.decode("utf-8"))
@@ -125,15 +127,16 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         choices = ['2', '1', '3']
         choice_param = 'two_choices'
         job = utils.create_wooey_job(script_pk=script.pk, data={'job_name': 'abc', choice_param: choices})
-        request = self.factory.get(reverse('wooey:wooey_script_clone',
-                                           kwargs={'script_group': job.script.script_group.slug, 'script_name': job.script.slug, 'job_id': job.pk}))
+        request = self.factory.post(reverse('wooey:wooey_script_json_clone',
+                                           kwargs={'slug': job.script.slug, 'job_id': job.pk}))
+        request.user = AnonymousUser()
         response = self.script_view_func(request, pk=job.pk, job_id=job.pk)
         self.assertEqual(response.status_code, 200)
 
     def test_multiple_choice(self):
         user = factories.UserFactory()
         script = factories.ChoiceScriptFactory()
-        url = reverse('wooey:wooey_script', kwargs={'script_group': script.script_group.slug, 'script_name': script.slug})
+        url = reverse('wooey:wooey_script', kwargs={'slug': script.slug})
         data = {'job_name': 'abc', 'wooey_type': script.pk, 'two_choices': ['2', '1', '3']}
         filecount = 0
         for i,v in config.SCRIPT_DATA['choices']['files'].items():

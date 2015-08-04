@@ -7,10 +7,12 @@
 {% endblock extra_style %}
 
 {% block outer_content %}
+{% if not request.user.is_authenticated %}
 <div class="jumbotron frontpage">
   <h1 class="wooey">Wooey!</h1>
   <p>A web UI for Python scripts</p>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block left_sidebar %}{% endblock left_sidebar %}

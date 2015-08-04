@@ -10,7 +10,7 @@ from django.forms import FileField
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_text
 from django.template import RequestContext
-
+from django.contrib.auth import get_user_model
 
 from django.contrib.contenttypes.models import ContentType
 
@@ -153,12 +153,24 @@ class WooeyHomeView(TemplateView):
 
 
 class WooeyProfileView(TemplateView):
-    template_name = 'wooey/profile/profile_base.html'
+    template_name = 'wooey/profile/profile.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super(WooeyProfileView, self).get_context_data(**kwargs)
+
+        if 'username' in self.kwargs:
+            user = get_user_model()
+            ctx['profile_user'] = user.objects.get(username=self.kwargs.get('username'))
+
+        else:
+            if self.request.user and self.request.user.is_authenticated():
+                ctx['profile_user'] = self.request.user
+
+        return ctx
 
 
 class WooeyScrapbookView(TemplateView):
     template_name = 'wooey/scrapbook.html'
-
 
     def get_context_data(self, **kwargs):
         ctx = super(WooeyScrapbookView, self).get_context_data(**kwargs)

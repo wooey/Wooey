@@ -3,6 +3,9 @@ from django import template
 from .. import settings as wooey_settings
 from django.utils.safestring import mark_safe
 from django.contrib.contenttypes.models import ContentType
+import urllib
+import hashlib
+
 
 register = template.Library()
 @register.filter
@@ -57,3 +60,36 @@ def app_model_id(obj):
 def concat(arg1, arg2):
     """concatenate arg1 & arg2"""
     return str(arg1) + str(arg2)
+
+
+class GravatarUrlNode(template.Node):
+    def __init__(self, email, size):
+        self.email = template.Variable(email)
+        self.size = template.Variable(size)
+
+    def render(self, context):
+        try:
+            email = self.email.resolve(context)
+        except template.VariableDoesNotExist:
+            return ''
+
+        try:
+            size = self.size.resolve(context)
+        except template.VariableDoesNotExist:
+            return ''
+
+        url = "http://www.gravatar.com/avatar/" + hashlib.md5(email.lower()).hexdigest() + "?"
+        url += urllib.urlencode({'s': str(size)})
+
+        return url
+
+
+@register.tag
+def gravatar(parser, token):
+    try:
+        tag_name, email, size = token.split_contents()
+
+    except ValueError:
+        raise template.TemplateSyntaxError, "%r tag requires email and size arguments" % token.contents.split()[0]
+
+    return GravatarUrlNode(email, size)

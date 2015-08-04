@@ -18,8 +18,10 @@ from .. import settings as wooey_settings
 from ..backend.utils import valid_user, get_file_previews
 from ..django_compat import JsonResponse
 from django.db.models import Q
+from django.views.generic import ListView
 
 SPANBASE = "<span title='{}' class='glyphicon {}'></span> "
+MAXIMUM_JOBS_NAVBAR = 10
 STATE_MAPPER = {
     #  Default Primary Success Info Warning Danger
     WooeyJob.COMPLETED: SPANBASE.format(_('Success'), 'success glyphicon-ok'),
@@ -29,7 +31,6 @@ STATE_MAPPER = {
     states.FAILURE: SPANBASE.format(_('Failure'), 'danger glyphicon-exclamation-sign'),
     WooeyJob.SUBMITTED: SPANBASE.format(_('Waiting'), 'glyphicon-hourglass'),
 }
-
 
 
 def generate_job_list(job_query):
@@ -50,41 +51,59 @@ def generate_job_list(job_query):
         })
     return jobs
 
+
 def get_global_queue(request):
     jobs = WooeyJob.objects.filter( Q(status=WooeyJob.RUNNING) | Q(status=WooeyJob.SUBMITTED) )
-    return jobs
+    return jobs.order_by('-created_date')
+
 
 def global_queue_json(request):
     jobs = get_global_queue(request)
     return JsonResponse(generate_job_list(jobs), safe=False)
 
+
 def get_user_queue(request):
     user = request.user
     jobs = WooeyJob.objects.filter(Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None))
     jobs = jobs.exclude(Q(status=WooeyJob.DELETED) | Q(status=WooeyJob.COMPLETED))
-    return jobs
+    return jobs.order_by('-created_date')
+
 
 def user_queue_json(request):
     jobs = get_user_queue(request)
     return JsonResponse(generate_job_list(jobs), safe=False)
 
+
 def get_user_results(request):
     user = request.user
     jobs = WooeyJob.objects.filter(Q(status=WooeyJob.COMPLETED) & ( Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None)) )
     jobs = jobs.exclude(status=WooeyJob.DELETED)
-    return jobs
+    return jobs.order_by('-created_date')
+
 
 def user_results_json(request):
     jobs = get_user_results(request)
     return JsonResponse(generate_job_list(jobs), safe=False)
 
-def all_queues_json(request):
-    return JsonResponse({
-        'global': generate_job_list(get_global_queue(request)),
-        'user': generate_job_list(get_user_queue(request)),
-        'results': generate_job_list(get_user_results(request)),
-    }, safe=False)
 
+def all_queues_json(request):
+
+    global_queue = get_global_queue(request)
+    user_queue = get_user_queue(request)
+    user_results = get_user_results(request)
+
+    return JsonResponse({
+        'totals':{
+            'global': global_queue.count(),
+            'user': user_queue.count(),
+            'results': user_results.count(),
+        },
+        'items':{
+            'global': generate_job_list(global_queue[:MAXIMUM_JOBS_NAVBAR]),
+            'user': generate_job_list(user_queue[:MAXIMUM_JOBS_NAVBAR]),
+            'results': generate_job_list(user_results[:MAXIMUM_JOBS_NAVBAR]),
+        },
+    }, safe=False)
 
 
 def celery_task_command(request):
@@ -174,3 +193,38 @@ class CeleryTaskJSON(CeleryTaskBase):
 
     def render_to_response(self, context, *args, **kwargs):
         return JsonResponse(context)
+
+
+class CeleryTaskListBase(ListView):
+    template_name = 'wooey/tasks/task_list.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super(CeleryTaskListBase, self).get_context_data(**kwargs)
+        ctx['title'] = self.title
+        return ctx
+
+
+class CeleryGlobalQueueView(CeleryTaskListBase):
+    title = "Global Queue"
+
+    def get_queryset(self, *args, **kwargs):
+        return get_global_queue(self.request)
+
+
+class CeleryUserQueueView(CeleryTaskListBase):
+    title = "My Queue"
+
+    def get_queryset(self, *args, **kwargs):
+        return get_user_queue(self.request)
+
+
+class CeleryUserResultsView(CeleryTaskListBase):
+    title = "My Results"
+
+    def get_queryset(self, *args, **kwargs):
+        return get_user_results(self.request)
+
+
+
+
+

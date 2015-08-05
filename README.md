@@ -2,6 +2,8 @@
 
 ## About
 
+[![Join the chat at https://gitter.im/wooey/Wooey](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/wooey/Wooey?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Wooey is a simple web interface (built on Flask) to run command line Python scripts. Think of it as an easy way to get
 your scripts up on the web for routine data analysis, file processing, or anything else.
 A [live demo](http://wooey.martinfitzpatrick.name/) is available, showcasing the UI for some simple scripts.

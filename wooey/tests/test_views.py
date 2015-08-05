@@ -31,28 +31,29 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         request.user = user
         response = wooey_celery.all_queues_json(request)
         d = response.content.decode("utf-8")
-        self.assertEqual({u'global': [], u'results': [], u'user': []}, json.loads(d))
-
+        self.assertEqual({u'items': {u'global': [], u'results': [], u'user': []},
+                          u'totals': {u'global': 0, u'results': 0, u'user': 0}
+                            }, json.loads(d))
         job = factories.TranslateJobFactory()
         job.save()
         response = wooey_celery.all_queues_json(request)
         d = json.loads(response.content.decode("utf-8"))
-        self.assertEqual(1, len(d['global']))
+        self.assertEqual(1, d['totals']['global'])
 
         job.user = user
         job.save()
         response = wooey_celery.all_queues_json(request)
         d = json.loads(response.content.decode("utf-8"))
         # we now are logged in, make sure the job appears under the user jobs
-        self.assertEqual(1, len(d['user']))
+        self.assertEqual(1, d['totals']['user'])
 
         user = AnonymousUser()
         request.user = user
         response = wooey_celery.all_queues_json(request)
         d = json.loads(response.content.decode("utf-8"))
         # test empty response since anonymous users should not see users jobs
-        self.assertEqual(d['results'], [])
-        self.assertEqual(d['user'], [])
+        self.assertEqual(d['items']['results'], [])
+        self.assertEqual(d['items']['user'], [])
 
     def test_celery_commands(self):
         user = factories.UserFactory()

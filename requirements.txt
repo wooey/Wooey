@@ -5,3 +5,4 @@ factory-boy
 coveralls
 six
 clinto
+tox

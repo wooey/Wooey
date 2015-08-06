@@ -111,9 +111,9 @@ def load_scripts():
     except OperationalError:
         # database not initialized yet
         return
+    found_scripts = OrderedDict()
     if scripts:
         scripts = Script.objects.all()
-        found_scripts = OrderedDict()
         for script in scripts:
             try:
                 found_scripts[script.script_name].append((script.script_version, script))

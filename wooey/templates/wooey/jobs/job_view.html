@@ -138,7 +138,7 @@
 
         {% for output_group, output_files in job_info.file_groups.items %}
                 {% for output_file_content in output_files %}
-                    {% include 'wooey/preview/'|concat:output_group|concat:'.html' %}
+                    {%if output_group %}{% include 'wooey/preview/'|concat:output_group|concat:'.html' %}{% endif %}
                 {% endfor %}
         {% endfor %}
 

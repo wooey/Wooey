@@ -16,7 +16,7 @@
             {% endif %}
 
             {% if not script.is_active %}<a class="icon icon-locked" href="#" title="This script is unavailable."></a>{% endif %}
-            <a class="icon icon-favorite" data-favorite="{{ script|app_model_id }}"  href="#"></a>
+            <a class="icon icon-favorite requires-login" data-favorite="{{ script|app_model_id }}"  href="#"></a>
         </div>
         <div class="panel-body">{{ script.script_description }}</div>
         <div class="wooey-script-group">{{ script.script_group.group_name }}</div>

@@ -19,16 +19,31 @@
     <form id="wooey-job-form" method="POST" action="{{ form.action }}" enctype="multipart/form-data">
         {% csrf_token %}
 
+        <div class="panel panel-default">
+        <div class="panel-heading">Settings  <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-settings" href="#collapse-settings"></a></div>
+
+        <div id="collapse-settings" class="panel-collapse collapse in">
+
+        <div class="panel-nav-tabs">
+        <ul class="nav nav-tabs">
         {% for group in form.groups %}
+            {% with group.group_name|slugify as group_slug %}
+            <li class="{% if forloop.first %}active{% endif %}"><a data-toggle="tab" href="#optiongroup-{{ group_slug }}">{{ group.group_name|title }}</a></li>
+            {% endwith %}
+        {% endfor %}
+        </ul>
+        </div>
+
+        <div class="panel-body">
+        <div class="tab-content">
+        {% for group in form.groups %}
+
         {% with group.group_name|slugify as group_slug %}
 
-        <div class="panel panel-default">
-            <div class="panel-heading">{{ group.group_name|title }}  <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-{{ group_slug }}" href="#collapse-{{ group_slug }}"></a></div>
-            <div id="collapse-{{ group_slug }}" class="panel-collapse collapse in">
-            <div class="panel-body">
+          <div id="optiongroup-{{ group_slug }}" class="tab-pane fade in {% if forloop.first %}active{% endif %}">
 
             {% for field in group.form %}
-            <div class="form-group row">
+                <div class="form-group row">
                 {{ field.errors }}
                 {% if not field.is_hidden %}
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
@@ -37,14 +52,18 @@
                 {% if not field.is_hidden %}
                 <p class="help-block">{{ field.help_text }}</p>
                 {% endif %}
-            </div>
+                </div>
             {% endfor %}
-            </div>
-            </div>
-            </div>
+          </div>
+
         {% endwith %}
         {% endfor %}
 
+        </div>
+        </div>
+        </div>
+
+        </div>
 
 
         <div class="panel panel-default">
@@ -70,6 +89,6 @@
             <button id="wooey-form-submit" type="submit" class="btn btn-primary">{% trans "Submit" %}</button>
         </div>
     </form>
-
+</div>
 
 {% endblock center_content %}

@@ -199,7 +199,8 @@ class JobListBase(ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super(JobListBase, self).get_context_data(**kwargs)
-        ctx['title'] = self.title
+        if 'title' not in ctx:
+            ctx['title'] = self.title
         return ctx
 
 
@@ -218,7 +219,14 @@ class UserQueueView(JobListBase):
 
 
 class UserResultsView(JobListBase):
-    title = "My Results"
+
+    def get_context_data(self, **kwargs):
+        if self.request.user and self.request.user.is_authenticated():
+            kwargs['title'] = "My Results"
+        else:
+            kwargs['title'] = "Public Results"
+
+        return super(UserResultsView, self).get_context_data(**kwargs)
 
     def get_queryset(self, *args, **kwargs):
         return get_user_results(self.request)

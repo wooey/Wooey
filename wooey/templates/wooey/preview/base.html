@@ -5,7 +5,7 @@
         <div class="panel-heading"><span class="glyphicon glyphicon-picture"></span> {{ output_file_content.basename }}
 
         <a class="icon icon-download" href="{{ output_file_content.url }}" download  title="{% trans "Download this output" %}"></a>
-        <a class="icon icon-pushpin" data-favorite="{{ output_file_content.object|app_model_id }}" href="#" title="{% trans "Pin in scrapbook" %}"></a>
+        <a class="icon icon-pushpin requires-login" data-favorite="{{ output_file_content.object|app_model_id }}" href="#" title="{% trans "Pin in scrapbook" %}"></a>
         </div>
         {% block preview_content %}{% endblock %}
         {% if show_preview_metadata %}

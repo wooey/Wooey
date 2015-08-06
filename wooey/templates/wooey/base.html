@@ -286,11 +286,27 @@
             margin-bottom: 0px;
         }
 
+        .panel-nav-tabs {
+            position: relative;
+        }
+
+        .panel-nav-tabs ul {
+            position: absolute;
+            top: -42px;
+        }
+
+        .panel-nav-tabs ul:first-child {
+            margin-left: 100px;
+        }
+
+        .user-is-anonymous .requires-login { display: none; }
+
+
         {% block extra_style %}
         {% endblock extra_style %}
     </style>
 </head>
-<body>
+<body class="{% if user.is_authenticated %}user-is-authenticated{% else %}user-is-anonymous{% endif %}">
     <nav class="navbar navbar-inverse navbar-fixed-top">
 {#    from http://www.bootply.com/3iSOTAyumP for brand centering #}
       <div class="container-fluid">
@@ -320,9 +336,6 @@
               </li>
 
               {% if request.user.is_authenticated %}
-
-
-
               <!-- List all currently active, waiting jobs for current user -->
               <li class="dropdown disabled" id="job-list-user">
                   <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Jobs <span class="badge jobs-badge" id="jobs-badge-user">8</span> <span class="caret"></span></a>
@@ -331,7 +344,7 @@
                   </ul>
 
               </li>
-
+              {% endif %}
               <!-- List latest N completed jobs -->
               <li class="dropdown disabled" id="job-list-results">
                   <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Results <span class="badge jobs-badge" id="jobs-badge-results">8</span> <span class="caret"></span></a>
@@ -341,6 +354,7 @@
 
               </li>
 
+              {% if request.user.is_authenticated %}
               <li class="dropdown" id="job-list-user">
                   <a href="{% url 'wooey:scrapbook' %}" role="button" aria-haspopup="true" aria-expanded="false">Scrapbook <span class="badge scrapbook-badge" id="favorite-wooey-wooeyfile-count">0</span></a>
               </li>

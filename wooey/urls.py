@@ -16,13 +16,13 @@ wooey_patterns = [
 
     url(r'^jobs/queue/all/json', views.all_queues_json, name='all_queues_json'),
 
-    url(r'^jobs/queue/global', views.CeleryGlobalQueueView.as_view(), name='global_queue'),
-    url(r'^jobs/queue/user', views.CeleryUserQueueView.as_view(), name='user_queue'),
-    url(r'^jobs/results/user', views.CeleryUserResultsView.as_view(), name='user_results'),
+    url(r'^jobs/queue/global', views.GlobalQueueView.as_view(), name='global_queue'),
+    url(r'^jobs/queue/user', views.UserQueueView.as_view(), name='user_queue'),
+    url(r'^jobs/results/user', views.UserResultsView.as_view(), name='user_results'),
 
 
-    url(r'^jobs/(?P<job_id>[a-zA-Z0-9\-]+)/$', views.CeleryTaskView.as_view(), name='celery_results'),
-    url(r'^jobs/(?P<job_id>[a-zA-Z0-9\-]+)/json$', views.CeleryTaskJSON.as_view(), name='celery_results_json'),
+    url(r'^jobs/(?P<job_id>[0-9\-]+)/$', views.JobView.as_view(), name='celery_results'),
+    url(r'^jobs/(?P<job_id>[0-9\-]+)/json$', views.JobJSON.as_view(), name='celery_results_json'),
 
     url(r'^scripts/(?P<slug>[a-zA-Z0-9\-\_]+)/$', views.WooeyScriptView.as_view(), name='wooey_script'),
     url(r'^scripts/(?P<slug>[a-zA-Z0-9\-\_]+)/jobs/(?P<job_id>[a-zA-Z0-9\-]+)$', views.WooeyScriptJSON.as_view(), name='wooey_script_json_clone'),
@@ -35,7 +35,7 @@ wooey_patterns = [
     url(r'^profile/(?P<username>[a-zA-Z0-9\-]+)$', views.WooeyProfileView.as_view(), name='profile'),
 
     url(r'^$', views.WooeyHomeView.as_view(), name='wooey_home'),
-    url(r'^$', views.WooeyHomeView.as_view(), name='wooey_task_launcher'),
+    url(r'^$', views.WooeyHomeView.as_view(), name='wooey_job_launcher'),
     url('^{}'.format(wooey_settings.WOOEY_LOGIN_URL.lstrip('/')), views.wooey_login, name='wooey_login'),
     url('^{}'.format(wooey_settings.WOOEY_REGISTER_URL.lstrip('/')), views.WooeyRegister.as_view(), name='wooey_register'),
 

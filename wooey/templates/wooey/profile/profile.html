@@ -17,7 +17,7 @@
       <small>{{ profile_user.username }}</small></h1>
 
 
-  <div class="task-metadata">
+  <div class="profile-metadata">
     Joined {{ profile_user.date_joined|timesince }} ago
     {% if profile_user.is_superuser %}
         • <span class="glyphicon glyphicon-fire"></span> Superuser

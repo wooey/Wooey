@@ -118,6 +118,7 @@ class WooeyScriptJSON(WooeyScriptBase):
         data = super(WooeyScriptJSON, self).post(*args, **kwargs)
         return JsonResponse(data)
 
+
 class WooeyScriptView(WooeyScriptBase):
 
     template_name = 'wooey/scripts/script_view.html'
@@ -130,7 +131,6 @@ class WooeyScriptView(WooeyScriptBase):
             # FIXME: This works but the form handling here should return the submitted data
             # may need to refactor the JSON stuff a little bit to make this work
             return self.get(*args, **kwargs)
-
 
 
 class WooeyHomeView(TemplateView):

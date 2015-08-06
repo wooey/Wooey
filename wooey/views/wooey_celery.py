@@ -118,12 +118,12 @@ def celery_task_command(request):
         if user == job.user or job.user == None:
             if command == 'resubmit':
                 new_job = job.submit_to_celery(resubmit=True, user=request.user)
-                response.update({'valid': True, 'extra': {'task_url': reverse('wooey:celery_results', kwargs={'job_id': new_job.pk})}})
+                response.update({'valid': True, 'extra': {'job_url': reverse('wooey:celery_results', kwargs={'job_id': new_job.pk})}})
             elif command == 'rerun':
                 job.submit_to_celery(user=request.user, rerun=True)
                 response.update({'valid': True, 'redirect': reverse('wooey:celery_results', kwargs={'job_id': job_id})})
             elif command == 'clone':
-                response.update({'valid': True, 'redirect': '{0}?job_id={1}'.format(reverse('wooey:wooey_task_launcher'), job_id)})
+                response.update({'valid': True, 'redirect': '{0}?job_id={1}'.format(reverse('wooey:wooey_job_launcher'), job_id)})
             elif command == 'delete':
                 job.status = WooeyJob.DELETED
                 job.save()
@@ -140,17 +140,17 @@ def celery_task_command(request):
     return JsonResponse(response)
 
 
-class CeleryTaskBase(DetailView):
+class JobBase(DetailView):
 
     model = WooeyJob
 
     def get_object(self):
         # FIXME: Update urls to use PK
         self.kwargs['pk'] = self.kwargs.get('job_id')
-        return super(CeleryTaskBase, self).get_object()
+        return super(JobBase, self).get_object()
 
     def get_context_data(self, **kwargs):
-        ctx = super(CeleryTaskBase, self).get_context_data(**kwargs)
+        ctx = super(JobBase, self).get_context_data(**kwargs)
         wooey_job = ctx['wooeyjob']
 
         user = self.request.user
@@ -166,7 +166,7 @@ class CeleryTaskBase(DetailView):
             favorite_file_ids = Favorite.objects.filter(content_type=ctype, object_id__in=[f['id'] for f in all],
                                                         user=user).values_list('object_id', flat=True)
 
-            ctx['task_info'] = {
+            ctx['job_info'] = {
                     'all_files': all,
                     'archives': archives,
                     'file_groups': out_files,
@@ -180,45 +180,44 @@ class CeleryTaskBase(DetailView):
 
 
         else:
-            ctx['task_error'] = _('You are not authenticated to view this job.')
+            ctx['job_error'] = _('You are not authenticated to view this job.')
         return ctx
 
 
+class JobView(JobBase):
+    template_name = 'wooey/jobs/job_view.html'
 
-class CeleryTaskView(CeleryTaskBase):
-    template_name = 'wooey/tasks/task_view.html'
 
-
-class CeleryTaskJSON(CeleryTaskBase):
+class JobJSON(JobBase):
 
     def render_to_response(self, context, *args, **kwargs):
         return JsonResponse(context)
 
 
-class CeleryTaskListBase(ListView):
-    template_name = 'wooey/tasks/task_list.html'
+class JobListBase(ListView):
+    template_name = 'wooey/jobs/job_list.html'
 
     def get_context_data(self, **kwargs):
-        ctx = super(CeleryTaskListBase, self).get_context_data(**kwargs)
+        ctx = super(JobListBase, self).get_context_data(**kwargs)
         ctx['title'] = self.title
         return ctx
 
 
-class CeleryGlobalQueueView(CeleryTaskListBase):
+class GlobalQueueView(JobListBase):
     title = "Global Queue"
 
     def get_queryset(self, *args, **kwargs):
         return get_global_queue(self.request)
 
 
-class CeleryUserQueueView(CeleryTaskListBase):
+class UserQueueView(JobListBase):
     title = "My Queue"
 
     def get_queryset(self, *args, **kwargs):
         return get_user_queue(self.request)
 
 
-class CeleryUserResultsView(CeleryTaskListBase):
+class UserResultsView(JobListBase):
     title = "My Results"
 
     def get_queryset(self, *args, **kwargs):

@@ -12,7 +12,7 @@
 {% endblock extra_css %}
 {% block extra_style %}
     {{ extra_style.super }}
-    #wooey-task-submit {
+    #wooey-job-submit {
       float: left;
       margin-left: 3px;
     }
@@ -28,10 +28,10 @@
 
         <div class="btn-toolbar" role="toolbar">
 
-        {% if task_info.archives %}
+        {% if job_info.archives %}
 
             <div class="btn-group">
-            <a href="{{ task_info.archives.0.url }}" role="button" class="btn btn-primary">
+            <a href="{{ job_info.archives.0.url }}" role="button" class="btn btn-primary">
             <span class="glyphicon glyphicon-download-alt" aria-hidden="true"></span> {% trans "Download" %}
             </a>
             <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
@@ -39,14 +39,14 @@
                 <span class="sr-only">Toggle Dropdown</span>
             </button>
             <ul class="dropdown-menu" role="menu">
-                {% for archive in task_info.archives %}
+                {% for archive in job_info.archives %}
                     <li><a href="{{ archive.url }}"><span class="glyphicon glyphicon-compressed"></span> {% if archive.url|endswith:"zip" %}.zip{% else %}.tar.gz{% endif %}</a></li>
                 {% endfor %}
             </ul>
             </div>
 
             <div class="btn-group">
-            <a href="{{ task_info.archives.0.url }}" role="button" class="btn btn-success">
+            <a href="{{ job_info.archives.0.url }}" role="button" class="btn btn-success">
             <span class="glyphicon glyphicon-share" aria-hidden="true"></span> {% trans "Share" %}
             </a>
             <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
@@ -58,7 +58,7 @@
                 {% with request.build_absolute_uri as permalink %}
                 <li><a href="{{ permalink }}" onclick="$('#modal-permalink').modal(); return false;"><span class="glyphicon glyphicon-link"></span> Permalink</a></li>
                 {% endwith %}
-                <li><a href="mailto:?subject=Wooey Job #{{ task_info.job.id }} is {{ task_info.job.status }}&body=You can see the result and any outputs at the following link:%0D%0A{{ request.build_absolute_uri }}"><span class="glyphicon glyphicon-envelope"></span> Email</a></li>
+                <li><a href="mailto:?subject=Wooey Job #{{ job_info.job.id }} is {{ job_info.job.status }}&body=You can see the result and any outputs at the following link:%0D%0A{{ request.build_absolute_uri }}"><span class="glyphicon glyphicon-envelope"></span> Email</a></li>
             </ul>
             </div>
 
@@ -69,11 +69,11 @@
 
 
         {% endif %}
-            <form action="{% url 'wooey:celery_task_command' %}" id="wooey-task-submit" method="post">
+            <form action="{% url 'wooey:celery_task_command' %}" id="wooey-job-submit" method="post">
                 {% csrf_token %}
-                <input name="job-id" value="{{ task_info.job.pk }}" type="hidden">
+                <input name="job-id" value="{{ job_info.job.pk }}" type="hidden">
 
-                {% if not task_info.job.status|complete_job %}
+                {% if not job_info.job.status|complete_job %}
                     <button class="btn btn-primary btn-danger" name="celery-command" value="stop" type="submit">
                         <span class="glyphicon glyphicon-stop" aria-hidden="true"></span> {% trans "Stop" %}
                     </button>
@@ -99,27 +99,27 @@
     </div>
     </div>
 
-  <h1>{{ task_info.job.job_name }} <small>{{ task_info.job.job_description }}</small></h1>
+  <h1>{{ job_info.job.job_name }} <small>{{ job_info.job.job_description }}</small></h1>
 
 
-  <div class="task-metadata">
-      <a href="{{ task_info.job.script.get_url }}">{{ task_info.job.script.script_name }}</a>
-      • Job <a href="{{ task_info.job.job_url }}">#{{ task_info.job.id }}</a>
+  <div class="job-metadata">
+      <a href="{{ job_info.job.script.get_url }}">{{ job_info.job.script.script_name }}</a>
+      • Job <a href="{{ job_info.job.job_url }}">#{{ job_info.job.id }}</a>
       • Priority 1
-      • Submitted {{ task_info.job.created_date|timesince }} ago by {{ task_info.job.user }}
-      • Updated {{ task_info.last_modified|timesince }} ago
+      • Submitted {{ job_info.job.created_date|timesince }} ago by {{ job_info.job.user }}
+      • Updated {{ job_info.last_modified|timesince }} ago
 
 
 
-    {% if task_info.job.status == 'completed' %}
+    {% if job_info.job.status == 'completed' %}
     <span class="label label-success"><span class="glyphicon glyphicon-ok"></span> Success</span>
-    {% elif task_info.job.status == 'running' %}
+    {% elif job_info.job.status == 'running' %}
     <span class="label label-success"><span class="glyphicon glyphicon-refresh spinning"></span> Executing</span>
-    {% elif task_info.job.status == 'pending' %}
+    {% elif job_info.job.status == 'pending' %}
     <span class="label label-default"><span class="glyphicon time"></span> Queued</span>
-    {% elif task_info.job.status == 'revoked' %}
+    {% elif job_info.job.status == 'revoked' %}
     <span class="label label-danger"><span class="glyphicon glyphicon-stop"></span> Halted</span>
-    {% elif task_info.job.status == 'submitted' %}
+    {% elif job_info.job.status == 'submitted' %}
     <span class="label label-default"><span class="glyphicon glyphicon-hourglass"></span> Waiting</span>
     {% endif %}
 
@@ -129,14 +129,14 @@
 
 
 
-{% if task_error %}
-    <h1 class="text-center">{{ task_error }}</h1>
+{% if job_error %}
+    <h1 class="text-center">{{ job_error }}</h1>
 {% else %}
     {% include "wooey/modals/resubmit_modal.html" %}
 
     <div class="row">
 
-        {% for output_group, output_files in task_info.file_groups.items %}
+        {% for output_group, output_files in job_info.file_groups.items %}
                 {% for output_file_content in output_files %}
                     {% include 'wooey/preview/'|concat:output_group|concat:'.html' %}
                 {% endfor %}
@@ -145,17 +145,17 @@
 
         <!-- Output command and stderr, stdout in console-style view -->
         <div class="col-sm-12 col-md-12">
-          <div class="thumbnail panel panel-{% if task_info.job.stderr %}danger{% else %}default{% endif %}">
+          <div class="thumbnail panel panel-{% if job_info.job.stderr %}danger{% else %}default{% endif %}">
                 <div class="panel-heading"><span class="glyphicon glyphicon-console"></span> {% trans "Console" %} <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-console" href="#collapse-console"></a></div>
 
                 <div id="collapse-console" class="panel-collapse collapse in">
                 <div class="panel-body console">
-                  <pre class="console-body console-command">{{ task_info.job.command }}</pre>
-                  {% if task_info.job.stdout %}
-                  <pre class="console-body console-stdout">{{ task_info.job.stdout|linebreaks }}</pre>
+                  <pre class="console-body console-command">{{ job_info.job.command }}</pre>
+                  {% if job_info.job.stdout %}
+                  <pre class="console-body console-stdout">{{ job_info.job.stdout|linebreaks }}</pre>
                   {% endif  %}
-                  {% if task_info.job.stderr %}
-                  <pre class="console-body console-stderr">{{ task_info.job.stderr|linebreaks }}</pre>
+                  {% if job_info.job.stderr %}
+                  <pre class="console-body console-stderr">{{ job_info.job.stderr|linebreaks }}</pre>
                   {% endif %}
 
                 </div>
@@ -179,7 +179,7 @@
                             <th></th>
                             <th style="text-align:center;">Size</th>
                         </tr>
-                        {% for file in task_info.all_files %}
+                        {% for file in job_info.all_files %}
                             <tr>
                             <th>
                                 {% if file.filetype == 'images' %}<span class="glyphicon glyphicon-picture"></span>
@@ -211,7 +211,7 @@
 {{ block.super }}
 <script>
     $(document).ready(function(){
-        $('#wooey-task-submit button').click(function(event){
+        $('#wooey-job-submit button').click(function(event){
             event.preventDefault();
             var $form = $(this).closest('form');
             var formData = $form.serializeArray();
@@ -228,7 +228,7 @@
                         }
                         else{
                             // the only way we end here is from a resubmission at the moment
-                            $('#new-task-url').attr('href', data.extra.task_url);
+                            $('#new-job-url').attr('href', data.extra.job_url);
                             $('#modal-resubmit').modal();
                         }
                     }

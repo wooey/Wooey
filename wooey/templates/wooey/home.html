@@ -241,7 +241,7 @@
                     var $jobform = $('#wooey-job-form');
                     updateScriptInfo('{{ clone_job.data_url }}');
                     loadWooeyScript('{{ clone_job.url }}', {job_id: '{{ clone_job.job_id }}'}, $jobform);
-                    $jobform.find('#wooey_clone_task_id').val("{{ clone_job.job_id }}");
+                    $jobform.find('#wooey_clone_job_id').val("{{ clone_job.job_id }}");
                 {% endif %}
 
 
@@ -323,7 +323,7 @@
                     }
                 };
 
-                var task_reloaded = false;
+                var job_reloaded = false;
 
                 $('#celery-refresh').click(function(event){
                     celeryRefresh();

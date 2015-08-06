@@ -32,12 +32,14 @@ def sanitize_name(name):
 def sanitize_string(value):
     return value.replace('"', '\\"')
 
+
 def get_storage(local=True):
     if wooey_settings.WOOEY_EPHEMERAL_FILES:
         storage = default_storage.local_storage if local else default_storage
     else:
         storage = default_storage
     return storage
+
 
 def get_job_commands(job=None):
     script = job.script
@@ -60,6 +62,7 @@ def get_job_commands(job=None):
         if values:
             com.extend(values)
     return com
+
 
 @transaction.atomic
 def create_wooey_job(user=None, script_pk=None, data=None):
@@ -293,8 +296,6 @@ def test_delimited(filepath):
     return True, rows
 
 
-
-
 def test_fastx(filepath):
     # if we can be delimited by + or > we're maybe a fasta/q
     with open(filepath) as fastx_file:
@@ -319,6 +320,7 @@ def test_fastx(filepath):
             [rows.extend([i, v]) for i,v in six.iteritems(sequences)]
             return True, rows
     return False, None
+
 
 def create_job_fileinfo(job):
     parameters = job.get_parameters()

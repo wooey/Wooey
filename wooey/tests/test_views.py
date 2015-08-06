@@ -94,23 +94,23 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         job.save()
 
         # test that an anonymous user cannot view a user's job
-        view = wooey_celery.CeleryTaskView.as_view()
+        view = wooey_celery.JobView.as_view()
         request = self.factory.get(reverse('wooey:celery_results', kwargs={'job_id': job.pk}))
         request.user = AnonymousUser()
         response = view(request, job_id=job.pk)
-        self.assertIn('task_error', response.context_data)
-        self.assertNotIn('task_info', response.context_data)
+        self.assertIn('job_error', response.context_data)
+        self.assertNotIn('job_info', response.context_data)
 
         # test the user can view the job
         request.user = user
         response = view(request, job_id=job.pk)
-        self.assertNotIn('task_error', response.context_data)
-        self.assertIn('task_info', response.context_data)
+        self.assertNotIn('job_error', response.context_data)
+        self.assertIn('job_info', response.context_data)
 
     @raises(Http404)
     def test_celery_nonexistent_task(self):
         # test request for non-existent job, should raise 404
-        view = wooey_celery.CeleryTaskView.as_view()
+        view = wooey_celery.JobView.as_view()
         request = self.factory.get(reverse('wooey:celery_results', kwargs={'job_id': '-1'}))
         response = view(request, job_id=-1)
 

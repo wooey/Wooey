@@ -221,16 +221,16 @@
                     window.scrollTo(0, scriptTop);
             };
 
-            {% if clone_job %}
+            {% if job_info %}
                 // Track file changes
                 $("input:file").change(function (){
                    var fileName = $(this).val();
                    filesUploaded[$(this).attr('name')] = fileName;
                  });
                 var $jobform = $('#wooey-job-form');
-                updateScriptInfo('{{ clone_job.data_url }}');
-                loadWooeyScript('{{ clone_job.url }}', {job_id: '{{ clone_job.job_id }}'}, $jobform);
-                $jobform.find('#wooey_clone_job_id').val("{{ clone_job.job_id }}");
+                updateScriptInfo('{{ job_info.data_url }}');
+                loadWooeyScript('{{ job_info.url }}', {job_id: '{{ job_info.job_id }}'}, $jobform);
+                $jobform.find('#wooey_clone_job_id').val("{{ job_info.job_id }}");
             {% endif %}
             initializeWooeyScript();
 

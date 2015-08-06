@@ -37,8 +37,8 @@ class WooeyScriptBase(DetailView):
         initial = None
         if job_id:
             job = WooeyJob.objects.get(pk=job_id)
-            # import pdb; pdb.set_trace();
             if job.user is None or (self.request.user.is_authenticated() and job.user == self.request.user):
+                context['job_info'] = {'job_id': job_id, 'url': job.get_resubmit_url(), 'data_url': job.script.get_url()}
                 initial = defaultdict(list)
                 for i in job.get_parameters():
                     value = i.value
@@ -83,8 +83,7 @@ class WooeyScriptBase(DetailView):
             if i in form.cleaned_data:
                 cleaned = form.cleaned_data[i]
                 cleaned = cleaned if isinstance(cleaned, list) else [cleaned]
-                if len(cleaned) != len(v):
-                    form.cleaned_data[i] = v
+                form.cleaned_data[i] = list(set(cleaned).union(set(v)))
                     
         if not form.errors:
             # data = form.cleaned_data

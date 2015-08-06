@@ -139,7 +139,7 @@ class WooeyHomeView(TemplateView):
     def get_context_data(self, **kwargs):
         #job_id = self.request.GET.get('job_id')
         ctx = super(WooeyHomeView, self).get_context_data(**kwargs)
-        ctx['scripts'] = Script.objects.all()
+        ctx['scripts'] = settings.WOOEY_SCRIPTS
 
         # Check for logged in user
         if self.request.user.is_authenticated():

@@ -113,40 +113,17 @@ def load_scripts():
         return
     if scripts:
         scripts = Script.objects.all()
+        found_scripts = OrderedDict()
         for script in scripts:
-            key = (script.script_group.group_order, script.script_group.pk)
-            group = dj_scripts.get(key, {
-                # 'url': reverse_lazy('script_group', kwargs={'script_group', script.script_group.slug}),
-                'group': script.script_group, 'scripts': []
-            })
-            dj_scripts[key] = group
-            group['scripts'].append((script.script_order, script))
-
-    for group_pk, group_info in six.iteritems(dj_scripts):
-        # order scripts
-        group_info['scripts'].sort(key=itemgetter(0))
-        latest_scripts = OrderedDict()
-        for i in group_info['scripts']:
-            script = i[1]
-            script_name = script.script_name
-            if script_name not in latest_scripts or latest_scripts[script_name].script_version < script.script_version:
-                latest_scripts[script_name] = script
-        valid_scripts = []
-        for i in latest_scripts.values():
             try:
-                # make sure we can load the form
-                get_master_form(script)
-            except:
-                sys.stdout.write('Traceback while loading {0}:\n {1}\n'.format(script, traceback.format_exc()))
-            else:
-                valid_scripts.append(i)
-        group_info['scripts'] = valid_scripts
-        # keep only the latest version of scripts
-    # order groups
-    ordered_scripts = OrderedDict()
-    for key in sorted(dj_scripts.keys(), key=itemgetter(0)):
-        ordered_scripts[key[1]] = dj_scripts[key]
-    settings.WOOEY_SCRIPTS = ordered_scripts
+                found_scripts[script.script_name].append((script.script_version, script))
+            except KeyError:
+                found_scripts[script.script_name] = [(script.script_version, script)]
+    final_scripts = []
+    for script_name, scripts in found_scripts.items():
+        scripts.sort(key=lambda x: x[0], reverse=True)
+        final_scripts.append(scripts[0][1])
+    settings.WOOEY_SCRIPTS = final_scripts
 
 
 def get_storage_object(path, local=False):

@@ -126,11 +126,8 @@ class WooeyScriptView(WooeyScriptBase):
     def post(self, *args, **kwargs):
         data = super(WooeyScriptView, self).post(*args, **kwargs)
         if data['valid']:
-            return HttpResponseRedirect( reverse('wooey:celery_results', kwargs={'job_id': data['job_id'] }) )
-        else:
-            # FIXME: This works but the form handling here should return the submitted data
-            # may need to refactor the JSON stuff a little bit to make this work
-            return self.get(*args, **kwargs)
+            data['redirect'] = reverse('wooey:celery_results', kwargs={'job_id': data['job_id']})
+        return JsonResponse(data)
 
 
 class WooeyHomeView(TemplateView):

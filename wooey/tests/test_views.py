@@ -5,14 +5,19 @@ import json
 from django.test import TestCase, RequestFactory, Client
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import AnonymousUser
+from django.http import Http404
+
+from nose.tools import raises
 
 from . import factories, mixins, config
 from ..views import wooey_celery
 from .. import views as wooey_views
 from .. import settings
 
+
 def load_JSON_dict(d):
     return json.loads(d.decode('utf-8'))
+
 
 class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     def setUp(self):
@@ -21,29 +26,34 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         settings.WOOEY_CELERY = False
 
     def test_celery_results(self):
-        request = self.factory.get(reverse('wooey:celery_results'))
+        request = self.factory.get(reverse('wooey:all_queues_json'))
         user = factories.UserFactory()
         request.user = user
-        response = wooey_celery.celery_status(request)
+        response = wooey_celery.all_queues_json(request)
         d = response.content.decode("utf-8")
-        self.assertEqual({'anon': [], 'user': []}, json.loads(d))
+        self.assertEqual({u'items': {u'global': [], u'results': [], u'user': []},
+                          u'totals': {u'global': 0, u'results': 0, u'user': 0}
+                            }, json.loads(d))
         job = factories.TranslateJobFactory()
         job.save()
-        response = wooey_celery.celery_status(request)
+        response = wooey_celery.all_queues_json(request)
         d = json.loads(response.content.decode("utf-8"))
-        self.assertEqual(1, len(d['anon']))
+        self.assertEqual(1, d['totals']['global'])
+
         job.user = user
         job.save()
-        response = wooey_celery.celery_status(request)
+        response = wooey_celery.all_queues_json(request)
         d = json.loads(response.content.decode("utf-8"))
         # we now are logged in, make sure the job appears under the user jobs
-        self.assertEqual(1, len(d['user']))
+        self.assertEqual(1, d['totals']['user'])
+
         user = AnonymousUser()
         request.user = user
-        response = wooey_celery.celery_status(request)
+        response = wooey_celery.all_queues_json(request)
         d = json.loads(response.content.decode("utf-8"))
         # test empty response since anonymous users should not see users jobs
-        self.assertEqual({'anon': [], 'user': []}, d)
+        self.assertEqual(d['items']['results'], [])
+        self.assertEqual(d['items']['user'], [])
 
     def test_celery_commands(self):
         user = factories.UserFactory()
@@ -82,25 +92,28 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         job = factories.TranslateJobFactory()
         job.user = user
         job.save()
+
         # test that an anonymous user cannot view a user's job
-        view = wooey_celery.CeleryTaskView.as_view()
-        request = self.factory.get(reverse('wooey:celery_results_info', kwargs={'job_id': job.pk}))
+        view = wooey_celery.JobView.as_view()
+        request = self.factory.get(reverse('wooey:celery_results', kwargs={'job_id': job.pk}))
         request.user = AnonymousUser()
         response = view(request, job_id=job.pk)
-        self.assertIn('task_error', response.context_data)
-        self.assertNotIn('task_info', response.context_data)
+        self.assertIn('job_error', response.context_data)
+        self.assertNotIn('job_info', response.context_data)
 
         # test the user can view the job
         request.user = user
         response = view(request, job_id=job.pk)
-        self.assertNotIn('task_error', response.context_data)
-        self.assertIn('task_info', response.context_data)
+        self.assertNotIn('job_error', response.context_data)
+        self.assertIn('job_info', response.context_data)
 
-        # test that jobs that don't exist don't fail horridly
-        request = self.factory.get(reverse('wooey:celery_results_info', kwargs={'job_id': '-1'}))
+    @raises(Http404)
+    def test_celery_nonexistent_task(self):
+        # test request for non-existent job, should raise 404
+        view = wooey_celery.JobView.as_view()
+        request = self.factory.get(reverse('wooey:celery_results', kwargs={'job_id': '-1'}))
         response = view(request, job_id=-1)
-        self.assertIn('task_error', response.context_data)
-        self.assertNotIn('task_info', response.context_data)
+
 
 class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     def setUp(self):
@@ -115,15 +128,16 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         choices = ['2', '1', '3']
         choice_param = 'two_choices'
         job = utils.create_wooey_job(script_pk=script.pk, data={'job_name': 'abc', choice_param: choices})
-        request = self.factory.get(reverse('wooey:wooey_script_clone',
-                                           kwargs={'script_group': job.script.script_group.slug, 'script_name': job.script.slug, 'job_id': job.pk}))
+        request = self.factory.post(reverse('wooey:wooey_script_json_clone',
+                                           kwargs={'slug': job.script.slug, 'job_id': job.pk}))
+        request.user = AnonymousUser()
         response = self.script_view_func(request, pk=job.pk, job_id=job.pk)
         self.assertEqual(response.status_code, 200)
 
     def test_multiple_choice(self):
         user = factories.UserFactory()
         script = factories.ChoiceScriptFactory()
-        url = reverse('wooey:wooey_script', kwargs={'script_group': script.script_group.slug, 'script_name': script.slug})
+        url = reverse('wooey:wooey_script', kwargs={'slug': script.slug})
         data = {'job_name': 'abc', 'wooey_type': script.pk, 'two_choices': ['2', '1', '3']}
         filecount = 0
         for i,v in config.SCRIPT_DATA['choices']['files'].items():

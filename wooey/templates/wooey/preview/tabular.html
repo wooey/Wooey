@@ -1,0 +1,39 @@
+{% extends "wooey/preview/base.html" %}
+{% load i18n %}
+{% load wooey_tags %}
+
+{% block preview_content %}
+    <div class="panel-body panel-nopad table-responsive">
+    {% with output_file_content.preview as table %}
+        <table class="table table-striped preview-table">
+          {% with table.0|length as colspan %}
+            {% for row in table %}
+                {% if forloop.first %}
+                    <thead>
+                        {% for item in row %}
+                            <th>{{ item }}</th>
+                        {% endfor %}
+                    </thead>
+                    <tbody>
+                {% else %}
+
+                    {% if row == None %}
+                        <tr class="ellided-continuation"><td colspan="{{ colspan }}">&hellip;</td></tr>
+                    {% else %}
+                        <tr>
+                        {% for item in row %}
+                            <td>{{ item }}</td>
+                        {% endfor %}
+                        </tr>
+                    {% endif %}
+
+                {% endif %}
+                {% if forloop.last %}
+                    </tbody>
+                {% endif %}
+            {% endfor %}
+          {% endwith %}
+          </table>
+    {% endwith %}
+    </div>
+{% endblock %}

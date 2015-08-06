@@ -1,0 +1,11 @@
+{% extends "wooey/preview/base.html" %}
+{% load i18n %}
+{% load wooey_tags %}
+
+{% block preview_content %}
+<div class="panel-body">
+    {% for entry in output_file_content.preview %}
+        {{ entry }}<br>
+    {% endfor %}
+</div>
+{% endblock %}

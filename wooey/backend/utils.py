@@ -3,6 +3,7 @@ __author__ = 'chris'
 import json
 import errno
 import os
+import re
 import sys
 import six
 import traceback
@@ -15,11 +16,14 @@ from django.db.utils import OperationalError
 from django.core.files.storage import default_storage
 from django.core.files import File
 from django.utils.translation import gettext_lazy as _
+from django.db.models import Q
+
 from celery.contrib import rdb
 
 from clinto.argparse_specs import ArgParseNodeBuilder
 
 from .. import settings as wooey_settings
+
 
 def sanitize_name(name):
     return name.replace(' ', '_').replace('-', '_')
@@ -28,12 +32,14 @@ def sanitize_name(name):
 def sanitize_string(value):
     return value.replace('"', '\\"')
 
+
 def get_storage(local=True):
     if wooey_settings.WOOEY_EPHEMERAL_FILES:
         storage = default_storage.local_storage if local else default_storage
     else:
         storage = default_storage
     return storage
+
 
 def get_job_commands(job=None):
     script = job.script
@@ -56,6 +62,7 @@ def get_job_commands(job=None):
         if values:
             com.extend(values)
     return com
+
 
 @transaction.atomic
 def create_wooey_job(user=None, script_pk=None, data=None):
@@ -82,9 +89,10 @@ def get_master_form(model=None, pk=None):
     return DJ_FORM_FACTORY.get_master_form(model=model, pk=pk)
 
 
-def get_form_groups(model=None, pk=None, initial_dict=None):
+def get_form_groups(model=None, pk=None, initial_dict=None, render_fn=None):
     from ..forms.factory import DJ_FORM_FACTORY
-    return DJ_FORM_FACTORY.get_group_forms(model=model, pk=pk, initial_dict=initial_dict)
+    return DJ_FORM_FACTORY.get_group_forms(model=model, pk=pk, initial_dict=initial_dict, render_fn=render_fn)
+
 
 def validate_form(form=None, data=None, files=None):
     form.add_wooey_fields()
@@ -92,6 +100,7 @@ def validate_form(form=None, data=None, files=None):
     form.files = files if files is not None else {}
     form.is_bound = True
     form.full_clean()
+
 
 def load_scripts():
     from ..models import Script
@@ -269,12 +278,23 @@ def test_delimited(filepath):
         rows = []
         try:
             for index, entry in enumerate(reader):
-                if index == 5:
-                    break
                 rows.append(entry)
+
         except Exception as e:
             return False, None
-        return True, rows
+
+        # If > 10 rows, generate preview by slicing top and bottom 5
+        # ? this might not be a great idea for massive files
+        if len(rows) > 10:
+            rows = rows[:5] + [None] + rows[-5:]
+
+        # FIXME: This should be more intelligent:
+        # for small files (<1000 rows?) we should take top and bottom preview 10
+        # for large files we should give up and present top 10 (11)
+        # same rules should apply to columns: this will require us to discard them as they're read
+
+    return True, rows
+
 
 def test_fastx(filepath):
     # if we can be delimited by + or > we're maybe a fasta/q
@@ -300,6 +320,7 @@ def test_fastx(filepath):
             [rows.extend([i, v]) for i,v in six.iteritems(sequences)]
             return True, rows
     return False, None
+
 
 def create_job_fileinfo(job):
     parameters = job.get_parameters()
@@ -344,7 +365,7 @@ def create_job_fileinfo(job):
             filepath = os.path.join(absbase, filename)
             if os.path.isdir(filepath):
                 continue
-            d = {'name': filename, 'file': get_storage_object(os.path.join(job.save_path, filename))}
+            d = {'name': filename, 'file': get_storage_object(os.path.join(job.save_path, filename)), 'size_bytes': os.path.getsize(filepath)}
             if filename.endswith('.tar.gz') or filename.endswith('.zip'):
                 file_groups['archives'].append(d)
             else:
@@ -356,10 +377,10 @@ def create_job_fileinfo(job):
     # establish grouping by inferring common things
     file_groups['all'] = files
     import imghdr
-    file_groups['images'] = []
+    file_groups['image'] = []
     for filemodel in files:
         if imghdr.what(filemodel['file'].path):
-            file_groups['images'].append(filemodel)
+            file_groups['image'].append(filemodel)
     file_groups['tabular'] = []
     file_groups['fasta'] = []
 
@@ -381,7 +402,9 @@ def create_job_fileinfo(job):
                 continue
             try:
                 preview = group_file.get('preview')
-                dj_file = WooeyFile(job=job, filetype=file_type, filepreview=preview,
+                size_bytes = group_file.get('size_bytes')
+
+                dj_file = WooeyFile(job=job, filetype=file_type, filepreview=preview, size_bytes=size_bytes,
                                     parameter=group_file.get('parameter'))
                 filepath = group_file['file'].path
                 save_path = job.get_relative_path(filepath)
@@ -396,14 +419,20 @@ def create_job_fileinfo(job):
                 continue
 
 
-def get_file_previews(job):
-    from ..models import WooeyFile
-    files = WooeyFile.objects.filter(job=job)
+def get_grouped_file_previews(files):
     groups = {'all': []}
     for file_info in files:
-        filedict = {'name': file_info.filepath.name, 'preview': json.loads(file_info.filepreview) if file_info.filepreview else None,
+
+        filedict = {'id': file_info.id,
+                    'object': file_info,
+                    'name': file_info.filepath.name,
+                    'preview': json.loads(file_info.filepreview) if file_info.filepreview else None,
                     'url': get_storage(local=False).url(file_info.filepath.name),
-                    'slug': file_info.parameter.parameter.script_param if file_info.parameter else None}
+                    'slug': file_info.parameter.parameter.script_param if file_info.parameter else None,
+                    'basename': os.path.basename(file_info.filepath.name),
+                    'filetype': file_info.filetype,
+                    'size_bytes': file_info.size_bytes,
+                    }
         try:
             groups[file_info.filetype].append(filedict)
         except KeyError:
@@ -411,3 +440,56 @@ def get_file_previews(job):
         if file_info.filetype != 'all':
             groups['all'].append(filedict)
     return groups
+
+
+def get_file_previews(job):
+    from ..models import WooeyFile
+    files = WooeyFile.objects.filter(job=job)
+    return get_grouped_file_previews(files)
+
+
+def get_file_previews_by_ids(ids):
+    from ..models import WooeyFile
+    files = WooeyFile.objects.filter(pk__in=ids)
+    return get_grouped_file_previews(files)
+
+
+def normalize_query(query_string,
+                    findterms=re.compile(r'"([^"]+)"|(\S+)').findall,
+                    normspace=re.compile(r'\s{2,}').sub):
+    """
+    Split the query string into individual keywords, discarding spaces
+    and grouping quoted words together.
+
+    >>> normalize_query('  some random  words "with   quotes  " and   spaces')
+    ['some', 'random', 'words', 'with quotes', 'and', 'spaces']
+    """
+
+    return [normspace(' ', (t[0] or t[1]).strip()) for t in findterms(query_string)]
+
+
+def get_query(query_string, search_fields):
+    """
+    Returns a query as a combination of Q objects that query the specified
+    search fields.
+    """
+
+    query = None # Query to search for every search term
+    terms = normalize_query(query_string)
+    for term in terms:
+        or_query = None # Query to search for a given term in each field
+        for field_name in search_fields:
+            q = Q(**{"%s__icontains" % field_name: term})
+            if or_query is None:
+                or_query = q
+            else:
+                or_query = or_query | q
+        if query is None:
+            query = or_query
+        else:
+            query = query & or_query
+
+    if query is None:
+        query = Q()
+
+    return query

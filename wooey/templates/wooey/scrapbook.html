@@ -1,0 +1,38 @@
+{% extends "wooey/base.html" %}
+{% load i18n %}
+{% load wooey_tags %}
+
+{% block extra_js %}
+    {{ js.super }}
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/ekko-lightbox/3.3.0/ekko-lightbox.min.js"></script>
+{% endblock extra_js %}
+{% block extra_css %}
+    {{ extra_css.super }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ekko-lightbox/3.3.0/ekko-lightbox.min.css"/>
+{% endblock extra_css %}
+{% block extra_style %}
+    {{ extra_style.super }}
+    #wooey-task-submit {
+      float: left;
+      margin-left: 3px;
+    }
+{% endblock extra_style %}
+{% block left_sidebar %}{% endblock left_sidebar %}
+{% block center_content_class %}col-md-12 col-xs-12{% endblock center_content_class %}
+{% block center_content %}
+
+<div class="row">
+    {% with True as show_preview_metadata %}
+
+    {% for output_group, output_files in file_groups.items %}
+            {% for output_file_content in output_files %}
+                {% include 'wooey/preview/'|concat:output_group|concat:'.html' %}
+            {% endfor %}
+    {% endfor %}
+
+    {% endwith %}
+
+</div>
+
+{% endblock center_content %}
+

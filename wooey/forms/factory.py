@@ -72,9 +72,10 @@ class WooeyFormFactory(object):
         appender_data_dict = {}
         WOOEY_CHOICE_LIMIT = 'data-wooey-choice-limit'
         choices = json.loads(param.choices)
-        field_kwargs = {'label': param.script_param.title(),
+        field_kwargs = {'label': param.script_param.replace('_', ' ').title(),
                         'required': param.required,
                         'help_text': param.param_help,
+                        'initial': param.default,
                         }
         multiple_choices = param.multiple_choice
         choice_limit = param.max_choices
@@ -110,7 +111,8 @@ class WooeyFormFactory(object):
         field.widget.attrs.update(widget_data_dict)
         return field
 
-    def get_group_forms(self, model=None, pk=None, initial_dict=None):
+    def get_group_forms(self, model=None, pk=None,  initial_dict=None, render_fn=None):
+
         pk = int(pk) if pk is not None else pk
         if initial_dict is None:
             initial_dict = {}
@@ -146,7 +148,11 @@ class WooeyFormFactory(object):
                 form.fields['wooey_type'].initial = pk
             for field_pk, field in six.iteritems(group_info['fields']):
                 form.fields[field_pk] = field
-            d['groups'].append({'group_name': group_info['group'], 'form': str(form)})
+
+            if render_fn:
+                form = render_fn(form)
+
+            d['groups'].append({'group_name': group_info['group'], 'form': form})
         try:
             self.wooey_forms[pk]['groups'] = d
         except KeyError:

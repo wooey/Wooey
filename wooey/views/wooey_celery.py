@@ -1,51 +1,109 @@
 from __future__ import absolute_import
-import os
 import six
 
 from django.core.urlresolvers import reverse
-from django.views.generic import TemplateView
-from django.conf import settings
+from django.views.generic import DetailView, TemplateView
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_text
-from django.db.models import Q
 from django.template.defaultfilters import escape
 
-from djcelery.models import TaskMeta
 from celery import app, states
 
 celery_app = app.app_or_default()
 
-from ..models import WooeyJob
+from django.contrib.contenttypes.models import ContentType
+
+from ..models import WooeyJob, WooeyFile, Favorite
 from .. import settings as wooey_settings
 from ..backend.utils import valid_user, get_file_previews
 from ..django_compat import JsonResponse
+from django.db.models import Q
+from django.views.generic import ListView
 
-def celery_status(request):
-    # TODO: This function can use some sprucing up, design a better data structure for returning jobs
-    spanbase = "<span class='glyphicon {}' data-toggle='tooltip' data-trigger='hover' title='{}'></span>"
-    STATE_MAPPER = {
-        WooeyJob.COMPLETED: spanbase.format('glyphicon-ok', _('Success')),
-        WooeyJob.RUNNING: spanbase.format('glyphicon-refresh spinning', _('Executing')),
-        states.PENDING: spanbase.format('glyphicon-time', _('In queue')),
-        states.REVOKED: spanbase.format('glyphicon-stop', _('Halted')),
-        WooeyJob.SUBMITTED: spanbase.format('glyphicon-hourglass', _('Waiting to be queued'))
-    }
+SPANBASE = "<span title='{}' class='glyphicon {}'></span> "
+MAXIMUM_JOBS_NAVBAR = 10
+STATE_MAPPER = {
+    #  Default Primary Success Info Warning Danger
+    WooeyJob.COMPLETED: SPANBASE.format(_('Success'), 'success glyphicon-ok'),
+    WooeyJob.RUNNING: SPANBASE.format(_('Executing'), 'success glyphicon-refresh spinning'),
+    states.PENDING: SPANBASE.format(_('Queued'), 'glyphicon-time'),
+    states.REVOKED: SPANBASE.format(_('Halted'), 'danger glyphicon-stop'),
+    states.FAILURE: SPANBASE.format(_('Failure'), 'danger glyphicon-exclamation-sign'),
+    WooeyJob.SUBMITTED: SPANBASE.format(_('Waiting'), 'glyphicon-hourglass'),
+}
+
+
+def generate_job_list(job_query):
+
+    if job_query is None:
+        return []
+
+    jobs = []
+
+    for job in job_query:
+        jobs.append({
+            'id': job.pk,
+            'name': escape(job.job_name),
+            'description': escape(six.u('Script: {}\n{}').format(job.script.script_name, job.job_description)),
+            'url': reverse('wooey:celery_results', kwargs={'job_id': job.pk}),
+            'submitted': job.created_date.strftime('%b %d %Y, %H:%M:%S'),
+            'status': STATE_MAPPER.get(job.status, job.status),
+        })
+    return jobs
+
+
+def get_global_queue(request):
+    jobs = WooeyJob.objects.filter( Q(status=WooeyJob.RUNNING) | Q(status=WooeyJob.SUBMITTED) )
+    return jobs.order_by('-created_date')
+
+
+def global_queue_json(request):
+    jobs = get_global_queue(request)
+    return JsonResponse(generate_job_list(jobs), safe=False)
+
+
+def get_user_queue(request):
     user = request.user
-    if user.is_superuser:
-        jobs = WooeyJob.objects.all()
-    else:
-        jobs = WooeyJob.objects.filter(Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None))
-        jobs = jobs.exclude(status=WooeyJob.DELETED)
-    # divide into user and anon jobs
-    def get_job_list(job_query):
-        return [{'job_name': escape(job.job_name), 'job_status': STATE_MAPPER.get(job.status, job.status),
-                'job_submitted': job.created_date.strftime('%b %d %Y, %H:%M:%S'),
-                'job_id': job.pk,
-                 'job_description': escape(six.u('Script: {}\n{}').format(job.script.script_name, job.job_description)),
-                'job_url': reverse('wooey:celery_results_info', kwargs={'job_id': job.pk})} for job in job_query]
-    d = {'user': get_job_list([i for i in jobs if i.user == user]),
-         'anon': get_job_list([i for i in jobs if i.user == None or (user.is_superuser and i.user != user)])}
-    return JsonResponse(d, safe=False)
+    jobs = WooeyJob.objects.filter(Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None))
+    jobs = jobs.exclude(Q(status=WooeyJob.DELETED) | Q(status=WooeyJob.COMPLETED))
+    return jobs.order_by('-created_date')
+
+
+def user_queue_json(request):
+    jobs = get_user_queue(request)
+    return JsonResponse(generate_job_list(jobs), safe=False)
+
+
+def get_user_results(request):
+    user = request.user
+    jobs = WooeyJob.objects.filter(Q(status=WooeyJob.COMPLETED) & ( Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None)) )
+    jobs = jobs.exclude(status=WooeyJob.DELETED)
+    return jobs.order_by('-created_date')
+
+
+def user_results_json(request):
+    jobs = get_user_results(request)
+    return JsonResponse(generate_job_list(jobs), safe=False)
+
+
+def all_queues_json(request):
+
+    global_queue = get_global_queue(request)
+    user_queue = get_user_queue(request)
+    user_results = get_user_results(request)
+
+    return JsonResponse({
+        'totals':{
+            'global': global_queue.count(),
+            'user': user_queue.count(),
+            'results': user_results.count(),
+        },
+        'items':{
+            'global': generate_job_list(global_queue[:MAXIMUM_JOBS_NAVBAR]),
+            'user': generate_job_list(user_queue[:MAXIMUM_JOBS_NAVBAR]),
+            'results': generate_job_list(user_results[:MAXIMUM_JOBS_NAVBAR]),
+        },
+    }, safe=False)
 
 
 def celery_task_command(request):
@@ -60,12 +118,12 @@ def celery_task_command(request):
         if user == job.user or job.user == None:
             if command == 'resubmit':
                 new_job = job.submit_to_celery(resubmit=True, user=request.user)
-                response.update({'valid': True, 'extra': {'task_url': reverse('wooey:celery_results_info', kwargs={'job_id': new_job.pk})}})
+                response.update({'valid': True, 'extra': {'job_url': reverse('wooey:celery_results', kwargs={'job_id': new_job.pk})}})
             elif command == 'rerun':
                 job.submit_to_celery(user=request.user, rerun=True)
-                response.update({'valid': True, 'redirect': reverse('wooey:celery_results_info', kwargs={'job_id': job_id})})
+                response.update({'valid': True, 'redirect': reverse('wooey:celery_results', kwargs={'job_id': job_id})})
             elif command == 'clone':
-                response.update({'valid': True, 'redirect': '{0}?job_id={1}'.format(reverse('wooey:wooey_task_launcher'), job_id)})
+                response.update({'valid': True, 'redirect': '{0}?job_id={1}'.format(reverse('wooey:wooey_job_launcher'), job_id)})
             elif command == 'delete':
                 job.status = WooeyJob.DELETED
                 job.save()
@@ -74,7 +132,7 @@ def celery_task_command(request):
                 celery_app.control.revoke(job.celery_id, signal='SIGKILL', terminate=True)
                 job.status = states.REVOKED
                 job.save()
-                response.update({'valid': True, 'redirect': reverse('wooey:celery_results_info', kwargs={'job_id': job_id})})
+                response.update({'valid': True, 'redirect': reverse('wooey:celery_results', kwargs={'job_id': job_id})})
             else:
                 response.update({'errors': {'__all__': [force_text(_("Unknown Command"))]}})
     else:
@@ -82,33 +140,90 @@ def celery_task_command(request):
     return JsonResponse(response)
 
 
-class CeleryTaskView(TemplateView):
-    template_name = 'wooey/tasks/task_view.html'
+class JobBase(DetailView):
+
+    model = WooeyJob
+
+    def get_object(self):
+        # FIXME: Update urls to use PK
+        self.kwargs['pk'] = self.kwargs.get('job_id')
+        return super(JobBase, self).get_object()
 
     def get_context_data(self, **kwargs):
-        ctx = super(CeleryTaskView, self).get_context_data(**kwargs)
-        job_id = ctx.get('job_id')
-        try:
-            wooey_job = WooeyJob.objects.get(pk=job_id)
-        except WooeyJob.DoesNotExist:
-            ctx['task_error'] = _('This task does not exist.')
+        ctx = super(JobBase, self).get_context_data(**kwargs)
+        wooey_job = ctx['wooeyjob']
+
+        user = self.request.user
+        user = None if not user.is_authenticated() and wooey_settings.WOOEY_ALLOW_ANONYMOUS else user
+        job_user = wooey_job.user
+        if job_user == None or job_user == user or (user != None and user.is_superuser):
+            out_files = get_file_previews(wooey_job)
+            all = out_files.pop('all', [])
+            archives = out_files.pop('archives', [])
+
+            # Get the favorite (scrapbook) status for each file
+            ctype = ContentType.objects.get_for_model(WooeyFile)
+            favorite_file_ids = Favorite.objects.filter(content_type=ctype, object_id__in=[f['id'] for f in all],
+                                                        user=user).values_list('object_id', flat=True)
+
+            ctx['job_info'] = {
+                    'all_files': all,
+                    'archives': archives,
+                    'file_groups': out_files,
+                    'status': wooey_job.status,
+                    'last_modified': wooey_job.modified_date,
+                    'job': wooey_job,
+
+                }
+
+            ctx['favorite_file_ids'] = favorite_file_ids
+
+
         else:
-            user = self.request.user
-            user = None if not user.is_authenticated() and wooey_settings.WOOEY_ALLOW_ANONYMOUS else user
-            job_user = wooey_job.user
-            if job_user == None or job_user == user or (user != None and user.is_superuser):
-                out_files = get_file_previews(wooey_job)
-                all = out_files.pop('all', [])
-                archives = out_files.pop('archives', [])
-                ctx['task_info'] = {
-                        'all_files': all,
-                        'archives': archives,
-                        'file_groups': out_files,
-                        'status': wooey_job.status,
-                        'last_modified': wooey_job.modified_date,
-                        'job': wooey_job
-                    }
-            else:
-                ctx['task_error'] = _('You are not authenticated to view this job.')
+            ctx['job_error'] = _('You are not authenticated to view this job.')
         return ctx
+
+
+class JobView(JobBase):
+    template_name = 'wooey/jobs/job_view.html'
+
+
+class JobJSON(JobBase):
+
+    def render_to_response(self, context, *args, **kwargs):
+        return JsonResponse(context)
+
+
+class JobListBase(ListView):
+    template_name = 'wooey/jobs/job_list.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super(JobListBase, self).get_context_data(**kwargs)
+        ctx['title'] = self.title
+        return ctx
+
+
+class GlobalQueueView(JobListBase):
+    title = "Global Queue"
+
+    def get_queryset(self, *args, **kwargs):
+        return get_global_queue(self.request)
+
+
+class UserQueueView(JobListBase):
+    title = "My Queue"
+
+    def get_queryset(self, *args, **kwargs):
+        return get_user_queue(self.request)
+
+
+class UserResultsView(JobListBase):
+    title = "My Results"
+
+    def get_queryset(self, *args, **kwargs):
+        return get_user_results(self.request)
+
+
+
+
 

@@ -8,18 +8,108 @@
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="//cdn.datatables.net/1.10.6/css/jquery.dataTables.min.css"/>
     <link rel="stylesheet" href="//cdn.datatables.net/responsive/1.0.5/css/dataTables.responsive.css"/>
+    <link href='http://fonts.googleapis.com/css?family=Pacifico' rel='stylesheet' type='text/css'>
 
     {% block extra_css %}
     {% endblock extra_css %}
 
 
     <style>
-        .navbar-brand {
-          float: none;
-            width: 150px;
-          }
 
-        .navbar-center
+        a:hover {
+            text-decoration: none;
+        }
+
+        body {
+            padding-top: 40px; /* navbar */
+
+        }
+
+        .wooey_script_thumbnail .wooey_script_icons {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+        }
+
+
+        .wooey_script_thumbnail {
+            position: relative;
+        }
+
+        .wooey_script_disabled:hover {
+            background: none;
+        }
+
+        .wooey-script-group {
+            text-transform: uppercase;
+            color: #ccc;
+            font-size:0.8em;
+            font-weight:bold;
+
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+        }
+
+        .wooey_script_disabled {
+            color: #ccc !important;
+        }
+
+
+        .navbar {
+            border-radius: 0;
+        }
+
+
+        .breadcrumbs {
+            margin-left: -5px;
+            color: #9d9d9d;
+            font-family: "Helvetica Neue",Helvetica,Roboto,Arial,sans-serif;
+            font-size: 14px;
+            font-style: normal;
+            font-weight: 400;
+        }
+
+
+        h5 {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 1em;
+            color: #555;
+        }
+
+
+        .wooey {
+            font-family: 'Pacifico',cursive;
+            color: #fff !important;
+        }
+
+        .jumbotron.frontpage {
+            background-color: #004D66;
+            text-align: center;
+            margin-bottom:0px;
+        }
+
+        .jumbotron.frontpage h1 {
+            font-size: 80px;
+            color: #fff;
+        }
+        .jumbotron.frontpage p {
+            font-size: 25.6px;
+            color: #eee;
+            margin-top: 1em;
+            font-weight: 100;
+        }
+
+        .navbar-header {
+            font-size: 2em;
+            padding-bottom: 0px;
+        }
+
+        .navbar-brand {
+        }
+
+        .navbar-title
         {
             position: absolute;
             left: 0;
@@ -29,6 +119,12 @@
             margin-left: 50% !important;
             margin-right: 50% !important;
           height:100%;
+        }
+
+        .navbar-title a
+        {
+            text-decoration: none;
+            color: #333;
         }
 
         .wooey-affix{
@@ -78,16 +174,131 @@
             to { -webkit-transform: rotate(360deg);}
         }
 
+        .jobs-badge { display: none; }
+
+        .console {
+            background-color:#222;
+            font-family:"Courier New",Courier,monospace
+        }
+
+        .console-body {
+            background: none;
+            border: none;
+        }
+
+        .console-stdout { color: #0f0; }
+        .console-stderr { color: #f00; }
+        .console-command { color: #fff; }
+
+
+        .thumbnail.panel {
+            padding: 0;
+            aborder-width: 0;
+            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .panel-body .form-group {
+            margin-left: 1em;
+            margin-right: 1em;
+
+        }
+
+        .panel-nopad {
+            padding: 0;
+        }
+
+        .panel-heading {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .page-header {
+            margin: -20px -15px 20px;
+            padding: 20px 20px 20px;
+            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .center-div {
+            padding-top: 30px;
+        }
+
+        .panel-heading h4 { margin: 0px; }
+
+        .glyphicon { font-weight: normal; }
+
+        a.icon:after {
+            font-family:'Glyphicons Halflings';
+            color: rgba(0,0,0,0.3);
+            float: right;
+            font-weight: normal;
+            padding-left: 5px;
+        }
+
+        a.icon-collapse:after { content:"\e114"; }
+        a.icon-collapse.collapsed:after { content:"\e080"; }
+
+        a.icon-download:after { content:"\e025"; }
+        a.icon-download:hover:after { color: #337AB7 !important; }
+
+        a.icon-locked:after { content:"\e033"; }
+
+        a.icon-favorite:after { content:"\e006"; }
+        a.icon-favorite:hover:after { color: #F0AD4E !important; }
+        a.icon-favorite:hover:after, .is-favorite a.icon-favorite:after { color: #F0AD4E !important; }
+
+        a.icon-pushpin:after { content:"\e146"; }
+        a.icon-pushpin:hover:after, .is-favorite a.icon-pushpin:after { color: #F0AD4E !important; }
+
+        .job-metadata, .profile-metadata {
+            font-size: 0.9em;
+        }
+
+        .job-metadata .label, .profile-metadata .label {
+            font-size: 1em;
+        }
+
+        .success { color: #5CB85C }
+        .warning { color: #F0AD4E }
+        .danger { color: #D9534F }
+
+        .center-div { background: url('/static/wooey/pinstripe.png'); }
+
+        .page-header { background: #fff; }
+
+        .numericalign { width: 49%; display: inline-block; }
+        .numericalign.numericpart { text-align:right; }
+
+        .preview-table tr, .preview-table th, .preview-table td { text-overflow: ellipsis; white-space: nowrap; }
+        .preview-metadata { font-size: 0.8em; }
+
+        .ellided-continuation > td { padding: 0 8px 8px 8px !important; }
+
+        .profile-gravatar-adjust {
+            margin-top: -86px;
+            margin-left: 80px;
+        }
+
+        .panel-table {
+            padding: 0px;
+        }
+
+        .panel-table .table {
+            margin-bottom: 0px;
+        }
+
         {% block extra_style %}
         {% endblock extra_style %}
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-default">
+    <nav class="navbar navbar-inverse navbar-fixed-top">
 {#    from http://www.bootply.com/3iSOTAyumP for brand centering #}
       <div class="container-fluid">
         <!-- Brand and toggle get grouped for better mobile display -->
         <div class="navbar-header">
+        <a href="{% url 'wooey:wooey_home' %}" class="navbar-brand wooey">Wooey!</a>
+        <span class="breadcrumbs">{% block breadcrumbs %}{% endblock %}</span>
+
           <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1">
             <span class="sr-only">Toggle navigation</span>
             <span class="icon-bar"></span>
@@ -95,44 +306,67 @@
             <span class="icon-bar"></span>
           </button>
         </div>
-        <div class="navbar-center"><a href="{% url 'wooey:wooey_home' %}"><img src="{% static 'wooey/wooey_logo.png' %}"/></a></div>
-            <!-- Collect the nav links, forms, and other content for toggling -->
-            <div class="collapse navbar-collapse" id="navbar-collapse-1">
-              <ul class="nav navbar-nav navbar-right">
-                  {% if request.user.is_authenticated %}
-                        <li><a href="{% url 'wooey:profile_home' %}"><span class="glyphicon glyphicon-user"> </span>{{ request.user.username|title }}</a></li>
-                      <li><a href="{% url "logout" %}?next={{ request.path }}">Logout</a></li>
-                  {% else %}
-                      <li>{% include "wooey/registration/login_header.html" %}</li>
-                  {% endif %}
-              </ul>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="navbar-collapse-1">
+          <ul class="nav navbar-nav navbar-right">
+              <!-- List global job queue active, waiting (limit N) -->
+              <li class="dropdown disabled" id="job-list-global">
+                  <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Queue <span class="badge jobs-badge" id="jobs-badge-global">8</span> <span class="caret"></span></a>
+
+                  <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-global-list">
+                  </ul>
+
+              </li>
+
+              {% if request.user.is_authenticated %}
+
+
+
+              <!-- List all currently active, waiting jobs for current user -->
+              <li class="dropdown disabled" id="job-list-user">
+                  <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Jobs <span class="badge jobs-badge" id="jobs-badge-user">8</span> <span class="caret"></span></a>
+
+                  <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-user-list">
+                  </ul>
+
+              </li>
+
+              <!-- List latest N completed jobs -->
+              <li class="dropdown disabled" id="job-list-results">
+                  <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Results <span class="badge jobs-badge" id="jobs-badge-results">8</span> <span class="caret"></span></a>
+
+                  <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-results-list">
+                  </ul>
+
+              </li>
+
+              <li class="dropdown" id="job-list-user">
+                  <a href="{% url 'wooey:scrapbook' %}" role="button" aria-haspopup="true" aria-expanded="false">Scrapbook <span class="badge scrapbook-badge" id="favorite-wooey-wooeyfile-count">0</span></a>
+              </li>
+
+              <li><a href="{% url 'wooey:profile_home' %}"><span class="glyphicon glyphicon-user"> </span> {{ request.user.username }}</a></li>
+              <li><a href="{% url "logout" %}?next={{ request.path }}">Logout</a></li>
+              {% else %}
+                  <li>{% include "wooey/registration/login_header.html" %}</li>
+              {% endif %}
+          </ul>
         </div><!-- /.navbar-collapse -->
       </div><!-- /.container-fluid -->
     </nav>
 
-    {% block left_sidebar %}
-        <div class="col-md-3 col-xs-6">
-            {% block left_sidebar_content %}
-            {% endblock left_sidebar_content %}
-        </div>
-    {% endblock left_sidebar %}
+{% block outer_content %}{% endblock %}
+
 
     {% block center %}
 
-        <div class="center-div {% block center_content_class %}col-md-6 col-xs-6{% endblock center_content_class %}">
-{#                <div{% block center_content_affix %} class="wooey-affix col-md-5" data-spy="affix" data-offset-bottom="0"{% endblock center_content_affix %}>#}
-                {% block center_content %}
-                {% endblock center_content %}
-{#                </div>#}
+        <div class="center-div {% block center_content_class %}col-md-10 col-xs-6{% endblock center_content_class %}">
+            {% block center_content %}
+            {% endblock center_content %}
         </div>
+
     {% endblock center %}
 
-    {% block right_sidebar %}
-        <div class="col-md-3 col-xs-12">
-        {% block right_sidebar_content %}
-        {% endblock right_sidebar_content %}
-        </div>
-    {% endblock right_sidebar %}
 
 </body>
     {% block js %}
@@ -147,7 +381,6 @@
     {% block inline_js %}
 
         <script type="text/javascript">
-
 
             function clearErrors($form){
                 $form.find('.errorlist').remove();
@@ -218,11 +451,157 @@
                     else{
                         processErrors($form, data.errors)
                     }
-                }
+                    }
+                });
             });
+
+            /* Job urls definitions: need to be template processed */
+            var wooey_job_list_urls = {
+                global: "{% url 'wooey:global_queue' %}",
+                user: "{% url 'wooey:user_queue' %}",
+                results: "{% url 'wooey:user_results' %}",
+            }
+
+
+            function celeryRefresh() {
+                /* Update the script status lists (navbar) and count pills */
+                $.get("{% url "wooey:all_queues_json" %}", function(data){
+
+                    for(var table_key in data['items']) {
+
+                        /* Do total counts first */
+                        var total_jobs = data['totals'][table_key]
+
+                        $('#jobs-badge-' + table_key).text( total_jobs )
+                        if( total_jobs > 0){
+                            $('#jobs-badge-' + table_key).show()
+                            $('#job-list-' + table_key).removeClass('disabled')
+                            $('#job-list-' + table_key + ' > a').removeClass('disabled')
+                        } else {
+                            / * Disable button */
+                            $('#jobs-badge-' + table_key).hide()
+                            $('#job-list-' + table_key).addClass('disabled')
+                            $('#job-list-' + table_key + ' > a').addClass('disabled')
+                        }
+
+
+                        var items = [];
+                        /* Now add the jobs to the dropdown lists */
+                        var job_data = data['items'][table_key];
+                        for (var i = 0; i < job_data.length; i++) {
+                            job = job_data[i]
+                            items.push('<li><a href="' + job['url'] + '">' + job['status'] + '&nbsp;' + job['name'] + '</a></li>')
+                        }
+
+                        /* Now add "more" links if count > length */
+                        if(total_jobs > job_data.length){
+                            items.push('<li role="separator" class="divider"></li>');
+                            items.push('<li><a href="'+ wooey_job_list_urls[table_key] +'">More...</a>');
+                        }
+
+                        /* Empty the list: might be nicer to replace, edit, more intelligently */
+                        $("#job-list-" + table_key + "-list").empty();
+                        $("#job-list-" + table_key + "-list").append(items);
+
+                    }
+                }, "json");
+            }
+
+
+            celeryRefresh();
+            /* Update the interface ~15 secs */
+            window.setInterval(celeryRefresh, 15 * 1000);
+
+
         });
 
-        })
+        // using jQuery
+        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie != '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = jQuery.trim(cookies[i]);
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        var csrftoken = getCookie('csrftoken');
+
+        function csrfSafeMethod(method) {
+            // these HTTP methods do not require CSRF protection
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+        $.ajaxSetup({
+            crossDomain: false, // obviates need for sameOrigin test
+            beforeSend: function(xhr, settings) {
+                if (!csrfSafeMethod(settings.type)) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
+
+
+        function toggleFavorite(event) {
+            /* Submit JSON favorite request and act on result */
+
+            favorite_item = $(event.target);
+            var data = new Object();
+            identifer = $(event.target).data('favorite');
+            identifiers = identifer.split('-');
+
+            data.app = identifiers[0];
+            data.model = identifiers[1];
+            data.pk = identifiers[2];
+
+            console.log(data);
+            $.ajax({
+                url: '/favorite/toggle',
+                data: data,
+                type: 'post',
+                dataType: 'json',
+                cache: false,
+                success: function(data){
+                    /* Act on result */
+                        console.log('#favorite-' + identifer)
+                        if(data.is_favorite){
+                            $('#favorite-' + identifer).addClass('panel-warning is-favorite');
+                            $('#favorite-' + identifer).removeClass('panel-default');
+                        } else {
+                            $('#favorite-' + identifer).addClass('panel-default');
+                            $('#favorite-' + identifer).removeClass('panel-warning is-favorite');
+                        }
+
+                    console.log('#favorite-' + data.app_label + '-' + data.model + '-count')
+                    $('#favorite-' + data.app + '-' + data.model + '-count').text(data.count);
+
+                    }
+                });
+
+            return false;
+            }
+
+
+        $(document).ready(function(){
+
+            $("a[data-favorite]").click(toggleFavorite);
+
+
+            $(document).delegate('*[data-toggle="lightbox"]', 'click', function(event) {
+                event.preventDefault();
+                $(this).ekkoLightbox();
+            });
+
+        });
+
+
+
+
         </script>
     {% endblock inline_js %}
 </html>

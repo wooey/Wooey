@@ -1,24 +1,37 @@
 from __future__ import absolute_import, unicode_literals
 from collections import defaultdict
 
-from django.views.generic import DetailView, TemplateView
+from django.views.generic import DetailView, TemplateView, View
+from django.template.loader import render_to_string
+from django.http import HttpResponse, HttpResponseRedirect
+from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.forms import FileField
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_text
+from django.template import RequestContext
+from django.contrib.auth import get_user_model
+
+from django.contrib.contenttypes.models import ContentType
 
 from ..backend import utils
-from ..models import WooeyJob, Script
+from ..models import WooeyJob, Script, WooeyFile, Favorite
 from .. import settings as wooey_settings
 from ..django_compat import JsonResponse
 
 
-class WooeyScriptJSON(DetailView):
+class WooeyScriptBase(DetailView):
     model = Script
     slug_field = 'slug'
-    slug_url_kwarg = 'script_name'
+    slug_url_kwarg = 'slug'
 
-    def render_to_response(self, context, **response_kwargs):
+    @staticmethod
+    def render_fn(s):
+        return s
+
+    def get_context_data(self, **kwargs):
+        context = super(WooeyScriptBase, self).get_context_data(**kwargs)
+
         # returns the models required and optional fields as html
         job_id = self.kwargs.get('job_id')
         initial = None
@@ -31,14 +44,16 @@ class WooeyScriptJSON(DetailView):
                     value = i.value
                     if value is not None:
                         initial[i.parameter.slug].append(value)
-        d = utils.get_form_groups(model=self.object, initial_dict=initial)
-        return JsonResponse(d)
+
+        context['form'] = utils.get_form_groups(model=self.object, initial_dict=initial, render_fn=self.render_fn)
+        return context
 
     def post(self, request, *args, **kwargs):
         post = request.POST.copy()
         user = request.user if request.user.is_authenticated() else None
         if not wooey_settings.WOOEY_ALLOW_ANONYMOUS and user is None:
-            return JsonResponse({'valid': False, 'errors': {'__all__': [force_text(_('You are not permitted to access this script.'))]}})
+            return {'valid': False, 'errors': {'__all__': [force_text(_('You are not permitted to access this script.'))]}}
+
         form = utils.get_master_form(pk=post['wooey_type'])
         # TODO: Check with people who know more if there's a smarter way to do this
         utils.validate_form(form=form, data=post, files=request.FILES)
@@ -81,23 +96,135 @@ class WooeyScriptJSON(DetailView):
                 if valid is True and group_valid is True:
                     job = utils.create_wooey_job(script_pk=script_pk, user=user, data=form.cleaned_data)
                     job.submit_to_celery()
-                    return JsonResponse({'valid': True})
-            return JsonResponse({'valid': False, 'errors': {'__all__': [force_text(_('You are not permitted to access this script.'))]}})
-        return JsonResponse({'valid': False, 'errors': form.errors})
+                    return {'valid': True, 'job_id': job.id}
+
+            return {'valid': False, 'errors': {'__all__': [force_text(_('You are not permitted to access this script.'))]}}
+
+        return {'valid': False, 'errors': form.errors}
+
+
+class WooeyScriptJSON(WooeyScriptBase):
+
+    # FIXME: the form data is returned as form objects so can be passed to templates
+    # this render_fn allows us to pass the return through a stringify method for JSON
+    @staticmethod
+    def render_fn(form):
+        return form.as_table()
+
+    def render_to_response(self, context, *args, **kwargs):
+        return JsonResponse(context)
+
+    def post(self, *args, **kwargs):
+        data = super(WooeyScriptJSON, self).post(*args, **kwargs)
+        return JsonResponse(data)
+
+
+class WooeyScriptView(WooeyScriptBase):
+
+    template_name = 'wooey/scripts/script_view.html'
+
+    def post(self, *args, **kwargs):
+        data = super(WooeyScriptView, self).post(*args, **kwargs)
+        if data['valid']:
+            return HttpResponseRedirect( reverse('wooey:celery_results', kwargs={'job_id': data['job_id'] }) )
+        else:
+            # FIXME: This works but the form handling here should return the submitted data
+            # may need to refactor the JSON stuff a little bit to make this work
+            return self.get(*args, **kwargs)
 
 
 class WooeyHomeView(TemplateView):
-    template_name = 'wooey/wooey_home.html'
+    template_name = 'wooey/home.html'
 
     def get_context_data(self, **kwargs):
-        job_id = self.request.GET.get('job_id')
+        #job_id = self.request.GET.get('job_id')
         ctx = super(WooeyHomeView, self).get_context_data(**kwargs)
-        ctx['wooey_scripts'] = getattr(settings, 'WOOEY_SCRIPTS', {})
-        if job_id:
-            job = WooeyJob.objects.get(pk=job_id)
-            if job.user is None or (self.request.user.is_authenticated() and job.user == self.request.user):
-                ctx['clone_job'] = {'job_id': job_id, 'url': job.get_resubmit_url(), 'data_url': job.script.get_url()}
+        ctx['scripts'] = Script.objects.all()
+
+        # Check for logged in user
+        if self.request.user.is_authenticated():
+            # Get the id of every favorite (scrapbook) file
+            ctype = ContentType.objects.get_for_model(Script)
+            ctx['favorite_script_ids'] = Favorite.objects.filter(content_type=ctype, user__id=self.request.user.id).values_list('object_id', flat=True)
+        else:
+            ctx['favorite_script_ids'] = []
+
         return ctx
 
+
 class WooeyProfileView(TemplateView):
-    template_name = 'wooey/profile/profile_base.html'
+    template_name = 'wooey/profile/profile.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super(WooeyProfileView, self).get_context_data(**kwargs)
+
+        if 'username' in self.kwargs:
+            user = get_user_model()
+            ctx['profile_user'] = user.objects.get(username=self.kwargs.get('username'))
+
+        else:
+            if self.request.user and self.request.user.is_authenticated():
+                ctx['profile_user'] = self.request.user
+
+        return ctx
+
+
+class WooeyScrapbookView(TemplateView):
+    template_name = 'wooey/scrapbook.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super(WooeyScrapbookView, self).get_context_data(**kwargs)
+
+        # Get the id of every favorite (scrapbook) file
+        ctype = ContentType.objects.get_for_model(WooeyFile)
+        favorite_file_ids = Favorite.objects.filter(content_type=ctype, user=self.request.user).values_list('object_id', flat=True)
+
+        out_files = utils.get_file_previews_by_ids(favorite_file_ids)
+
+        all = out_files.pop('all', [])
+        archives = out_files.pop('archives', [])
+
+        ctx['file_groups'] = out_files
+        ctx['favorite_file_ids'] = favorite_file_ids
+
+        return ctx
+
+
+class WooeySearchBase(View):
+
+    model = None
+    search_fields = []
+
+    def get(self, request, *args, **kwargs):
+
+        self.search_results = None
+        if 'q' in request.GET:
+            query_string = request.GET['q'].strip()
+
+            query = utils.get_query(query_string, self.search_fields)
+            self.search_results = self.model.objects.filter(query)
+
+            return self.search(request, *args, **kwargs)
+
+
+class WooeyScriptSearchBase(WooeySearchBase):
+
+    model = Script
+    search_fields = ['script_name', 'script_description']
+
+
+class WooeyScriptSearchJSONHTML(WooeyScriptSearchBase):
+    """
+    Returns the result of the script search as JSON containing rendered template
+    elements for display in the original page. This is a temporary function
+    until the handling is moved to client side rendering.
+    """
+
+    def search(self, request):
+        results = []
+        for script in self.search_results:
+            results.append( render_to_string('wooey/scripts/script_panel.html', {'script': script}, context_instance=RequestContext(request)) )
+        return JsonResponse({'results': results})
+
+
+

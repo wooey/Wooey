@@ -123,7 +123,7 @@ def celery_task_command(request):
                 job.submit_to_celery(user=request.user, rerun=True)
                 response.update({'valid': True, 'redirect': reverse('wooey:celery_results', kwargs={'job_id': job_id})})
             elif command == 'clone':
-                response.update({'valid': True, 'redirect': '{0}?job_id={1}'.format(reverse('wooey:wooey_job_launcher'), job_id)})
+                response.update({'valid': True, 'redirect': reverse('wooey:wooey_script_clone', kwargs={'slug': job.script.slug, 'job_id': job_id})})
             elif command == 'delete':
                 job.status = WooeyJob.DELETED
                 job.save()

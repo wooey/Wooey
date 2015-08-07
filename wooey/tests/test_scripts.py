@@ -43,8 +43,6 @@ class ScriptAdditionTests(mixins.ScriptFactoryMixin, TestCase):
         self.assertNotEqual(old_pk, script.pk)
         self.assertNotEqual(old_version, script.script_version)
         # asset we are using the latest script in the frontend
-        # this is kind of hacky, we should have a better class for WOOEY_SCRIPTS to handle this
-        for group_index, group in settings.WOOEY_SCRIPTS.items():
-            for group_script in group['scripts']:
-                # we should have only 1 script
-                self.assertEqual(group_script.pk, script.pk)
+        self.assertIn(script, settings.WOOEY_SCRIPTS)
+        old_script = Script.objects.get(pk=old_pk)
+        self.assertNotIn(old_script, settings.WOOEY_SCRIPTS)

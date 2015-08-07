@@ -37,15 +37,15 @@ class WooeyScriptBase(DetailView):
         initial = None
         if job_id:
             job = WooeyJob.objects.get(pk=job_id)
-            # import pdb; pdb.set_trace();
             if job.user is None or (self.request.user.is_authenticated() and job.user == self.request.user):
+                context['job_info'] = {'job_id': job_id, 'url': job.get_resubmit_url(), 'data_url': job.script.get_url()}
                 initial = defaultdict(list)
                 for i in job.get_parameters():
                     value = i.value
                     if value is not None:
                         initial[i.parameter.slug].append(value)
 
-        context['form'] = utils.get_form_groups(model=self.object, initial_dict=initial, render_fn=self.render_fn)
+        context['form'] = utils.get_form_groups(model=self.object, initial_dict=initial, render_fn=self.render_fn, pk=self.object.pk)
         return context
 
     def post(self, request, *args, **kwargs):
@@ -83,8 +83,7 @@ class WooeyScriptBase(DetailView):
             if i in form.cleaned_data:
                 cleaned = form.cleaned_data[i]
                 cleaned = cleaned if isinstance(cleaned, list) else [cleaned]
-                if len(cleaned) != len(v):
-                    form.cleaned_data[i] = v
+                form.cleaned_data[i] = list(set(cleaned).union(set(v)))
                     
         if not form.errors:
             # data = form.cleaned_data
@@ -126,11 +125,8 @@ class WooeyScriptView(WooeyScriptBase):
     def post(self, *args, **kwargs):
         data = super(WooeyScriptView, self).post(*args, **kwargs)
         if data['valid']:
-            return HttpResponseRedirect( reverse('wooey:celery_results', kwargs={'job_id': data['job_id'] }) )
-        else:
-            # FIXME: This works but the form handling here should return the submitted data
-            # may need to refactor the JSON stuff a little bit to make this work
-            return self.get(*args, **kwargs)
+            data['redirect'] = reverse('wooey:celery_results', kwargs={'job_id': data['job_id']})
+        return JsonResponse(data)
 
 
 class WooeyHomeView(TemplateView):

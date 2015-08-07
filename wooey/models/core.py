@@ -192,8 +192,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         return self
 
     def get_resubmit_url(self):
-        return reverse('wooey:wooey_script_clone', kwargs={'script_group': self.script.script_group.slug,
-                                                      'script_name': self.script.slug, 'job_id': self.pk})
+        return reverse('wooey:wooey_script_clone', kwargs={'slug': self.script.slug, 'job_id': self.pk})
 
     @property
     def output_path(self):

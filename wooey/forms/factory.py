@@ -14,6 +14,7 @@ from . import config
 from ..backend import utils
 from ..models import ScriptParameter, Script
 from ..django_compat import flatatt, format_html
+from .. import version
 
 
 def mutli_render(render_func, appender_data_dict=None):
@@ -117,7 +118,9 @@ class WooeyFormFactory(object):
             initial_dict = {}
         if pk is not None and pk in self.wooey_forms:
             if 'groups' in self.wooey_forms[pk]:
-                return copy.deepcopy(self.wooey_forms[pk]['groups'])
+                if (version.PY_MINOR_VERSION == version.PY34 and version.PY_FULL_VERSION >= version.PY343) or \
+                        (version.PY_MINOR_VERSION == version.PY33 and version.PY_FULL_VERSION >= version.PY336):
+                    return copy.deepcopy(self.wooey_forms[pk]['groups'])
         params = ScriptParameter.objects.filter(script=model).order_by('pk')
         # set a reference to the object type for POST methods to use
         script_id_field = forms.CharField(widget=forms.HiddenInput)
@@ -165,7 +168,9 @@ class WooeyFormFactory(object):
         pk = int(pk) if pk is not None else pk
         if pk is not None and pk in self.wooey_forms:
             if 'master' in self.wooey_forms[pk]:
-                return copy.deepcopy(self.wooey_forms[pk]['master'])
+                if (version.PY_MINOR_VERSION == version.PY34 and version.PY_FULL_VERSION >= version.PY343) or \
+                        (version.PY_MINOR_VERSION == version.PY33 and version.PY_FULL_VERSION >= version.PY336):
+                    return copy.deepcopy(self.wooey_forms[pk]['master'])
         if model is None and pk is not None:
             model = Script.objects.get(pk=pk)
         master_form = WooeyForm()

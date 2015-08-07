@@ -12,7 +12,7 @@ from django.utils.safestring import mark_safe
 from .scripts import WooeyForm
 from . import config
 from ..backend import utils
-from ..models import ScriptParameter
+from ..models import ScriptParameter, Script
 from ..django_compat import flatatt, format_html
 
 
@@ -112,7 +112,6 @@ class WooeyFormFactory(object):
         return field
 
     def get_group_forms(self, model=None, pk=None,  initial_dict=None, render_fn=None):
-
         pk = int(pk) if pk is not None else pk
         if initial_dict is None:
             initial_dict = {}
@@ -167,6 +166,8 @@ class WooeyFormFactory(object):
         if pk is not None and pk in self.wooey_forms:
             if 'master' in self.wooey_forms[pk]:
                 return copy.deepcopy(self.wooey_forms[pk]['master'])
+        if model is None and pk is not None:
+            model = Script.objects.get(pk=pk)
         master_form = WooeyForm()
         params = ScriptParameter.objects.filter(script=model).order_by('pk')
         # set a reference to the object type for POST methods to use

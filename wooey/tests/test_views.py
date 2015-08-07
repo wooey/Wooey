@@ -127,9 +127,10 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         script = factories.ChoiceScriptFactory()
         choices = ['2', '1', '3']
         choice_param = 'two_choices'
-        job = utils.create_wooey_job(script_pk=script.pk, data={'job_name': 'abc', choice_param: choices})
-        request = self.factory.post(reverse('wooey:wooey_script_json_clone',
-                                           kwargs={'slug': job.script.slug, 'job_id': job.pk}))
+        job = utils.create_wooey_job(script_pk=script.pk, data={'job_name': 'abc', choice_param: choices, 'wooey_type': script.pk})
+        request = self.factory.post(reverse('wooey:wooey_script_clone',
+                                           kwargs={'slug': job.script.slug, 'job_id': job.pk}),
+                                    data={'wooey_type': script.pk})
         request.user = AnonymousUser()
         response = self.script_view_func(request, pk=job.pk, job_id=job.pk)
         self.assertEqual(response.status_code, 200)

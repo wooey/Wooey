@@ -45,7 +45,7 @@ class WooeyScriptBase(DetailView):
                     if value is not None:
                         initial[i.parameter.slug].append(value)
 
-        context['form'] = utils.get_form_groups(model=self.object, initial_dict=initial, render_fn=self.render_fn)
+        context['form'] = utils.get_form_groups(model=self.object, initial_dict=initial, render_fn=self.render_fn, pk=self.object.pk)
         return context
 
     def post(self, request, *args, **kwargs):

@@ -60,14 +60,27 @@
             border-radius: 0;
         }
 
+        ol.navbar-breadcrumb {
+            float: left;
+        }
 
-        .breadcrumbs {
+
+        .navbar-breadcrumb {
             margin-left: -5px;
             color: #9d9d9d;
+            background-color: inherit;
             font-family: "Helvetica Neue",Helvetica,Roboto,Arial,sans-serif;
             font-size: 14px;
             font-style: normal;
             font-weight: 400;
+            margin-bottom: 0;
+            border-radius: 0;
+            padding: 0;
+        }
+
+        .navbar-breadcrumb > li {
+            line-height: 20px;
+            padding: 17px 0px;
         }
 
 
@@ -107,6 +120,8 @@
         }
 
         .navbar-brand {
+            padding: 0px 0px 0px 15px;
+            height: 0;
         }
 
         .navbar-title
@@ -312,15 +327,17 @@
       <div class="container-fluid">
         <!-- Brand and toggle get grouped for better mobile display -->
         <div class="navbar-header">
-        <a href="{% url 'wooey:wooey_home' %}" class="navbar-brand wooey">Wooey!</a>
-        <span class="breadcrumbs">{% block breadcrumbs %}{% endblock %}</span>
+            <ol class="breadcrumb navbar-breadcrumb">
+              <li><a href="{% url 'wooey:wooey_home' %}" class="navbar-brand wooey">Wooey!</a></li>
+                {% block breadcrumbs %}{% endblock %}
+            </ol>
 
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
         </div>
 
         <!-- Collect the nav links, forms, and other content for toggling -->

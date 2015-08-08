@@ -2,6 +2,11 @@
 {% load i18n %}
 {% load wooey_tags %}
 
+{% block breadcrumbs %}
+    <li><a href="{{ job_info.job.script.get_url }}">{{ job_info.job.script.script_name }}</a></li>
+    <li><a href="#">{% blocktrans with job_id=job_info.job.id %}Job # {{ job_id }}{% endblocktrans %}</a></li>
+{% endblock breadcrumbs %}
+
 {% block extra_js %}
     {{ js.super }}
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/ekko-lightbox/3.3.0/ekko-lightbox.min.js"></script>
@@ -103,8 +108,6 @@
 
 
   <div class="job-metadata">
-      <a href="{{ job_info.job.script.get_url }}">{{ job_info.job.script.script_name }}</a>
-      • Job <a href="{{ job_info.job.job_url }}">#{{ job_info.job.id }}</a>
       • Priority 1
       • Submitted {{ job_info.job.created_date|timesince }} ago by {{ job_info.job.user }}
       • Updated {{ job_info.last_modified|timesince }} ago

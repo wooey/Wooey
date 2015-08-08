@@ -209,6 +209,23 @@ class WooeyScriptSearchBase(WooeySearchBase):
     search_fields = ['script_name', 'script_description']
 
 
+class WooeyScriptSearchJSON(WooeyScriptSearchBase):
+    """
+    Returns the result of the script search as JSON containing data only
+    """
+
+    def search(self, request):
+        results = []
+        for script in self.search_results:
+            results.append({
+                'id': script.id,
+                'name': script.script_name,
+                'description': script.script_description,
+                'url': reverse('wooey:wooey_script', kwargs={'slug':script.slug}),
+            })
+        return JsonResponse({'results': results})
+
+
 class WooeyScriptSearchJSONHTML(WooeyScriptSearchBase):
     """
     Returns the result of the script search as JSON containing rendered template

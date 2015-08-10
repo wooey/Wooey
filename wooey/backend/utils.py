@@ -20,7 +20,7 @@ from django.db.models import Q
 
 from celery.contrib import rdb
 
-from clinto.argparse_specs import ArgParseNodeBuilder
+from clinto.parser import Parser
 
 from .. import settings as wooey_settings
 
@@ -151,7 +151,7 @@ def add_wooey_script(script=None, group=None):
     basename, extension = os.path.splitext(script)
     filename = os.path.split(basename)[1]
 
-    parser = ArgParseNodeBuilder(script_name=filename, script_path=script)
+    parser = Parser(script_name=filename, script_path=script)
     if not parser.valid:
         return (False, parser.error)
     # make our script

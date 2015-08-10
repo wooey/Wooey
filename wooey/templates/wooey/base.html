@@ -424,7 +424,7 @@
                 <li>
                     <form>
                      <div class="form-group">
-                        <input type="text" class="form-control" id="sidebarsearchform"  placeholder="Search for scripts...">
+                        <input type="text" class="form-control" id="sidebarsearchform"  placeholder="Search for scripts..." value="{{ request.GET.q }}">
                       </div>
                     </form>
                 </li>
@@ -721,8 +721,7 @@
                 $("#wrapper").toggleClass("toggled");
             });
 
-
-            $("#sidebarsearchform").bindWithDelay("keyup", function(event){
+            function sidebarSearch(event){
                 var query = $('#sidebarsearchform').val();
                 $.ajax({
                     url: '{% url 'wooey:wooey_search_script_json' %}',
@@ -737,14 +736,17 @@
                         $('#sidebarsearchresults').empty()
                         for (var i in data['results']) {
 
-                            $("#sidebarsearchresults").append('<li><a href="' + data['results'][i].url + '">' + data['results'][i].name + '</a></li>')
+                            $("#sidebarsearchresults").append('<li><a href="' + data['results'][i].url + '?q=' + query + '">' + data['results'][i].name + '</a></li>')
                         }
                     }
                 });
 
 
-            }, 100);
+            }
 
+
+            $("#sidebarsearchform").bindWithDelay("keyup", sidebarSearch, 100);
+            sidebarSearch();
         });
 
 

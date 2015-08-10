@@ -97,29 +97,30 @@
 }
 
 @media(min-width:768px) {
-    #wrapper {
-        padding-left: 250px;
-    }
 
-    #wrapper.toggled {
+    #wrapper {
         padding-left: 0;
     }
 
     #sidebar-wrapper {
-        width: 250px;
+        width: 0;
+    }
+
+    #wrapper.toggled {
+        padding-left: 250px;
     }
 
     #wrapper.toggled #sidebar-wrapper {
-        width: 0;
+        width: 250px;
     }
 
     #page-content-wrapper {
         padding: 20px;
         position: relative;
+        margin-right: 0;
     }
 
     #wrapper.toggled #page-content-wrapper {
         position: relative;
-        margin-right: 0;
     }
 }

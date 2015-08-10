@@ -54,7 +54,9 @@ class ScriptGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
 class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     script_name = models.CharField(max_length=255)
     slug = AutoSlugField(populate_from='script_name', unique=True)
-    script_group = models.ForeignKey('ScriptGroup')
+    # we create defaults for the script_group in the clean method of the model. We have to set it to null/blank=True
+    # or else we will fail form validation before we hit the model.
+    script_group = models.ForeignKey('ScriptGroup', null=True, blank=True)
     script_description = models.TextField(blank=True, null=True)
     script_order = models.PositiveSmallIntegerField(default=1)
     is_active = models.BooleanField(default=True)
@@ -83,6 +85,13 @@ class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     def get_script_path(self):
         path = self.script_path.path
         return path if self.execute_full_path else os.path.split(path)[1]
+
+    def clean(self):
+        if self.script_group is None:
+            group = ScriptGroup.objects.filter(group_name=wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP).order_by('pk').first()
+            if not group:
+                group, created = ScriptGroup.objects.get_or_create(group_name=wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP)
+            self.script_group = group
 
     @transaction.atomic
     def save(self, **kwargs):

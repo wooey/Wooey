@@ -3,6 +3,7 @@ import shutil
 from ..models import Script, WooeyFile, WooeyJob
 from ..backend import utils
 
+
 class FileCleanupMixin(object):
     def tearDown(self):
         for i in WooeyFile.objects.all():
@@ -12,6 +13,7 @@ class FileCleanupMixin(object):
         for i in WooeyJob.objects.all():
             shutil.rmtree(local_storage.path(i.get_output_path()))
         super(FileCleanupMixin, self).tearDown()
+
 
 class ScriptFactoryMixin(object):
     def tearDown(self):

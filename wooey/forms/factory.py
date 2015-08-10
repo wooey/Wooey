@@ -35,10 +35,12 @@ def mutli_render(render_func, appender_data_dict=None):
         return mark_safe('\n'.join(pieces))
     return render
 
+
 def multi_value_from_datadict(func):
     def value_from_datadict(data, files, name):
         return [func(QueryDict('{name}={value}'.format(name=name, value=i)), files, name) for i in data.getlist(name)]
     return value_from_datadict
+
 
 def multi_value_clean(func):
     def clean(*args, **kwargs):

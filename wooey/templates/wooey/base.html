@@ -1,7 +1,7 @@
 {% load i18n %}
 {% load staticfiles %}
 <!DOCTYPE html>
-<html>
+<body>
 <head lang="en">
     <meta charset="UTF-8">
     <title>{% block title %}Wooey!{% endblock title %}</title>
@@ -419,7 +419,7 @@
 <div id="wrapper">
 
         <!-- Sidebar -->
-        <div id="sidebar-wrapper">
+        <div id="sidebar-wrapper" class="sidebar-wrapper">
             <ul class="sidebar-nav">
                 <li>
                     <form>
@@ -447,7 +447,7 @@
 
 </div>
 
-</body>
+
     {% block js %}
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
     <script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
@@ -455,11 +455,13 @@
     <script type="text/javascript" src="//cdn.datatables.net/responsive/1.0.5/js/dataTables.responsive.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
     {% endblock js %}
+
     {% block extra_js %}
     {% endblock extra_js %}
-    {% block inline_js %}
 
-        <script type="text/javascript">
+    <div id="inline-js">
+    {% block inline_js %}
+    <script  type="text/javascript">
 
             (function($) {
                 // https://github.com/bgrins/bindWithDelay/blob/master/bindWithDelay.js
@@ -721,7 +723,9 @@
                 $("#wrapper").toggleClass("toggled");
             });
 
-            function sidebarSearch(event){
+
+
+            $("#sidebarsearchform").bindWithDelay("keyup", function(event){
                 var query = $('#sidebarsearchform').val();
                 $.ajax({
                     url: '{% url 'wooey:wooey_search_script_json' %}',
@@ -735,22 +739,48 @@
 
                         $('#sidebarsearchresults').empty()
                         for (var i in data['results']) {
-
-                            $("#sidebarsearchresults").append('<li><a href="' + data['results'][i].url + '?q=' + query + '">' + data['results'][i].name + '</a></li>')
+                            $("#sidebarsearchresults").append('<li class="sidebarsearchresult"><a href="' + data['results'][i].url + '">' + data['results'][i].name + '</a></li>')
                         }
+
+                        $('.sidebarsearchresult').bind("click", function(event){
+                            $.ajax({
+                                url: event.target.href,
+                                method: 'GET',
+                                dataType: 'html',
+                                async: true,
+
+                                cache: false,
+                                contentType: false,
+                                success: function(html){
+                                    $("#page-content-wrapper").html( $(html).find("#page-content-wrapper") );
+
+                                    var div = document.createElement("div");
+                                    div.innerHTML = html;
+                                    var scripts = div.getElementsByTagName('script');
+                                    for (var ix = 0; ix < scripts.length; ix++) {
+                                        eval(scripts[ix].text);
+                                    }
+
+                                    jQuery.ready();
+
+                                },
+                              });
+                            return false;
+                        });
+
                     }
                 });
 
 
-            }
+            }, 100);
 
 
-            $("#sidebarsearchform").bindWithDelay("keyup", sidebarSearch, 100);
-            sidebarSearch();
+
         });
 
-
-
-        </script>
+    </script>
     {% endblock inline_js %}
+    </div>
+
+</body>
 </html>

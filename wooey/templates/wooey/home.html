@@ -93,120 +93,120 @@
 
 {% block inline_js %}
 {{ block.super }}
-        <script type="text/javascript">
+<script  type="text/javascript">
 
-            $(document).ready(function(){
+    $(document).ready(function(){
 
-                // TODO: Make this nice
-                var $jobtable = $('#wooey-job-table-anon');
-                var $jobtable_user = $('#wooey-job-table-user');
-                var wooey_dt = $jobtable.dataTable({
-                    "columnDefs": [
-                        { "visible": false,  "targets": [ 0 ] },
-                    ],
-                    "order": [[ 3, "desc" ]]
-                });
-                var wooey_dt_user = $jobtable_user.dataTable({
-                    "columnDefs": [
-                        { "visible": false,  "targets": [ 0 ] },
-                    ],
-                    "order": [[ 3, "desc" ]]
-                });
-                $('#wooey-job-table-anon,#wooey-job-table-user').on( 'draw.dt', function () {
-                    $('[data-toggle="popover"]').popover({
-                        trigger: 'hover',
-                        container: 'body',
-                        placement: 'auto left',
-                    });
-                });
-                $('#wooey-job-table-anon_wrapper,#wooey-job-table-user_wrapper').addClass('col-md-12');
-
-
-                var job_tables = {
-                    anon: {
-                        table: $jobtable,
-                        dt: wooey_dt,
-                        dt_api: wooey_dt.api(),
-                        jobs: {}
-                    },
-                    user: {
-                        table: $jobtable_user,
-                        dt: wooey_dt_user,
-                        dt_api: wooey_dt_user.api(),
-                        jobs: {}
-                    }
-                };
-
-                var job_reloaded = false;
-
-                $('#celery-refresh').click(function(event){
-                    celeryRefresh();
-                });
-                var tid, cid;
-                var $refreshBadge = $('<span id="refresh-badge" class="badge">9</span>');
-                $('#auto-refresh').click(function(event){
-                    var btn = $(this);
-                    if(btn.hasClass('btn-link')) {
-                        $.cookie('auto-refresh', true, { expires: 365, path: '/' });
-                        tid = setTimeout(celeryRefresh, 10000);
-                        cid = setTimeout(updateRefreshBadge, 1000);
-                        $refreshBadge.appendTo(btn);
-                    }
-                    else {
-                        $.cookie('auto-refresh', false, { expires: 365, path: '/' });
-                        clearTimeout(tid);
-                        clearTimeout(cid);
-                        $refreshBadge.remove();
-                        $refreshBadge.text(9);
-                    }
-                    btn.toggleClass('btn-link');
-                });
-                var autoRefresh = $.cookie()['auto-refresh'] === 'true';
-                if(autoRefresh) {
-                    $('#auto-refresh').trigger('click');
-                }
-                else{
-
-                }
-
-                function updateRefreshBadge(){
-                    var val = parseInt($refreshBadge.text())-1;
-                    if(val == -1){
-                        celeryRefresh();
-                        val=9;
-                    }
-                    $refreshBadge.text(val);
-                    cid = setTimeout(updateRefreshBadge, 1000);
-                }
-
-
-
-
-                $("#searchform").bindWithDelay("keyup", function(event){
-                    var query = $('#searchform').val();
-                    $.ajax({
-                        url: '{% url 'wooey:wooey_search_script_jsonhtml' %}',
-                        method: 'GET',
-                        data: {q: query},
-                        dataType: 'json',
-                        async: true,
-                        cache: false,
-                        contentType: false,
-                        success: function(data){
-                            $("#script-list").empty()
-                            for (var i in data['results']) {
-                                $("#script-list").append(data['results'][i]);
-                            }
-                            $("a[data-favorite]").click(toggleFavorite);
-                        }
-                    });
-
-
-                }, 100);
-
-
-
-
+        // TODO: Make this nice
+        var $jobtable = $('#wooey-job-table-anon');
+        var $jobtable_user = $('#wooey-job-table-user');
+        var wooey_dt = $jobtable.dataTable({
+            "columnDefs": [
+                { "visible": false,  "targets": [ 0 ] },
+            ],
+            "order": [[ 3, "desc" ]]
+        });
+        var wooey_dt_user = $jobtable_user.dataTable({
+            "columnDefs": [
+                { "visible": false,  "targets": [ 0 ] },
+            ],
+            "order": [[ 3, "desc" ]]
+        });
+        $('#wooey-job-table-anon,#wooey-job-table-user').on( 'draw.dt', function () {
+            $('[data-toggle="popover"]').popover({
+                trigger: 'hover',
+                container: 'body',
+                placement: 'auto left',
             });
+        });
+        $('#wooey-job-table-anon_wrapper,#wooey-job-table-user_wrapper').addClass('col-md-12');
+
+
+        var job_tables = {
+            anon: {
+                table: $jobtable,
+                dt: wooey_dt,
+                dt_api: wooey_dt.api(),
+                jobs: {}
+            },
+            user: {
+                table: $jobtable_user,
+                dt: wooey_dt_user,
+                dt_api: wooey_dt_user.api(),
+                jobs: {}
+            }
+        };
+
+        var job_reloaded = false;
+
+        $('#celery-refresh').click(function(event){
+            celeryRefresh();
+        });
+        var tid, cid;
+        var $refreshBadge = $('<span id="refresh-badge" class="badge">9</span>');
+        $('#auto-refresh').click(function(event){
+            var btn = $(this);
+            if(btn.hasClass('btn-link')) {
+                $.cookie('auto-refresh', true, { expires: 365, path: '/' });
+                tid = setTimeout(celeryRefresh, 10000);
+                cid = setTimeout(updateRefreshBadge, 1000);
+                $refreshBadge.appendTo(btn);
+            }
+            else {
+                $.cookie('auto-refresh', false, { expires: 365, path: '/' });
+                clearTimeout(tid);
+                clearTimeout(cid);
+                $refreshBadge.remove();
+                $refreshBadge.text(9);
+            }
+            btn.toggleClass('btn-link');
+        });
+        var autoRefresh = $.cookie()['auto-refresh'] === 'true';
+        if(autoRefresh) {
+            $('#auto-refresh').trigger('click');
+        }
+        else{
+
+        }
+
+        function updateRefreshBadge(){
+            var val = parseInt($refreshBadge.text())-1;
+            if(val == -1){
+                celeryRefresh();
+                val=9;
+            }
+            $refreshBadge.text(val);
+            cid = setTimeout(updateRefreshBadge, 1000);
+        }
+
+
+
+
+        $("#searchform").bindWithDelay("keyup", function(event){
+            var query = $('#searchform').val();
+            $.ajax({
+                url: '{% url 'wooey:wooey_search_script_jsonhtml' %}',
+                method: 'GET',
+                data: {q: query},
+                dataType: 'json',
+                async: true,
+                cache: false,
+                contentType: false,
+                success: function(data){
+                    $("#script-list").empty()
+                    for (var i in data['results']) {
+                        $("#script-list").append(data['results'][i]);
+                    }
+                    $("a[data-favorite]").click(toggleFavorite);
+                }
+            });
+
+
+        }, 100);
+
+
+
+
+    });
 </script>
 {% endblock inline_js %}

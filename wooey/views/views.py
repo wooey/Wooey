@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 from collections import defaultdict
+import datetime as dt
 
 from django.views.generic import DetailView, TemplateView, View
 from django.template.loader import render_to_string
@@ -34,12 +35,13 @@ class WooeyScriptBase(DetailView):
 
         # returns the models required and optional fields as html
         job_id = self.kwargs.get('job_id')
-        initial = None
+        initial = defaultdict(list)
+
         if job_id:
             job = WooeyJob.objects.get(pk=job_id)
             if job.user is None or (self.request.user.is_authenticated() and job.user == self.request.user):
                 context['job_info'] = {'job_id': job_id, 'url': job.get_resubmit_url(), 'data_url': job.script.get_url()}
-                initial = defaultdict(list)
+
                 for i in job.get_parameters():
                     value = i.value
                     if value is not None:

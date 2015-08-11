@@ -1,11 +1,18 @@
-# Config file for automatic testing at travis-ci.org
-
 language: python
-
+env:
+  - DJANGO_VERSION="Django>=1.6,<1.7" DJANGO_SETTINGS_MODULE=
+  - DJANGO_VERSION="Django>=1.7,<1.8" DJANGO_SETTINGS_MODULE=
+  - DJANGO_VERSION="Django>=1.8,<1.9" DJANGO_SETTINGS_MODULE=
 python:
-  - "3.4"
   - "2.7"
-
-install: pip install -r requirements/dev.txt
-
-script: py.test tests
+  - "3.3"
+  - "3.4"
+# command to install dependencies
+install:
+  - pip install -q $DJANGO_VERSION
+  - pip install -q -r requirements.txt
+  - pip install -q -e .
+# command to run tests
+script: make test
+after_success:
+  - coveralls

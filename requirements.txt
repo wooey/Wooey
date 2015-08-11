@@ -1,0 +1,9 @@
+django
+django-autoslug
+django-celery
+nose
+factory-boy
+coveralls
+six
+clinto
+tox

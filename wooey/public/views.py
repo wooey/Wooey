@@ -47,6 +47,9 @@ def home():
         else:
             flash_errors(form)
 
+    print( request )
+    print( session )
+
     scripts = Script.query.order_by(Script.name)
     return render_template("public/home.html", login_form=form, scripts=scripts)
 

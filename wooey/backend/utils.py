@@ -43,7 +43,8 @@ def get_storage(local=True):
 
 def get_job_commands(job=None):
     script = job.script
-    com = ['python', script.get_script_path()]
+    com = [sys.executable] if sys.executable else []
+    com.extend([script.get_script_path()])
     parameters = job.get_parameters()
     param_dict = OrderedDict()
     for param in parameters:

@@ -1,0 +1,8 @@
+{% extends "wooey/modals/base_modal.html" %}
+{% load i18n %}
+{% block modal_id %}modal-resubmit{% endblock %}
+{% block modal_title %}{% trans "Resubmission Complete" %}{% endblock modal_title %}
+{% block modal_body %}{% trans "Your job has been successfully resubmitted." %}{% endblock modal_body %}
+{% block modal_buttons %}
+<a href="#" id="new-job-url"><button class="btn btn-primary">{% trans "View Job" %}</button></a>
+{% endblock modal_buttons %}

@@ -1,0 +1,9 @@
+{% extends "wooey/preview/base.html" %}
+{% load i18n %}
+{% load wooey_tags %}
+
+{% block preview_content %}
+<div class="panel-body">
+    <a href="{{ output_file_content.url }}" data-toggle="lightbox" data-gallery="job-images" data-type="image"><img src="{{ output_file_content.url }}" alt="{{ output_file_content.name }}" class="img-responsive"></a>
+</div>
+{% endblock %}

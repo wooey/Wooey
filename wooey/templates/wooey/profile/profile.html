@@ -1,0 +1,36 @@
+{% extends "wooey/base.html" %}
+{% load i18n %}
+{% load wooey_tags %}
+{% block center_content_class %}col-md-12 col-xs-12{% endblock center_content_class %}
+
+{% block center_content %}
+<div class="page-header">
+
+  <img src="{% gravatar profile_user.email 64 %}" class="gravatar gravatar-64">
+  <div class="profile-gravatar-adjust">
+  <h1>
+    {% if profile_user.first_name or profile_user.last_name %}
+      {{ profile_user.get_full_name }}
+    {% else %}
+      {{ profile_user.username }}
+    {% endif %}
+      <small>{{ profile_user.username }}</small></h1>
+
+
+  <div class="profile-metadata">
+    Joined {{ profile_user.date_joined|timesince }} ago
+    {% if profile_user.is_superuser %}
+        • <span class="glyphicon glyphicon-fire"></span> Superuser
+    {% endif %}
+
+    {% if profile_user.is_staff %}
+        • <span class="glyphicon glyphicon-education"></span> Staff
+    {% endif %}
+
+  </div>
+
+    </div>
+</div>
+
+
+{% endblock center_content %}

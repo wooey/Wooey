@@ -1,0 +1,6 @@
+include LICENSE
+include README.md
+recursive-include wooey/templates *
+recursive-include wooey/static *
+recursive-include wooey/conf *
+recursive-exclude * *.pyc

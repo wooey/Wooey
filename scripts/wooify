@@ -1,0 +1,6 @@
+#!/usr/bin/env python
+__author__ = 'chris'
+from wooey.backend import command_line
+
+if __name__ == "__main__":
+    command_line.bootstrap()

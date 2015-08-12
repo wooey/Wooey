@@ -351,7 +351,7 @@ def create_job_fileinfo(job):
             else:
                 files.append(d)
         except IOError:
-            sys.stderr.format('{}'.format(traceback.format_exc()))
+            sys.stderr.write('{}'.format(traceback.format_exc()))
             continue
 
     # establish grouping by inferring common things

@@ -86,7 +86,7 @@ class WooeyFormFactory(object):
             form_field = 'MultipleChoiceField' if multiple_choices else 'ChoiceField'
             base_choices = [(None, '----')] if not param.required and not multiple_choices else []
             field_kwargs['choices'] = base_choices+[(str(i), str(i).title()) for i in choices]
-         if form_field == 'TextField':
+        if form_field == 'TextField':
             form_field = 'CharField'
             field_kwargs = {'widget': forms.Textarea}
             widget_data_dict.update({'style': 'display: block'})  #slightly dirty hack to make a Text box appear on a new line, rather than next to its label

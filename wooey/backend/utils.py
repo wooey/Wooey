@@ -134,7 +134,6 @@ def get_storage_object(path, local=False):
     obj = storage.open(path)
     obj.url = storage.url(path)
     obj.path = storage.path(path)
-    obj.size = storage.size(path)
     return obj
 
 def add_wooey_script(script=None, group=None):

@@ -41,6 +41,7 @@ class Mock(MagicMock):
 
 # Add any modules that cannot be installed by RTD to this array
 MOCK_MODULES = [
+    'boto',
 ]
 
 for mod_name in MOCK_MODULES:

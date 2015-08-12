@@ -134,6 +134,7 @@ def get_storage_object(path, local=False):
     obj = storage.open(path)
     obj.url = storage.url(path)
     obj.path = storage.path(path)
+    obj.size = storage.size(path)
     return obj
 
 def add_wooey_script(script=None, group=None):
@@ -345,7 +346,8 @@ def create_job_fileinfo(job):
             filepath = os.path.join(absbase, filename)
             if os.path.isdir(filepath):
                 continue
-            d = {'name': filename, 'file': get_storage_object(os.path.join(job.save_path, filename)), 'size_bytes': os.path.getsize(filepath)}
+            storage_file = get_storage_object(os.path.join(job.save_path, filename))
+            d = {'name': filename, 'file': storage_file, 'size_bytes': storage_file.size}
             if filename.endswith('.tar.gz') or filename.endswith('.zip'):
                 file_groups['archives'].append(d)
             else:

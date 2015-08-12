@@ -40,7 +40,6 @@ def numericalign(s):
     :param s:
     :return: s
     """
-    print(s)
     number, units = s.split()
     return mark_safe('<span class="numericalign numericpart">%s</span><span class="numericalign">&nbsp;%s</span>' % (number, units))
 

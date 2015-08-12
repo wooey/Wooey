@@ -276,7 +276,7 @@ def test_delimited(filepath):
 
 def test_fastx(filepath):
     # if we can be delimited by + or > we're maybe a fasta/q
-    with open(filepath) as fastx_file:
+    with open(filepath, encoding='latin-1') as fastx_file:
         sequences = OrderedDict()
         seq = []
         header = ''

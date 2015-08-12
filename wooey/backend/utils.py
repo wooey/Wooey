@@ -19,6 +19,8 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 
 from celery.contrib import rdb
+# Python2.7 encoding= support
+from io import open
 
 from clinto.parser import Parser
 

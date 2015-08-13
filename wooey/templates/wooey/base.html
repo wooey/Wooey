@@ -357,7 +357,7 @@
                   <span class="icon-bar"></span>
               </button>
             <ol class="breadcrumb navbar-breadcrumb">
-              <li><a href="{% url 'wooey:wooey_home' %}" class="navbar-brand wooey">Wooey!</a></li>
+              <li><a href="{% url 'wooey:wooey_home' %}" class="navbar-brand wooey">{{ wooey_settings.WOOEY_SITE_NAME }}</a></li>
                 {% block breadcrumbs %}{% endblock %}
             </ol>
 

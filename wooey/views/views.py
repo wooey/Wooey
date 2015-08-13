@@ -48,6 +48,7 @@ class WooeyScriptBase(DetailView):
                         initial[i.parameter.slug].append(value)
 
         context['form'] = utils.get_form_groups(model=self.object, initial_dict=initial, render_fn=self.render_fn, pk=self.object.pk)
+        context['wooey_settings'] = wooey_settings
         return context
 
     def post(self, request, *args, **kwargs):
@@ -147,6 +148,7 @@ class WooeyHomeView(TemplateView):
         else:
             ctx['favorite_script_ids'] = []
 
+        ctx['wooey_settings'] = wooey_settings
         return ctx
 
 

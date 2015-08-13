@@ -43,6 +43,9 @@ class Mock(MagicMock):
 MOCK_MODULES = [
     'boto',
     'boto.utils',
+    'storages',
+    'storages.backends',
+    'storages.backends.s3boto',
 ]
 
 for mod_name in MOCK_MODULES:

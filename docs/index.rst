@@ -9,7 +9,7 @@ The project was inspired by how simply and powerfully `sandman <https://github.c
 could expose users to a database and by how `Gooey <https://github.com/chriskiehl/Gooey>`_ turns
 ArgumentParser-based command-line scripts into WxWidgets GUIs. Originally two separate
 projects (Django-based djangui by `Chris Mitchell <https://github.com/Chris7>`_ and Flask-based Wooey by
-`Martin Fitzpatrick <https://github/mfitzp>`_ it has been merged to combine our efforts.
+`Martin Fitzpatrick <https://github/mfitzp>`_) it has been merged to combine our efforts.
 
 
 

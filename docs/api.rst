@@ -6,7 +6,7 @@ Wooey. If you
 
 .. toctree::
    :maxdepth: 2
-   
+
    admin
    apps
    backend

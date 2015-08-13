@@ -1,4 +1,5 @@
 __author__ = 'chris'
+import os
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 
@@ -18,3 +19,5 @@ WOOEY_EPHEMERAL_FILES = get('WOOEY_EPHEMERAL_FILES', False)
 WOOEY_DEFAULT_SCRIPT_GROUP = get('WOOEY_DEFAULT_SCRIPT_GROUP', _('Scripts'))
 WOOEY_SITE_NAME = get('WOOEY_SITE_NAME', _('Wooey!'))
 WOOEY_SITE_TAG = get('WOOEY_SITE_TAG', _('A web UI for Python scripts'))
+
+SECRET_KEY = get('SECRET_KEY', os.environ.get('SECRET_KEY', None))

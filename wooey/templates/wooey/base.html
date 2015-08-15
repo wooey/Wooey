@@ -1,10 +1,11 @@
 {% load i18n %}
 {% load staticfiles %}
+{% load wooey_tags %}
 <!DOCTYPE html>
 <html>
 <head lang="en">
     <meta charset="UTF-8">
-    <title>{% block title %}Wooey!{% endblock title %}</title>
+    <title>{% block title %}{% get_wooey_setting "WOOEY_SITE_NAME" %}{% endblock title %}</title>
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="//cdn.datatables.net/1.10.6/css/jquery.dataTables.min.css"/>
     <link rel="stylesheet" href="//cdn.datatables.net/responsive/1.0.5/css/dataTables.responsive.css"/>
@@ -357,7 +358,7 @@
                   <span class="icon-bar"></span>
               </button>
             <ol class="breadcrumb navbar-breadcrumb">
-              <li><a href="{% url 'wooey:wooey_home' %}" class="navbar-brand wooey">Wooey!</a></li>
+              <li><a href="{% url 'wooey:wooey_home' %}" class="navbar-brand wooey">{% get_wooey_setting "WOOEY_SITE_NAME" %}</a></li>
                 {% block breadcrumbs %}{% endblock %}
             </ol>
 

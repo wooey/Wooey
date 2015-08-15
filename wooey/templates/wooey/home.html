@@ -9,8 +9,8 @@
 {% block outer_content %}
 {% if not request.user.is_authenticated %}
 <div class="jumbotron frontpage">
-  <h1 class="wooey">Wooey!</h1>
-  <p>A web UI for Python scripts</p>
+  <h1 class="wooey">{% get_wooey_setting "WOOEY_SITE_NAME" %}</h1>
+  <p>{% get_wooey_setting "WOOEY_SITE_TAG" %}</p>
 </div>
 {% endif %}
 {% endblock %}

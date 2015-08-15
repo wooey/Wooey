@@ -1,5 +1,5 @@
 Tests
-*****
+=====
 
 .. automodule:: wooey.tests
    :members:

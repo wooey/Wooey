@@ -1,5 +1,5 @@
 Wooey Storage
-*************
+=============
 
 .. automodule:: wooey.wooeystorage
    :members:

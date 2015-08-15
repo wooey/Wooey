@@ -1,5 +1,5 @@
 Tasks
-*****
+=====
 
 .. automodule:: wooey.tasks
    :members:

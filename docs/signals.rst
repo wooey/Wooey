@@ -1,5 +1,5 @@
 Signals
-*******
+=======
 
 .. automodule:: wooey.signals
    :members:

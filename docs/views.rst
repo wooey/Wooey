@@ -1,5 +1,5 @@
 Views
-*****
+=====
 
 .. automodule:: wooey.views
    :members:

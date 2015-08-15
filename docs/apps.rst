@@ -1,5 +1,5 @@
 Apps
-****
+====
 
 .. automodule:: wooey.apps
    :members:

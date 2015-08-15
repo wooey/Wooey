@@ -1,5 +1,5 @@
 Management
-**********
+==========
 
 .. automodule:: wooey.management
    :members:

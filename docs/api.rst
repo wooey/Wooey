@@ -1,5 +1,5 @@
 API Reference
-*************
+=============
 
 The API reference is intended for developers of Wooey. It lists the internal classes and methods that make up
 Wooey. If you

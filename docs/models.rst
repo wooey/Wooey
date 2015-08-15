@@ -1,5 +1,5 @@
 Models
-******
+======
 
 .. automodule:: wooey.models
    :members:

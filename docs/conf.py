@@ -17,6 +17,7 @@ import os
 
 from mock import MagicMock
 
+
 class Mock(MagicMock):
     __all__ = []
     def __init__(self, *args, **kwargs):

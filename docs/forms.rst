@@ -1,5 +1,5 @@
 Forms
-*****
+-----
 
 .. automodule:: wooey.forms
    :members:

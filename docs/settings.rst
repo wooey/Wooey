@@ -1,5 +1,5 @@
 Settings
-********
+========
 
 .. automodule:: wooey.settings
    :members:

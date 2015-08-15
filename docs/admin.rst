@@ -1,5 +1,5 @@
 Admin
-*****
+=====
 
 .. automodule:: wooey.admin
    :members:

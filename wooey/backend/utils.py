@@ -42,6 +42,21 @@ def get_storage(local=True):
         storage = default_storage
     return storage
 
+def purge_output(job=None):
+    from ..models import WooeyFile
+    # cleanup the old files, we need to be somewhat aggressive here.
+    local_storage = get_storage(local=True)
+    for dj_file in WooeyFile.objects.filter(job=job):
+        if dj_file.parameter is None or dj_file.parameter.parameter.is_output:
+            wooey_file = dj_file.filepath.name
+            # this will delete the default file -- which if we are using an ephemeral file system will be the
+            # remote instance
+            dj_file.filepath.delete(False)
+            dj_file.delete()
+            # check our local storage and remove it if it is there as well
+            path = local_storage.path(wooey_file)
+            if local_storage.exists(path):
+                local_storage.delete(path)
 
 def get_job_commands(job=None):
     script = job.script
@@ -169,8 +184,6 @@ def add_wooey_script(script=None, group=None):
             script_obj.script_description = d['description']
         if not script_obj.script_name:
             script_obj.script_name = d['name']
-        # probably a much better way to avoid this recursion
-        script_obj._add_script = False
         script_obj.save()
     if not created:
         if script_obj is False:
@@ -313,11 +326,12 @@ def create_job_fileinfo(job):
                 value = field.value
                 if value is None:
                     continue
+                local_storage = get_storage(local=True)
                 if isinstance(value, six.string_types):
                     # check if this was ever created and make a fileobject if so
-                    if get_storage(local=True).exists(value):
+                    if local_storage.exists(value):
                         if not get_storage(local=False).exists(value):
-                            get_storage(local=False).save(value, File(get_storage(local=True).open(value)))
+                            get_storage(local=False).save(value, File(local_storage.open(value)))
                         value = field.value
                     else:
                         field.force_value(None)
@@ -345,7 +359,12 @@ def create_job_fileinfo(job):
             filepath = os.path.join(absbase, filename)
             if os.path.isdir(filepath):
                 continue
-            storage_file = get_storage_object(os.path.join(job.save_path, filename))
+            full_path = os.path.join(job.save_path, filename)
+            try:
+                storage_file = get_storage_object(full_path)
+            except:
+                sys.stderr.write('Error in accessing stored file:\n{}'.format(traceback.format_exc()))
+                continue
             d = {'name': filename, 'file': storage_file, 'size_bytes': storage_file.size}
             if filename.endswith('.tar.gz') or filename.endswith('.zip'):
                 file_groups['archives'].append(d)

@@ -7,3 +7,5 @@ coveralls
 six
 clinto
 tox
+boto
+django-storages-redux

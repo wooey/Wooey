@@ -161,7 +161,41 @@ def add_wooey_script(script=None, group=None):
         except NotImplementedError:
             script_path = script.script_path.name
 
-    script_obj, script = (script, get_storage_object(script_path, local=True).path) if isinstance(script, Script) else (False, script)
+    local_storage = get_storage(local=True)
+    if isinstance(script, Script):
+        script_obj = script
+
+        # we need to move the script to the wooey scripts directory now
+        # handle remotely first
+        old_name = script.script_path.name
+        new_name = os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, old_name)
+
+        current_storage = get_storage(local=not wooey_settings.WOOEY_EPHEMERAL_FILES)
+        current_file = current_storage.open(script.script_path.name)
+        new_path = current_storage.save(new_name, current_file)
+
+        # remove the old file
+        current_storage.delete(old_name)
+
+        script._rename_script = True
+        script.script_path.name = new_name
+        script.save()
+
+        # download the script locally if it doesn't exist
+        if not local_storage.exists(new_path):
+            new_path = local_storage.save(new_path, current_file)
+
+        script = get_storage_object(new_path, local=True).path
+        local_file = local_storage.open(new_path)
+    else:
+        script_obj = False
+        # we got a path, make sure we have it remotely
+        local_file = local_storage.open(script)
+        if wooey_settings.WOOEY_EPHEMERAL_FILES:
+            remote_storage = get_storage(local=False)
+            if not remote_storage.exists(script):
+                remote_storage.save(script, local_file)
+
     if isinstance(group, ScriptGroup):
         group = group.group_name
     if group is None:
@@ -169,15 +203,21 @@ def add_wooey_script(script=None, group=None):
     basename, extension = os.path.splitext(script)
     filename = os.path.split(basename)[1]
 
-    parser = Parser(script_name=filename, script_path=script)
+    parser = Parser(script_name=filename, script_path=local_storage.path(local_file))
     if not parser.valid:
         return (False, parser.error)
     # make our script
     d = parser.get_script_description()
     script_group, created = ScriptGroup.objects.get_or_create(group_name=group)
     if script_obj is False:
-        wooey_script, created = Script.objects.get_or_create(script_group=script_group, script_description=d['description'],
-                                                               script_path=script, script_name=d['name'])
+        script_kwargs = {'script_group': script_group, 'script_description': d['description'],
+                         'script_path': script, 'script_name': d['name']}
+        scripts = Script.objects.filter(**script_kwargs).order_by('-script_version')
+        created = len(scripts) == 0
+        if created:
+            wooey_script = Script(**script_kwargs)
+            wooey_script._script_cl_creation = True
+            wooey_script.save()
     else:
         created = False
         if not script_obj.script_description:
@@ -203,8 +243,6 @@ def add_wooey_script(script=None, group=None):
                                                                           choices=json.dumps(param.get('choices')), choice_limit=json.dumps(param.get('choice_limit', 1)),
                                                                           param_help=param.get('help'), is_checked=param.get('checked', False),
                                                                           parameter_group=param_group)
-    # update our loaded scripts
-    load_scripts()
     return (True, '')
 
 def valid_user(obj, user):

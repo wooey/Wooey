@@ -12,8 +12,10 @@ from . import settings as wooey_settings
 
 class CachedS3BotoStorage(S3BotoStorage):
     def __init__(self, *args, **kwargs):
+        if os.environ.get('TESTING', False):
+            from .tests import config
+            kwargs['location'] = config.WOOEY_TEST_REMOTE_STORAGE_DIR
         super(CachedS3BotoStorage, self).__init__(*args, **kwargs)
-        self._modified = False
         self.local_storage = get_storage_class('django.core.files.storage.FileSystemStorage')()
 
     def _open(self, name, mode='rb'):
@@ -38,25 +40,14 @@ class CachedS3BotoStorage(S3BotoStorage):
         # and give false information
         super(CachedS3BotoStorage, self).delete(name)
         name = self._normalize_name(self._clean_name(name))
-        self._entries.pop(name, None)
-        self._modified = True
-
-    @property
-    def entries(self):
-        """
-        Get the locally cached files for the bucket.
-        """
-        if self.preload_metadata and (self._modified or not self._entries):
-            self._entries = dict((self._decode_name(entry.key), entry)
-                                for entry in self.bucket.list(prefix=self.location))
-            self._modified = True
-        return self._entries
+        encoded_name = self._encode_name(name)
+        self._entries.pop(encoded_name, None)
 
 
 class FakeRemoteStorage(FileSystemStorage):
     def __init__(self, *args, **kwargs):
-        from .tests.config import WOOEY_TEST_REMOTE_STORAGE
-        kwargs['location'] = WOOEY_TEST_REMOTE_STORAGE
+        from .tests.config import WOOEY_TEST_REMOTE_STORAGE_PATH
+        kwargs['location'] = WOOEY_TEST_REMOTE_STORAGE_PATH
         super(FakeRemoteStorage, self).__init__(*args, **kwargs)
         self.local_storage = get_storage_class('django.core.files.storage.FileSystemStorage')()
 

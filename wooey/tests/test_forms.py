@@ -13,7 +13,7 @@ from . import mixins
 class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
 
     @staticmethod
-    def get_mvdict( data):
+    def get_mvdict(data):
         return MultiValueDict(data)
 
     def test_master_form(self):
@@ -50,3 +50,4 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase)
         file_param = 'multiple_file_choices'
         files = [i.value for i in job.get_parameters() if i.parameter.slug == file_param]
         self.assertEqual(len(files), len(fdict.get(file_param)))
+

@@ -154,7 +154,7 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         # test submitting this in the 'currently' field
         from ..models import WooeyJob
         job = WooeyJob.objects.latest('created_date')
-        files = [i.value.path for i in job.get_parameters() if i.parameter.slug == 'multiple_file_choices']
+        files = [i.value.name for i in job.get_parameters() if i.parameter.slug == 'multiple_file_choices']
 
         data['multiple_file_choices'] = files
         request = self.factory.post(url, data=data)

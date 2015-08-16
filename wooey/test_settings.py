@@ -61,7 +61,7 @@ WOOEY_EPHEMERAL_FILES = True
 WOOEY_CELERY = False
 WOOEY_FILE_DIR = 'wooey_test'
 
-if os.environ.get('AWS_ACCESS_KEY_ID'):
+if os.environ.get('WOOEY_TEST_S3'):
     STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = 'wooey.wooeystorage.CachedS3BotoStorage'
     from boto.s3.connection import VHostCallingFormat
 

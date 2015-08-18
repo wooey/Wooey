@@ -76,7 +76,7 @@ if os.environ.get('WOOEY_TEST_S3'):
     AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
     AWS_AUTO_CREATE_BUCKET = True
     AWS_QUERYSTRING_AUTH = False
-    AWS_FILE_OVERWRITE = False
+    AWS_S3_FILE_OVERWRITE = False
     AWS_PRELOAD_METADATA = True
     AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN', '')
 

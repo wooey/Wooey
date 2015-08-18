@@ -9,10 +9,13 @@ from ..models import Script
 from .. import settings as wooey_settings
 
 class ScriptAdditionTests(mixins.ScriptFactoryMixin, TestCase):
+    def setUp(self):
+        self.storage = utils.get_storage(local=not wooey_settings.WOOEY_EPHEMERAL_FILES)
+        self.filename_func = lambda x: os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, x)
 
     def test_command_order(self):
         script = os.path.join(config.WOOEY_TEST_SCRIPTS, 'command_order.py')
-        new_file = utils.get_storage().save(os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, 'command_order.py'), open(script))
+        new_file = self.storage.save(self.filename_func('command_order.py'), open(script))
         added, errors = utils.add_wooey_script(script=new_file, group=None)
         self.assertEqual(added, True, errors)
         job = utils.create_wooey_job(script_pk=1, data={'job_name': 'abc', 'link': 'alink', 'name': 'aname'})
@@ -27,12 +30,12 @@ class ScriptAdditionTests(mixins.ScriptFactoryMixin, TestCase):
 
     def test_script_upgrade(self):
         script_path = os.path.join(config.WOOEY_TEST_SCRIPTS, 'command_order.py')
-        new_file = utils.get_storage().save(os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, 'command_order.py'), open(script_path))
+        new_file = self.storage.save(self.filename_func('command_order.py'), open(script_path))
         added, errors = utils.add_wooey_script(script=new_file, group=None)
         self.assertEqual(added, True, errors)
         # upgrade script
         script = Script.objects.get(pk=1)
-        new_script = utils.get_storage().save(os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, 'command_order.py'), open(script_path))
+        new_script = self.storage.save(self.filename_func('command_order.py'), open(script_path))
         script.script_path = new_script
         # we are going to be cloning this, so we lose the old object
         old_pk, old_version = script.pk, script.script_version

@@ -49,7 +49,7 @@ def script_presave(instance, **kwargs):
 
 def script_postsave(instance, created, **kwargs):
     from .backend import utils
-    if created and not skip_script(instance):
+    if created and (not skip_script(instance) or getattr(instance, '_script_upgrade', False)):
         added, error = utils.add_wooey_script(script=instance, group=instance.script_group)
         instance._script_upgrade = False
         instance._script_cl_creation = False

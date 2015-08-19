@@ -17,7 +17,7 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase)
         return MultiValueDict(data)
 
     def test_master_form(self):
-        script = factories.TranslateScriptFactory()
+        script = self.translate_script
         form = utils.get_master_form(model=script)
         self.assertTrue(isinstance(form, WooeyForm))
         qdict = self.get_mvdict(config.SCRIPT_DATA['translate'].get('data'))
@@ -26,12 +26,12 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase)
         self.assertTrue(form.is_valid())
 
     def test_group_form(self):
-        script = factories.TranslateScriptFactory()
+        script = self.translate_script
         form = utils.get_form_groups(model=script)
         self.assertEqual(len(form['groups']), 1)
 
     def test_multiplechoice_form(self):
-        script = factories.ChoiceScriptFactory()
+        script = self.choice_script
         form = utils.get_master_form(model=script)
         # check our wrapper is in the form render
         form_str = str(form)

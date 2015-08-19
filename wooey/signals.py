@@ -50,15 +50,15 @@ def script_presave(instance, **kwargs):
 def script_postsave(instance, created, **kwargs):
     from .backend import utils
     if created and (not skip_script(instance) or getattr(instance, '_script_upgrade', False)):
-        added, error = utils.add_wooey_script(script=instance, group=instance.script_group)
+        res = utils.add_wooey_script(script=instance, group=instance.script_group)
         instance._script_upgrade = False
         instance._script_cl_creation = False
         instance._rename_script = False
-        if added is False:
+        if res['valid'] is False:
             # delete the model on exceptions.
             # TODO: use django messages backend to propogate this message to the admin
             instance.delete()
-            raise BaseException(error)
+            raise BaseException(res['errors'])
     utils.load_scripts()
 
 pre_save.connect(script_presave, sender=Script)

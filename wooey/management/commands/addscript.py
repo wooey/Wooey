@@ -43,7 +43,7 @@ class Command(BaseCommand):
                         # save it locally as well (the default_storage will default to the remote store)
                         local_storage = get_storage(local=True)
                         local_storage.save(os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, os.path.split(script)[1]), File(f))
-                added, error = add_wooey_script(script=script, group=group)
-                if added:
+                res = add_wooey_script(script=script, group=group)
+                if res['valid']:
                     converted += 1
         sys.stdout.write('Converted {} scripts\n'.format(converted))

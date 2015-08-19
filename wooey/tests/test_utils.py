@@ -26,7 +26,7 @@ class TestUtils(mixins.ScriptFactoryMixin, TestCase):
         from .. import settings as wooey_settings
         from django.contrib.auth.models import AnonymousUser
         user = AnonymousUser()
-        script = factories.TranslateScriptFactory()
+        script = self.translate_script
         d = utils.valid_user(script, user)
         self.assertTrue(d['valid'])
         wooey_settings.WOOEY_ALLOW_ANONYMOUS = False
@@ -35,7 +35,7 @@ class TestUtils(mixins.ScriptFactoryMixin, TestCase):
 
     def test_valid_user(self):
         user = factories.UserFactory()
-        script = factories.TranslateScriptFactory()
+        script = self.translate_script
         d = utils.valid_user(script, user)
         self.assertTrue(d['valid'])
         from .. import settings as wooey_settings

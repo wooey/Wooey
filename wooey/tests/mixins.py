@@ -1,8 +1,10 @@
 import shutil
+import os
 
 from ..models import Script, WooeyFile, WooeyJob
 from ..backend import utils
 from .. import settings as wooey_settings
+from . import factories, config
 
 
 class FileCleanupMixin(object):
@@ -30,3 +32,8 @@ class ScriptFactoryMixin(object):
             path += 'c' # handle pyc junk
             utils.get_storage().delete(path)
         super(ScriptFactoryMixin, self).tearDown()
+
+    def setUp(self):
+        self.translate_script = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate.py'))
+        self.choice_script = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'choices.py'))
+        super(ScriptFactoryMixin, self).setUp()

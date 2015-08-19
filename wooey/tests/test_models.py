@@ -7,12 +7,10 @@ from .. import version
 
 class ScriptTestCase(mixins.ScriptFactoryMixin, TestCase):
 
-    def test_script_creation(self):
-        script = factories.TranslateScriptFactory()
 
     def test_multiple_choices(self):
         # load our choice script
-        script = factories.ChoiceScriptFactory()
+        script = self.choice_script
 
         multiple_choice_param = 'two_choices'
         single_choice_param = 'one_choice'
@@ -50,7 +48,7 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         return local_storage.url(fileinfo['object'].filepath.name)
 
     def test_jobs(self):
-        script = factories.TranslateScriptFactory()
+        script = self.translate_script
         from ..backend import utils
         job = utils.create_wooey_job(script_pk=script.pk, data={'job_name': 'abc', 'sequence': 'aaa', 'out': 'abc'})
         job = job.submit_to_celery()
@@ -92,7 +90,7 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
                 self.assertEqual(response.status_code, 200)
 
     def test_multiplechoices(self):
-        script = factories.ChoiceScriptFactory()
+        script = self.choice_script
         choices = ['2', '1', '3']
         choice_param = 'two_choices'
 

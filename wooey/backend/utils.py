@@ -208,7 +208,7 @@ def add_wooey_script(script=None, group=None):
 
     parser = Parser(script_name=filename, script_path=local_storage.path(local_file))
     if not parser.valid:
-        return (False, parser.error)
+        return {'valid': False, 'errors': parser.error}
     # make our script
     d = parser.get_script_description()
     script_group, created = ScriptGroup.objects.get_or_create(group_name=group)
@@ -246,7 +246,7 @@ def add_wooey_script(script=None, group=None):
                                                                           choices=json.dumps(param.get('choices')), choice_limit=json.dumps(param.get('choice_limit', 1)),
                                                                           param_help=param.get('help'), is_checked=param.get('checked', False),
                                                                           parameter_group=param_group)
-    return (True, '')
+    return {'valid': True, 'errors': None, 'script': wooey_script}
 
 def valid_user(obj, user):
     groups = obj.user_groups.all()

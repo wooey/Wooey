@@ -169,7 +169,7 @@ def add_wooey_script(script=None, group=None):
         # handle remotely first, because by default scripts will be saved remotely if we are using an
         # ephemeral file system
         old_name = script.script_path.name
-        new_name = os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, old_name) if not old_name.startswith(wooey_settings.WOOEY_SCRIPT_DIR) else old_name
+        new_name = os.path.normpath(os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, old_name) if not old_name.startswith(wooey_settings.WOOEY_SCRIPT_DIR) else old_name)
 
         current_storage = get_storage(local=not wooey_settings.WOOEY_EPHEMERAL_FILES)
         current_file = current_storage.open(old_name)

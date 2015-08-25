@@ -53,8 +53,7 @@ for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()
 
 
-os.environ['DJANGO_SETTINGS_MODULE'] = 'wooey.settings'
-os.environ['SECRET_KEY'] = 'not-so-secret'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'wooey.docs_settings'
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the

@@ -42,6 +42,21 @@ def get_storage(local=True):
         storage = default_storage
     return storage
 
+def purge_output(job=None):
+    from ..models import WooeyFile
+    # cleanup the old files, we need to be somewhat aggressive here.
+    local_storage = get_storage(local=True)
+    for dj_file in WooeyFile.objects.filter(job=job):
+        if dj_file.parameter is None or dj_file.parameter.parameter.is_output:
+            wooey_file = dj_file.filepath.name
+            # this will delete the default file -- which if we are using an ephemeral file system will be the
+            # remote instance
+            dj_file.filepath.delete(False)
+            dj_file.delete()
+            # check our local storage and remove it if it is there as well
+            path = local_storage.path(wooey_file)
+            if local_storage.exists(path):
+                local_storage.delete(path)
 
 def get_job_commands(job=None):
     script = job.script
@@ -146,7 +161,44 @@ def add_wooey_script(script=None, group=None):
         except NotImplementedError:
             script_path = script.script_path.name
 
-    script_obj, script = (script, get_storage_object(script_path, local=True).path) if isinstance(script, Script) else (False, script)
+    local_storage = get_storage(local=True)
+    if isinstance(script, Script):
+        script_obj = script
+
+        # we need to move the script to the wooey scripts directory now
+        # handle remotely first, because by default scripts will be saved remotely if we are using an
+        # ephemeral file system
+        old_name = script.script_path.name
+        new_name = os.path.normpath(os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, old_name) if not old_name.startswith(wooey_settings.WOOEY_SCRIPT_DIR) else old_name)
+
+        current_storage = get_storage(local=not wooey_settings.WOOEY_EPHEMERAL_FILES)
+        current_file = current_storage.open(old_name)
+        new_path = current_storage.save(new_name, current_file)
+
+        # remove the old file
+        current_storage.delete(old_name)
+
+        script._rename_script = True
+        script.script_path.name = new_name
+        script.save()
+
+        # download the script locally if it doesn't exist
+        if not local_storage.exists(new_path):
+            new_path = local_storage.save(new_path, current_file)
+
+        script = get_storage_object(new_path, local=True).path
+        local_file = local_storage.open(new_path)
+    else:
+        script_obj = False
+        # we got a path, if we are using a remote file system, it will be located remotely by default
+        # make sure we have it locally as well
+        if wooey_settings.WOOEY_EPHEMERAL_FILES:
+            remote_storage = get_storage(local=False)
+            remote_file = remote_storage.open(script)
+            local_file = local_storage.save(script, remote_file)
+        else:
+            local_file = local_storage.open(script)
+
     if isinstance(group, ScriptGroup):
         group = group.group_name
     if group is None:
@@ -154,23 +206,27 @@ def add_wooey_script(script=None, group=None):
     basename, extension = os.path.splitext(script)
     filename = os.path.split(basename)[1]
 
-    parser = Parser(script_name=filename, script_path=script)
+    parser = Parser(script_name=filename, script_path=local_storage.path(local_file))
     if not parser.valid:
-        return (False, parser.error)
+        return {'valid': False, 'errors': parser.error}
     # make our script
     d = parser.get_script_description()
     script_group, created = ScriptGroup.objects.get_or_create(group_name=group)
     if script_obj is False:
-        wooey_script, created = Script.objects.get_or_create(script_group=script_group, script_description=d['description'],
-                                                               script_path=script, script_name=d['name'])
+        script_kwargs = {'script_group': script_group, 'script_description': d['description'],
+                         'script_path': script, 'script_name': d['name']}
+        scripts = Script.objects.filter(**script_kwargs).order_by('-script_version')
+        created = len(scripts) == 0
+        if created:
+            wooey_script = Script(**script_kwargs)
+            wooey_script._script_cl_creation = True
+            wooey_script.save()
     else:
         created = False
         if not script_obj.script_description:
             script_obj.script_description = d['description']
         if not script_obj.script_name:
             script_obj.script_name = d['name']
-        # probably a much better way to avoid this recursion
-        script_obj._add_script = False
         script_obj.save()
     if not created:
         if script_obj is False:
@@ -190,9 +246,7 @@ def add_wooey_script(script=None, group=None):
                                                                           choices=json.dumps(param.get('choices')), choice_limit=json.dumps(param.get('choice_limit', 1)),
                                                                           param_help=param.get('help'), is_checked=param.get('checked', False),
                                                                           parameter_group=param_group)
-    # update our loaded scripts
-    load_scripts()
-    return (True, '')
+    return {'valid': True, 'errors': None, 'script': wooey_script}
 
 def valid_user(obj, user):
     groups = obj.user_groups.all()
@@ -313,11 +367,12 @@ def create_job_fileinfo(job):
                 value = field.value
                 if value is None:
                     continue
+                local_storage = get_storage(local=True)
                 if isinstance(value, six.string_types):
                     # check if this was ever created and make a fileobject if so
-                    if get_storage(local=True).exists(value):
+                    if local_storage.exists(value):
                         if not get_storage(local=False).exists(value):
-                            get_storage(local=False).save(value, File(get_storage(local=True).open(value)))
+                            get_storage(local=False).save(value, File(local_storage.open(value)))
                         value = field.value
                     else:
                         field.force_value(None)
@@ -345,7 +400,12 @@ def create_job_fileinfo(job):
             filepath = os.path.join(absbase, filename)
             if os.path.isdir(filepath):
                 continue
-            storage_file = get_storage_object(os.path.join(job.save_path, filename))
+            full_path = os.path.join(job.save_path, filename)
+            try:
+                storage_file = get_storage_object(full_path)
+            except:
+                sys.stderr.write('Error in accessing stored file:\n{}'.format(traceback.format_exc()))
+                continue
             d = {'name': filename, 'file': storage_file, 'size_bytes': storage_file.size}
             if filename.endswith('.tar.gz') or filename.endswith('.zip'):
                 file_groups['archives'].append(d)

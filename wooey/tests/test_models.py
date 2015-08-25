@@ -7,12 +7,10 @@ from .. import version
 
 class ScriptTestCase(mixins.ScriptFactoryMixin, TestCase):
 
-    def test_script_creation(self):
-        script = factories.TranslateScriptFactory()
 
     def test_multiple_choices(self):
         # load our choice script
-        script = factories.ChoiceScriptFactory()
+        script = self.choice_script
 
         multiple_choice_param = 'two_choices'
         single_choice_param = 'one_choice'
@@ -44,13 +42,13 @@ class ScriptGroupTestCase(TestCase):
 class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     urls = 'wooey.test_urls'
 
-    def setUp(self):
-        from .. import settings
-        # the test server doesn't have celery running
-        settings.WOOEY_CELERY = False
+    def get_local_url(self, fileinfo):
+        from ..backend import utils
+        local_storage = utils.get_storage(local=True)
+        return local_storage.url(fileinfo['object'].filepath.name)
 
     def test_jobs(self):
-        script = factories.TranslateScriptFactory()
+        script = self.translate_script
         from ..backend import utils
         job = utils.create_wooey_job(script_pk=script.pk, data={'job_name': 'abc', 'sequence': 'aaa', 'out': 'abc'})
         job = job.submit_to_celery()
@@ -75,7 +73,8 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         file_previews = utils.get_file_previews(job)
         for group, files in file_previews.items():
             for fileinfo in files:
-                response = Client().get(fileinfo.get('url'))
+                # for testing, we use the local url
+                response = Client().get(self.get_local_url(fileinfo))
                 self.assertEqual(response.status_code, 200)
 
         # check our download links are ok
@@ -87,11 +86,11 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         file_previews = utils.get_file_previews(job)
         for group, files in file_previews.items():
             for fileinfo in files:
-                response = Client().get(fileinfo.get('url'))
+                response = Client().get(self.get_local_url(fileinfo))
                 self.assertEqual(response.status_code, 200)
 
     def test_multiplechoices(self):
-        script = factories.ChoiceScriptFactory()
+        script = self.choice_script
         choices = ['2', '1', '3']
         choice_param = 'two_choices'
 

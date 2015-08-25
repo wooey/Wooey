@@ -2,10 +2,13 @@ from __future__ import unicode_literals
 import os
 
 from django.core.files import File
+from django.conf import settings
 
 BASE_DIR = os.path.split(__file__)[0]
 WOOEY_TEST_SCRIPTS = os.path.join(BASE_DIR, 'scripts')
 WOOEY_TEST_DATA = os.path.join(BASE_DIR, 'data')
+WOOEY_TEST_REMOTE_STORAGE_DIR = 'remote_storage'
+WOOEY_TEST_REMOTE_STORAGE_PATH = os.path.join(BASE_DIR, 'media', 'remote_storage')
 
 # Because forms are input as lists by Django, all attributes here need to be
 # list like as well. The MultiValueDict/QueryDict get method assumes a list and

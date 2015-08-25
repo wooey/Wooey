@@ -5,6 +5,7 @@ import os
 import zipfile
 import six
 import traceback
+import time
 
 from django.utils.text import get_valid_filename
 from django.core.files.storage import default_storage
@@ -33,7 +34,6 @@ class WooeyTask(Task):
 def submit_script(**kwargs):
     job_id = kwargs.pop('wooey_job')
     resubmit = kwargs.pop('wooey_resubmit', False)
-    rerun = kwargs.pop('rerun', False)
     from .backend import utils
     from .models import WooeyJob, WooeyFile
     job = WooeyJob.objects.get(pk=job_id)
@@ -50,24 +50,6 @@ def submit_script(**kwargs):
     abscwd = os.path.abspath(os.path.join(settings.MEDIA_ROOT, cwd))
     job.command = ' '.join(command)
     job.save_path = cwd
-
-    if rerun:
-        # cleanup the old files, we need to be somewhat aggressive here.
-        local_storage = utils.get_storage(local=True)
-        remote_storage = utils.get_storage(local=False)
-        to_delete = []
-        with atomic():
-            for dj_file in WooeyFile.objects.filter(job=job):
-                if dj_file.parameter is None or dj_file.parameter.parameter.is_output:
-                    to_delete.append(dj_file)
-                    path = local_storage.path(dj_file.filepath.name)
-                    dj_file.filepath.delete(False)
-                    if local_storage.exists(path):
-                        local_storage.delete(path)
-                    # TODO: This needs to be tested to make sure it's being nuked
-                    if remote_storage.exists(path):
-                        remote_storage.delete(path)
-            [i.delete() for i in to_delete]
 
     utils.mkdirs(abscwd)
     # make sure we have the script, otherwise download it. This can happen if we have an ephemeral file system or are
@@ -93,7 +75,6 @@ def submit_script(**kwargs):
 
     # fetch the job again in case the database connection was lost during the job or something else changed.
     job = WooeyJob.objects.get(pk=job_id)
-
     # if there are files generated, make zip/tar files for download
     if len(os.listdir(abscwd)):
         tar_out = get_valid_file(abscwd, get_valid_filename(job.job_name), 'tar.gz')
@@ -130,12 +111,11 @@ def submit_script(**kwargs):
                     s3path = os.path.join(root[root.find(cwd):], filename)
                     remote = utils.get_storage(local=False)
                     exists = remote.exists(s3path)
-                    filesize = remote.size(s3path)
+                    filesize = remote.size(s3path) if exists else 0
                     if not exists or (exists and filesize == 0):
                         if exists:
                             remote.delete(s3path)
                         remote.save(s3path, File(open(filepath, 'rb')))
-
     utils.create_job_fileinfo(job)
 
 

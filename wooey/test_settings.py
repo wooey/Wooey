@@ -98,3 +98,4 @@ if os.environ.get('WOOEY_TEST_S3'):
 
 else:
     STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = 'wooey.wooeystorage.FakeRemoteStorage'
+

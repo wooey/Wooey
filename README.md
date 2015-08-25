@@ -87,15 +87,7 @@ There is a bootstrapper included with wooey, which will create a Django project 
 
 # <a name="running"></a>Running Wooey
 
-Wooey depends on a distributed worker to handle tasks, you can disable this by setting **WOOEY_CELERY** to False in your settings, which will allow you to run Wooey through the simple command:
-
-```
-python manage.py runserver
-```
-
-However, this will cause the server to execute tasks, which will block the site.
-
-The recommended ways to run Wooey are:
+Wooey depends on a distributed worker to handle tasks, there are a number of recommended ways to run them together:
 
 ## <a name="procfile"></a>Through a Procfile
 
@@ -114,12 +106,24 @@ honcho start
 
 ## <a name="two-procs"></a>Through two separate processes
 
-You can also run wooey by invoking two commands (you will need a separate process for each):
+You can also run wooey by invoking two commands (you will need a separate process for each, for example running
+in a separate terminal):
 
 ```
 python manage.py celery worker -c 1 --beat -l info
 python manage.py runserver
 ```
+
+## <a name="single-process"></a>Single process
+
+To run Wooey in a single process you can set **WOOEY_CELERY** to False in your settings.
+This will bypass the distributed task server and allow you to run Wooey through the simple command:
+
+```
+python manage.py runserver
+```
+
+However, this will cause the server to execute tasks. This will block the site and is not recommended.
 
         
 # <a name="adding"></a>Adding & Managing Scripts

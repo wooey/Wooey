@@ -8,7 +8,7 @@ import pandas as pd
 import seaborn as sns
 import numpy as np
 
-parser = argparse.ArgumentParser(description="Create a heatmap from a delimited file.")
+parser = argparse.ArgumentParser(description="Create a heatmap from a delimited file.", version=0.1)
 parser.add_argument('--tsv', help='The delimited file to plot.', type=argparse.FileType('r'), required=True)
 parser.add_argument('--delimiter', help='The delimiter for fields. Default: tab', type=str, default='\t')
 parser.add_argument('--row', help='The column containing row to create a heatmap from. Default to first row.', type=str)

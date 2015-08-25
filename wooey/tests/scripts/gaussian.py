@@ -6,7 +6,7 @@ import math
 from matplotlib import pyplot as plt
 import numpy as np
 
-parser = argparse.ArgumentParser(description="This will plot a gaussian distribution with the given parameters.")
+parser = argparse.ArgumentParser(description="This will plot a gaussian distribution with the given parameters.", version=0.1)
 parser.add_argument('--mean', help='The mean of the gaussian.', type=float, required=True)
 parser.add_argument('--std', help='The standard deviation (width) of the gaussian.', type=float, required=True)
 

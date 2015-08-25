@@ -219,8 +219,11 @@ def add_wooey_script(script=None, group=None):
     d = parser.get_script_description()
     script_group, created = ScriptGroup.objects.get_or_create(group_name=group)
     if script_obj is False:
+        script_version = d.get('version')
+        if script_version is None:
+            script_version = '1'
         try:
-            parse_version(d.get('version'))
+            parse_version(script_version)
         except:
             sys.stderr.write('Error parsing version, defaulting to 1. Error message:\n {}'.format(traceback.format_exc()))
             script_version = '1'

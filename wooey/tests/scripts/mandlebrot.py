@@ -3,7 +3,7 @@ import sys
 from numpy import mgrid, linspace, zeros, copy, multiply, add
 from matplotlib import pyplot as plt
 
-parser = argparse.ArgumentParser(description="Something")
+parser = argparse.ArgumentParser(description="Something", version=0.1)
 parser.add_argument('height', help='The height of the image.', type=int, default=400)
 parser.add_argument('width', help='the width of the image.', type=int, default=400)
 parser.add_argument('xmin', help='The minimum region to compute.', type=float, default=-2)

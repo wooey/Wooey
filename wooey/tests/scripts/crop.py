@@ -5,7 +5,7 @@ import argparse
 import sys
 from PIL import Image
 
-parser = argparse.ArgumentParser(description="Crop images")
+parser = argparse.ArgumentParser(description="Crop images", version=0.1)
 parser.add_argument('--image', help='The image to crop', type=argparse.FileType('r'), required=True)
 parser.add_argument('--left', help='The number of pixels to crop from the left', type=int, default=0)
 parser.add_argument('--right', help='The number of pixels to crop from the right', type=int, default=0)

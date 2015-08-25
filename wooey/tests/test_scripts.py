@@ -38,10 +38,10 @@ class ScriptAdditionTests(mixins.ScriptFactoryMixin, TestCase):
         new_script = self.storage.save(self.filename_func('command_order.py'), open(script_path))
         script.script_path = new_script
         # we are going to be cloning this, so we lose the old object
-        old_pk, old_version = script.pk, script.script_version
+        old_pk, old_iter = script.pk, script.script_iteration
         script.save()
         self.assertNotEqual(old_pk, script.pk)
-        self.assertNotEqual(old_version, script.script_version)
+        self.assertNotEqual(old_iter, script.script_iteration)
         # asset we are using the latest script in the frontend
         self.assertIn(script, settings.WOOEY_SCRIPTS)
         old_script = Script.objects.get(pk=old_pk)

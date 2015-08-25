@@ -53,7 +53,7 @@ class ScriptGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
 
 class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     script_name = models.CharField(max_length=255)
-    slug = AutoSlugField(populate_from='script_name', unique=True, unique_with='script_version')
+    slug = AutoSlugField(populate_from='script_name', unique=True, unique_with=('script_version', 'script_iteration'))
     # we create defaults for the script_group in the clean method of the model. We have to set it to null/blank=True
     # or else we will fail form validation before we hit the model.
     script_group = models.ForeignKey('ScriptGroup', null=True, blank=True)
@@ -67,9 +67,11 @@ class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     save_path = models.CharField(max_length=255, blank=True, null=True,
                                  help_text='By default save to the script name,'
                                            ' this will change the output folder.')
+    script_version = models.CharField(max_length=50, help_text='The script version.', blank=True, default='1')
+
     # when a script updates, increment this to keep old scripts that are cloned working. The downside is we get redundant
     # parameters, but even a huge site may only have a few thousand parameters to query though.
-    script_version = models.PositiveSmallIntegerField(default=1)
+    script_iteration = models.PositiveSmallIntegerField(default=1)
 
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)

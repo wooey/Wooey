@@ -7,7 +7,7 @@ class JobAdmin(ModelAdmin):
     list_display = ('user', 'job_name', 'script', 'status', 'created_date')
 
 class ScriptAdmin(ModelAdmin):
-    list_display = ('script_name', 'script_group', 'is_active', 'script_version')
+    list_display = ('script_name', 'script_group', 'is_active', 'script_version', 'script_iteration')
 
 class ParameterAdmin(ModelAdmin):
     list_display = ('script', 'parameter_group', 'short_param')

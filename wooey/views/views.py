@@ -33,6 +33,7 @@ class WooeyScriptBase(DetailView):
 
     def get_object(self, queryset=None):
         script_version = self.kwargs.get('script_verison')
+        script_iteration = self.kwargs.get('script_iteration')
         if script_version is not None:
             if queryset is None:
                 queryset = self.get_queryset()
@@ -43,6 +44,10 @@ class WooeyScriptBase(DetailView):
             if slug is not None:
                 slug_field = self.get_slug_field()
                 queryset = queryset.filter(**{slug_field: slug, 'script_version': script_version})
+                if script_iteration:
+                    queryset.filter(script_iteration=script_iteration)
+                else:
+                    queryset.latest('script_iteration')
             else:
                 raise AttributeError("Generic detail view %s must be called with "
                                      "either an object pk or a slug."

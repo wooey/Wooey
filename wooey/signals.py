@@ -43,7 +43,7 @@ def script_presave(instance, **kwargs):
     created = instance.pk is None
     if not created:
         if 'script_path' in instance.changed_fields and not skip_script(instance):
-            instance.script_version += 1
+            instance.script_iteration += 1
             instance._script_upgrade = True
             instance.pk = None
 

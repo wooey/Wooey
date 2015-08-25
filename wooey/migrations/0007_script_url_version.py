@@ -12,14 +12,19 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
+        migrations.AddField(
             model_name='script',
-            name='script_version',
+            name='script_iteration',
             field=models.PositiveSmallIntegerField(default=1),
         ),
         migrations.AlterField(
             model_name='script',
+            name='script_version',
+            field=models.CharField(default='1', help_text='The script version.', max_length=50, blank=True),
+        ),
+        migrations.AlterField(
+            model_name='script',
             name='slug',
-            field=autoslug.fields.AutoSlugField(populate_from='script_name', unique_with=('script_version',), editable=False),
+            field=autoslug.fields.AutoSlugField(populate_from='script_name', unique_with=('script_version', 'script_iteration'), editable=False),
         ),
     ]

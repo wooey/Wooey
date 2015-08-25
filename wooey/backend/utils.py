@@ -9,6 +9,7 @@ import six
 import traceback
 from operator import itemgetter
 from collections import OrderedDict
+from pkg_resources import parse_version
 
 from django.conf import settings
 from django.db import transaction
@@ -134,13 +135,18 @@ def load_scripts():
         scripts = Script.objects.all()
         for script in scripts:
             try:
-                found_scripts[script.script_name].append((script.script_version, script))
+                script_version = parse_version(str(script.script_version))
+            except:
+                sys.stderr.write('Error converting script version:\n{}'.format(traceback.format_exc()))
+                script_version = script.script_version
+            try:
+                found_scripts[script.script_name].append((script_version, script.script_iteration, script))
             except KeyError:
-                found_scripts[script.script_name] = [(script.script_version, script)]
+                found_scripts[script.script_name] = [(script_version, script.script_iteration, script)]
     final_scripts = []
     for script_name, scripts in found_scripts.items():
-        scripts.sort(key=lambda x: x[0], reverse=True)
-        final_scripts.append(scripts[0][1])
+        scripts.sort(key=itemgetter(0, 1), reverse=True)
+        final_scripts.append(scripts[0][2])
     settings.WOOEY_SCRIPTS = final_scripts
 
 
@@ -213,10 +219,16 @@ def add_wooey_script(script=None, group=None):
     d = parser.get_script_description()
     script_group, created = ScriptGroup.objects.get_or_create(group_name=group)
     if script_obj is False:
+        try:
+            parse_version(d.get('version'))
+        except:
+            sys.stderr.write('Error parsing version, defaulting to 1. Error message:\n {}'.format(traceback.format_exc()))
+            script_version = '1'
+        else:
+            script_version = d.get('version')
         script_kwargs = {'script_group': script_group, 'script_description': d['description'],
-                         'script_path': script, 'script_name': d['name']}
-        scripts = Script.objects.filter(**script_kwargs).order_by('-script_version')
-        created = len(scripts) == 0
+                         'script_path': script, 'script_name': d['name'], 'script_version': script_version}
+        created = Script.objects.filter(**script_kwargs).count() == 0
         if created:
             wooey_script = Script(**script_kwargs)
             wooey_script._script_cl_creation = True
@@ -230,7 +242,7 @@ def add_wooey_script(script=None, group=None):
         script_obj.save()
     if not created:
         if script_obj is False:
-            wooey_script.script_version += 1
+            wooey_script.script_iteration += 1
             wooey_script.save()
     if script_obj:
         wooey_script = script_obj
@@ -249,9 +261,10 @@ def add_wooey_script(script=None, group=None):
     return {'valid': True, 'errors': None, 'script': wooey_script}
 
 def valid_user(obj, user):
-    groups = obj.user_groups.all()
-    from ..models import Script
     ret = {'valid': False, 'error': '', 'display': ''}
+    from ..models import Script
+    groups = obj.user_groups.all()
+
     if wooey_settings.WOOEY_ALLOW_ANONYMOUS or user.is_authenticated():
         if isinstance(obj, Script):
             from itertools import chain

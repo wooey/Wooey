@@ -8,6 +8,7 @@ from collections import OrderedDict
 from django import forms
 from django.http.request import QueryDict
 from django.utils.safestring import mark_safe
+from django.core.urlresolvers import reverse
 
 from .scripts import WooeyForm
 from . import config
@@ -15,6 +16,7 @@ from ..backend import utils
 from ..models import ScriptParameter, Script
 from ..django_compat import flatatt, format_html
 from .. import version
+from .fields import WooeyFileInput
 
 
 def mutli_render(render_func, appender_data_dict=None):
@@ -82,6 +84,7 @@ class WooeyFormFactory(object):
                         }
         multiple_choices = param.multiple_choice
         choice_limit = param.max_choices
+
         if choices:
             form_field = 'MultipleChoiceField' if multiple_choices else 'ChoiceField'
             base_choices = [(None, '----')] if not param.required and not multiple_choices else []
@@ -89,15 +92,17 @@ class WooeyFormFactory(object):
         if form_field == 'FileField':
             if param.is_output:
                 form_field = 'CharField'
-        if form_field == 'FieldField':
-            if param.is_output:
                 initial = None
-            elif list(filter(None, initial)): # for python3, we need to evaluate the filter object
+            elif initial and list(filter(None, initial)): # for python3, we need to evaluate the filter object
                 if isinstance(initial, (list, tuple)):
                     initial = [utils.get_storage_object(value) if not hasattr(value, 'path') else value for value in initial if value is not None]
                 else:
                     initial = utils.get_storage_object(initial) if not hasattr(initial, 'path') else initial
                 field_kwargs['widget'] = forms.ClearableFileInput()
+            else:
+                field_kwargs['widget'] = WooeyFileInput()
+                initial = reverse('wooey:wooey_files')
+            # print field_kwargs
         # if not isinstance(initial, (list, tuple)):
         field_kwargs['initial'] = initial
         field = getattr(forms, form_field)

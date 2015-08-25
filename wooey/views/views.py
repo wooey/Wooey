@@ -243,3 +243,17 @@ class WooeyScriptSearchJSONHTML(WooeyScriptSearchBase):
 
 
 
+
+def wooey_user_files(request):
+    from ..models import WooeyFile
+    # break it up into job names and files related to that job
+    files = WooeyFile.objects.select_related('job').filter(job__user=request.user)
+    l = {}
+    for file in files:
+        job = file.job
+        name = job.job_name
+        job_files = l.get(name, [])
+        job_files.append(file)
+        l[name] = job_files
+    ret = [{'text': job_name, 'children': [{'text': f.filepath.name, 'id': f.pk} for f in l[job_name]]} for job_name in sorted(l.keys())]
+    return JsonResponse(ret, safe=False)

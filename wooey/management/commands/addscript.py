@@ -3,10 +3,9 @@ import os
 import sys
 from django.core.management.base import BaseCommand, CommandError
 from django.core.files import File
-from django.core.files.storage import default_storage
 from django.conf import settings
 
-from ...backend.utils import add_wooey_script
+from ...backend.utils import add_wooey_script, get_storage, default_storage
 from ... import settings as wooey_settings
 
 
@@ -40,7 +39,11 @@ class Command(BaseCommand):
                 # copy the script to our storage
                 with open(script, 'r') as f:
                     script = default_storage.save(os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, os.path.split(script)[1]), File(f))
-                added, error = add_wooey_script(script=os.path.abspath(os.path.join(settings.MEDIA_ROOT, script)), group=group)
-                if added:
+                    if wooey_settings.WOOEY_EPHEMERAL_FILES:
+                        # save it locally as well (the default_storage will default to the remote store)
+                        local_storage = get_storage(local=True)
+                        local_storage.save(os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, os.path.split(script)[1]), File(f))
+                res = add_wooey_script(script=script, group=group)
+                if res['valid']:
                     converted += 1
         sys.stdout.write('Converted {} scripts\n'.format(converted))

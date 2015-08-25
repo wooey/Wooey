@@ -3,11 +3,11 @@ import os
 import six
 
 from django.contrib.auth import get_user_model
+from django.core.files.storage import default_storage
 
 from ..models import WooeyJob, ScriptGroup, Script, ScriptParameter, ScriptParameterGroup, ScriptParameters
 
-from . import config
-
+from .. import settings as wooey_settings
 
 class ScriptGroupFactory(factory.DjangoModelFactory):
     class Meta:
@@ -26,14 +26,6 @@ class ScriptFactory(factory.DjangoModelFactory):
     script_description = 'test script desc'
 
 
-class TranslateScriptFactory(ScriptFactory):
-    script_path = factory.django.FileField(from_path=os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate.py'))
-
-
-class ChoiceScriptFactory(ScriptFactory):
-    script_path = factory.django.FileField(from_path=os.path.join(config.WOOEY_TEST_SCRIPTS, 'choices.py'))
-
-
 class UserFactory(factory.DjangoModelFactory):
     class Meta:
         model = get_user_model()
@@ -50,9 +42,13 @@ class BaseJobFactory(factory.DjangoModelFactory):
     job_description = six.u('\xd0\xb9\xd1\x86\xd1\x83\xd0\xb5\xd0\xba\xd0\xb5')
 
 
-class TranslateJobFactory(BaseJobFactory):
-    script = factory.SubFactory(TranslateScriptFactory)
+def generate_script(script_path):
+    filename = os.path.join(script_path)[1]
+    filename = os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, filename)
+    new_file = default_storage.save(filename, open(script_path))
+    from ..backend import utils
+    res = utils.add_wooey_script(script=new_file, group=None)
+    return res['script']
 
-
-class MultipleChoiceJobFactory(BaseJobFactory):
-    script = factory.SubFactory(ChoiceScriptFactory)
+def generate_job(script):
+    return BaseJobFactory(script=script)

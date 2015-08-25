@@ -21,6 +21,7 @@ def load_JSON_dict(d):
 
 class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     def setUp(self):
+        super(CeleryViews, self).setUp()
         self.factory = RequestFactory()
         # the test server doesn't have celery running
         settings.WOOEY_CELERY = False
@@ -34,7 +35,8 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         self.assertEqual({u'items': {u'global': [], u'results': [], u'user': []},
                           u'totals': {u'global': 0, u'results': 0, u'user': 0}
                             }, json.loads(d))
-        job = factories.TranslateJobFactory()
+
+        job = factories.generate_job(self.translate_script)
         job.save()
         response = wooey_celery.all_queues_json(request)
         d = json.loads(response.content.decode("utf-8"))
@@ -57,7 +59,7 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
 
     def test_celery_commands(self):
         user = factories.UserFactory()
-        job = factories.TranslateJobFactory()
+        job = factories.generate_job(self.translate_script)
         job.user = user
         job.save()
         celery_command = {'celery-command': ['delete'], 'job-id': [job.pk]}
@@ -89,7 +91,7 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
 
     def test_celery_task_view(self):
         user = factories.UserFactory()
-        job = factories.TranslateJobFactory()
+        job = factories.generate_job(self.translate_script)
         job.user = user
         job.save()
 
@@ -117,6 +119,7 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
 
 class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     def setUp(self):
+        super(WooeyViews, self).setUp()
         self.factory = RequestFactory()
         self.script_view_func = wooey_views.WooeyScriptJSON.as_view()
         # the test server doesn't have celery running
@@ -124,7 +127,7 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
 
     def test_multiple_choice_clone(self):
         from ..backend import utils
-        script = factories.ChoiceScriptFactory()
+        script = self.choice_script
         choices = ['2', '1', '3']
         choice_param = 'two_choices'
         job = utils.create_wooey_job(script_pk=script.pk, data={'job_name': 'abc', choice_param: choices, 'wooey_type': script.pk})
@@ -137,7 +140,7 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
 
     def test_multiple_choice(self):
         user = factories.UserFactory()
-        script = factories.ChoiceScriptFactory()
+        script = self.choice_script
         url = reverse('wooey:wooey_script', kwargs={'slug': script.slug})
         data = {'job_name': 'abc', 'wooey_type': script.pk, 'two_choices': ['2', '1', '3']}
         filecount = 0
@@ -154,7 +157,7 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         # test submitting this in the 'currently' field
         from ..models import WooeyJob
         job = WooeyJob.objects.latest('created_date')
-        files = [i.value.path for i in job.get_parameters() if i.parameter.slug == 'multiple_file_choices']
+        files = [i.value.name for i in job.get_parameters() if i.parameter.slug == 'multiple_file_choices']
 
         data['multiple_file_choices'] = files
         request = self.factory.post(url, data=data)

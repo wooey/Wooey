@@ -83,7 +83,8 @@ class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
         return reverse('wooey:wooey_script', kwargs={'slug': self.slug})
 
     def get_script_path(self):
-        path = self.script_path.path
+        local_storage = utils.get_storage(local=True)
+        path = local_storage.path(self.script_path.path)
         return path if self.execute_full_path else os.path.split(path)[1]
 
     def clean(self):
@@ -92,45 +93,6 @@ class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
             if not group:
                 group, created = ScriptGroup.objects.get_or_create(group_name=wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP)
             self.script_group = group
-
-    @transaction.atomic
-    def save(self, **kwargs):
-        if 'script_path' in self.changed_fields:
-            self.script_version += 1
-        new_script = self.pk is None or 'script_path' in self.changed_fields
-        # if uploading from the admin, fix its path
-        # we do this to avoid having migrations specific to various users with different WOOEY_SCRIPT_DIR settings
-        if new_script or wooey_settings.WOOEY_SCRIPT_DIR not in self.script_path.file.name:
-            old_path = self.script_path.file.name
-            old_name = os.path.split(old_path)[1]
-            new_name = os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, old_name)
-            # TODO -- versioning of old scripts
-            remote_store = utils.get_storage(local=False)
-            if remote_store.exists(new_name):
-                remote_store.delete(new_name)
-            local_storage = utils.get_storage(local=True)
-            if local_storage.exists(new_name):
-                local_storage.delete(new_name)
-            remote_store.save(new_name, self.script_path.file)
-
-            # save it locally as well, check if it exists because for some setups remote=local
-            if not local_storage.exists(new_name):
-                local_storage.save(new_name, self.script_path.file)
-            self.script_path.save(new_name, self.script_path.file, save=False)
-            self.script_path.name = new_name
-            if old_name != new_name:
-                if local_storage.exists(old_name):
-                    local_storage.delete(old_name)
-            # clone ourselves if we are updating a script
-            self.pk = None
-        super(Script, self).save(**kwargs)
-        if new_script:
-            if getattr(self, '_add_script', True):
-                added, error = utils.add_wooey_script(script=self, group=self.script_group)
-                if added is False:
-                    # TODO: Make a better error
-                    raise BaseException(error)
-        utils.load_scripts()
 
 
 class WooeyJob(WooeyPy2Mixin, models.Model):
@@ -194,6 +156,9 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         self.status = self.SUBMITTED
         self.save()
         task_kwargs = {'wooey_job': self.pk, 'rerun': kwargs.pop('rerun', False)}
+
+        if task_kwargs.get('rerun'):
+            utils.purge_output(job=self)
         if wooey_settings.WOOEY_CELERY:
             results = tasks.submit_script.delay(**task_kwargs)
         else:
@@ -341,6 +306,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
                 return com
         if field == self.FILE:
             if self.parameter.is_output:
+
                 try:
                     value = value.path
                 except AttributeError:

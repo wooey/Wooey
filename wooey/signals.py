@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from django.db.models.signals import post_delete
+from django.db.models.signals import post_delete, pre_save, post_save
 from django.db.utils import InterfaceError, DatabaseError
 from django import db
 
@@ -35,3 +35,31 @@ post_delete.connect(reload_scripts, sender=Script)
 post_delete.connect(reload_scripts, sender=ScriptGroup)
 post_delete.connect(reload_scripts, sender=ScriptParameter)
 post_delete.connect(reload_scripts, sender=ScriptParameterGroup)
+
+def skip_script(instance):
+    return getattr(instance, '_script_cl_creation', False) or getattr(instance, '_script_upgrade', False) or getattr(instance, '_rename_script', False)
+
+def script_presave(instance, **kwargs):
+    created = instance.pk is None
+    if not created:
+        if 'script_path' in instance.changed_fields and not skip_script(instance):
+            instance.script_version += 1
+            instance._script_upgrade = True
+            instance.pk = None
+
+def script_postsave(instance, created, **kwargs):
+    from .backend import utils
+    if created and (not skip_script(instance) or getattr(instance, '_script_upgrade', False)):
+        res = utils.add_wooey_script(script=instance, group=instance.script_group)
+        instance._script_upgrade = False
+        instance._script_cl_creation = False
+        instance._rename_script = False
+        if res['valid'] is False:
+            # delete the model on exceptions.
+            # TODO: use django messages backend to propogate this message to the admin
+            instance.delete()
+            raise BaseException(res['errors'])
+    utils.load_scripts()
+
+pre_save.connect(script_presave, sender=Script)
+post_save.connect(script_postsave, sender=Script)

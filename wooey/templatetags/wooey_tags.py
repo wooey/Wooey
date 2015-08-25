@@ -168,4 +168,6 @@ def gravatar(parser, token):
 
     return GravatarUrlNode(email, size)
 
-
+@register.filter
+def get_range(value):
+    return range(int(value))

@@ -12,6 +12,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_text
 from django.template import RequestContext
 from django.contrib.auth import get_user_model
+from django.http import Http404
 
 from django.contrib.contenttypes.models import ContentType
 
@@ -29,6 +30,34 @@ class WooeyScriptBase(DetailView):
     @staticmethod
     def render_fn(s):
         return s
+
+    def get_object(self, queryset=None):
+        script_version = self.kwargs.get('script_verison')
+        if script_version is not None:
+            if queryset is None:
+                queryset = self.get_queryset()
+
+            slug = self.kwargs.get(self.slug_url_kwarg, None)
+
+            # Next, try looking up by slug.
+            if slug is not None:
+                slug_field = self.get_slug_field()
+                queryset = queryset.filter(**{slug_field: slug, 'script_version': script_version})
+            else:
+                raise AttributeError("Generic detail view %s must be called with "
+                                     "either an object pk or a slug."
+                                     % self.__class__.__name__)
+
+            try:
+                # Get the single item from the filtered queryset
+                obj = queryset.get()
+            except queryset.model.DoesNotExist:
+                raise Http404(_("No %(verbose_name)s found matching the query") %
+                              {'verbose_name': queryset.model._meta.verbose_name})
+            return obj
+        else:
+            return super(WooeyScriptBase, self).get_object(queryset=queryset)
+
 
     def get_context_data(self, **kwargs):
         context = super(WooeyScriptBase, self).get_context_data(**kwargs)

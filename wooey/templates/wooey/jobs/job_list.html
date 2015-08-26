@@ -24,7 +24,7 @@
 
         </tr>
           {% for job in object_list %}
-        <tr class="{% if job.status == 'completed' %}success{% elif job.status == 'running' %}success{% elif job.status == 'pending' %}default{% elif job.status == 'revoked' %}danger{% elif job.status == 'submitted' %}default{% endif %}">
+        <tr>
             <td>{{ job.id }}</td>
             <td><a href="{% url 'wooey:celery_results' job_id=job.pk %}">{{ job.job_name }}</a></td>
             <td>{{ job.script.script_name }}</td>

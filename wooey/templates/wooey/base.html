@@ -341,12 +341,12 @@
             background-color: #555;
         }
 
-        li.tab-error > a {
+        li > a.tab-error {
             color: #A94442;
             background-color: #F2DEDE;
         }
 
-        li.active.tab-error > a {
+        li.active > a.tab-error {
             color: #A94442;
             background-color: #fff;
         }
@@ -560,12 +560,12 @@
                         $tab_pane = $field.closest('.tab-pane')
                         if($tab_pane){
                             id = $tab_pane.attr('id');
-                            obj = $('a[href="#' + id + '"]').parent()
-                            obj.addClass('tab-error');
+                            $obj = $('a[href="#' + id + '"]')
+                            $obj.addClass('tab-error');
 
                             // If first time we've seen a tab error, change the (.active) tab
                             if(!previous_tab_error){
-                                obj.tab('show');
+                                $obj.tab('show')
                             }
                         }
                     }

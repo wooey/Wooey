@@ -414,7 +414,7 @@
 
               {% if request.user.is_authenticated %}
               <li class="dropdown" id="job-list-user">
-                  <a href="{% url 'wooey:scrapbook' %}" role="button" aria-haspopup="true" aria-expanded="false">Scrapbook <span class="badge scrapbook-badge" id="favorite-wooey-wooeyfile-count">0</span></a>
+                  <a href="{% url 'wooey:scrapbook' %}" role="button" aria-haspopup="true" aria-expanded="false">Scrapbook <span class="badge scrapbook-badge" id="favorite-wooey-wooeyfile-count">{% get_user_favorite_count request.user 'wooey' 'wooeyfile' %}</span></a>
               </li>
 
               <li><a href="{% url 'wooey:profile_home' %}"><span class="glyphicon glyphicon-user"> </span> {{ request.user.username }}</a></li>
@@ -706,7 +706,6 @@
             data.model = identifiers[1];
             data.pk = identifiers[2];
 
-            console.log(data);
             $.ajax({
                 url: '/favorite/toggle',
                 data: data,
@@ -715,7 +714,6 @@
                 cache: false,
                 success: function(data){
                     /* Act on result */
-                        console.log('#favorite-' + identifer)
                         if(data.is_favorite){
                             $('#favorite-' + identifer).addClass('panel-warning is-favorite');
                             $('#favorite-' + identifer).removeClass('panel-default');
@@ -724,7 +722,6 @@
                             $('#favorite-' + identifer).removeClass('panel-warning is-favorite');
                         }
 
-                    console.log('#favorite-' + data.app_label + '-' + data.model + '-count')
                     $('#favorite-' + data.app + '-' + data.model + '-count').text(data.count);
 
                     }
@@ -733,11 +730,9 @@
             return false;
             }
 
-
         $(document).ready(function(){
 
             $("a[data-favorite]").click(toggleFavorite);
-
 
             $(document).delegate('*[data-toggle="lightbox"]', 'click', function(event) {
                 event.preventDefault();

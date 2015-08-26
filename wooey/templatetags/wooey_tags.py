@@ -9,6 +9,14 @@ import hashlib
 
 register = template.Library()
 @register.simple_tag
+def get_user_favorite_count(user, app, model):
+    from ..models import Favorite
+    ctype = ContentType.objects.get(app_label=app, model=model)
+    # Return the current total number for UI updates
+    favorites_count = Favorite.objects.filter(content_type=ctype, user=user).count()
+    return str(favorites_count)
+
+@register.simple_tag
 def get_wooey_setting(name):
     return getattr(wooey_settings, name, "")
 
@@ -96,3 +104,5 @@ def gravatar(parser, token):
         raise template.TemplateSyntaxError("%r tag requires email and size arguments" % token.contents.split()[0])
 
     return GravatarUrlNode(email, size)
+
+

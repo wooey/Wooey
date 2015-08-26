@@ -3,6 +3,7 @@ __author__ = 'chris'
 import copy
 import json
 import six
+import os
 from collections import OrderedDict
 
 from django import forms
@@ -89,14 +90,18 @@ class WooeyFormFactory(object):
         if form_field == 'FileField':
             if param.is_output:
                 form_field = 'CharField'
-                initial = None
+                if initial:
+                    if not isinstance(initial, (list, tuple)):
+                        initial = [initial]
+                    initial = [os.path.split(i.name)[1] for i in initial]
             elif initial is not None and list(filter(None, initial)): # for python3, we need to evaluate the filter object
                 if isinstance(initial, (list, tuple)):
                     initial = [utils.get_storage_object(value) if not hasattr(value, 'path') else value for value in initial if value is not None]
                 else:
                     initial = utils.get_storage_object(initial) if not hasattr(initial, 'path') else initial
                 field_kwargs['widget'] = forms.ClearableFileInput()
-        # if not isinstance(initial, (list, tuple)):
+        if not multiple_choices and isinstance(initial, list):
+            initial = initial[0]
         field_kwargs['initial'] = initial
         field = getattr(forms, form_field)
         field = field(**field_kwargs)

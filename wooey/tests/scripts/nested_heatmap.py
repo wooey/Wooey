@@ -6,7 +6,7 @@ import os
 import sys
 
 
-parser = argparse.ArgumentParser(description="Create a nested heatmap from a delimited file.", version=0.1)
+parser = argparse.ArgumentParser(description="Create a nested heatmap from a delimited file.")
 parser.add_argument('--tsv', help='The delimited file to plot.', type=argparse.FileType('r'), required=True)
 parser.add_argument('--delimiter', help='The delimiter for fields. Default: tab', type=str, default='\t')
 parser.add_argument('--major-index', help='The first column to group by.', type=str, required=True)

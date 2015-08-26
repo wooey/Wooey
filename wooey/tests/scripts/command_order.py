@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-parser = argparse.ArgumentParser(description="Something", version=0.1)
+parser = argparse.ArgumentParser(description="Something")
 parser.add_argument('link', help='the url containing the metadata')
 parser.add_argument('name', help='the name of the file')
 

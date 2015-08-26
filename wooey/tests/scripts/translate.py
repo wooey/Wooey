@@ -24,7 +24,7 @@ for i in 'ACTG':
     CODON_TABLE['N%sN' % i] = 'X'
     CODON_TABLE['NN%s' % i] = 'X'
 
-parser = argparse.ArgumentParser(description="This will translate a given DNA sequence to protein.", version=0.1)
+parser = argparse.ArgumentParser(description="This will translate a given DNA sequence to protein.")
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument('--sequence', help='The sequence to translate.', type=str)
 group.add_argument('--fasta', help='The fasta file to translate.', type=argparse.FileType('rb'))

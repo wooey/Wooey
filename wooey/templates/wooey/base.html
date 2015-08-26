@@ -341,6 +341,17 @@
             background-color: #555;
         }
 
+        li > a.tab-error {
+            color: #A94442;
+            background-color: #F2DEDE;
+        }
+
+        li.active > a.tab-error {
+            color: #A94442;
+            background-color: #fff;
+        }
+
+
         {% block extra_style %}
         {% endblock extra_style %}
     </style>
@@ -403,7 +414,7 @@
 
               {% if request.user.is_authenticated %}
               <li class="dropdown" id="job-list-user">
-                  <a href="{% url 'wooey:scrapbook' %}" role="button" aria-haspopup="true" aria-expanded="false">Scrapbook <span class="badge scrapbook-badge" id="favorite-wooey-wooeyfile-count">0</span></a>
+                  <a href="{% url 'wooey:scrapbook' %}" role="button" aria-haspopup="true" aria-expanded="false">Scrapbook <span class="badge scrapbook-badge" id="favorite-wooey-wooeyfile-count">{% get_user_favorite_count request.user 'wooey' 'wooeyfile' %}</span></a>
               </li>
 
               <li><a href="{% url 'wooey:profile_home' %}"><span class="glyphicon glyphicon-user"> </span> {{ request.user.username }}</a></li>
@@ -519,6 +530,8 @@
             }
 
             function processErrors($form, errors){
+                var previous_tab_error = false;
+
                 for (var key in errors){
                     for(var i=0;i<errors[key].length;i++) {
                         var error = errors[key][i];
@@ -538,10 +551,23 @@
                                 $field = $field2;
                             }
                         }
-                        if ($form.hasClass('form-inline') || $form.hasClass('navbar-form'))
+                        if ($form.hasClass('form-inline') || $form.hasClass('navbar-form')) {
                             addInlineError($field, error);
-                        else
+                        } else
                             addUlError($field, error);
+
+                        // See if we're in a tabbed view; find the parent tab and set it to error state
+                        $tab_pane = $field.closest('.tab-pane');
+                        if($tab_pane){
+                            id = $tab_pane.attr('id');
+                            $obj = $('a[href="#' + id + '"]');
+                            $obj.addClass('tab-error');
+
+                            // If first time we've seen a tab error, change the (.active) tab
+                            if(!previous_tab_error){
+                                $obj.tab('show');
+                            }
+                        }
                     }
                 }
             }
@@ -680,7 +706,6 @@
             data.model = identifiers[1];
             data.pk = identifiers[2];
 
-            console.log(data);
             $.ajax({
                 url: '/favorite/toggle',
                 data: data,
@@ -689,7 +714,6 @@
                 cache: false,
                 success: function(data){
                     /* Act on result */
-                        console.log('#favorite-' + identifer)
                         if(data.is_favorite){
                             $('#favorite-' + identifer).addClass('panel-warning is-favorite');
                             $('#favorite-' + identifer).removeClass('panel-default');
@@ -698,7 +722,6 @@
                             $('#favorite-' + identifer).removeClass('panel-warning is-favorite');
                         }
 
-                    console.log('#favorite-' + data.app_label + '-' + data.model + '-count')
                     $('#favorite-' + data.app + '-' + data.model + '-count').text(data.count);
 
                     }
@@ -707,11 +730,9 @@
             return false;
             }
 
-
         $(document).ready(function(){
 
             $("a[data-favorite]").click(toggleFavorite);
-
 
             $(document).delegate('*[data-toggle="lightbox"]', 'click', function(event) {
                 event.preventDefault();

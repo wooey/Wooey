@@ -89,10 +89,8 @@ class WooeyFormFactory(object):
         if form_field == 'FileField':
             if param.is_output:
                 form_field = 'CharField'
-        if form_field == 'FieldField':
-            if param.is_output:
                 initial = None
-            elif list(filter(None, initial)): # for python3, we need to evaluate the filter object
+            elif initial is not None and list(filter(None, initial)): # for python3, we need to evaluate the filter object
                 if isinstance(initial, (list, tuple)):
                     initial = [utils.get_storage_object(value) if not hasattr(value, 'path') else value for value in initial if value is not None]
                 else:

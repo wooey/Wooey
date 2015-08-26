@@ -227,8 +227,6 @@ def add_wooey_script(script=None, group=None):
         except:
             sys.stderr.write('Error parsing version, defaulting to 1. Error message:\n {}'.format(traceback.format_exc()))
             script_version = '1'
-        else:
-            script_version = d.get('version')
         script_kwargs = {'script_group': script_group, 'script_description': d['description'],
                          'script_path': script, 'script_name': d['name'], 'script_version': script_version}
         created = Script.objects.filter(**script_kwargs).count() == 0

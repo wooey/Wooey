@@ -18,6 +18,16 @@
 
   <div class="container-fluid">
 
+        {% if script.documentation %}
+        <div class="panel panel-default">
+            <div class="panel-heading">Documentation  <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-metadata" href="#collapse-metadata"></a></div>
+            <div id="collapse-metadata" class="panel-collapse collapse in">
+            <div class="panel-body markdown">{{ script.documentation }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+
     <form id="wooey-job-form" method="POST" action="{{ form.action }}" enctype="multipart/form-data">
         {% csrf_token %}
 

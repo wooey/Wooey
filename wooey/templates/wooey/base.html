@@ -557,15 +557,15 @@
                             addUlError($field, error);
 
                         // See if we're in a tabbed view; find the parent tab and set it to error state
-                        $tab_pane = $field.closest('.tab-pane')
+                        $tab_pane = $field.closest('.tab-pane');
                         if($tab_pane){
                             id = $tab_pane.attr('id');
-                            $obj = $('a[href="#' + id + '"]')
+                            $obj = $('a[href="#' + id + '"]');
                             $obj.addClass('tab-error');
 
                             // If first time we've seen a tab error, change the (.active) tab
                             if(!previous_tab_error){
-                                $obj.tab('show')
+                                $obj.tab('show');
                             }
                         }
                     }

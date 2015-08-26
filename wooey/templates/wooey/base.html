@@ -341,6 +341,17 @@
             background-color: #555;
         }
 
+        li.tab-error > a {
+            color: #A94442;
+            background-color: #F2DEDE;
+        }
+
+        li.active.tab-error > a {
+            color: #A94442;
+            background-color: #fff;
+        }
+
+
         {% block extra_style %}
         {% endblock extra_style %}
     </style>
@@ -519,6 +530,8 @@
             }
 
             function processErrors($form, errors){
+                var previous_tab_error = false;
+
                 for (var key in errors){
                     for(var i=0;i<errors[key].length;i++) {
                         var error = errors[key][i];
@@ -538,10 +551,23 @@
                                 $field = $field2;
                             }
                         }
-                        if ($form.hasClass('form-inline') || $form.hasClass('navbar-form'))
+                        if ($form.hasClass('form-inline') || $form.hasClass('navbar-form')) {
                             addInlineError($field, error);
-                        else
+                        } else
                             addUlError($field, error);
+
+                        // See if we're in a tabbed view; find the parent tab and set it to error state
+                        $tab_pane = $field.closest('.tab-pane')
+                        if($tab_pane){
+                            id = $tab_pane.attr('id');
+                            obj = $('a[href="#' + id + '"]').parent()
+                            obj.addClass('tab-error');
+
+                            // If first time we've seen a tab error, change the (.active) tab
+                            if(!previous_tab_error){
+                                obj.tab('show');
+                            }
+                        }
                     }
                 }
             }

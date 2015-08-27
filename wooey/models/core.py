@@ -306,7 +306,6 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
                 return com
         if field == self.FILE:
             if self.parameter.is_output:
-
                 try:
                     value = value.path
                 except AttributeError:

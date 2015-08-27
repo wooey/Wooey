@@ -1,12 +1,26 @@
 __author__ = 'chris'
 import os
 import sys
+import tempfile
+
 from django.core.management.base import BaseCommand, CommandError
 from django.core.files import File
 from django.conf import settings
 
 from ...backend.utils import add_wooey_script, get_storage, default_storage
 from ... import settings as wooey_settings
+
+try:
+    import urllib as request
+    import urlparse
+except:
+    import urllib.request as request
+    import urllib.urlparse as urlparse
+
+import zipfile
+import tarfile
+
+ACCEPTED_ARCHIVE_EXTENSIONS = ['.zip', '.gz', '.gzip', '.tgz']
 
 
 class Command(BaseCommand):
@@ -26,10 +40,46 @@ class Command(BaseCommand):
                 script = args[0]
             else:
                 raise CommandError('You must provide a script path or directory containing scripts.')
+
+        # Check for remote URL; zipfile, etc.
+        # if it is download, extract to temporary folder + substitute scriptpath
+        if urlparse.urlparse(script).scheme != "":
+            # We have remote URL, download to temporary file with same suffix
+            _, ext = os.path.splitext(script)
+            tfile = tempfile.NamedTemporaryFile(suffix=ext)
+            request.urlretrieve(script, tfile.name)
+            script = tfile.name
+            print(script)
+
+        if any([script.endswith(ext) for ext in ACCEPTED_ARCHIVE_EXTENSIONS]):
+            # We have an archive; create a temporary folder and extract there
+            tfolder = tempfile.mkdtemp()
+            if script.endswith('.zip'):
+               with zipfile.ZipFile(script, "r") as zf:
+                    zf.extractall(tfolder)
+
+            else:
+                # Must be gzip
+                with tarfile.open(script, 'r:gz') as tf:
+                    tf.extractall(tfolder)
+
+            # Set the script path to the temporary folder and continue as normal
+            script = tfolder
+
         if not os.path.exists(script):
             raise CommandError('{0} does not exist.'.format(script))
-        group = options.get('group', 'Wooey Scripts')
-        scripts = [os.path.join(script, i) for i in os.listdir(script)] if os.path.isdir(script) else [script]
+        group = options.get('group', 'Scripts')
+
+        scripts = []
+        if os.path.isdir(script):
+            for dirpath, _, fnames in os.walk(script):
+                scripts.extend([os.path.join(dirpath, fn) for fn in fnames])
+
+        else:
+            scripts.append(script) # Single script
+
+        print(scripts)
+
         converted = 0
         for script in scripts:
             if script.endswith('.pyc') or '__init__' in script:

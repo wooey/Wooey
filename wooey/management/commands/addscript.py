@@ -13,9 +13,9 @@ from ... import settings as wooey_settings
 try:
     import urllib as request
     import urlparse
-except:
+except ImportError:
     import urllib.request as request
-    import urllib.urlparse as urlparse
+    import urllib.parse as urlparse
 
 import zipfile
 import tarfile
@@ -49,7 +49,6 @@ class Command(BaseCommand):
             tfile = tempfile.NamedTemporaryFile(suffix=ext)
             request.urlretrieve(script, tfile.name)
             script = tfile.name
-            print(script)
 
         if any([script.endswith(ext) for ext in ACCEPTED_ARCHIVE_EXTENSIONS]):
             # We have an archive; create a temporary folder and extract there
@@ -77,8 +76,6 @@ class Command(BaseCommand):
 
         else:
             scripts.append(script) # Single script
-
-        print(scripts)
 
         converted = 0
         for script in scripts:

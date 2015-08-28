@@ -97,6 +97,9 @@ class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
                 group, created = ScriptGroup.objects.get_or_create(group_name=wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP)
             self.script_group = group
 
+    def get_previous_versions(self):
+        return Script.objects.filter(script_name=self.script_name, is_active=True).exclude(pk=self.pk).order_by('script_version')
+
 
 class WooeyJob(WooeyPy2Mixin, models.Model):
     """

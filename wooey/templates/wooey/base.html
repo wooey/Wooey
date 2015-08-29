@@ -466,6 +466,7 @@
     <script type="text/javascript" src="//cdn.datatables.net/1.10.6/js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="//cdn.datatables.net/responsive/1.0.5/js/dataTables.responsive.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/showdown/1.2.2/showdown.min.js"></script>
     {% endblock js %}
 
     {% block extra_js %}
@@ -730,6 +731,11 @@
             return false;
             }
 
+        var converter = new showdown.Converter({
+            'github_flavouring': true,
+            'tables': true
+        });
+
         $(document).ready(function(){
 
             $("a[data-favorite]").click(toggleFavorite);
@@ -795,6 +801,10 @@
 
 
             }, 100);
+
+            $(".markdown").each(function( index ) {
+                $( this ).html( converter.makeHtml( $( this ).html() ) );
+            });
 
 
 

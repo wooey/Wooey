@@ -58,6 +58,7 @@ class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     # or else we will fail form validation before we hit the model.
     script_group = models.ForeignKey('ScriptGroup', null=True, blank=True)
     script_description = models.TextField(blank=True, null=True)
+    documentation = models.TextField(blank=True, null=True)
     script_order = models.PositiveSmallIntegerField(default=1)
     is_active = models.BooleanField(default=True)
     user_groups = models.ManyToManyField(Group, blank=True)

@@ -18,11 +18,21 @@
 
   <div class="container-fluid">
 
+        {% if script.documentation %}
+        <div class="panel panel-default">
+            <div class="panel-heading">{% trans "Documentation" %} <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-metadata" href="#collapse-metadata"></a></div>
+            <div id="collapse-metadata" class="panel-collapse collapse in">
+            <div class="panel-body markdown">{{ script.documentation }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+
     <form id="wooey-job-form" method="POST" action="{{ form.action }}" enctype="multipart/form-data">
         {% csrf_token %}
 
         <div class="panel panel-default">
-        <div class="panel-heading">Settings  <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-settings" href="#collapse-settings"></a></div>
+        <div class="panel-heading">{% trans "Settings" %} <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-settings" href="#collapse-settings"></a></div>
 
         <div id="collapse-settings" class="panel-collapse collapse in">
 
@@ -69,17 +79,17 @@
 
 
         <div class="panel panel-default">
-            <div class="panel-heading">Metadata  <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-metadata" href="#collapse-metadata"></a></div>
+            <div class="panel-heading">{% trans "Metadata" %} <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-metadata" href="#collapse-metadata"></a></div>
             <div id="collapse-metadata" class="panel-collapse collapse in">
             <div class="panel-body">
 
                 <div class="form-group row">
                     <label for="job-name">{% trans "Job Name" %}</label>
-                    <input class="form-control" id="wooey_job_name" type="text" name="job_name" placeholder="{% trans "Job Name" %}" value="{{ script.script_name }} {% now "Ymd-G:i" %}"/>
+                    <input class="form-control" id="wooey_job_name" type="text" id="job-name" name="job_name" placeholder="{% trans "Job Name" %}" value="{{ script.script_name }} {% now "Ymd-G:i" %}"/>
                 </div>
                 <div class="form-group row">
                     <label for="job-description">{% trans "Job Description" %}</label>
-                    <textarea class="form-control" id="wooey_job_description" cols="30" rows="5" name="job_description" placeholder="{% trans "Enter job description here..." %}"></textarea>
+                    <textarea class="form-control" id="wooey_job_description" cols="30" rows="5" id="job-description" name="job_description" placeholder="{% trans "Enter job description here..." %}"></textarea>
                 </div>
             </div>
             </div>

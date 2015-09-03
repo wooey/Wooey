@@ -31,4 +31,9 @@ class Migration(migrations.Migration):
             model_name='script',
             name='script_version',
         ),
+        migrations.AlterField(
+            model_name='scriptversion',
+            name='script',
+            field=models.ForeignKey(related_name='script_version', to='wooey.Script'),
+        ),
     ]

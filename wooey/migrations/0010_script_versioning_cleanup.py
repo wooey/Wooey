@@ -2,13 +2,12 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
-import wooey.models.mixins
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0008_script_versioning'),
+        ('wooey', '0009_script_versioning_data_migration'),
     ]
 
     operations = [
@@ -31,10 +30,5 @@ class Migration(migrations.Migration):
         migrations.RemoveField(
             model_name='script',
             name='script_version',
-        ),
-        migrations.RenameField(
-            model_name='scriptversion',
-            old_name='script_version_new',
-            new_name='script_version',
         ),
     ]

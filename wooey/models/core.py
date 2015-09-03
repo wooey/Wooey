@@ -152,7 +152,6 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
     script_version = models.ForeignKey('ScriptVersion')
-    script = models.ForeignKey('Script')
 
     class Meta:
         app_label = 'wooey'
@@ -220,7 +219,6 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
 class ScriptParameterGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     group_name = models.TextField()
     script_version = models.ForeignKey('ScriptVersion')
-    script = models.ForeignKey('Script')
 
     class Meta:
         app_label = 'wooey'

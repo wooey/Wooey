@@ -127,40 +127,29 @@ def validate_form(form=None, data=None, files=None):
 
 
 def get_current_scripts():
-    from ..models import Script, ScriptVersion
-    # select all the scripts we have, then divide them into groups
-    dj_scripts = {}
+    from ..models import ScriptVersion
     try:
-        scripts = Script.objects.count()
+        scripts = ScriptVersion.objects.count()
     except OperationalError:
         # database not initialized yet
         return
-    found_scripts = OrderedDict()
-    if scripts:
-        scripts = Script.objects.all()
-        tscript_versions = ScriptVersion.objects.select_related('script').filter(script__in=list(scripts))
-        script_versions = defaultdict(list)
-        for sv in tscript_versions:
-            try:
-                version_string = parse_version(str(sv.script_version))
-            except:
-                sys.stderr.write('Error converting script version:\n{}'.format(traceback.format_exc()))
-                version_string = sv.script_version
-            script_versions[sv.script.script_name].append((version_string, sv.script_iteration, sv))
+
+    # get the scripts with default version
+    scripts = ScriptVersion.objects.filter(default_version=True)
+    # scripts we need to figure out the default version for some reason
+    non_default_scripts = ScriptVersion.objects.filter(default_version=False).exclude(script__in=[i.script for i in scripts])
+    script_versions = defaultdict(list)
+    for sv in non_default_scripts:
+        try:
+            version_string = parse_version(str(sv.script_version))
+        except:
+            sys.stderr.write('Error converting script version:\n{}'.format(traceback.format_exc()))
+            version_string = sv.script_version
+        script_versions[sv.script.script_name].append((version_string, sv.script_iteration, sv))
         [script_versions[i].sort(key=itemgetter(0, 1, 2), reverse=True) for i in script_versions]
-        for script in scripts:
-            script_version = script_versions.get(script.script_name, [[None]])[0][-1]
-            if script_version is None:
-                continue
-            try:
-                found_scripts[script.script_name].append((script_version, script_version.script_iteration, script))
-            except KeyError:
-                found_scripts[script.script_name] = [(script_version, script_version.script_iteration, script)]
-    final_scripts = []
-    for script_name, scripts in found_scripts.items():
-        scripts.sort(key=itemgetter(0, 1), reverse=True)
-        final_scripts.append(scripts[0][2])
-    return final_scripts
+    if script_versions:
+        scripts = scripts.filter(pk__in=[i[2].pk for i in script_versions.values()])
+    return [i.script for i in scripts]
 
 
 def get_storage_object(path, local=False):

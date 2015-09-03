@@ -1,7 +1,7 @@
 import shutil
 import os
 
-from ..models import Script, WooeyFile, WooeyJob
+from ..models import ScriptVersion, WooeyFile, WooeyJob
 from ..backend import utils
 from .. import settings as wooey_settings
 from . import factories, config
@@ -23,7 +23,7 @@ class FileCleanupMixin(object):
 
 class ScriptFactoryMixin(object):
     def tearDown(self):
-        for i in Script.objects.all():
+        for i in ScriptVersion.objects.all():
             path = i.script_path.name
             # import pdb; pdb.set_trace();
             utils.get_storage().delete(path)

@@ -17,7 +17,7 @@ from django.http import Http404
 from django.contrib.contenttypes.models import ContentType
 
 from ..backend import utils
-from ..models import WooeyJob, Script, WooeyFile, Favorite
+from ..models import WooeyJob, Script, WooeyFile, Favorite, ScriptVersion
 from .. import settings as wooey_settings
 from ..django_compat import JsonResponse
 
@@ -52,7 +52,6 @@ class WooeyScriptBase(DetailView):
                 raise AttributeError("Generic detail view %s must be called with "
                                      "either an object pk or a slug."
                                      % self.__class__.__name__)
-
             try:
                 # Get the single item from the filtered queryset
                 obj = queryset.get()
@@ -74,14 +73,14 @@ class WooeyScriptBase(DetailView):
         if job_id:
             job = WooeyJob.objects.get(pk=job_id)
             if job.user is None or (self.request.user.is_authenticated() and job.user == self.request.user):
-                context['job_info'] = {'job_id': job_id, 'url': job.get_resubmit_url(), 'data_url': job.script.get_url()}
+                context['job_info'] = {'job_id': job_id, 'url': job.get_resubmit_url(), 'data_url': job.script_version.script.get_url()}
 
                 for i in job.get_parameters():
                     value = i.value
                     if value is not None:
                         initial[i.parameter.slug].append(value)
 
-        context['form'] = utils.get_form_groups(model=self.object, initial_dict=initial, render_fn=self.render_fn, pk=self.object.pk)
+        context['form'] = utils.get_form_groups(script_version=self.object.latest_version, initial_dict=initial, render_fn=self.render_fn, pk=self.object.pk)
         return context
 
     def post(self, request, *args, **kwargs):
@@ -123,13 +122,13 @@ class WooeyScriptBase(DetailView):
                     
         if not form.errors:
             # data = form.cleaned_data
-            script_pk = form.cleaned_data.get('wooey_type')
-            script = Script.objects.get(pk=script_pk)
-            valid = utils.valid_user(script, request.user).get('valid')
+            version_pk = form.cleaned_data.get('wooey_type')
+            script_version = ScriptVersion.objects.get(pk=version_pk)
+            valid = utils.valid_user(script_version.script, request.user).get('valid')
             if valid is True:
-                group_valid = utils.valid_user(script.script_group, request.user).get('valid')
+                group_valid = utils.valid_user(script_version.script.script_group, request.user).get('valid')
                 if valid is True and group_valid is True:
-                    job = utils.create_wooey_job(script_pk=script_pk, user=user, data=form.cleaned_data)
+                    job = utils.create_wooey_job(script_version_pk=version_pk, user=user, data=form.cleaned_data)
                     job.submit_to_celery()
                     return {'valid': True, 'job_id': job.id}
 
@@ -171,7 +170,7 @@ class WooeyHomeView(TemplateView):
     def get_context_data(self, **kwargs):
         #job_id = self.request.GET.get('job_id')
         ctx = super(WooeyHomeView, self).get_context_data(**kwargs)
-        ctx['scripts'] = settings.WOOEY_SCRIPTS
+        ctx['scripts'] = utils.get_current_scripts()
 
         # Check for logged in user
         if self.request.user.is_authenticated():

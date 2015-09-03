@@ -44,7 +44,7 @@ def generate_job_list(job_query):
         jobs.append({
             'id': job.pk,
             'name': escape(job.job_name),
-            'description': escape(six.u('Script: {}\n{}').format(job.script.script_name, job.job_description)),
+            'description': escape(six.u('Script: {}\n{}').format(job.script_version.script.script_name, job.job_description)),
             'url': reverse('wooey:celery_results', kwargs={'job_id': job.pk}),
             'submitted': job.created_date.strftime('%b %d %Y, %H:%M:%S'),
             'status': STATE_MAPPER.get(job.status, job.status),
@@ -112,7 +112,7 @@ def celery_task_command(request):
     job_id = request.POST.get('job-id')
     job = WooeyJob.objects.get(pk=job_id)
     response = {'valid': False,}
-    valid = valid_user(job.script, request.user)
+    valid = valid_user(job.script_version.script, request.user)
     if valid.get('valid') is True:
         user = request.user if request.user.is_authenticated() else None
         if user == job.user or job.user == None:
@@ -123,7 +123,7 @@ def celery_task_command(request):
                 job.submit_to_celery(user=request.user, rerun=True)
                 response.update({'valid': True, 'redirect': reverse('wooey:celery_results', kwargs={'job_id': job_id})})
             elif command == 'clone':
-                response.update({'valid': True, 'redirect': reverse('wooey:wooey_script_clone', kwargs={'slug': job.script.slug, 'job_id': job_id})})
+                response.update({'valid': True, 'redirect': reverse('wooey:wooey_script_clone', kwargs={'slug': job.script_version.script.slug, 'job_id': job_id})})
             elif command == 'delete':
                 job.status = WooeyJob.DELETED
                 job.save()

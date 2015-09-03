@@ -54,7 +54,7 @@ def submit_script(**kwargs):
     utils.mkdirs(abscwd)
     # make sure we have the script, otherwise download it. This can happen if we have an ephemeral file system or are
     # executing jobs on a worker node.
-    script_path = job.script.script_path
+    script_path = job.script_version.script_path
     if not utils.get_storage(local=True).exists(script_path.path):
         utils.get_storage(local=True).save(script_path.path, script_path.file)
 

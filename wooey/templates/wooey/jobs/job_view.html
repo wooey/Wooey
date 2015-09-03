@@ -3,7 +3,7 @@
 {% load wooey_tags %}
 
 {% block breadcrumbs %}
-    <li><a href="{{ job_info.job.script.get_url }}">{{ job_info.job.script.script_name }}</a></li>
+    <li><a href="{{ job_info.job.script_version.script.get_url }}">{{ job_info.job.script_version.script.script_name }}</a></li>
     <li><a href="#">{% blocktrans with job_id=job_info.job.id %}Job # {{ job_id }}{% endblocktrans %}</a></li>
 {% endblock breadcrumbs %}
 

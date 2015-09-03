@@ -8,7 +8,7 @@ import sys
 import six
 import traceback
 from operator import itemgetter
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from pkg_resources import parse_version
 
 from django.conf import settings
@@ -60,9 +60,9 @@ def purge_output(job=None):
                 local_storage.delete(path)
 
 def get_job_commands(job=None):
-    script = job.script
+    script_version = job.script_version
     com = [sys.executable] if sys.executable else []
-    com.extend([script.get_script_path()])
+    com.extend([script_version.get_script_path()])
     parameters = job.get_parameters()
     param_dict = OrderedDict()
     for param in parameters:
@@ -84,13 +84,13 @@ def get_job_commands(job=None):
 
 
 @transaction.atomic
-def create_wooey_job(user=None, script_pk=None, data=None):
-    from ..models import Script, WooeyJob, ScriptParameter, ScriptParameters
-    script = Script.objects.get(pk=script_pk)
+def create_wooey_job(user=None, script_version_pk=None, data=None):
+    from ..models import Script, WooeyJob, ScriptParameter, ScriptParameters, ScriptVersion
+    script_version = ScriptVersion.objects.select_related('script').get(pk=script_version_pk)
     if data is None:
         data = {}
     job = WooeyJob(user=user, job_name=data.pop('job_name', None), job_description=data.pop('job_description', None),
-                     script=script)
+                     script_version=script_version)
     job.save()
     parameters = OrderedDict([(i.slug, i) for i in ScriptParameter.objects.filter(slug__in=data.keys()).order_by('pk')])
     for slug, param in six.iteritems(parameters):
@@ -103,14 +103,19 @@ def create_wooey_job(user=None, script_pk=None, data=None):
     return job
 
 
-def get_master_form(model=None, pk=None):
+def get_master_form(script_version=None, pk=None):
     from ..forms.factory import DJ_FORM_FACTORY
-    return DJ_FORM_FACTORY.get_master_form(model=model, pk=pk)
+    return DJ_FORM_FACTORY.get_master_form(script_version=script_version, pk=pk)
 
 
-def get_form_groups(model=None, pk=None, initial_dict=None, render_fn=None):
+def get_form_groups(script_version=None, pk=None, initial_dict=None, render_fn=None):
     from ..forms.factory import DJ_FORM_FACTORY
-    return DJ_FORM_FACTORY.get_group_forms(model=model, pk=pk, initial_dict=initial_dict, render_fn=render_fn)
+    return DJ_FORM_FACTORY.get_group_forms(script_version=script_version, pk=pk, initial_dict=initial_dict, render_fn=render_fn)
+
+def reset_form_factory(script_version=None):
+    from ..forms.factory import DJ_FORM_FACTORY
+    DJ_FORM_FACTORY.reset_forms(script_version=script_version)
+
 
 
 def validate_form(form=None, data=None, files=None):
@@ -121,8 +126,8 @@ def validate_form(form=None, data=None, files=None):
     form.full_clean()
 
 
-def load_scripts():
-    from ..models import Script
+def get_current_scripts():
+    from ..models import Script, ScriptVersion
     # select all the scripts we have, then divide them into groups
     dj_scripts = {}
     try:
@@ -133,21 +138,29 @@ def load_scripts():
     found_scripts = OrderedDict()
     if scripts:
         scripts = Script.objects.all()
-        for script in scripts:
+        tscript_versions = ScriptVersion.objects.select_related('script').filter(script__in=list(scripts))
+        script_versions = defaultdict(list)
+        for sv in tscript_versions:
             try:
-                script_version = parse_version(str(script.script_version))
+                version_string = parse_version(str(sv.script_version))
             except:
                 sys.stderr.write('Error converting script version:\n{}'.format(traceback.format_exc()))
-                script_version = script.script_version
+                version_string = sv.script_version
+            script_versions[sv.script.script_name].append((version_string, sv.script_iteration, sv))
+        [script_versions[i].sort(key=itemgetter(0, 1, 2), reverse=True) for i in script_versions]
+        for script in scripts:
+            script_version = script_versions.get(script.script_name, [[None]])[0][-1]
+            if script_version is None:
+                continue
             try:
-                found_scripts[script.script_name].append((script_version, script.script_iteration, script))
+                found_scripts[script.script_name].append((script_version, script_version.script_iteration, script))
             except KeyError:
-                found_scripts[script.script_name] = [(script_version, script.script_iteration, script)]
+                found_scripts[script.script_name] = [(script_version, script_version.script_iteration, script)]
     final_scripts = []
     for script_name, scripts in found_scripts.items():
         scripts.sort(key=itemgetter(0, 1), reverse=True)
         final_scripts.append(scripts[0][2])
-    settings.WOOEY_SCRIPTS = final_scripts
+    return final_scripts
 
 
 def get_storage_object(path, local=False):
@@ -157,24 +170,25 @@ def get_storage_object(path, local=False):
     obj.path = storage.path(path)
     return obj
 
-def add_wooey_script(script=None, group=None):
-    from ..models import Script, ScriptGroup, ScriptParameter, ScriptParameterGroup
-    # if we have a script, it will at this point be saved in the model pointing to our file system, which may be
-    # ephemeral. So the path attribute may not be implemented
-    if not isinstance(script, six.string_types):
-        try:
-            script_path = script.script_path.path
-        except NotImplementedError:
-            script_path = script.script_path.name
+def add_wooey_script(script_version=None, script_path=None, group=None):
+    # There is a class called 'Script' which contains the general information about a script. However, that is not where the file details
+    # of the script lie. That is the ScriptVersion model. This allows the end user to tag a script as a favorite/etc. and set
+    # information such as script descriptions/names that do not constantly need to be updated with every version change. Thus,
+    # a ScriptVersion stores the file info and such.
+    from ..models import Script, ScriptGroup, ScriptParameter, ScriptParameterGroup, ScriptVersion
+
+    # if we are adding through the admin, at this point the file will be saved already and this method will be receiving
+    # the scriptversion object. Otherwise, we are adding through the managementment command. In this case, the file will be
+    # a location and we need to setup the Script and ScriptVersion in here.
 
     local_storage = get_storage(local=True)
-    if isinstance(script, Script):
-        script_obj = script
+    if script_version is not None:
+        # we are updating the script here or creating it through the admin
 
         # we need to move the script to the wooey scripts directory now
         # handle remotely first, because by default scripts will be saved remotely if we are using an
         # ephemeral file system
-        old_name = script.script_path.name
+        old_name = script_version.script_path.name
         new_name = os.path.normpath(os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, old_name) if not old_name.startswith(wooey_settings.WOOEY_SCRIPT_DIR) else old_name)
 
         current_storage = get_storage(local=not wooey_settings.WOOEY_EPHEMERAL_FILES)
@@ -184,26 +198,26 @@ def add_wooey_script(script=None, group=None):
         # remove the old file
         current_storage.delete(old_name)
 
-        script._rename_script = True
-        script.script_path.name = new_name
-        script.save()
+        script_version._rename_script = True
+        script_version.script_path.name = new_name
+        script_version.save()
 
         # download the script locally if it doesn't exist
         if not local_storage.exists(new_path):
             new_path = local_storage.save(new_path, current_file)
 
         script = get_storage_object(new_path, local=True).path
-        local_file = local_storage.open(new_path)
+        local_file = local_storage.open(new_path).name
     else:
-        script_obj = False
         # we got a path, if we are using a remote file system, it will be located remotely by default
         # make sure we have it locally as well
         if wooey_settings.WOOEY_EPHEMERAL_FILES:
             remote_storage = get_storage(local=False)
-            remote_file = remote_storage.open(script)
-            local_file = local_storage.save(script, remote_file)
+            remote_file = remote_storage.open(script_path)
+            local_file = local_storage.save(script_path, remote_file)
         else:
-            local_file = local_storage.open(script)
+            local_file = local_storage.open(script_path).name
+        script = get_storage_object(local_file, local=True).path
 
     if isinstance(group, ScriptGroup):
         group = group.group_name
@@ -218,48 +232,73 @@ def add_wooey_script(script=None, group=None):
     # make our script
     d = parser.get_script_description()
     script_group, created = ScriptGroup.objects.get_or_create(group_name=group)
-    if script_obj is False:
-        script_version = d.get('version')
-        if script_version is None:
-            script_version = '1'
-        try:
-            parse_version(script_version)
-        except:
-            sys.stderr.write('Error parsing version, defaulting to 1. Error message:\n {}'.format(traceback.format_exc()))
-            script_version = '1'
-        script_kwargs = {'script_group': script_group, 'script_description': d['description'],
-                         'script_path': script, 'script_name': d['name'], 'script_version': script_version}
-        created = Script.objects.filter(**script_kwargs).count() == 0
-        if created:
+    version_string = d.get('version')
+    if version_string is None:
+        version_string = '1'
+    try:
+        parse_version(version_string)
+    except:
+        sys.stderr.write('Error parsing version, defaulting to 1. Error message:\n {}'.format(traceback.format_exc()))
+        version_string = '1'
+    if script_version is None:
+        # we are being loaded from the management command, create/update our script/version
+        script_kwargs = {'script_group': script_group, 'script_name': d['name']}
+        version_kwargs = {'script_version': version_string, 'script_path': local_file, 'default_version': True}
+        # does this script already exist in the database?
+        script_created = Script.objects.filter(**script_kwargs).count() == 0
+        if script_created:
+            # we are creating it, add the description if we can
+            script_kwargs.update({'script_description': d['description']})
             wooey_script = Script(**script_kwargs)
             wooey_script._script_cl_creation = True
             wooey_script.save()
+            version_kwargs.update({'script_iteration': 1})
+        else:
+            # we're updating it
+            wooey_script = Script.objects.get(**script_kwargs)
+            if not wooey_script.script_description and d['description']:
+                wooey_script.script_description = d['description']
+                wooey_script.save()
+            # check if we have the version in our script version
+            current_versions = ScriptVersion.objects.filter(script=wooey_script, script_version=version_string)
+            if current_versions.count() == 0:
+                next_iteration = 1
+                # disable older versions
+                ScriptVersion.objects.filter(script=wooey_script, script_version=version_string).update(default_version=False)
+            else:
+                # get the largest iteration and add 1 to it
+                next_iteration = sorted([i.script_iteration for i in current_versions])[-1]+1
+            version_kwargs.update({'script_iteration': next_iteration})
+        version_kwargs.update({'script': wooey_script})
+        script_version = ScriptVersion(**version_kwargs)
+        script_version._script_cl_creation = True
+        script_version.save()
     else:
-        created = False
-        if not script_obj.script_description:
-            script_obj.script_description = d['description']
-        if not script_obj.script_name:
-            script_obj.script_name = d['name']
-        script_obj.save()
-    if not created:
-        if script_obj is False:
-            wooey_script.script_iteration += 1
-            wooey_script.save()
-    if script_obj:
-        wooey_script = script_obj
+        # we are being created/updated from the admin
+        if not script_version.script.script_description:
+            script_version.script.script_description = d['description']
+        if not script_version.script.script_name:
+            script_version.script.script_name = d['name']
+        past_versions = ScriptVersion.objects.filter(script=script_version.script, script_version=version_string).exclude(pk=script_version.pk)
+        script_version.script_iteration = past_versions.count()+1
+        past_versions.update(default_version=False)
+        script_version.default_version = True
+        script_version.script.save()
+        script_version.save()
+
     # make our parameters
     for param_group_info in d['inputs']:
-        param_group, created = ScriptParameterGroup.objects.get_or_create(group_name=param_group_info.get('group'), script=wooey_script)
+        param_group, created = ScriptParameterGroup.objects.get_or_create(group_name=param_group_info.get('group'), script_version=script_version)
         for param in param_group_info.get('nodes'):
             # TODO: fix 'file' to be global in argparse
             is_out = True if param.get('upload', None) is False and param.get('type') == 'file' else not param.get('upload', False)
-            script_param, created = ScriptParameter.objects.get_or_create(script=wooey_script, short_param=param['param'], script_param=param['name'],
+            script_param, created = ScriptParameter.objects.get_or_create(script_version=script_version, short_param=param['param'], script_param=param['name'],
                                                                           is_output=is_out, required=param.get('required', False),
                                                                           form_field=param['model'], default=param.get('default'), input_type=param.get('type'),
                                                                           choices=json.dumps(param.get('choices')), choice_limit=json.dumps(param.get('choice_limit', 1)),
                                                                           param_help=param.get('help'), is_checked=param.get('checked', False),
                                                                           parameter_group=param_group)
-    return {'valid': True, 'errors': None, 'script': wooey_script}
+    return {'valid': True, 'errors': None, 'script': script_version}
 
 def valid_user(obj, user):
     ret = {'valid': False, 'error': '', 'display': ''}

@@ -27,7 +27,7 @@
         <tr>
             <td>{{ job.id }}</td>
             <td><a href="{% url 'wooey:celery_results' job_id=job.pk %}">{{ job.job_name }}</a></td>
-            <td>{{ job.script.script_name }}</td>
+            <td>{{ job.script_version.script.script_name }}</td>
             <td>{{ job.created_date|timesince }} </td>
             
             <td>

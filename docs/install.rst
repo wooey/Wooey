@@ -55,3 +55,12 @@ Installation with existing Django Projects
        
     6. You may also need to define a MEDIA_ROOT, MEDIA_URL, STATIC_ROOT, and STATIC_URL
        if these are not setup already.
+
+Installation on remote servers
+------------------------------
+
+We have provided guides for several available services that host sites. Here are examples (pull requests for services not listed are appreciated!)
+
+`Heroku`_
+
+.. _Heroku: heroku

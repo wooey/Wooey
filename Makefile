@@ -2,6 +2,7 @@ testenv:
 	pip install -r requirements.txt
 	pip install Django
 	pip install -e .
+	pip install sphinx mock
 
 test:
 	nosetests --with-coverage --cover-erase --cover-package=wooey tests

@@ -336,9 +336,18 @@ def test_fastx(filepath):
         sequences = OrderedDict()
         seq = []
         header = ''
+        found_caret = False
         for row_index, row in enumerate(fastx_file, 1):
             if row_index > 30:
                 break
+            if not row.strip():
+                continue
+            if found_caret is False and row[0] != '>':
+                if row[0] == ';':
+                    continue
+                break
+            elif found_caret is False and row[0] == '>':
+                found_caret = True
             if row and row[0] == '>':
                 if seq:
                     sequences[header] = ''.join(seq)

@@ -135,7 +135,7 @@ def get_current_scripts():
         return
 
     # get the scripts with default version
-    scripts = ScriptVersion.objects.filter(default_version=True)
+    scripts = ScriptVersion.objects.select_related('script').filter(default_version=True)
     # scripts we need to figure out the default version for some reason
     non_default_scripts = ScriptVersion.objects.filter(default_version=False).exclude(script__in=[i.script for i in scripts])
     script_versions = defaultdict(list)
@@ -147,9 +147,12 @@ def get_current_scripts():
             version_string = sv.script_version
         script_versions[sv.script.script_name].append((version_string, sv.script_iteration, sv))
         [script_versions[i].sort(key=itemgetter(0, 1, 2), reverse=True) for i in script_versions]
+    scripts = [i.script for i in scripts]
     if script_versions:
-        scripts = scripts.filter(pk__in=[i[2].pk for i in script_versions.values()])
-    return [i.script for i in scripts]
+        for script_version_info in script_versions.values():
+            new_scripts = ScriptVersion.objects.select_related('script').filter(pk__in=[i[2].pk for i in script_version_info])
+            scripts.extend([i.script for i in new_scripts])
+    return scripts
 
 
 def get_storage_object(path, local=False):

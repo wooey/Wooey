@@ -111,7 +111,7 @@ class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
         app_label = 'wooey'
 
     def __str__(self):
-        return '{}: {}'.format(self.script_version, self.script_iteration)
+        return '{}({}: {})'.format(self.script.script_name, self.script_version, self.script_iteration)
 
     def get_url(self):
         return reverse('wooey:wooey_script', kwargs={'slug': self.script.slug})

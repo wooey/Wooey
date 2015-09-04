@@ -20,7 +20,7 @@ def make_script_versions(apps, schema_editor):
         for i, v in enumerate(ordered_scripts):
             script = v[1]
             version_kwargs = {'script_version': '1', 'script_iteration': script.script_version,
-                              'script_path': script.script_path, 'script': script,}
+                              'script_path': script.script_path, 'script': last_script,}
             if v[1] == last_script:
                 version_kwargs.update({'default_version': True})
             script_version = ScriptVersion(**version_kwargs)

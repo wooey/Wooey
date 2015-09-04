@@ -61,6 +61,7 @@ Installation on remote servers
 
 We have provided guides for several available services that host sites. Here are examples (pull requests for services not listed are appreciated!)
 
-`Heroku`_
+.. toctree::
+   :maxdepth: 1
 
-.. _Heroku: heroku
+   heroku

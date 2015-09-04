@@ -31,6 +31,8 @@ For the rest of this guide, the wooey instance will be called wooey_heroku.
 Setup Heroku and git
 --------------------
 
+Of course, you will at this point need to have an app on Heroku.
+
 * Create an app on Heroku
 * Login to heroku on the command line
 
@@ -64,7 +66,8 @@ Create a file, called Procfile, which tells Heroku how to run your app, with the
 
 ::
 
-    web: waitress-serve --connection-limit 2000 --channel-timeout=300 --port=$PORT wooey_heroku.wsgi:application worker: python manage.py celery worker -c 1 --beat -l info
+    web: waitress-serve --connection-limit 2000 --channel-timeout=300 --port=$PORT wooey_heroku.wsgi:application
+    worker: python manage.py celery worker -c 1 --beat -l info
 
 Setup Environment Vars on Heroku
 
@@ -105,10 +108,11 @@ To start, complete these steps:
 * Copy down your access key ID and secret access key id
 * Add the user to your IAM group that has control of S3 buckets.
 * Set these variables in heroku:
+  ::
 
-  * heroku config:set -a wooey AWS_ACCESS_KEY_ID=access_key
-  * heroku config:set -a wooey AWS_SECRET_ACCESS_KEY=secret_key
-  * heroku config:set -a wooey AWS_STORAGE_BUCKET_NAME=bucket_name
+      heroku config:set -a wooey AWS_ACCESS_KEY_ID=access_key
+      heroku config:set -a wooey AWS_SECRET_ACCESS_KEY=secret_key
+      heroku config:set -a wooey AWS_STORAGE_BUCKET_NAME=bucket_name
 
 * Edit your CORS configuration for the bucket:
   ::
@@ -212,7 +216,9 @@ Add everything to git and push it upstream
 
 ::
 
-    git add . git commit -m 'initial commit' git push -u heroku master
+    git add .
+    git commit -m 'initial commit'
+    git push -u heroku master
 
 At the last step, the -u indicates to create the branch master if it does not exist on the remote.
 

@@ -207,7 +207,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
         This holds the parameter mapping for each script, and enforces uniqueness by each script via a FK.
     """
     script = models.ForeignKey('Script')
-    short_param = models.CharField(max_length=255)
+    short_param = models.CharField(max_length=255, blank=True)
     script_param = models.CharField(max_length=255)
     slug = AutoSlugField(populate_from='script_param', unique=True)
     is_output = models.BooleanField(default=None)

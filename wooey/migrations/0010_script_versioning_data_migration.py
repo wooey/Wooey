@@ -33,7 +33,7 @@ def make_script_versions(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0008_script_versioning'),
+        ('wooey', '0009_script_versioning'),
     ]
 
     operations = [

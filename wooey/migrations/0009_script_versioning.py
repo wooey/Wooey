@@ -7,7 +7,7 @@ import wooey.models.mixins
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0007_script_documentation'),
+        ('wooey', '0008_short_param_admin'),
     ]
 
     operations = [

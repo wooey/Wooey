@@ -52,6 +52,8 @@
 
             <div class="btn-group">
             <a href="{{ job_info.archives.0.url }}" role="button" class="btn btn-success">
+            {% url 'wooey:celery_results_uuid' job_info.job.uuid as permalink %}
+            {% absolute_url permalink as permalink %}
             <span class="glyphicon glyphicon-share" aria-hidden="true"></span> {% trans "Share" %}
             </a>
             <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
@@ -60,17 +62,14 @@
             </button>
             <ul class="dropdown-menu" role="menu">
                 <!-- <li><a href="""><span class="glyphicon glyphicon-figshare"></span> Figshare</a></li> -->
-                {% with request.build_absolute_uri as permalink %}
                 <li><a href="{{ permalink }}" onclick="$('#modal-permalink').modal(); return false;"><span class="glyphicon glyphicon-link"></span> Permalink</a></li>
-                {% endwith %}
-                <li><a href="mailto:?subject=Wooey Job #{{ job_info.job.id }} is {{ job_info.job.status }}&body=You can see the result and any outputs at the following link:%0D%0A{{ request.build_absolute_uri }}"><span class="glyphicon glyphicon-envelope"></span> Email</a></li>
+
+                <li><a href="mailto:?subject=Wooey Job #{{ job_info.job.id }} is {{ job_info.job.status }}&body=You can see the result and any outputs at the following link:%0D%0A{{ permalink }}"><span class="glyphicon glyphicon-envelope"></span> Email</a></li>
             </ul>
             </div>
 
 
-        {% with request.build_absolute_uri as permalink %}
-        {% include 'wooey/modals/permalink_modal.html' %}
-        {% endwith %}
+    {% include 'wooey/modals/permalink_modal.html' %}
 
 
         {% endif %}

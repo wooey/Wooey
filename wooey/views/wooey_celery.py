@@ -145,9 +145,15 @@ class JobBase(DetailView):
     model = WooeyJob
 
     def get_object(self):
-        # FIXME: Update urls to use PK
-        self.kwargs['pk'] = self.kwargs.get('job_id')
-        return super(JobBase, self).get_object()
+
+        if 'uuid' in self.kwargs:
+            return self.model.objects.get(uuid=self.kwargs['uuid'])
+
+        else:
+            # FIXME: Update urls to use PK
+            self.kwargs['pk'] = self.kwargs.get('job_id')
+
+            return super(JobBase, self).get_object()
 
     def get_context_data(self, **kwargs):
         ctx = super(JobBase, self).get_context_data(**kwargs)
@@ -156,7 +162,10 @@ class JobBase(DetailView):
         user = self.request.user
         user = None if not user.is_authenticated() and wooey_settings.WOOEY_ALLOW_ANONYMOUS else user
         job_user = wooey_job.user
-        if job_user == None or job_user == user or (user != None and user.is_superuser):
+        if job_user is None or job_user == user or \
+                (user is not None and user.is_superuser) or \
+                ('uuid' in self.kwargs):
+
             out_files = get_file_previews(wooey_job)
             all = out_files.pop('all', [])
             archives = out_files.pop('archives', [])

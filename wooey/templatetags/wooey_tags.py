@@ -171,3 +171,8 @@ def gravatar(parser, token):
 @register.filter
 def get_range(value):
     return range(int(value))
+
+@register.simple_assignment_tag(takes_context=True)
+def absolute_url(context, url):
+    request = context['request']
+    return request.build_absolute_uri(url)

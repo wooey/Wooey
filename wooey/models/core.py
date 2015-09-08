@@ -5,6 +5,7 @@ import errno
 import importlib
 import json
 import six
+import uuid
 from io import IOBase
 
 from django.core.files.storage import default_storage
@@ -128,6 +129,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
     # blank=True, null=True is to allow anonymous users to submit jobs
     user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True)
     celery_id = models.CharField(max_length=255, null=True)
+    uuid = models.CharField(max_length=255, default=uuid.uuid4, unique=True)
     job_name = models.CharField(max_length=255)
     job_description = models.TextField(null=True, blank=True)
     stdout = models.TextField(null=True, blank=True)
@@ -196,8 +198,10 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
 
     @property
     def output_path(self):
-        return os.path.join(wooey_settings.WOOEY_FILE_DIR, get_valid_filename(self.user.username if self.user is not None else ''),
-                            get_valid_filename(self.script_version.script.slug if not self.script_version.script.save_path else self.script_version.script.save_path), str(self.pk))
+        return os.path.join(wooey_settings.WOOEY_FILE_DIR,
+                            get_valid_filename(self.user.username if self.user is not None else ''),
+                            get_valid_filename(self.script_version.script.slug if not self.script_version.script.save_path else self.script_version.script.save_path),
+                            str(self.uuid))
 
     def get_output_path(self):
         path = self.output_path

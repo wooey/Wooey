@@ -16,11 +16,18 @@ from django.db.transaction import atomic
 from celery import Task
 from celery import states
 from celery import app
+from celery.signals import worker_process_init
 from celery.contrib import rdb
 
 from . import settings as wooey_settings
 
 celery_app = app.app_or_default()
+
+@worker_process_init.connect
+def configure_workers(*args, **kwargs):
+    # this sets up Django on nodes started by the worker daemon.
+    import django
+    django.setup()
 
 
 class WooeyTask(Task):

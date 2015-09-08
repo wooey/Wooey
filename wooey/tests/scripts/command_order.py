@@ -7,4 +7,4 @@ parser.add_argument('name', help='the name of the file')
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    sys.stderr.write('{} {}'.format(args.link,args.name))
+    sys.stderr.write('{} {}'.format(args.link, args.name))

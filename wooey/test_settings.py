@@ -5,7 +5,6 @@ DEBUG = True
 
 TEST_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'tests')
 
-
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -30,14 +29,12 @@ INSTALLED_APPS = [
     'wooey',
 ]
 
-
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
 STATIC_URL = '/static/'
-
 
 STATIC_ROOT = os.path.join(TEST_DIR, 'static')
 
@@ -98,4 +95,3 @@ if os.environ.get('WOOEY_TEST_S3'):
 
 else:
     STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = 'wooey.wooeystorage.FakeRemoteStorage'
-

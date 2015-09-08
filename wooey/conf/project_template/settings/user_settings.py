@@ -1,6 +1,5 @@
 from os import environ
 from .wooey_settings import *
-
 # This file is where the user can override and customize their installation of wooey
 
 # Wooey Apps - add additional apps here after the initial install (remember to follow everything by a comma)
@@ -35,7 +34,6 @@ MEDIA_URL = '/uploads/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 # the url mapping
 STATIC_URL = '/static/'
-
 ## Here is a setup example for production servers
 
 ## A postgres database -- for multiple users a sqlite based database is asking for trouble
@@ -115,6 +113,5 @@ STATIC_URL = '/static/'
 #
 # STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = 'wooey.wooeystorage.CachedS3BotoStorage'
 # WOOEY_EPHEMERAL_FILES = True
-
 
 AUTHENTICATION_BACKEND = 'django.contrib.auth.backends.ModelBackend'

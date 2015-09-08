@@ -11,11 +11,13 @@ if DJANGO_VERSION < DJ17:
     import json
     from django.http import HttpResponse
 
+
     class JsonResponse(HttpResponse):
         """
             JSON response
             # from https://gist.github.com/philippeowagner/3179eb475fe1795d6515
         """
+
         def __init__(self, content, mimetype='application/json', status=None, content_type=None, **kwargs):
             super(JsonResponse, self).__init__(
                 content=json.dumps(content),
@@ -33,6 +35,7 @@ if DJANGO_VERSION >= DJ18:
 
 else:
     from django.template import Template
+
 
     class Engine(object):
         @staticmethod

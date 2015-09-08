@@ -11,12 +11,13 @@ parser.add_argument('xmax', help='The maximum region to compute.', type=float, d
 parser.add_argument('ymin', help='The minimum region to compute.', type=float, default=-1.25)
 parser.add_argument('ymax', help='The maximum region to compute.', type=float, default=1.25)
 
+
 def mandel(n, m, itermax, xmin, xmax, ymin, ymax):
     # from https://thesamovar.wordpress.com/2009/03/22/fast-fractals-with-python-and-numpy/
     ix, iy = mgrid[0:n, 0:m]
     x = linspace(xmin, xmax, n)[ix]
     y = linspace(ymin, ymax, m)[iy]
-    c = x+complex(0,1)*y
+    c = x+complex(0, 1)*y
     del x, y
     img = zeros(c.shape, dtype=int)
     ix.shape = n*m
@@ -37,6 +38,7 @@ def mandel(n, m, itermax, xmin, xmax, ymin, ymax):
 
     plt.imshow(img)
     plt.savefig('fractal.png')
+
 
 def limit(value, min, max, default):
     if value < min or value > max:

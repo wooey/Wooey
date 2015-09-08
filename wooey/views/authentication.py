@@ -10,6 +10,7 @@ from django.utils.encoding import force_text
 from .. import settings as wooey_settings
 from ..django_compat import JsonResponse
 
+
 class WooeyRegister(CreateView):
     template_name = 'wooey/registration/register.html'
     model = get_user_model()
@@ -45,6 +46,7 @@ class WooeyRegister(CreateView):
         auser = authenticate(username=self.object.username, password=self.request.POST['password'])
         login(self.request, auser)
         return reverse(next_url) if next_url else reverse('wooey:wooey_home')
+
 
 def wooey_login(request):
     if wooey_settings.WOOEY_AUTH is False:

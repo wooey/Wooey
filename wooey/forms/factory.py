@@ -32,7 +32,7 @@ def mutli_render(render_func, appender_data_dict=None):
         # build the attribute dict
         data_attrs = flatatt(appender_data_dict if appender_data_dict is not None else {})
         pieces.append(format_html('<a href="#{anchor}"{data}><span class="glyphicon glyphicon-plus"></span></a>', anchor=config.WOOEY_MULTI_WIDGET_ANCHOR
-                                  ,data=data_attrs))
+                                  , data=data_attrs))
         return mark_safe('\n'.join(pieces))
     return render
 
@@ -94,7 +94,7 @@ class WooeyFormFactory(object):
                     if not isinstance(initial, (list, tuple)):
                         initial = [initial]
                     initial = [os.path.split(i.name)[1] for i in initial]
-            elif initial is not None and list(filter(None, initial)): # for python3, we need to evaluate the filter object
+            elif initial is not None and list(filter(None, initial)):  # for python3, we need to evaluate the filter object
                 if isinstance(initial, (list, tuple)):
                     initial = [utils.get_storage_object(value) if not hasattr(value, 'path') else value for value in initial if value is not None]
                 else:

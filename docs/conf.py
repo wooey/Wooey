@@ -20,16 +20,17 @@ from mock import MagicMock
 
 class Mock(MagicMock):
     __all__ = []
+
     def __init__(self, *args, **kwargs):
         super(Mock, self).__init__()
-    
+
     @classmethod
     def __getattr__(cls, name):
         if name in ('__file__', '__path__'):
             return os.devnull
         else:
             return Mock()
-    
+
     @classmethod
     def __setattr__(*args, **kwargs):
         pass
@@ -52,14 +53,13 @@ MOCK_MODULES = [
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()
 
-
 os.environ['DJANGO_SETTINGS_MODULE'] = 'wooey.docs_settings'
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('..') )
+sys.path.insert(0, os.path.abspath('..'))
 
 # -- General configuration ------------------------------------------------
 
@@ -69,7 +69,7 @@ sys.path.insert(0, os.path.abspath('..') )
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc','sphinx.ext.viewcode']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -219,8 +219,6 @@ html_static_path = ['_static']
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'Wooeydoc'
-
-
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {

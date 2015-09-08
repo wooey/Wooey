@@ -16,6 +16,7 @@ env = os.environ
 env['DJANGO_SETTINGS_MODULE'] = '{}.settings'.format(WOOEY_TEST_PROJECT_NAME)
 env['TESTING'] = 'True'
 
+
 class TestProject(TestCase):
     def setUp(self):
         os.chdir(BASE_DIR)

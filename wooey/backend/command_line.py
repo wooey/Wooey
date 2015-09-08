@@ -7,13 +7,15 @@ from django.template import Context
 import wooey
 from .. import django_compat
 
+
 def which(pgm):
     # from http://stackoverflow.com/questions/9877462/is-there-a-python-equivalent-to-the-which-command
     path=os.getenv('PATH')
     for p in path.split(os.path.pathsep):
-        p=os.path.join(p,pgm)
+        p=os.path.join(p, pgm)
         if os.path.exists(p) and os.access(p, os.X_OK):
             return p
+
 
 def walk_dir(templates, dest, filter=None):
     l = []
@@ -24,6 +26,7 @@ def walk_dir(templates, dest, filter=None):
             relative_dir = '.{0}'.format(os.path.split(os.path.join(root, filename).replace(templates, ''))[0])
             l.append((os.path.join(root, filename), os.path.join(dest, relative_dir)))
     return l
+
 
 def bootstrap(env=None, cwd=None):
     if env is None:

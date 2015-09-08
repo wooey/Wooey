@@ -8,6 +8,7 @@ from ..backend import utils
 from ..models import ScriptVersion
 from .. import settings as wooey_settings
 
+
 class ScriptAdditionTests(mixins.ScriptFactoryMixin, TestCase):
     def setUp(self):
         self.storage = utils.get_storage(local=not wooey_settings.WOOEY_EPHEMERAL_FILES)

@@ -5,7 +5,6 @@ import argparse
 import os
 import sys
 
-
 parser = argparse.ArgumentParser(description="Create a nested heatmap from a delimited file.")
 parser.add_argument('--tsv', help='The delimited file to plot.', type=argparse.FileType('r'), required=True)
 parser.add_argument('--delimiter', help='The delimiter for fields. Default: tab', type=str, default='\t')
@@ -14,6 +13,7 @@ parser.add_argument('--minor-index', help='The second column to group by.', type
 parser.add_argument('--minor-cutoff', help='The minimum number of minor entries grouped to be considered.', type=int, default=2)
 parser.add_argument('--log-normalize', help='Whether to log normalize data.', action='store_true')
 parser.add_argument('--translate', help='Whether to translate data so the minimum value is zero.', action='store_true')
+
 
 def main():
     args = parser.parse_args()
@@ -48,7 +48,7 @@ def main():
         merged_dat = pd.DataFrame(columns=[seaborn_map.data2d.columns])
         for major_val in seaborn_map.data2d.index:
             minor_rows = multi[multi.index.get_level_values(major_index)==major_val][seaborn_map.data2d.columns]
-            major_row = major_dat.loc[major_val,][seaborn_map.data2d.columns]
+            major_row = major_dat.loc[major_val, ][seaborn_map.data2d.columns]
             merged_dat.append(major_row)
             merged_dat = merged_dat.append(major_row).append(minor_rows)
         merged_map = sns.clustermap(merged_dat, row_cluster=False, col_cluster=False)

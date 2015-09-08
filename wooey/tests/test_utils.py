@@ -8,6 +8,7 @@ from . import factories
 from . import config
 from . import mixins
 
+
 class TestUtils(mixins.ScriptFactoryMixin, TestCase):
     def test_sanitize_name(self):
         assert(utils.sanitize_name('abc')) == 'abc'
@@ -68,4 +69,3 @@ class TestFileDetectors(TestCase):
         res, preview = utils.test_delimited(self.file)
         self.assertEqual(res, True, 'Delimited parser fail')
         self.assertEqual(preview, [i.strip().split('\t') for i in open(self.file).readlines()], 'Delimited Preview Fail')
-

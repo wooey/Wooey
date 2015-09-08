@@ -6,6 +6,7 @@ from . import config
 from ..backend import utils
 from . import mixins
 
+
 class FormTestCase(mixins.ScriptFactoryMixin, TestCase):
 
     def test_addscript(self):

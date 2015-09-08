@@ -44,7 +44,7 @@ coverage.xml
 *,cover
 
 # Translations
-*.mo
+#*.mo Include so users don't have to self-build
 *.pot
 
 # Django stuff:

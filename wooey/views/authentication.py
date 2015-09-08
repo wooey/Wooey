@@ -4,7 +4,7 @@ from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.forms.models import modelform_factory
 from django.contrib.auth import login, authenticate, get_user_model
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 
 from .. import settings as wooey_settings

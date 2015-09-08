@@ -22,6 +22,7 @@ BROKER_URL = 'django://'
 CELERY_TRACK_STARTED = True
 WOOEY_CELERY = True
 CELERY_SEND_EVENTS = True
+CELERY_IMPORTS = ('wooey.tasks')
 
 # Things you most likely do not need to change
 

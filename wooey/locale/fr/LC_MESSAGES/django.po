@@ -86,7 +86,7 @@ msgstr "Statut"
 #: templates/wooey/jobs/job_view.html:7
 #, python-format
 msgid "Job # %(job_id)s"
-msgstr "Travail # %(JOB_ID)s"
+msgstr "Travail # %(job_id)s"
 
 #: templates/wooey/jobs/job_view.html:40
 msgid "Download"
@@ -239,7 +239,7 @@ msgstr "Vous avez entré un nom d'utilisateur ou mot de passe invalide."
 #: views/views.py:59
 #, python-format
 msgid "No %(verbose_name)s found matching the query"
-msgstr "Aucune% (verbose_name) s trouvé correspondant à la requête"
+msgstr "Aucune %(verbose_name)s trouvé correspondant à la requête"
 
 #: views/views.py:89 views/views.py:134
 msgid "You are not permitted to access this script."

@@ -185,7 +185,7 @@ msgstr "Version %(version)s"
 #: templates/wooey/scripts/script_panel.html:26
 #, python-format
 msgid "Iteration %(iteration)s"
-msgstr "Iteration %(Iteration)s"
+msgstr "Iteration %(iteration)s"
 
 #: templates/wooey/scripts/script_view.html:23
 msgid "Documentation"

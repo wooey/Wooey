@@ -86,7 +86,7 @@ msgstr "Toestand"
 #: templates/wooey/jobs/job_view.html:7
 #, python-format
 msgid "Job # %(job_id)s"
-msgstr "Job #%(job_id)s"
+msgstr "Job # %(job_id)s"
 
 #: templates/wooey/jobs/job_view.html:40
 msgid "Download"
@@ -185,7 +185,7 @@ msgstr "Version %(version)s"
 #: templates/wooey/scripts/script_panel.html:26
 #, python-format
 msgid "Iteration %(iteration)s"
-msgstr "Iteratie %(iteratie)s"
+msgstr "Iteratie %(iteration)s"
 
 #: templates/wooey/scripts/script_view.html:23
 msgid "Documentation"

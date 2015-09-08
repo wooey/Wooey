@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-09-08 15:52+0200\n"
+"POT-Creation-Date: 2015-09-08 17:37+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -58,6 +58,30 @@ msgstr "Wooey!"
 #: settings.py:22
 msgid "A web UI for Python scripts"
 msgstr "Une interface Web pour que les scripts Python"
+
+#: templates/wooey/base.html:389
+msgid "Queue"
+msgstr "File"
+
+#: templates/wooey/base.html:399
+msgid "Jobs"
+msgstr "Emplois"
+
+#: templates/wooey/base.html:408
+msgid "Results"
+msgstr "Résultats"
+
+#: templates/wooey/base.html:417
+msgid "Scrapbook"
+msgstr "Album"
+
+#: templates/wooey/base.html:421
+msgid "Logout"
+msgstr ""
+
+#: templates/wooey/base.html:439
+msgid "Search for scripts..."
+msgstr ""
 
 #: templates/wooey/home.html:51
 msgid "Your Jobs"
@@ -134,7 +158,8 @@ msgstr "Lien permanant à ces résultats"
 
 #: templates/wooey/modals/permalink_modal.html:6
 msgid "You can share the following link to give open access to your results:"
-msgstr "Vous pouvez partager le lien suivant pour donner libre accès à vos résultats:"
+msgstr ""
+"Vous pouvez partager le lien suivant pour donner libre accès à vos résultats:"
 
 #: templates/wooey/modals/resubmit_modal.html:4
 msgid "Resubmission Complete"
@@ -276,4 +301,3 @@ msgstr "Commande inconnue"
 #: views/wooey_celery.py:192
 msgid "You are not authenticated to view this job."
 msgstr "Vous n'êtes pas authentifié pour voir ce travail."
-

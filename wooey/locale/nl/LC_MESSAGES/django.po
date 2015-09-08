@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-09-08 15:52+0200\n"
+"POT-Creation-Date: 2015-09-08 17:37+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -58,6 +58,30 @@ msgstr "Wooey!"
 #: settings.py:22
 msgid "A web UI for Python scripts"
 msgstr "Een web UI voor Python-scripts"
+
+#: templates/wooey/base.html:389
+msgid "Queue"
+msgstr "Wachtrij"
+
+#: templates/wooey/base.html:399
+msgid "Jobs"
+msgstr "Taak"
+
+#: templates/wooey/base.html:408
+msgid "Results"
+msgstr "Resultaten"
+
+#: templates/wooey/base.html:417
+msgid "Scrapbook"
+msgstr "Plakboek"
+
+#: templates/wooey/base.html:421
+msgid "Logout"
+msgstr ""
+
+#: templates/wooey/base.html:439
+msgid "Search for scripts..."
+msgstr ""
 
 #: templates/wooey/home.html:51
 msgid "Your Jobs"
@@ -276,4 +300,3 @@ msgstr "Onbekend commando"
 #: views/wooey_celery.py:192
 msgid "You are not authenticated to view this job."
 msgstr "U bent niet geverifieerd om dit werk te bekijken."
-

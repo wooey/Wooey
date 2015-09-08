@@ -172,6 +172,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
             self.user = None if user is None or not user.is_authenticated() else user
             # clear the output channels
             self.celery_id = None
+            self.uuid = uuid.uuid4()
             self.stdout = ''
             self.stderr = ''
             self.save()

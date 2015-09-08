@@ -1,4 +1,5 @@
 import os
+import uuid
 
 from django.test import TestCase, Client
 

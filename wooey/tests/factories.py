@@ -1,6 +1,7 @@
 import factory
 import os
 import six
+import uuid
 
 from django.contrib.auth import get_user_model
 from django.core.files.storage import default_storage
@@ -40,7 +41,6 @@ class BaseJobFactory(factory.DjangoModelFactory):
         model = WooeyJob
     job_name = six.u('\xd0\xb9\xd1\x86\xd1\x83')
     job_description = six.u('\xd0\xb9\xd1\x86\xd1\x83\xd0\xb5\xd0\xba\xd0\xb5')
-
 
 def generate_script(script_path):
     filename = os.path.join(script_path)[1]

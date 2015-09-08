@@ -6,6 +6,7 @@ import os
 import re
 import sys
 import six
+import uuid
 import traceback
 from operator import itemgetter
 from collections import OrderedDict, defaultdict

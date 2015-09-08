@@ -15,7 +15,7 @@ from django.conf import settings
 from django.core.files.storage import SuspiciousFileOperation
 from django.core.urlresolvers import reverse_lazy, reverse
 from django.contrib.auth.models import Group
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import ugettext_lazy as _
 from django.db import transaction
 from django.utils.text import get_valid_filename
 

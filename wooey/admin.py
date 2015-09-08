@@ -3,7 +3,7 @@ import os
 
 from django.contrib.admin import ModelAdmin, site, TabularInline
 from django.forms import ModelForm, ValidationError
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import ugettext_lazy as _
 
 from .models import Script, ScriptVersion, ScriptGroup, ScriptParameter, WooeyJob, ScriptParameterGroup, WooeyFile
 

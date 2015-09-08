@@ -3,4 +3,5 @@ include README.md
 recursive-include wooey/templates *
 recursive-include wooey/static *
 recursive-include wooey/conf *
+recursive-include wooey/locale *
 recursive-exclude * *.pyc

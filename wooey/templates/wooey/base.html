@@ -386,7 +386,7 @@
           <ul class="nav navbar-nav navbar-right">
               <!-- List global job queue active, waiting (limit N) -->
               <li class="dropdown disabled" id="job-list-global">
-                  <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Queue <span class="badge jobs-badge" id="jobs-badge-global">8</span> <span class="caret"></span></a>
+                  <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Queue" %} <span class="badge jobs-badge" id="jobs-badge-global">8</span> <span class="caret"></span></a>
 
                   <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-global-list">
                   </ul>
@@ -396,7 +396,7 @@
               {% if request.user.is_authenticated %}
               <!-- List all currently active, waiting jobs for current user -->
               <li class="dropdown disabled" id="job-list-user">
-                  <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Jobs <span class="badge jobs-badge" id="jobs-badge-user">8</span> <span class="caret"></span></a>
+                  <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Jobs" %} <span class="badge jobs-badge" id="jobs-badge-user">8</span> <span class="caret"></span></a>
 
                   <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-user-list">
                   </ul>
@@ -405,7 +405,7 @@
               {% endif %}
               <!-- List latest N completed jobs -->
               <li class="dropdown disabled" id="job-list-results">
-                  <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Results <span class="badge jobs-badge" id="jobs-badge-results">8</span> <span class="caret"></span></a>
+                  <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Results" %} <span class="badge jobs-badge" id="jobs-badge-results">8</span> <span class="caret"></span></a>
 
                   <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-results-list">
                   </ul>
@@ -414,11 +414,11 @@
 
               {% if request.user.is_authenticated %}
               <li class="dropdown" id="job-list-user">
-                  <a href="{% url 'wooey:scrapbook' %}" role="button" aria-haspopup="true" aria-expanded="false">Scrapbook <span class="badge scrapbook-badge" id="favorite-wooey-wooeyfile-count">{% get_user_favorite_count request.user 'wooey' 'wooeyfile' %}</span></a>
+                  <a href="{% url 'wooey:scrapbook' %}" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Scrapbook" %} <span class="badge scrapbook-badge" id="favorite-wooey-wooeyfile-count">{% get_user_favorite_count request.user 'wooey' 'wooeyfile' %}</span></a>
               </li>
 
               <li><a href="{% url 'wooey:profile_home' %}"><span class="glyphicon glyphicon-user"> </span> {{ request.user.username }}</a></li>
-              <li><a href="{% url "logout" %}?next={{ request.path }}">Logout</a></li>
+              <li><a href="{% url "logout" %}?next={{ request.path }}">{% trans "Logout" %}</a></li>
               {% else %}
                   <li>{% include "wooey/registration/login_header.html" %}</li>
               {% endif %}
@@ -436,7 +436,7 @@
                 <li>
                     <form>
                      <div class="form-group">
-                        <input type="text" class="form-control" id="sidebarsearchform"  placeholder="Search for scripts..." value="{{ request.GET.q }}">
+                        <input type="text" class="form-control" id="sidebarsearchform"  placeholder="{% trans 'Search for scripts...' %}" value="{{ request.GET.q }}">
                       </div>
                     </form>
                 </li>

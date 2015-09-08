@@ -1,21 +1,11 @@
 from __future__ import absolute_import
+import os
+
 from django.contrib.admin import ModelAdmin, site, TabularInline
 from django.forms import ModelForm, ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from .models import Script, ScriptVersion, ScriptGroup, ScriptParameter, WooeyJob, ScriptParameterGroup, WooeyFile
-
-
-class ScriptVersionForm(ModelForm):
-    class Meta:
-        model = ScriptVersion
-        fields = '__all__'
-
-    def clean(self):
-        cleaned = self.cleaned_data
-        # make sure we only have 1 default
-        current_defaults = ScriptVersion.objects.filter(script=cleaned['script'], default_version=True)
-        current_defaults.update(default_version=False)
 
 
 class JobAdmin(ModelAdmin):
@@ -25,7 +15,6 @@ class JobAdmin(ModelAdmin):
 class ScriptVersionInline(TabularInline):
     model = ScriptVersion
     extra = 0
-    form = ScriptVersionForm
 
 
 class ScriptAdmin(ModelAdmin):
@@ -33,6 +22,9 @@ class ScriptAdmin(ModelAdmin):
     inlines = [
         ScriptVersionInline
     ]
+
+    class Media:
+        js = (os.path.join('wooey', 'js', 'admin', 'script.js'),)
 
 
 class ParameterAdmin(ModelAdmin):

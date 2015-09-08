@@ -28,19 +28,19 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='scriptparameter',
             name='script_version',
-            field=models.ForeignKey(default=1, to='wooey.ScriptVersion'),
+            field=models.ForeignKey(null=True, to='wooey.ScriptVersion'),
             preserve_default=False,
         ),
         migrations.AddField(
             model_name='scriptparametergroup',
             name='script_version',
-            field=models.ForeignKey(default=1, to='wooey.ScriptVersion'),
+            field=models.ForeignKey(null=True, to='wooey.ScriptVersion'),
             preserve_default=False,
         ),
         migrations.AddField(
             model_name='wooeyjob',
             name='script_version',
-            field=models.ForeignKey(default=1, to='wooey.ScriptVersion'),
+            field=models.ForeignKey(null=True, to='wooey.ScriptVersion'),
             preserve_default=False,
         ),
     ]

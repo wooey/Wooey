@@ -14,7 +14,7 @@ def gen_uuid(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0008_short_param_admin'),
+        ('wooey', '0011_script_versioning_cleanup'),
     ]
 
     operations = [

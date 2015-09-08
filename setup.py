@@ -12,7 +12,7 @@ setup(
     version='0.2.6',
     packages=find_packages(),
     scripts=['scripts/wooify'],
-    entry_points={'console_scripts': ['wooify = wooey.backend.command_line:bootstrap',]},
+    entry_points={'console_scripts': ['wooify = wooey.backend.command_line:bootstrap', ]},
     install_requires = ['Django>=1.6', 'django-autoslug', 'django-celery', 'six', 'clinto>=0.1.1'],
     include_package_data=True,
     description='A Django app which creates a web GUI and task interface for argparse scripts',
@@ -33,4 +33,3 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     ],
 )
-

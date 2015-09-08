@@ -10,6 +10,7 @@ from ..models import WooeyJob, ScriptGroup, Script, ScriptParameter, ScriptParam
 
 from .. import settings as wooey_settings
 
+
 class ScriptGroupFactory(factory.DjangoModelFactory):
     class Meta:
         model = ScriptGroup
@@ -42,6 +43,7 @@ class BaseJobFactory(factory.DjangoModelFactory):
     job_name = six.u('\xd0\xb9\xd1\x86\xd1\x83')
     job_description = six.u('\xd0\xb9\xd1\x86\xd1\x83\xd0\xb5\xd0\xba\xd0\xb5')
 
+
 def generate_script(script_path):
     filename = os.path.join(script_path)[1]
     filename = os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, filename)
@@ -49,6 +51,7 @@ def generate_script(script_path):
     from ..backend import utils
     res = utils.add_wooey_script(script_path=new_file, group=None)
     return res['script']
+
 
 def generate_job(script_version):
     return BaseJobFactory(script_version=script_version)

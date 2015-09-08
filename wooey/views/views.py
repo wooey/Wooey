@@ -62,7 +62,6 @@ class WooeyScriptBase(DetailView):
         else:
             return super(WooeyScriptBase, self).get_object(queryset=queryset)
 
-
     def get_context_data(self, **kwargs):
         context = super(WooeyScriptBase, self).get_context_data(**kwargs)
 
@@ -119,7 +118,7 @@ class WooeyScriptBase(DetailView):
                 cleaned = form.cleaned_data[i]
                 cleaned = cleaned if isinstance(cleaned, list) else [cleaned]
                 form.cleaned_data[i] = list(set(cleaned).union(set(v)))
-                    
+
         if not form.errors:
             # data = form.cleaned_data
             version_pk = form.cleaned_data.get('wooey_type')
@@ -256,7 +255,7 @@ class WooeyScriptSearchJSON(WooeyScriptSearchBase):
                 'id': script.id,
                 'name': script.script_name,
                 'description': script.script_description,
-                'url': reverse('wooey:wooey_script', kwargs={'slug':script.slug}),
+                'url': reverse('wooey:wooey_script', kwargs={'slug': script.slug}),
             })
         return JsonResponse({'results': results})
 
@@ -271,8 +270,5 @@ class WooeyScriptSearchJSONHTML(WooeyScriptSearchBase):
     def search(self, request):
         results = []
         for script in self.search_results:
-            results.append( render_to_string('wooey/scripts/script_panel.html', {'script': script}, context_instance=RequestContext(request)) )
+            results.append(render_to_string('wooey/scripts/script_panel.html', {'script': script}, context_instance=RequestContext(request)))
         return JsonResponse({'results': results})
-
-
-

@@ -6,6 +6,7 @@ from django.test import TestCase, Client
 from . import factories, config, mixins
 from .. import version
 
+
 class ScriptTestCase(mixins.ScriptFactoryMixin, TestCase):
 
     def test_multiple_choices(self):
@@ -32,6 +33,7 @@ class ScriptTestCase(mixins.ScriptFactoryMixin, TestCase):
         param = ScriptParameter.objects.get(slug=optional_choice_param)
         self.assertTrue(param.multiple_choice)
         self.assertEqual(param.max_choices, -1)
+
 
 class ScriptGroupTestCase(TestCase):
 

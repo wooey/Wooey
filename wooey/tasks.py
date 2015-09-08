@@ -13,7 +13,6 @@ from django.core.files import File
 from django.conf import settings
 from django.db.transaction import atomic
 
-
 from celery import Task
 from celery import states
 from celery import app
@@ -23,8 +22,10 @@ from . import settings as wooey_settings
 
 celery_app = app.app_or_default()
 
+
 class WooeyTask(Task):
     pass
+
     # def after_return(self, status, retval, task_id, args, kwargs, einfo):
     #     job, created = WooeyJob.objects.get_or_create(wooey_celery_id=task_id)
     #     job.content_type.wooey_celery_state = status
@@ -64,6 +65,7 @@ def submit_script(**kwargs):
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=abscwd)
 
     stdout, stderr = proc.communicate()
+
     # tar/zip up the generated content for bulk downloads
     def get_valid_file(cwd, name, ext):
         out = os.path.join(cwd, name)
@@ -117,7 +119,6 @@ def submit_script(**kwargs):
                             remote.delete(s3path)
                         remote.save(s3path, File(open(filepath, 'rb')))
     utils.create_job_fileinfo(job)
-
 
     job.stdout = stdout
     job.stderr = stderr

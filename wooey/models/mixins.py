@@ -3,6 +3,7 @@ __author__ = 'chris'
 from django.forms.models import model_to_dict
 from ..backend import utils
 
+
 class UpdateScriptsMixin(object):
     pass
     # this method is no longer needed, as scripts are not cached
@@ -12,10 +13,10 @@ class UpdateScriptsMixin(object):
     #     utils.update_form_factory(script_version=self.script_version)
 
 
-
 class WooeyPy2Mixin(object):
     def __unicode__(self):
         return unicode(self.__str__())
+
 
 # from
 # http://stackoverflow.com/questions/1355150/django-when-saving-how-can-you-check-if-a-field-has-changed

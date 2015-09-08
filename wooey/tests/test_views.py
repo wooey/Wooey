@@ -146,7 +146,7 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         url = reverse('wooey:wooey_script', kwargs={'slug': script.slug})
         data = {'job_name': 'abc', 'wooey_type': script_version.pk, 'two_choices': ['2', '1', '3']}
         filecount = 0
-        for i,v in config.SCRIPT_DATA['choices']['files'].items():
+        for i, v in config.SCRIPT_DATA['choices']['files'].items():
             data[i] = v
             filecount += len(v)
         request = self.factory.post(url, data=data)

@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser(description="This will plot a gaussian distribu
 parser.add_argument('--mean', help='The mean of the gaussian.', type=float, required=True)
 parser.add_argument('--std', help='The standard deviation (width) of the gaussian.', type=float, required=True)
 
+
 def main():
     args = parser.parse_args()
     u = args.mean

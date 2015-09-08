@@ -53,7 +53,7 @@ def generate_job_list(job_query):
 
 
 def get_global_queue(request):
-    jobs = WooeyJob.objects.filter( Q(status=WooeyJob.RUNNING) | Q(status=WooeyJob.SUBMITTED) )
+    jobs = WooeyJob.objects.filter(Q(status=WooeyJob.RUNNING) | Q(status=WooeyJob.SUBMITTED))
     return jobs.order_by('-created_date')
 
 
@@ -76,7 +76,7 @@ def user_queue_json(request):
 
 def get_user_results(request):
     user = request.user
-    jobs = WooeyJob.objects.filter(Q(status=WooeyJob.COMPLETED) & ( Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None)) )
+    jobs = WooeyJob.objects.filter(Q(status=WooeyJob.COMPLETED) & (Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None)))
     jobs = jobs.exclude(status=WooeyJob.DELETED)
     return jobs.order_by('-created_date')
 
@@ -93,12 +93,12 @@ def all_queues_json(request):
     user_results = get_user_results(request)
 
     return JsonResponse({
-        'totals':{
+        'totals': {
             'global': global_queue.count(),
             'user': user_queue.count(),
             'results': user_results.count(),
         },
-        'items':{
+        'items': {
             'global': generate_job_list(global_queue[:MAXIMUM_JOBS_NAVBAR]),
             'user': generate_job_list(user_queue[:MAXIMUM_JOBS_NAVBAR]),
             'results': generate_job_list(user_results[:MAXIMUM_JOBS_NAVBAR]),
@@ -111,7 +111,7 @@ def celery_task_command(request):
     command = request.POST.get('celery-command')
     job_id = request.POST.get('job-id')
     job = WooeyJob.objects.get(pk=job_id)
-    response = {'valid': False,}
+    response = {'valid': False, }
     valid = valid_user(job.script_version.script, request.user)
     if valid.get('valid') is True:
         user = request.user if request.user.is_authenticated() else None
@@ -239,8 +239,3 @@ class UserResultsView(JobListBase):
 
     def get_queryset(self, *args, **kwargs):
         return get_user_results(self.request)
-
-
-
-
-

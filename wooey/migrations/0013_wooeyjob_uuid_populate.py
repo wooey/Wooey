@@ -22,4 +22,3 @@ class Migration(migrations.Migration):
         # Set the uuids for existing records
         migrations.RunPython(gen_uuid),
     ]
-

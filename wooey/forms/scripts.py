@@ -9,4 +9,3 @@ class WooeyForm(forms.Form):
         # form rendering
         self.fields['job_name'] = forms.CharField()
         self.fields['job_description'] = forms.CharField(required=False)
-

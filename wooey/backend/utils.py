@@ -44,6 +44,7 @@ def get_storage(local=True):
         storage = default_storage
     return storage
 
+
 def purge_output(job=None):
     from ..models import WooeyFile
     # cleanup the old files, we need to be somewhat aggressive here.
@@ -59,6 +60,7 @@ def purge_output(job=None):
             path = local_storage.path(wooey_file)
             if local_storage.exists(path):
                 local_storage.delete(path)
+
 
 def get_job_commands(job=None):
     script_version = job.script_version
@@ -113,10 +115,10 @@ def get_form_groups(script_version=None, pk=None, initial_dict=None, render_fn=N
     from ..forms.factory import DJ_FORM_FACTORY
     return DJ_FORM_FACTORY.get_group_forms(script_version=script_version, pk=pk, initial_dict=initial_dict, render_fn=render_fn)
 
+
 def reset_form_factory(script_version=None):
     from ..forms.factory import DJ_FORM_FACTORY
     DJ_FORM_FACTORY.reset_forms(script_version=script_version)
-
 
 
 def validate_form(form=None, data=None, files=None):
@@ -163,13 +165,13 @@ def get_storage_object(path, local=False):
     obj.path = storage.path(path)
     return obj
 
+
 def add_wooey_script(script_version=None, script_path=None, group=None):
     # There is a class called 'Script' which contains the general information about a script. However, that is not where the file details
     # of the script lie. That is the ScriptVersion model. This allows the end user to tag a script as a favorite/etc. and set
     # information such as script descriptions/names that do not constantly need to be updated with every version change. Thus,
     # a ScriptVersion stores the file info and such.
     from ..models import Script, ScriptGroup, ScriptParameter, ScriptParameterGroup, ScriptVersion
-
     # if we are adding through the admin, at this point the file will be saved already and this method will be receiving
     # the scriptversion object. Otherwise, we are adding through the managementment command. In this case, the file will be
     # a location and we need to setup the Script and ScriptVersion in here.
@@ -293,6 +295,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None):
                                                                           parameter_group=param_group)
     return {'valid': True, 'errors': None, 'script': script_version}
 
+
 def valid_user(obj, user):
     ret = {'valid': False, 'error': '', 'display': ''}
     from ..models import Script
@@ -313,6 +316,7 @@ def valid_user(obj, user):
                 ret['valid'] = True
     ret['display'] = 'disabled' if wooey_settings.WOOEY_SHOW_LOCKED_SCRIPTS else 'hide'
     return ret
+
 
 def mkdirs(path):
     try:
@@ -367,7 +371,6 @@ def test_delimited(filepath):
         # ? this might not be a great idea for massive files
         if len(rows) > 10:
             rows = rows[:5] + [None] + rows[-5:]
-
         # FIXME: This should be more intelligent:
         # for small files (<1000 rows?) we should take top and bottom preview 10
         # for large files we should give up and present top 10 (11)
@@ -406,7 +409,7 @@ def test_fastx(filepath):
             sequences[header] = ''.join(seq)
         if sequences:
             rows = []
-            [rows.extend([i, v]) for i,v in six.iteritems(sequences)]
+            [rows.extend([i, v]) for i, v in six.iteritems(sequences)]
             return True, rows
     return False, None
 
@@ -570,10 +573,10 @@ def get_query(query_string, search_fields):
     search fields.
     """
 
-    query = None # Query to search for every search term
+    query = None  # Query to search for every search term
     terms = normalize_query(query_string)
     for term in terms:
-        or_query = None # Query to search for a given term in each field
+        or_query = None  # Query to search for a given term in each field
         for field_name in search_fields:
             q = Q(**{"%s__icontains" % field_name: term})
             if or_query is None:

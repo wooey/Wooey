@@ -27,8 +27,10 @@ def task_completed(sender=None, **kwargs):
 
 from .models import ScriptVersion
 
+
 def skip_script(instance):
     return getattr(instance, '_script_cl_creation', False) or getattr(instance, '_script_upgrade', False) or getattr(instance, '_rename_script', False)
+
 
 def script_version_presave(instance, **kwargs):
     created = instance.pk is None
@@ -37,6 +39,7 @@ def script_version_presave(instance, **kwargs):
             instance.script_iteration += 1
             instance._script_upgrade = True
             instance.pk = None
+
 
 def script_version_postsave(instance, created, **kwargs):
     from .backend import utils

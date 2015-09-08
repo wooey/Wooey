@@ -29,7 +29,7 @@ class ScriptFactoryMixin(object):
             utils.get_storage().delete(path)
             if wooey_settings.WOOEY_EPHEMERAL_FILES:
                 utils.get_storage(local=False).delete(path)
-            path += 'c' # handle pyc junk
+            path += 'c'  # handle pyc junk
             utils.get_storage().delete(path)
         super(ScriptFactoryMixin, self).tearDown()
 

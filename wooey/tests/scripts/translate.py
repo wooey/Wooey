@@ -17,9 +17,9 @@ CODON_TABLE = {'AAA': 'K', 'AAC': 'N', 'AAG': 'K', 'AAT': 'N', 'ACA': 'T', 'ACC'
 
 for i in 'ACTG':
     for j in 'ACTG':
-        CODON_TABLE['%s%sN' % (i,j)] = 'X'
-        CODON_TABLE['%sN%s' % (i,j)] = 'X'
-        CODON_TABLE['N%s%s' % (i,j)] = 'X'
+        CODON_TABLE['%s%sN' % (i, j)] = 'X'
+        CODON_TABLE['%sN%s' % (i, j)] = 'X'
+        CODON_TABLE['N%s%s' % (i, j)] = 'X'
     CODON_TABLE['%sNN' % i] = 'X'
     CODON_TABLE['N%sN' % i] = 'X'
     CODON_TABLE['NN%s' % i] = 'X'
@@ -30,6 +30,7 @@ group.add_argument('--sequence', help='The sequence to translate.', type=str)
 group.add_argument('--fasta', help='The fasta file to translate.', type=argparse.FileType('rb'))
 parser.add_argument('--frame', help='The frame to translate in.', type=str, choices=['+1', '+2', '+3', '-1', '-2', '-3'], default='+1')
 parser.add_argument('--out', help='The file to save translations to.', type=argparse.FileType('wb'))
+
 
 def main():
     args = parser.parse_args()

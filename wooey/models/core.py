@@ -29,9 +29,9 @@ from .. backend import utils
 from . mixins import UpdateScriptsMixin, ModelDiffMixin, WooeyPy2Mixin
 from .. import django_compat
 
-
 # TODO: Handle cases where celery is not setup but specified to be used
 tasks = importlib.import_module(wooey_settings.WOOEY_CELERY_TASKS)
+
 
 class ScriptGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     """
@@ -52,6 +52,7 @@ class ScriptGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     def __str__(self):
         return self.group_name
 
+
 class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     script_name = models.CharField(max_length=255)
     slug = AutoSlugField(populate_from='script_name', unique=True)
@@ -64,7 +65,7 @@ class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     is_active = models.BooleanField(default=True)
     user_groups = models.ManyToManyField(Group, blank=True)
 
-    execute_full_path = models.BooleanField(default=True) # use full path for subprocess calls
+    execute_full_path = models.BooleanField(default=True)  # use full path for subprocess calls
     save_path = models.CharField(max_length=255, blank=True, null=True,
                                  help_text='By default save to the script name,'
                                            ' this will change the output folder.')
@@ -121,6 +122,7 @@ class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
         local_storage = utils.get_storage(local=True)
         path = local_storage.path(self.script_path.path)
         return path if self.script.execute_full_path else os.path.split(path)[1]
+
 
 class WooeyJob(WooeyPy2Mixin, models.Model):
     """
@@ -432,7 +434,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
                     if hasattr(value, 'size'):
                         filesize = value.size
                     elif issubclass(type(value), IOBase):
-                        value.seek(0,2)
+                        value.seek(0, 2)
                         filesize = value.tell()
                         value.seek(0)
                     else:

@@ -20,4 +20,3 @@ class Migration(migrations.Migration):
             field=models.CharField(default=uuid.uuid4, unique=False, max_length=255),
         ),
     ]
-

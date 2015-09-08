@@ -6,6 +6,7 @@ try:
 except ImportError:
     AppConfig = object
 
+
 class WooeyConfig(AppConfig):
     name = 'wooey'
     verbose_name = 'Wooey'

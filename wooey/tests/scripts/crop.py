@@ -13,6 +13,7 @@ parser.add_argument('--top', help='The number of pixels to crop from the top', t
 parser.add_argument('--bottom', help='The number of pixels to crop from the bottom', type=int, default=0)
 parser.add_argument('--save', help='Where to save the new image', type=argparse.FileType('w'), required=True)
 
+
 def main():
     args = parser.parse_args()
     im = Image.open(args.image)

@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 
 from ..models import Favorite
 
+
 @login_required
 @ensure_csrf_cookie
 def toggle_favorite(request):
@@ -51,7 +52,6 @@ def toggle_favorite(request):
         # Exists, so delete it
         fave.delete()
         is_favorite = False
-
 
     # Return the current total number for UI updates
     favorites_count = Favorite.objects.filter(content_type=ctype, user=request.user).count()

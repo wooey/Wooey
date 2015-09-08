@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 __author__ = 'Chris Mitchell'
-
 # Code modified from http://stackoverflow.com/questions/20718819/downloading-images-from-google-search-using-python-gives-error
 
 import argparse

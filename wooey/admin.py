@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from .models import Script, ScriptVersion, ScriptGroup, ScriptParameter, WooeyJob, ScriptParameterGroup, WooeyFile
 
+
 class ScriptVersionForm(ModelForm):
     class Meta:
         model = ScriptVersion
@@ -16,13 +17,16 @@ class ScriptVersionForm(ModelForm):
         current_defaults = ScriptVersion.objects.filter(script=cleaned['script'], default_version=True)
         current_defaults.update(default_version=False)
 
+
 class JobAdmin(ModelAdmin):
     list_display = ('user', 'job_name', 'script_version', 'status', 'created_date')
+
 
 class ScriptVersionInline(TabularInline):
     model = ScriptVersion
     extra = 0
     form = ScriptVersionForm
+
 
 class ScriptAdmin(ModelAdmin):
     list_display = ('script_name', 'script_group', 'is_active')
@@ -30,14 +34,18 @@ class ScriptAdmin(ModelAdmin):
         ScriptVersionInline
     ]
 
+
 class ParameterAdmin(ModelAdmin):
     list_display = ('script_version', 'parameter_group', 'short_param')
+
 
 class GroupAdmin(ModelAdmin):
     list_display = ('group_name', 'is_active')
 
+
 class ParameterGroupAdmin(ModelAdmin):
     list_display = ('script_version', 'group_name')
+
 
 class FileAdmin(ModelAdmin):
     pass

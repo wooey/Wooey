@@ -11,6 +11,26 @@
 
             {% if script.is_active %}
                 <a href="{% url 'wooey:wooey_script' slug=script.slug %}">{{ script.script_name }}</a>
+                {% with previous_versions=script.get_previous_versions %}
+                    {% if previous_versions %}
+                        <div class="dropdown wooey-script-dropdown">
+                            <a href="#" class="dropdown dropdown-toggle" id="{{ script.id }}_scriptDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                                <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                {% regroup previous_versions by script_version as script_version_list %}
+                                {% for past_script_versions in script_version_list %}
+                                    <li class="dropdown-header">{% blocktrans with version=past_script_versions.grouper %}Version {{ version }}{% endblocktrans %}</li>
+                                    {% for past_script in past_script_versions.list %}
+                                        <li><a href="{% url 'wooey:wooey_script' slug=past_script.script.slug script_version=past_script.script_version script_iteration=past_script.script_iteration %}">
+                                            {% blocktrans with iteration=past_script.script_iteration %}Iteration {{ iteration }}{% endblocktrans %}</a>
+                                        </li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                {% endwith %}
             {% else %}
                 {{ script.script_name }}
             {% endif %}

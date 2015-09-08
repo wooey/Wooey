@@ -127,22 +127,24 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
 
     def test_multiple_choice_clone(self):
         from ..backend import utils
-        script = self.choice_script
+        script_version = self.choice_script
+        script = script_version.script
         choices = ['2', '1', '3']
         choice_param = 'two_choices'
-        job = utils.create_wooey_job(script_pk=script.pk, data={'job_name': 'abc', choice_param: choices, 'wooey_type': script.pk})
+        job = utils.create_wooey_job(script_version_pk=script_version.pk, data={'job_name': 'abc', choice_param: choices, 'wooey_type': script_version.pk})
         request = self.factory.post(reverse('wooey:wooey_script_clone',
-                                           kwargs={'slug': job.script.slug, 'job_id': job.pk}),
-                                    data={'wooey_type': script.pk})
+                                           kwargs={'slug': job.script_version.script.slug, 'job_id': job.pk}),
+                                    data={'wooey_type': script_version.pk})
         request.user = AnonymousUser()
         response = self.script_view_func(request, pk=job.pk, job_id=job.pk)
         self.assertEqual(response.status_code, 200)
 
     def test_multiple_choice(self):
         user = factories.UserFactory()
-        script = self.choice_script
+        script_version = self.choice_script
+        script = script_version.script
         url = reverse('wooey:wooey_script', kwargs={'slug': script.slug})
-        data = {'job_name': 'abc', 'wooey_type': script.pk, 'two_choices': ['2', '1', '3']}
+        data = {'job_name': 'abc', 'wooey_type': script_version.pk, 'two_choices': ['2', '1', '3']}
         filecount = 0
         for i,v in config.SCRIPT_DATA['choices']['files'].items():
             data[i] = v

@@ -17,8 +17,8 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase)
         return MultiValueDict(data)
 
     def test_master_form(self):
-        script = self.translate_script
-        form = utils.get_master_form(model=script)
+        script_version = self.translate_script
+        form = utils.get_master_form(script_version=script_version)
         self.assertTrue(isinstance(form, WooeyForm))
         qdict = self.get_mvdict(config.SCRIPT_DATA['translate'].get('data'))
         utils.validate_form(form=form, data=qdict,
@@ -26,13 +26,13 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase)
         self.assertTrue(form.is_valid())
 
     def test_group_form(self):
-        script = self.translate_script
-        form = utils.get_form_groups(model=script)
+        script_version = self.translate_script
+        form = utils.get_form_groups(script_version=script_version)
         self.assertEqual(len(form['groups']), 1)
 
     def test_multiplechoice_form(self):
-        script = self.choice_script
-        form = utils.get_master_form(model=script)
+        script_version = self.choice_script
+        form = utils.get_master_form(script_version=script_version)
         # check our wrapper is in the form render
         form_str = str(form)
         self.assertTrue(forms_config.WOOEY_MULTI_WIDGET_ANCHOR in form_str)
@@ -45,7 +45,7 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase)
         # test we can create a job from this form
         # this is implemented to put data and files in the same dictionary, so update it
         form.cleaned_data.update(fdict)
-        job = utils.create_wooey_job(script_pk=script.pk, data=form.cleaned_data)
+        job = utils.create_wooey_job(script_version_pk=script_version.pk, data=form.cleaned_data)
         # check the files are here
         file_param = 'multiple_file_choices'
         files = [i.value for i in job.get_parameters() if i.parameter.slug == file_param]

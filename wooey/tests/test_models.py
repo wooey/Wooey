@@ -7,7 +7,6 @@ from .. import version
 
 class ScriptTestCase(mixins.ScriptFactoryMixin, TestCase):
 
-
     def test_multiple_choices(self):
         # load our choice script
         script = self.choice_script
@@ -50,7 +49,7 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     def test_jobs(self):
         script = self.translate_script
         from ..backend import utils
-        job = utils.create_wooey_job(script_pk=script.pk, data={'job_name': 'abc', 'sequence': 'aaa', 'out': 'abc'})
+        job = utils.create_wooey_job(script_version_pk=script.pk, data={'job_name': 'abc', 'sequence': 'aaa', 'out': 'abc'})
         job = job.submit_to_celery()
         old_pk = job.pk
         new_job = job.submit_to_celery(resubmit=True)
@@ -78,7 +77,7 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
                 self.assertEqual(response.status_code, 200)
 
         # check our download links are ok
-        job = utils.create_wooey_job(script_pk=script.pk,
+        job = utils.create_wooey_job(script_version_pk=script.pk,
                                         data={'fasta': open(os.path.join(config.WOOEY_TEST_DATA, 'fasta.fasta')),
                                               'out': 'abc', 'job_name': 'abc'})
 
@@ -95,7 +94,7 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         choice_param = 'two_choices'
 
         from ..backend import utils
-        job = utils.create_wooey_job(script_pk=script.pk, data={'job_name': 'abc', choice_param: choices})
+        job = utils.create_wooey_job(script_version_pk=script.pk, data={'job_name': 'abc', choice_param: choices})
         # make sure we have our choices in the parameters
         choice_params = [i.value for i in job.get_parameters() if i.parameter.slug == choice_param]
         self.assertEqual(choices, choice_params)

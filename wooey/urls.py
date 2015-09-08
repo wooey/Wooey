@@ -25,6 +25,8 @@ wooey_patterns = [
     url(r'^jobs/(?P<job_id>[0-9\-]+)/json$', views.JobJSON.as_view(), name='celery_results_json'),
 
     url(r'^scripts/(?P<slug>[a-zA-Z0-9\-\_]+)/$', views.WooeyScriptView.as_view(), name='wooey_script'),
+    url(r'^scripts/(?P<slug>[a-zA-Z0-9\-\_]+)/version/(?P<script_version>[\d+])$', views.WooeyScriptView.as_view(), name='wooey_script'),
+    url(r'^scripts/(?P<slug>[a-zA-Z0-9\-\_]+)/version/(?P<script_version>\d+)/iteration/(?P<script_iteration>\d+)$', views.WooeyScriptView.as_view(), name='wooey_script'),
     url(r'^scripts/(?P<slug>[a-zA-Z0-9\-\_]+)/jobs/(?P<job_id>[a-zA-Z0-9\-]+)$', views.WooeyScriptView.as_view(), name='wooey_script_clone'),
     url(r'^scripts/(?P<slug>[a-zA-Z0-9\-\_]+)/$', views.WooeyScriptJSON.as_view(), name='wooey_script_json'),
 

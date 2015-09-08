@@ -7,6 +7,7 @@ parser.add_argument('--two-choices', choices=[0,1,2,3], nargs=2)
 parser.add_argument('--at-least-one-choice', choices=[0,1,2,3], nargs='+')
 parser.add_argument('--all-choices', choices=[0,1,2,3], nargs='*')
 parser.add_argument('--need-at-least-one-numbers', type=int, nargs='+', required=True)
+parser.add_argument('--choices-str', nargs='+', type=str)
 parser.add_argument('--multiple-file-choices', type=argparse.FileType('r'), nargs='*')
 parser.add_argument('--more-multiple-file-choices', type=argparse.FileType('r'), nargs='*')
 

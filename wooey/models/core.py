@@ -62,14 +62,11 @@ class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     script_order = models.PositiveSmallIntegerField(default=1)
     is_active = models.BooleanField(default=True)
     user_groups = models.ManyToManyField(Group, blank=True)
-    script_path = models.FileField() if django_compat.DJANGO_VERSION >= django_compat.DJ17 else models.FileField(upload_to=wooey_settings.WOOEY_SCRIPT_DIR)
+
     execute_full_path = models.BooleanField(default=True) # use full path for subprocess calls
     save_path = models.CharField(max_length=255, blank=True, null=True,
                                  help_text='By default save to the script name,'
                                            ' this will change the output folder.')
-    # when a script updates, increment this to keep old scripts that are cloned working. The downside is we get redundant
-    # parameters, but even a huge site may only have a few thousand parameters to query though.
-    script_version = models.PositiveSmallIntegerField(default=0)
 
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
@@ -83,10 +80,9 @@ class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     def get_url(self):
         return reverse('wooey:wooey_script', kwargs={'slug': self.slug})
 
-    def get_script_path(self):
-        local_storage = utils.get_storage(local=True)
-        path = local_storage.path(self.script_path.path)
-        return path if self.execute_full_path else os.path.split(path)[1]
+    @property
+    def latest_version(self):
+        return self.script_version.get(default_version=True)
 
     def clean(self):
         if self.script_group is None:
@@ -95,6 +91,35 @@ class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
                 group, created = ScriptGroup.objects.get_or_create(group_name=wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP)
             self.script_group = group
 
+    def get_previous_versions(self):
+        return self.script_version.all().order_by('script_version', 'script_iteration')
+
+
+class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
+    # when a script updates, increment this to keep old scripts that are cloned working. The downside is we get redundant
+    # parameters, but even a huge site may only have a few thousand parameters to query though.
+    script_version = models.CharField(max_length=50, help_text='The script version.', blank=True, default='1')
+    script_iteration = models.PositiveSmallIntegerField(default=1)
+    script_path = models.FileField() if django_compat.DJANGO_VERSION >= django_compat.DJ17 else models.FileField(upload_to=wooey_settings.WOOEY_SCRIPT_DIR)
+    default_version = models.BooleanField(default=False)
+    script = models.ForeignKey('Script', related_name='script_version')
+
+    created_date = models.DateTimeField(auto_now_add=True)
+    modified_date = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        app_label = 'wooey'
+
+    def __str__(self):
+        return '{}({}: {})'.format(self.script.script_name, self.script_version, self.script_iteration)
+
+    def get_url(self):
+        return reverse('wooey:wooey_script', kwargs={'slug': self.script.slug})
+
+    def get_script_path(self):
+        local_storage = utils.get_storage(local=True)
+        path = local_storage.path(self.script_path.path)
+        return path if self.script.execute_full_path else os.path.split(path)[1]
 
 class WooeyJob(WooeyPy2Mixin, models.Model):
     """
@@ -126,7 +151,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
     command = models.TextField()
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
-    script = models.ForeignKey('Script')
+    script_version = models.ForeignKey('ScriptVersion')
 
     class Meta:
         app_label = 'wooey'
@@ -167,12 +192,12 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         return self
 
     def get_resubmit_url(self):
-        return reverse('wooey:wooey_script_clone', kwargs={'slug': self.script.slug, 'job_id': self.pk})
+        return reverse('wooey:wooey_script_clone', kwargs={'slug': self.script_version.script.slug, 'job_id': self.pk})
 
     @property
     def output_path(self):
         return os.path.join(wooey_settings.WOOEY_FILE_DIR, get_valid_filename(self.user.username if self.user is not None else ''),
-                            get_valid_filename(self.script.slug if not self.script.save_path else self.script.save_path), str(self.pk))
+                            get_valid_filename(self.script_version.script.slug if not self.script_version.script.save_path else self.script_version.script.save_path), str(self.pk))
 
     def get_output_path(self):
         path = self.output_path
@@ -193,20 +218,20 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
 
 class ScriptParameterGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     group_name = models.TextField()
-    script = models.ForeignKey('Script')
+    script_version = models.ForeignKey('ScriptVersion')
 
     class Meta:
         app_label = 'wooey'
 
     def __str__(self):
-        return '{}: {}'.format(self.script.script_name, self.group_name)
+        return '{}: {}'.format(self.script_version.script.script_name, self.group_name)
 
 
 class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     """
         This holds the parameter mapping for each script, and enforces uniqueness by each script via a FK.
     """
-    script = models.ForeignKey('Script')
+    script_version = models.ForeignKey('ScriptVersion')
     short_param = models.CharField(max_length=255, blank=True)
     script_param = models.CharField(max_length=255)
     slug = AutoSlugField(populate_from='script_param', unique=True)
@@ -254,7 +279,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
             return choice_limit
 
     def __str__(self):
-        return '{}: {}'.format(self.script.script_name, self.script_param)
+        return '{}: {}'.format(self.script_version.script.script_name, self.script_param)
 
 
 # TODO: find a better name for this class

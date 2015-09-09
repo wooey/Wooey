@@ -83,7 +83,7 @@ class Command(BaseCommand):
                 continue
             if script.endswith('.py'):
                 # Get the script name here (before storage changes it)
-                script_name = os.path.splitext(os.path.basename(script))[0] # Get the base script name
+                script_name = os.path.splitext(os.path.basename(script))[0]  # Get the base script name
                 sys.stdout.write('Converting {}\n'.format(script))
                 # copy the script to our storage
                 with open(script, 'r') as f:

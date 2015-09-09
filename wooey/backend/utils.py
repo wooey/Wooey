@@ -272,10 +272,13 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
             else:
                 # get the largest iteration and add 1 to it
                 next_iteration = sorted([i.script_iteration for i in current_versions])[-1]+1
+                current_versions.update(default_version=False)
+
             version_kwargs.update({'script_iteration': next_iteration})
         version_kwargs.update({'script': wooey_script})
         script_version = ScriptVersion(**version_kwargs)
         script_version._script_cl_creation = True
+        script_version.default_version = True
         script_version.save()
     else:
         # we are being created/updated from the admin

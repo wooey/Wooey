@@ -222,7 +222,8 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
     if isinstance(group, ScriptGroup):
         group = group.group_name
     if group is None:
-        group = 'Scripts'
+        group = wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP
+
     basename, extension = os.path.splitext(script)
     filename = os.path.split(basename)[1]
 

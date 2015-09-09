@@ -29,9 +29,9 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('script', type=str, help='A script or folder of scripts to add to Wooey.')
         parser.add_argument('--group',
-            dest='group',
-            default='Scripts',
-            help='The name of the group to create scripts under. Default: Wooey Scripts')
+                            dest='group',
+                            default=wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP,
+                            help='The name of the group to create scripts under. Default: Scripts')
 
     def handle(self, *args, **options):
         script = options.get('script')
@@ -67,7 +67,7 @@ class Command(BaseCommand):
 
         if not os.path.exists(script):
             raise CommandError('{0} does not exist.'.format(script))
-        group = options.get('group', 'Scripts')
+        group = options.get('group', wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP)
 
         scripts = []
         if os.path.isdir(script):

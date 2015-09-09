@@ -9,3 +9,4 @@ clinto
 tox
 boto
 django-storages-redux
+titlecase

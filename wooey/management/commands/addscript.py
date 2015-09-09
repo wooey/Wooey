@@ -5,9 +5,8 @@ import tempfile
 
 from django.core.management.base import BaseCommand, CommandError
 from django.core.files import File
-from django.conf import settings
 
-from ...backend.utils import add_wooey_script, get_storage, default_storage
+from ...backend.utils import add_wooey_script, get_storage, default_storage, titlecase_name
 from ... import settings as wooey_settings
 
 try:
@@ -84,6 +83,8 @@ class Command(BaseCommand):
             if script.endswith('.py'):
                 # Get the script name here (before storage changes it)
                 script_name = os.path.splitext(os.path.basename(script))[0]  # Get the base script name
+                script_name = titlecase_name(script_name)
+
                 sys.stdout.write('Converting {}\n'.format(script))
                 # copy the script to our storage
                 with open(script, 'r') as f:

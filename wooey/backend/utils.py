@@ -28,6 +28,8 @@ from clinto.parser import Parser
 
 from .. import settings as wooey_settings
 
+from titlecase import titlecase
+
 
 def sanitize_name(name):
     return name.replace(' ', '_').replace('-', '_')
@@ -35,6 +37,11 @@ def sanitize_name(name):
 
 def sanitize_string(value):
     return value.replace('"', '\\"')
+
+
+def titlecase_name(name):
+    name = name.replace('_', ' ').replace('-', ' ')
+    return titlecase(name)
 
 
 def get_storage(local=True):

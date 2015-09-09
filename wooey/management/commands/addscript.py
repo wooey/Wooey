@@ -30,7 +30,7 @@ class Command(BaseCommand):
         parser.add_argument('script', type=str, help='A script or folder of scripts to add to Wooey.')
         parser.add_argument('--group',
             dest='group',
-            default='Wooey Scripts',
+            default='Scripts',
             help='The name of the group to create scripts under. Default: Wooey Scripts')
 
     def handle(self, *args, **options):
@@ -82,6 +82,8 @@ class Command(BaseCommand):
             if script.endswith('.pyc') or '__init__' in script:
                 continue
             if script.endswith('.py'):
+                # Get the script name here (before storage changes it)
+                script_name = os.path.splitext(os.path.basename(script))[0] # Get the base script name
                 sys.stdout.write('Converting {}\n'.format(script))
                 # copy the script to our storage
                 with open(script, 'r') as f:
@@ -90,7 +92,7 @@ class Command(BaseCommand):
                         # save it locally as well (the default_storage will default to the remote store)
                         local_storage = get_storage(local=True)
                         local_storage.save(os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, os.path.split(script)[1]), File(f))
-                res = add_wooey_script(script_path=script, group=group)
+                res = add_wooey_script(script_path=script, group=group, script_name=script_name)
                 if res['valid']:
                     converted += 1
         sys.stdout.write('Converted {} scripts\n'.format(converted))

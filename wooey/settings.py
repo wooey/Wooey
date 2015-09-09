@@ -1,7 +1,7 @@
 __author__ = 'chris'
 import os
 from django.conf import settings
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _l, ugettext as _
 
 
 def get(key, default):
@@ -18,5 +18,5 @@ WOOEY_REGISTER_URL = get('WOOEY_REGISTER_URL', '/accounts/register/')
 WOOEY_SHOW_LOCKED_SCRIPTS = get('WOOEY_SHOW_LOCKED_SCRIPTS', True)
 WOOEY_EPHEMERAL_FILES = get('WOOEY_EPHEMERAL_FILES', False)
 WOOEY_DEFAULT_SCRIPT_GROUP = get('WOOEY_DEFAULT_SCRIPT_GROUP', _('Scripts'))
-WOOEY_SITE_NAME = get('WOOEY_SITE_NAME', _('Wooey!'))
-WOOEY_SITE_TAG = get('WOOEY_SITE_TAG', _('A web UI for Python scripts'))
+WOOEY_SITE_NAME = get('WOOEY_SITE_NAME', 'Wooey!')
+WOOEY_SITE_TAG = get('WOOEY_SITE_TAG', _l('A web UI for Python scripts'))

@@ -3,6 +3,7 @@
 {% load wooey_tags %}
 
 {% block extra_style %}
+    {{ block.super }}
     .wooey-script-dropdown {
         display: inline-block;
     }
@@ -10,33 +11,35 @@
 {% endblock extra_style %}
 
 {% block outer_content %}
-{% if not request.user.is_authenticated %}
-<div class="jumbotron frontpage">
-  <h1 class="wooey">{% get_wooey_setting "WOOEY_SITE_NAME" %}</h1>
-  <p>{% get_wooey_setting "WOOEY_SITE_TAG" %}</p>
-</div>
-{% endif %}
+    {{ block.super }}
+    {% if not request.user.is_authenticated %}
+        <div class="jumbotron frontpage">
+          <h1 class="wooey">{% get_wooey_setting "WOOEY_SITE_NAME" %}</h1>
+          <p>{% get_wooey_setting "WOOEY_SITE_TAG" %}</p>
+        </div>
+    {% endif %}
 {% endblock %}
 
 {% block left_sidebar %}{% endblock left_sidebar %}
 {% block center_content_class %}col-md-12 col-xs-12{% endblock center_content_class %}
 
 {% block center_content %}
-<div class="row">
-    <div class="col-sm-12 col-md-12">
-        <form>
-         <div class="form-group">
-            <input type="text" class="form-control" id="searchform" placeholder="Search for scripts...">
-          </div>
-        </form>
+    {{ block.super }}
+    <div class="row">
+        <div class="col-sm-12 col-md-12">
+            <form>
+             <div class="form-group">
+                <input type="text" class="form-control" id="searchform" placeholder="Search for scripts...">
+              </div>
+            </form>
+        </div>
     </div>
-</div>
 
-<div class="row" id="script-list">
+    <div class="row" id="script-list">
 
-  {% for script in scripts %}
+    {% for script in scripts %}
         {% include 'wooey/scripts/script_panel.html' %}
-  {% endfor %}
+    {% endfor %}
 
 </div>
 
@@ -45,53 +48,54 @@
 {% endblock center_content %}
 
 {% block right_sidebar_content %}
-<div class="panel panel-default tabpanel">
-    <ul class="nav nav-tabs">
-        {% if request.user.is_authenticated %}
-            <li class="active"><a href="#user-jobs" data-toggle="pill">{% trans "Your Jobs" %}</a></li>
-        {% endif %}
-        <li{% if not request.user.is_authenticated %} class="active"{% endif %}><a href="#all-jobs" data-toggle="pill">{% trans "All Jobs" %}</a></li>
-        <li class="no-hover">
-            <a href="#" id="celery-refresh">
-                <span class="glyphicon glyphicon-refresh"></span>
-                <button class="btn btn-xs btn-link active" id="auto-refresh"> {% trans "Auto" %}</button>
-            </a>
-        </li>
-    </ul>
-    <div class="tab-content">
-        {% if request.user.is_authenticated %}
-            <div role="tabpanel" id="user-jobs" class="panel panel-body tab-pane active table-responsive">
-                <table id="wooey-job-table-user" class="table-responsive table hover stripe" width="100%">
-                <thead>
-                    <th>{% trans "Id" %}</th>
-                    <th>{% trans "Name" %}</th>
-                    <th>{% trans "Status" %}</th>
-                    <th>{% trans "Submitted" %}</th>
-                </thead>
-                <tbody>
+    {{ block.super }}
+    <div class="panel panel-default tabpanel">
+        <ul class="nav nav-tabs">
+            {% if request.user.is_authenticated %}
+                <li class="active"><a href="#user-jobs" data-toggle="pill">{% trans "Your Jobs" %}</a></li>
+            {% endif %}
+            <li{% if not request.user.is_authenticated %} class="active"{% endif %}><a href="#all-jobs" data-toggle="pill">{% trans "All Jobs" %}</a></li>
+            <li class="no-hover">
+                <a href="#" id="celery-refresh">
+                    <span class="glyphicon glyphicon-refresh"></span>
+                    <button class="btn btn-xs btn-link active" id="auto-refresh"> {% trans "Auto" %}</button>
+                </a>
+            </li>
+        </ul>
+        <div class="tab-content">
+            {% if request.user.is_authenticated %}
+                <div role="tabpanel" id="user-jobs" class="panel panel-body tab-pane active table-responsive">
+                    <table id="wooey-job-table-user" class="table-responsive table hover stripe" width="100%">
+                    <thead>
+                        <th>{% trans "Id" %}</th>
+                        <th>{% trans "Name" %}</th>
+                        <th>{% trans "Status" %}</th>
+                        <th>{% trans "Submitted" %}</th>
+                    </thead>
+                    <tbody>
 
-                </tbody>
+                    </tbody>
 
-                </table>
-              </div>
-        {% endif %}
+                    </table>
+                  </div>
+            {% endif %}
 
-      <div role="tabpanel" id="all-jobs" class="panel panel-body tab-pane {% if not request.user.is_authenticated %}active{% endif %} table-responsive">
-        <table id="wooey-job-table-anon" class="table-responsive table hover stripe" width="100%">
-        <thead>
-            <th>{% trans "Id" %}</th>
-            <th>{% trans "Name" %}</th>
-            <th>{% trans "Status" %}</th>
-            <th>{% trans "Submitted" %}</th>
-        </thead>
-        <tbody>
+          <div role="tabpanel" id="all-jobs" class="panel panel-body tab-pane {% if not request.user.is_authenticated %}active{% endif %} table-responsive">
+            <table id="wooey-job-table-anon" class="table-responsive table hover stripe" width="100%">
+            <thead>
+                <th>{% trans "Id" %}</th>
+                <th>{% trans "Name" %}</th>
+                <th>{% trans "Status" %}</th>
+                <th>{% trans "Submitted" %}</th>
+            </thead>
+            <tbody>
 
-        </tbody>
+            </tbody>
 
-        </table>
-      </div>
+            </table>
+          </div>
+        </div>
     </div>
-</div>
 {% endblock right_sidebar_content %}
 
 {% block inline_js %}

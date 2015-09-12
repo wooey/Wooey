@@ -47,148 +47,11 @@
 
 {% endblock center_content %}
 
-{% block right_sidebar_content %}
-    {{ block.super }}
-    <div class="panel panel-default tabpanel">
-        <ul class="nav nav-tabs">
-            {% if request.user.is_authenticated %}
-                <li class="active"><a href="#user-jobs" data-toggle="pill">{% trans "Your Jobs" %}</a></li>
-            {% endif %}
-            <li{% if not request.user.is_authenticated %} class="active"{% endif %}><a href="#all-jobs" data-toggle="pill">{% trans "All Jobs" %}</a></li>
-            <li class="no-hover">
-                <a href="#" id="celery-refresh">
-                    <span class="glyphicon glyphicon-refresh"></span>
-                    <button class="btn btn-xs btn-link active" id="auto-refresh"> {% trans "Auto" %}</button>
-                </a>
-            </li>
-        </ul>
-        <div class="tab-content">
-            {% if request.user.is_authenticated %}
-                <div role="tabpanel" id="user-jobs" class="panel panel-body tab-pane active table-responsive">
-                    <table id="wooey-job-table-user" class="table-responsive table hover stripe" width="100%">
-                    <thead>
-                        <th>{% trans "Id" %}</th>
-                        <th>{% trans "Name" %}</th>
-                        <th>{% trans "Status" %}</th>
-                        <th>{% trans "Submitted" %}</th>
-                    </thead>
-                    <tbody>
-
-                    </tbody>
-
-                    </table>
-                  </div>
-            {% endif %}
-
-          <div role="tabpanel" id="all-jobs" class="panel panel-body tab-pane {% if not request.user.is_authenticated %}active{% endif %} table-responsive">
-            <table id="wooey-job-table-anon" class="table-responsive table hover stripe" width="100%">
-            <thead>
-                <th>{% trans "Id" %}</th>
-                <th>{% trans "Name" %}</th>
-                <th>{% trans "Status" %}</th>
-                <th>{% trans "Submitted" %}</th>
-            </thead>
-            <tbody>
-
-            </tbody>
-
-            </table>
-          </div>
-        </div>
-    </div>
-{% endblock right_sidebar_content %}
-
 {% block inline_js %}
 {{ block.super }}
 <script  type="text/javascript">
 
     $(document).ready(function(){
-
-        // TODO: Make this nice
-        var $jobtable = $('#wooey-job-table-anon');
-        var $jobtable_user = $('#wooey-job-table-user');
-        var wooey_dt = $jobtable.dataTable({
-            "columnDefs": [
-                { "visible": false,  "targets": [ 0 ] },
-            ],
-            "order": [[ 3, "desc" ]]
-        });
-        var wooey_dt_user = $jobtable_user.dataTable({
-            "columnDefs": [
-                { "visible": false,  "targets": [ 0 ] },
-            ],
-            "order": [[ 3, "desc" ]]
-        });
-        $('#wooey-job-table-anon,#wooey-job-table-user').on( 'draw.dt', function () {
-            $('[data-toggle="popover"]').popover({
-                trigger: 'hover',
-                container: 'body',
-                placement: 'auto left',
-            });
-        });
-        $('#wooey-job-table-anon_wrapper,#wooey-job-table-user_wrapper').addClass('col-md-12');
-
-
-        var job_tables = {
-            anon: {
-                table: $jobtable,
-                dt: wooey_dt,
-                dt_api: wooey_dt.api(),
-                jobs: {}
-            },
-            user: {
-                table: $jobtable_user,
-                dt: wooey_dt_user,
-                dt_api: wooey_dt_user.api(),
-                jobs: {}
-            }
-        };
-
-        var job_reloaded = false;
-
-        $('#celery-refresh').click(function(event){
-            celeryRefresh();
-        });
-        var tid, cid;
-        var $refreshBadge = $('<span id="refresh-badge" class="badge">9</span>');
-        $('#auto-refresh').click(function(event){
-            var btn = $(this);
-            if(btn.hasClass('btn-link')) {
-                $.cookie('auto-refresh', true, { expires: 365, path: '/' });
-                tid = setTimeout(celeryRefresh, 10000);
-                cid = setTimeout(updateRefreshBadge, 1000);
-                $refreshBadge.appendTo(btn);
-            }
-            else {
-                $.cookie('auto-refresh', false, { expires: 365, path: '/' });
-                clearTimeout(tid);
-                clearTimeout(cid);
-                $refreshBadge.remove();
-                $refreshBadge.text(9);
-            }
-            btn.toggleClass('btn-link');
-        });
-        var autoRefresh = $.cookie()['auto-refresh'] === 'true';
-        if(autoRefresh) {
-            $('#auto-refresh').trigger('click');
-        }
-        else{
-
-        }
-
-        function updateRefreshBadge(){
-            var val = parseInt($refreshBadge.text())-1;
-            if(val == -1){
-                celeryRefresh();
-                val=9;
-            }
-            $refreshBadge.text(val);
-            cid = setTimeout(updateRefreshBadge, 1000);
-        }
-
-
-
-
         $("#searchform").bindWithDelay("keyup", function(event){
             var query = $('#searchform').val();
             $.ajax({
@@ -210,10 +73,6 @@
 
 
         }, 100);
-
-
-
-
     });
 </script>
 {% endblock inline_js %}

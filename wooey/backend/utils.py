@@ -188,10 +188,13 @@ def add_wooey_script(script_version=None, script_path=None, group=None):
 
         current_storage = get_storage(local=not wooey_settings.WOOEY_EPHEMERAL_FILES)
         current_file = current_storage.open(old_name)
+        if current_storage.exists(new_name):
+            new_name = current_storage.get_available_name(new_name)
         new_path = current_storage.save(new_name, current_file)
 
         # remove the old file
-        current_storage.delete(old_name)
+        if old_name != new_name:
+            current_storage.delete(old_name)
 
         script_version._rename_script = True
         script_version.script_path.name = new_name

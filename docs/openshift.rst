@@ -95,6 +95,7 @@ Next, you want to setup a database and a message broker for Celery
         CELERYD_CONCURRENCY = 1
         CELERY_TASK_SERIALIZER = 'json'
         ACKS_LATE = True
+        CELERY_IMPORTS = ('wooey.tasks')
 
     * Change AMPQ_URL to CLOUDAMQP_URI, which is the environment variable setup in your app.
     * Next, we need to tell the server to start celery. We will make a new deployment hook for this. Create the file project_root/.openshift/action_hooks/post_start with the following content:
@@ -106,7 +107,20 @@ Next, you want to setup a database and a message broker for Celery
         cd wsgi
         cd YourProjectName
         rm worker1.pid
-        celery multi start worker1 -A YourProjectName
+        celery multi stop worker1
+        celery multi start worker1
+
+    * To save our connections, we need to tell celery to stop when the app stops as well. Create another file, pre_stop with:
+
+      ::
+
+        #!/bin/bash
+        cd $OPENSHIFT_REPO_DIR
+        cd wsgi
+        cd YourAppName
+        rm worker1.pid
+        celery multi stop worker1
+
 
 3. Setup the requirements.txt file. The bootstrapper provides a requirements.txt file that already has all the apps needed to run Wooey. Just copy it from YourAppName/YourAppName/ to the top level directory of OpenShift (which has things like setup.py and openshiftlibs.py)
 
@@ -114,6 +128,7 @@ Next, you want to setup a database and a message broker for Celery
 
     * alter myproject to YourProjectName
     * Change
+
       ::
 
         os.environ['DJANGO_SETTINGS_MODULE'] = 'myproject.settings'
@@ -129,36 +144,13 @@ Next, you want to setup a database and a message broker for Celery
     * There is a hidden directory at the project root, called .openshift. within it you want the directory action_hooks. cd into this, and make the following changes
     * In deploy, change myproject to YourProjectName
     * In secure_db, do the same.
-    * To enable celery, create a new file, post_start (remember to chmod +x it) with the following contents:
-
-      ::
-
-        #!/bin/bash
-        cd $OPENSHIFT_REPO_DIR
-        cd wsgi
-        cd YourAppName
-        rm worker1.pid
-        celery multi start worker1 \
-            --pidfile="%n.pid" \
-            -l info
-
-    * To save our connections, we need to tell celery to stop when the app stops as well. Create another file, pre_stop with:
-
-      ::
-
-        #!/bin/bash
-        cd $OPENSHIFT_REPO_DIR
-        cd wsgi
-        cd YourAppName
-        rm worker1.pid
-        celery multi stop
 
 6. Update where the static assets are being served from in user_settings.py (Optionally, you can follow the guide to not use OpenShift's static service and go through S3 instead :ref:`here <aws>`):
 
    ::
 
     STATIC_ROOT = os.path.join(os.environ.get('OPENSHIFT_REPO_DIR'), 'wsgi', 'static', 'static')
-    MEDIA_ROOT = os.path.join(os.environ.get('OPENSHIFT_REPO_DIR'), 'wsgi', 'static', 'media')
+    MEDIA_ROOT = MEDIA_ROOT = os.path.join(os.environ.get('OPENSHIFT_DATA_DIR'), 'user_uploads')
 
 
 7. Remove DEBUG mode. In user_settings.py, add:

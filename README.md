@@ -17,4 +17,4 @@ Wooey was envisioned as a system to allow data analysts to be able to easily:
        to existing tools such as Galaxy.
 
 
-For installation and other instructions, check out our [documentation](http://wooey.readthedocs.org)!
+For installation and other instructions, check out our [documentation](http://wooey.readthedocs.org) or give Wooey a test drive at our [demo-server](https://wooey.herokuapp.com)!

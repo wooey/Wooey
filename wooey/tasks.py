@@ -38,6 +38,13 @@ def append_output(out, stdbuffer):
         stdbuffer.append(line)
     out.close()
 
+def stringify(l):
+    """
+    Combine list of str/bytes into string
+    :param l:
+    :return:
+    """
+    return ''.join([str(s) for s in l])
 
 @worker_process_init.connect
 def configure_workers(*args, **kwargs):
@@ -105,8 +112,8 @@ def submit_script(**kwargs):
     while proc.poll() is None or tout.is_alive() or terr.is_alive():
         # Only update if there is output from the script
         if stdout + stderr != prev_std:
-            job.stdout = ''.join(stdout)
-            job.stderr = ''.join(stderr)
+            job.stdout = stringify(stdout)
+            job.stderr = stringify(stderr)
             job.save()
             prev_std = stdout + stderr
 
@@ -164,8 +171,8 @@ def submit_script(**kwargs):
                         remote.save(s3path, File(open(filepath, 'rb')))
     utils.create_job_fileinfo(job)
 
-    job.stdout = ''.join(stdout)
-    job.stderr = ''.join(stderr)
+    job.stdout = stringify(stdout)
+    job.stderr = stringify(stderr)
     job.status = WooeyJob.COMPLETED
     job.save()
 

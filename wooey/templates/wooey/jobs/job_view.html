@@ -243,6 +243,7 @@
                 $('#console-stderr').text(data['stderr']);
 
                 $('#job-outputs').html(data['outputs_html']);
+                $("a[data-favorite]").click(toggleFavorite);
 
                 if(data['status'] == 'completed'){
                     window.clearInterval(refreshtimerID);
@@ -252,10 +253,12 @@
         }
 
         /* Don't update if the job is complete */
-        if(data['status'] != 'completed'){
+        if('{{ job_info.job.status|lower }}' != 'completed'){
             /* Update the interface ~3 secs */
             refreshtimerID = window.setInterval(jobRefresh, 3 * 1000);
         }
+
+        refreshtimerID = window.setInterval(jobRefresh, 3 * 1000);
 
     });
 </script>

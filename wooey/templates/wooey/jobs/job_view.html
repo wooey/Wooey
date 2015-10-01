@@ -244,6 +244,24 @@
             return true;
         });
 
+
+
+            function jobRefresh() {
+                /* Update the job data, items, outputs etc. */
+                $.get("{% url "wooey:celery_results_json_html" %}", function(data){
+
+                    console.log(data['status']);
+
+                }, "json");
+            }
+
+        /* Update the interface ~5 secs */
+        window.setInterval(jobRefresh, 5 * 1000);
+
+
+        });
+
+
     });
 </script>
 {% endblock %}

@@ -38,6 +38,7 @@ def append_output(out, stdbuffer):
         stdbuffer.append(line)
     out.close()
 
+
 def stringify(l):
     """
     Combine list of str/bytes into string
@@ -45,6 +46,7 @@ def stringify(l):
     :return:
     """
     return ''.join([str(s) for s in l])
+
 
 @worker_process_init.connect
 def configure_workers(*args, **kwargs):

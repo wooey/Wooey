@@ -203,6 +203,26 @@ class JobJSON(JobBase):
         return JsonResponse(context)
 
 
+class JobJSONHTML(JobBase):
+    """
+    Return the required data to update the rendered content for the job, e.g.
+    status
+    stdout, stderr
+    rendered outputs (template)
+    file_list (rendered, or data only)
+    """
+    def render_to_response(self, context, *args, **kwargs):
+        """
+        Build dictionary of content
+        """
+        return JsonResponse({
+            'status': context['status'],
+            'stdout': context['job'].stdout,
+            'stderr': context['job'].stderr,
+            'rendered_output': '',
+        })
+
+
 class JobListBase(ListView):
     template_name = 'wooey/jobs/job_list.html'
 

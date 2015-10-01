@@ -47,7 +47,7 @@ def update_from_output_queue(q, out):
     except Empty:
         return out
 
-    out += line
+    out += str(line)
     return out
 
 

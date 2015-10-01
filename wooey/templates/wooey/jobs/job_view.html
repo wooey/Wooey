@@ -251,9 +251,11 @@
             }, "json");
         }
 
-        /* Update the interface ~3 secs */
-        refreshtimerID = window.setInterval(jobRefresh, 3 * 1000);
-
+        /* Don't update if the job is complete */
+        if(data['status'] != 'completed'){
+            /* Update the interface ~3 secs */
+            refreshtimerID = window.setInterval(jobRefresh, 3 * 1000);
+        }
 
     });
 </script>

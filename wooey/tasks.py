@@ -4,8 +4,8 @@ import tarfile
 import os
 import zipfile
 import six
+import sys
 import traceback
-import time
 
 from django.utils.text import get_valid_filename
 from django.core.files.storage import default_storage
@@ -21,7 +21,23 @@ from celery.contrib import rdb
 
 from . import settings as wooey_settings
 
+try:
+    from Queue import Queue, Empty
+except ImportError:
+    from queue import Queue, Empty  # python 3.x
+
+from threading import Thread
+
+ON_POSIX = 'posix' in sys.builtin_module_names
+
 celery_app = app.app_or_default()
+
+
+def append_output(out, stdbuffer):
+    for line in iter(out.readline, b''):
+        stdbuffer.append(line)
+    out.close()
+
 
 @worker_process_init.connect
 def configure_workers(*args, **kwargs):
@@ -69,9 +85,30 @@ def submit_script(**kwargs):
     job.status = WooeyJob.RUNNING
     job.save()
 
+    # Use lists so they can be passed into the threads and appended in place
+    # we only extract + join in the main thread so no issues
+    stdout, stderr = [], []
+
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=abscwd)
 
-    stdout, stderr = proc.communicate()
+    # We need to use threads to capture the IO, otherwise they will block one another
+    # i.e. a check against stderr will sit waiting on stderr before returning
+    tout = Thread(target=append_output, args=(proc.stdout, stdout))
+    tout.start()
+
+    terr = Thread(target=append_output, args=(proc.stderr, stderr))
+    terr.start()
+
+    prev_std = None
+
+    # Loop until the process is complete + both stdout/stderr have EOFd
+    while proc.poll() is None or tout.is_alive() or terr.is_alive():
+        # Only update if there is output from the script
+        if stdout + stderr != prev_std:
+            job.stdout = ''.join(stdout)
+            job.stderr = ''.join(stderr)
+            job.save()
+            prev_std = stdout + stderr
 
     # tar/zip up the generated content for bulk downloads
     def get_valid_file(cwd, name, ext):
@@ -127,8 +164,8 @@ def submit_script(**kwargs):
                         remote.save(s3path, File(open(filepath, 'rb')))
     utils.create_job_fileinfo(job)
 
-    job.stdout = stdout
-    job.stderr = stderr
+    job.stdout = ''.join(stdout)
+    job.stderr = ''.join(stderr)
     job.status = WooeyJob.COMPLETED
     job.save()
 

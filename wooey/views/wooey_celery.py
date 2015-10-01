@@ -216,9 +216,9 @@ class JobJSONHTML(JobBase):
         Build dictionary of content
         """
         return JsonResponse({
-            'status': context['status'],
-            'stdout': context['job'].stdout,
-            'stderr': context['job'].stderr,
+            'status': context['job_info']['status'],
+            'stdout': context['job_info']['job'].stdout,
+            'stderr': context['job_info']['job'].stderr,
             'rendered_output': '',
         })
 

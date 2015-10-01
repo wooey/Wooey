@@ -8,44 +8,48 @@ import sys
 import traceback
 
 from django.utils.text import get_valid_filename
-from django.core.files.storage import default_storage
 from django.core.files import File
 from django.conf import settings
-from django.db.transaction import atomic
 
 from celery import Task
-from celery import states
 from celery import app
 from celery.signals import worker_process_init
-from celery.contrib import rdb
 
 from . import settings as wooey_settings
 
+from billiard import Process, Queue
 try:
-    from Queue import Queue, Empty
+    from Queue import Empty
 except ImportError:
-    from queue import Queue, Empty  # python 3.x
-
-from threading import Thread
+    from queue import Empty  # python 3.x
 
 ON_POSIX = 'posix' in sys.builtin_module_names
 
 celery_app = app.app_or_default()
 
 
-def append_output(out, stdbuffer):
+def enqueue_output(out, q):
     for line in iter(out.readline, b''):
-        stdbuffer.append(line)
+        q.put(line)
     out.close()
 
 
-def stringify(l):
-    """
-    Combine list of str/bytes into string
-    :param l:
-    :return:
-    """
-    return ''.join([str(s) for s in l])
+def output_monitor_queue(out):
+    q = Queue()
+    p = Process(target=enqueue_output, args=(out, q))
+    p.start()
+    return q, p
+
+
+def update_from_output_queue(q, out):
+    try:
+        line = q.get_nowait()
+    except Empty:
+        return out
+
+    out += line
+    return out
+
 
 
 @worker_process_init.connect
@@ -62,6 +66,7 @@ class WooeyTask(Task):
     #     job, created = WooeyJob.objects.get_or_create(wooey_celery_id=task_id)
     #     job.content_type.wooey_celery_state = status
     #     job.save()
+
 
 @celery_app.task(base=WooeyTask)
 def submit_script(**kwargs):
@@ -94,30 +99,31 @@ def submit_script(**kwargs):
     job.status = WooeyJob.RUNNING
     job.save()
 
-    # Use lists so they can be passed into the threads and appended in place
-    # we only extract + join in the main thread so no issues
-    stdout, stderr = [], []
-
+    stdout, stderr = '', ''
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=abscwd)
 
-    # We need to use threads to capture the IO, otherwise they will block one another
+    # We need to use subprocesses to capture the IO, otherwise they will block one another
     # i.e. a check against stderr will sit waiting on stderr before returning
-    tout = Thread(target=append_output, args=(proc.stdout, stdout))
-    tout.start()
-
-    terr = Thread(target=append_output, args=(proc.stderr, stderr))
-    terr.start()
+    # we use Queues to communicate
+    qout, pout = output_monitor_queue(proc.stdout)
+    qerr, perr = output_monitor_queue(proc.stderr)
 
     prev_std = None
 
     # Loop until the process is complete + both stdout/stderr have EOFd
-    while proc.poll() is None or tout.is_alive() or terr.is_alive():
-        # Only update if there is output from the script
-        if stdout + stderr != prev_std:
-            job.stdout = stringify(stdout)
-            job.stderr = stringify(stderr)
+    while proc.poll() is None or pout.is_alive() or perr.is_alive():
+
+        # Check for updates from either (non-blocking)
+        stdout = update_from_output_queue(qout, stdout)
+        stderr = update_from_output_queue(qerr, stderr)
+
+        # If there are changes, update the db
+        if (stdout, stderr) != prev_std:
+            job.stdout = stdout
+            job.stderr = stderr
             job.save()
-            prev_std = stdout + stderr
+
+            prev_std = (stdout, stderr)
 
     # tar/zip up the generated content for bulk downloads
     def get_valid_file(cwd, name, ext):
@@ -173,8 +179,8 @@ def submit_script(**kwargs):
                         remote.save(s3path, File(open(filepath, 'rb')))
     utils.create_job_fileinfo(job)
 
-    job.stdout = stringify(stdout)
-    job.stderr = stringify(stderr)
+    job.stdout = stdout
+    job.stderr = stderr
     job.status = WooeyJob.COMPLETED
     job.save()
 

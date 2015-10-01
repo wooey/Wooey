@@ -112,18 +112,13 @@
       • {% blocktrans with job_last_modified_date=job_info.last_modified|timesince %}Updated {{ job_last_modified_date }} ago{% endblocktrans %}
 
 
-
-    {% if job_info.job.status == 'completed' %}
-    <span class="label label-success"><span class="glyphicon glyphicon-ok"></span> {% trans "Success" %}</span>
-    {% elif job_info.job.status == 'running' %}
-    <span class="label label-success"><span class="glyphicon glyphicon-refresh spinning"></span> {% trans "Executing" %}</span>
-    {% elif job_info.job.status == 'pending' %}
-    <span class="label label-default"><span class="glyphicon time"></span> {% trans "Queued" %}</span>
-    {% elif job_info.job.status == 'revoked' %}
-    <span class="label label-danger"><span class="glyphicon glyphicon-stop"></span> {% trans "Halted" %}</span>
-    {% elif job_info.job.status == 'submitted' %}
-    <span class="label label-default"><span class="glyphicon glyphicon-hourglass"></span> {% trans "Waiting" %}</span>
-    {% endif %}
+    <span id="current-job-status" class="status-{{ job_info.job.status }}">
+    <span class="status-completed-toggle label label-success"><span class="glyphicon glyphicon-ok"></span> Success</span>
+    <span class="status-running-toggle label label-success"><span class="glyphicon glyphicon-refresh spinning"></span> Executing</span>
+    <span class="status-pending-toggle label label-default"><span class="glyphicon time"></span> Queued</span>
+    <span class="status-revoked-toggle label label-danger"><span class="glyphicon glyphicon-stop"></span> Halted</span>
+    <span class="status-submitted-toggle label label-default"><span class="glyphicon glyphicon-hourglass"></span> Waiting</span>
+    </span>
 
   </div>
 </div>
@@ -154,10 +149,10 @@
                 <div class="panel-body console">
                   <pre class="console-body console-command">{{ job_info.job.command }}</pre>
                   {% if job_info.job.stdout %}
-                  <pre class="console-body console-stdout">{{ job_info.job.stdout|linebreaks }}</pre>
+                  <pre id='console-stdout' class="console-body console-stdout">{{ job_info.job.stdout|linebreaks }}</pre>
                   {% endif  %}
                   {% if job_info.job.stderr %}
-                  <pre class="console-body console-stderr">{{ job_info.job.stderr|linebreaks }}</pre>
+                  <pre id='console-stderr' class="console-body console-stderr">{{ job_info.job.stderr|linebreaks }}</pre>
                   {% endif %}
 
                 </div>
@@ -214,6 +209,7 @@
 <script  type="text/javascript">
 
     $(document).ready(function(){
+
         $('#wooey-job-submit button').click(function(event){
             event.preventDefault();
             var $form = $(this).closest('form');
@@ -246,20 +242,23 @@
 
 
 
-            function jobRefresh() {
-                /* Update the job data, items, outputs etc. */
-                $.get("{% url "wooey:celery_results_json_html" %}", function(data){
-
-                    console.log(data['status']);
-
-                }, "json");
-            }
-
-        /* Update the interface ~5 secs */
-        window.setInterval(jobRefresh, 5 * 1000);
+        function jobRefresh() {
+            /* Update the job data, items, outputs etc. */
+            $.get("{% url "wooey:celery_results_json_html" job_info.job.id  %}", function(data){
+                $('#current-job-status').removeClass().addClass('status-' + data['status']);
+                $('#console-stdout').text(data['stdout']);
+                $('#console-stderr').text(data['stderr']);
 
 
-        });
+                if(data['status'] == 'completed'){
+                    window.clearInterval(refreshtimerID);
+                }
+                console.log(data['status'])
+            }, "json");
+        }
+
+        /* Update the interface ~3 secs */
+        refreshtimerID = window.setInterval(jobRefresh, 3 * 1000);
 
 
     });

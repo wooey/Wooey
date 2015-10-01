@@ -352,6 +352,20 @@
         }
 
 
+        .status-completed-toggle, .status-running-toggle, .status-pending-toggle, .status-revoked-toggle, .status-submitted-toggle {
+            display: none;
+        }
+
+        .status-completed .status-completed-toggle,
+        .status-running .status-running-toggle,
+        .status-pending .status-pending-toggle,
+        .status-revoked .status-revoked-toggle,
+        .status-submitted .status-submitted-toggle {
+            display: inline-block !important;
+        }
+
+
+
         {% block extra_style %}
         {% endblock extra_style %}
     </style>

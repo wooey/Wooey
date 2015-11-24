@@ -513,13 +513,29 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
             fileinfo = utils.get_file_info(local_path)
             # save ourself first, we have to do this because we are referenced in WooeyFile
             self.save()
-            dj_file = WooeyFile(job=self.job, filetype=fileinfo.get('type'),
-                                  filepreview=fileinfo.get('preview'), parameter=self)
-            save_file = utils.get_storage().open(local_path)
-            save_path = self.job.get_relative_path(local_path)
-            dj_file.filepath.save(save_path, save_file, save=False)
-            dj_file.filepath.name = save_path
-            dj_file.save()
+            checksum = utils.get_checksum(local_path)
+            wooey_file, file_created = WooeyFile.objects.get_or_create(checksum=checksum)
+            if file_created:
+                wooey_file.filetype = fileinfo.get('type')
+                wooey_file.filepreview = fileinfo.get('preview')
+                save_file = utils.get_storage().open(local_path)
+                save_path = self.job.get_relative_path(local_path)
+                wooey_file.filepath.save(save_path, save_file, save=False)
+                wooey_file.filepath.name = save_path
+                wooey_file.save()
+
+            user_file = UserFile(job=self.job, system_file=wooey_file, parameter=self, filename=os.path.split(local_path))
+            user_file.save()
+
+
+class UserFile(WooeyPy2Mixin, models.Model):
+    filename = models.TextField()
+    job = models.ForeignKey('WooeyJob')
+    system_file = models.ForeignKey('WooeyFile')
+    parameter = models.ForeignKey('ScriptParameters', null=True, blank=True)
+
+    def __str__(self):
+        return '{}: {}'.format(self.job.job_name, self.system_file.filepath)
 
 
 class WooeyFile(WooeyPy2Mixin, models.Model):
@@ -528,6 +544,7 @@ class WooeyFile(WooeyPy2Mixin, models.Model):
     filepreview = models.TextField(null=True, blank=True)
     filetype = models.CharField(max_length=255, null=True, blank=True)
     size_bytes = models.IntegerField(null=True)
+    checksum = models.CharField(max_length=40, blank=True)
     parameter = models.ForeignKey('ScriptParameters', null=True, blank=True)
 
     class Meta:
@@ -536,4 +553,4 @@ class WooeyFile(WooeyPy2Mixin, models.Model):
         verbose_name_plural = _('wooey files')
 
     def __str__(self):
-        return '{}: {}'.format(self.job.job_name, self.filepath)
+        return self.filepath

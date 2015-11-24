@@ -13,7 +13,7 @@ celery_app = app.app_or_default()
 
 from django.contrib.contenttypes.models import ContentType
 
-from ..models import WooeyJob, WooeyFile, Favorite
+from ..models import WooeyJob, UserFile, Favorite
 from .. import settings as wooey_settings
 from ..backend.utils import valid_user, get_file_previews
 from ..django_compat import JsonResponse
@@ -172,7 +172,7 @@ class JobBase(DetailView):
             archives = out_files.pop('archives', [])
 
             # Get the favorite (scrapbook) status for each file
-            ctype = ContentType.objects.get_for_model(WooeyFile)
+            ctype = ContentType.objects.get_for_model(UserFile)
             favorite_file_ids = Favorite.objects.filter(content_type=ctype, object_id__in=[f['id'] for f in all],
                                                         user=user).values_list('object_id', flat=True)
 

@@ -17,7 +17,7 @@ from django.http import Http404
 from django.contrib.contenttypes.models import ContentType
 
 from ..backend import utils
-from ..models import WooeyJob, Script, WooeyFile, Favorite, ScriptVersion
+from ..models import WooeyJob, Script, UserFile, Favorite, ScriptVersion
 from .. import settings as wooey_settings
 from ..django_compat import JsonResponse
 
@@ -100,7 +100,7 @@ class WooeyScriptBase(DetailView):
                 new_values = list(filter(lambda x: x, post.getlist(i)))
                 cleaned_values = []
                 for new_value in new_values:
-                    if i not in request.FILES and (i not in form.cleaned_data or (not [j for j in form.cleaned_data[i] if j] and new_value)):
+                    if i not in request.FILES and (i not in form.cleaned_data or (new_value and (form.cleaned_data[i] is None or not [j for j in form.cleaned_data[i] if j]))):
                         # this is a previously set field, so a cloned job
                         if new_value is not None:
                             cleaned_values.append(utils.get_storage(local=False).open(new_value))
@@ -206,7 +206,7 @@ class WooeyScrapbookView(TemplateView):
         ctx = super(WooeyScrapbookView, self).get_context_data(**kwargs)
 
         # Get the id of every favorite (scrapbook) file
-        ctype = ContentType.objects.get_for_model(WooeyFile)
+        ctype = ContentType.objects.get_for_model(UserFile)
         favorite_file_ids = Favorite.objects.filter(content_type=ctype, user=self.request.user).values_list('object_id', flat=True)
 
         out_files = utils.get_file_previews_by_ids(favorite_file_ids)

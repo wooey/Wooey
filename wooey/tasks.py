@@ -74,7 +74,7 @@ def submit_script(**kwargs):
     job_id = kwargs.pop('wooey_job')
     resubmit = kwargs.pop('wooey_resubmit', False)
     from .backend import utils
-    from .models import WooeyJob, WooeyFile
+    from .models import WooeyJob, UserFile
     job = WooeyJob.objects.get(pk=job_id)
 
     command = utils.get_job_commands(job=job)

@@ -540,12 +540,10 @@ class UserFile(WooeyPy2Mixin, models.Model):
 
 class WooeyFile(WooeyPy2Mixin, models.Model):
     filepath = models.FileField(max_length=500) if django_compat.DJANGO_VERSION >= django_compat.DJ17 else models.FileField(max_length=500, upload_to=wooey_settings.WOOEY_SCRIPT_DIR)
-    job = models.ForeignKey('WooeyJob')
     filepreview = models.TextField(null=True, blank=True)
     filetype = models.CharField(max_length=255, null=True, blank=True)
     size_bytes = models.IntegerField(null=True)
     checksum = models.CharField(max_length=40, blank=True)
-    parameter = models.ForeignKey('ScriptParameters', null=True, blank=True)
 
     class Meta:
         app_label = 'wooey'

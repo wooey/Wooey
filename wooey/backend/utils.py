@@ -524,7 +524,6 @@ def create_job_fileinfo(job):
                     wooey_file.filetype = file_type
                     wooey_file.filepreview = preview
                     wooey_file.size_bytes = size_bytes
-                    wooey_file.parameter = group_file.get('parameter')
                     wooey_file.filepath.name = save_path
                 user_file = UserFile(job=job, parameter=group_file.get('parameter'),
                                      system_file=wooey_file, filename=os.path.split(filepath)[1])

@@ -58,11 +58,11 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         new_job = job.submit_to_celery(resubmit=True)
         self.assertNotEqual(old_pk, new_job.pk)
         # test rerunning, our output should be removed
-        from ..models import WooeyFile
-        old_output = sorted([i.pk for i in WooeyFile.objects.filter(job=new_job)])
+        from ..models import UserFile
+        old_output = sorted([i.pk for i in UserFile.objects.filter(job=new_job)])
         job.submit_to_celery(rerun=True)
         # check that we overwrite our output
-        new_output = sorted([i.pk for i in WooeyFile.objects.filter(job=new_job)])
+        new_output = sorted([i.pk for i in UserFile.objects.filter(job=new_job)])
         # Django 1.6 has a bug where they are reusing pk numbers
         if version.DJANGO_VERSION >= version.DJ17:
             self.assertNotEqual(old_output, new_output)
@@ -70,7 +70,7 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         # check the old entries are gone
         if version.DJANGO_VERSION >= version.DJ17:
             # Django 1.6 has a bug where they are reusing pk numbers, so once again we cannot use this check
-            self.assertEqual([], list(WooeyFile.objects.filter(pk__in=old_output)))
+            self.assertEqual([], list(UserFile.objects.filter(pk__in=old_output)))
 
         file_previews = utils.get_file_previews(job)
         for group, files in file_previews.items():

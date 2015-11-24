@@ -28,7 +28,29 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase)
     def test_group_form(self):
         script_version = self.translate_script
         form = utils.get_form_groups(script_version=script_version)
-        self.assertEqual(len(form['groups']), 1)
+        self.assertEqual(len(form['groups']), 2)
+        # test we can hide parameters and groups
+        from wooey.models import ScriptParameterGroup, ScriptParameter
+        groups = ScriptParameterGroup.objects.filter(script_version=script_version)
+        group = groups[1]
+        group.hidden = True
+        group.save()
+        form = utils.get_form_groups(script_version=script_version)
+        self.assertEqual(len(form['groups']), 1, 'Script Parameter group is hidden but shown')
+        group.hidden = False
+        group.save()
+        form = utils.get_form_groups(script_version=script_version)
+        self.assertEqual(len(form['groups']), 2, 'Script Parameter group is shown but hidden')
+        param = ScriptParameter.objects.get(script_version=script_version, slug='out')
+        param.hidden = True
+        param.save()
+        form = utils.get_form_groups(script_version=script_version)
+        self.assertNotIn('out', form['groups'][1]['form'].fields, 'Script Parameter is hidden but shown')
+        param.hidden = False
+        param.save()
+        form = utils.get_form_groups(script_version=script_version)
+        self.assertIn('out', form['groups'][1]['form'].fields, 'Script Parameter is shown but hidden')
+
 
     def test_multiplechoice_form(self):
         script_version = self.choice_script

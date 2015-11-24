@@ -28,8 +28,9 @@ parser = argparse.ArgumentParser(description="This will translate a given DNA se
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument('--sequence', help='The sequence to translate.', type=str)
 group.add_argument('--fasta', help='The fasta file to translate.', type=argparse.FileType('rb'))
-parser.add_argument('--frame', help='The frame to translate in.', type=str, choices=['+1', '+2', '+3', '-1', '-2', '-3'], default='+1')
-parser.add_argument('--out', help='The file to save translations to.', type=argparse.FileType('wb'))
+simple_group = parser.add_argument_group('Parameter Group')
+simple_group.add_argument('--frame', help='The frame to translate in.', type=str, choices=['+1', '+2', '+3', '-1', '-2', '-3'], default='+1')
+simple_group.add_argument('--out', help='The file to save translations to.', type=argparse.FileType('wb'))
 
 
 def main():

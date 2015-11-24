@@ -126,11 +126,13 @@ class WooeyFormFactory(object):
                 if (version.PY_MINOR_VERSION == version.PY34 and version.PY_FULL_VERSION >= version.PY343) or \
                         (version.PY_MINOR_VERSION == version.PY33 and version.PY_FULL_VERSION >= version.PY336):
                     return copy.deepcopy(self.wooey_forms[pk]['groups'])
-        params = ScriptParameter.objects.filter(script_version=script_version).order_by('pk')
+        params = ScriptParameter.objects.filter(script_version=script_version, hidden=False).order_by('pk')
         # set a reference to the object type for POST methods to use
         script_id_field = forms.CharField(widget=forms.HiddenInput)
         group_map = {}
         for param in params:
+            if param.parameter_group.hidden:
+                continue
             initial_values = initial_dict.get(param.slug, None)
             field = self.get_field(param, initial=initial_values)
             field.name = param.slug

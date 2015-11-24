@@ -79,10 +79,13 @@ def get_job_commands(job=None):
         if subproc_value:
             param_dict[subproc_param].append(subproc_value)
     for param, values in param_dict.items():
-        for value in values:
-            if param:
-                com.append(param)
-            com.append(value)
+        if param and not values:
+            com.append(param)
+        else:
+            for value in values:
+                if param:
+                    com.append(param)
+                com.append(value)
     return com
 
 

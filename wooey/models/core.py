@@ -339,6 +339,8 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
         if field == self.BOOLEAN:
             if value:
                 return com
+            else:
+                del com['parameter']
         if field == self.FILE:
             if self.parameter.is_output:
                 try:

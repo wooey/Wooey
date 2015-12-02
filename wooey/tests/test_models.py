@@ -41,7 +41,7 @@ class ScriptGroupTestCase(TestCase):
         group = factories.ScriptGroupFactory()
 
 
-class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
+class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMixin, TestCase):
     urls = 'wooey.test_urls'
 
     def get_local_url(self, fileinfo):
@@ -60,7 +60,8 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         # test rerunning, our output should be removed
         from ..models import UserFile
         old_output = sorted([i.pk for i in UserFile.objects.filter(job=new_job)])
-        job.submit_to_celery(rerun=True)
+        # the pk will not change here since we are using rerun=True
+        new_job.submit_to_celery(rerun=True)
         # check that we overwrite our output
         new_output = sorted([i.pk for i in UserFile.objects.filter(job=new_job)])
         # Django 1.6 has a bug where they are reusing pk numbers
@@ -90,6 +91,26 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
             for fileinfo in files:
                 response = Client().get(self.get_local_url(fileinfo))
                 self.assertEqual(response.status_code, 200)
+
+    def test_file_sharing(self):
+        # this tests whether a file uploaded by one job will be referenced by a second job instead of being duplicated
+        # on the file system
+        new_file = self.storage.open(self.get_any_file())
+        script_slug = 'multiple_file_choices'
+        script = self.choice_script
+        from ..backend import utils
+        job = utils.create_wooey_job(script_version_pk=script.pk, data={'job_name': 'job1', script_slug: new_file})
+        job = job.submit_to_celery()
+        job2 = utils.create_wooey_job(script_version_pk=script.pk, data={'job_name': 'job2', script_slug: new_file})
+        job2 = job2.submit_to_celery()
+        from ..models import UserFile
+        job1_files = filter(lambda x: x.parameter.parameter.slug == script_slug, UserFile.objects.filter(job=job, parameter__isnull=False))
+        job1_file = job1_files[0]
+        job2_files = filter(lambda x: x.parameter.parameter.slug == script_slug, UserFile.objects.filter(job=job2, parameter__isnull=False))
+        job2_file = job2_files[0]
+        self.assertNotEqual(job1_file.pk, job2_file.pk)
+        self.assertEqual(job1_file.system_file, job2_file.system_file)
+
 
     def test_multiplechoices(self):
         script = self.choice_script

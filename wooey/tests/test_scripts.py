@@ -9,10 +9,7 @@ from ..models import ScriptVersion
 from .. import settings as wooey_settings
 
 
-class ScriptAdditionTests(mixins.ScriptFactoryMixin, TestCase):
-    def setUp(self):
-        self.storage = utils.get_storage(local=not wooey_settings.WOOEY_EPHEMERAL_FILES)
-        self.filename_func = lambda x: os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, x)
+class ScriptAdditionTests(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase):
 
     def test_command_order(self):
         script = os.path.join(config.WOOEY_TEST_SCRIPTS, 'command_order.py')

@@ -198,6 +198,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         task_kwargs = {'wooey_job': self.pk, 'rerun': kwargs.pop('rerun', False)}
 
         if task_kwargs.get('rerun'):
+            import pdb; pdb.set_trace();
             utils.purge_output(job=self)
         if wooey_settings.WOOEY_CELERY:
             results = tasks.submit_script.delay(**task_kwargs)
@@ -524,8 +525,8 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
                 wooey_file.filepath.name = save_path
                 wooey_file.save()
 
-            user_file = UserFile(job=self.job, system_file=wooey_file, parameter=self, filename=os.path.split(local_path))
-            user_file.save()
+            UserFile.objects.get_or_create(job=self.job, system_file=wooey_file,
+                                           parameter=self, filename=os.path.split(local_path)[1])
 
 
 class UserFile(WooeyPy2Mixin, models.Model):

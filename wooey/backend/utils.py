@@ -49,12 +49,14 @@ def purge_output(job=None):
     from ..models import UserFile
     # cleanup the old files, we need to be somewhat aggressive here.
     local_storage = get_storage(local=True)
+    # import pdb; pdb.set_trace();
     for user_file in UserFile.objects.filter(job=job):
         if user_file.parameter is None or user_file.parameter.parameter.is_output:
             system_file = user_file.system_file
-            if UserFile.objects.filter(system_file=system_file).exclude(job=user_file.job).count() == 0:
+            matching_files = UserFile.objects.filter(system_file=system_file).exclude(job=user_file.job)
+            # nothing else references this file, delete it
+            if matching_files.count() == 0:
                 wooey_file = system_file.filepath.name
-                # nothing else references this file, delete it
                 # this will delete the default file -- which if we are using an ephemeral file system will be the
                 # remote instance
                 system_file.filepath.delete(False)
@@ -63,6 +65,8 @@ def purge_output(job=None):
                 path = local_storage.path(wooey_file)
                 if local_storage.exists(path):
                     local_storage.delete(path)
+            # delete all copies this user has of this file.
+            user_file.delete()
 
 
 def get_job_commands(job=None):
@@ -430,13 +434,13 @@ def create_job_fileinfo(job):
     from ..models import WooeyFile, UserFile
     # first, create a reference to things the script explicitly created that is a parameter
     files = []
+    local_storage = get_storage(local=True)
     for field in parameters:
         try:
             if field.parameter.form_field == 'FileField':
                 value = field.value
                 if value is None:
                     continue
-                local_storage = get_storage(local=True)
                 if isinstance(value, six.string_types):
                     # check if this was ever created and make a fileobject if so
                     if local_storage.exists(value):
@@ -461,28 +465,45 @@ def create_job_fileinfo(job):
     # generated them without an explicit arguments reference in the script
     file_groups = {'archives': []}
     absbase = os.path.join(settings.MEDIA_ROOT, job.save_path)
-    for filename in os.listdir(absbase):
-        new_name = os.path.join(job.save_path, filename)
-        if any([i.endswith(new_name) for i in known_files]):
-            continue
-        try:
-            filepath = os.path.join(absbase, filename)
-            if os.path.isdir(filepath):
+    for root, dirs, dir_files in os.walk(absbase):
+        for filename in dir_files:
+            new_name = os.path.join(job.save_path, filename)
+            if any([i.endswith(new_name) for i in known_files]):
                 continue
-            full_path = os.path.join(job.save_path, filename)
             try:
-                storage_file = get_storage_object(full_path)
-            except:
-                sys.stderr.write('Error in accessing stored file:\n{}'.format(traceback.format_exc()))
+                filepath = os.path.join(root, filename)
+                if os.path.isdir(filepath):
+                    continue
+                full_path = os.path.join(job.save_path, filename)
+                # check if we have it already
+                checksum = get_checksum(filepath)
+                existing_file = list(WooeyFile.objects.filter(checksum=checksum))
+                if existing_file:
+                    # reference the old file and delete this file
+                    existing_file = existing_file[0]
+                    existing_file_path = existing_file.filepath.name
+                    # check that this file is not the originating file
+                    if existing_file_path != full_path:
+                        # it isn't, delete it
+                        try:
+                            os.remove(local_storage.path(full_path))
+                        except:
+                            sys.stderr.write('Error in deleting duplicate file:\n{}'.format(traceback.format_exc()))
+                            pass
+                        full_path = existing_file_path
+                try:
+                    storage_file = get_storage_object(full_path)
+                except:
+                    sys.stderr.write('Error in accessing stored file:\n{}'.format(traceback.format_exc()))
+                    continue
+                d = {'name': filename, 'file': storage_file, 'size_bytes': storage_file.size, 'checksum': checksum}
+                if filename.endswith('.tar.gz') or filename.endswith('.zip'):
+                    file_groups['archives'].append(d)
+                else:
+                    files.append(d)
+            except IOError:
+                sys.stderr.write('{}'.format(traceback.format_exc()))
                 continue
-            d = {'name': filename, 'file': storage_file, 'size_bytes': storage_file.size}
-            if filename.endswith('.tar.gz') or filename.endswith('.zip'):
-                file_groups['archives'].append(d)
-            else:
-                files.append(d)
-        except IOError:
-            sys.stderr.write('{}'.format(traceback.format_exc()))
-            continue
 
     # establish grouping by inferring common things
     file_groups['all'] = files
@@ -518,21 +539,20 @@ def create_job_fileinfo(job):
                 save_path = job.get_relative_path(filepath)
 
                 # get the checksum of the file to see if we need to save it
-                checksum = get_checksum(filepath)
+                checksum = group_file.get('checksum', get_checksum(filepath))
                 wooey_file, file_created = WooeyFile.objects.get_or_create(checksum=checksum)
                 if file_created:
                     wooey_file.filetype = file_type
                     wooey_file.filepreview = preview
                     wooey_file.size_bytes = size_bytes
                     wooey_file.filepath.name = save_path
-                user_file = UserFile(job=job, parameter=group_file.get('parameter'),
-                                     system_file=wooey_file, filename=os.path.split(filepath)[1])
+                UserFile.objects.get_or_create(job=job, parameter=group_file.get('parameter'),
+                                               system_file=wooey_file, filename=os.path.split(filepath)[1])
                 try:
                     with transaction.atomic():
                         if file_created:
                             wooey_file.save()
                         job.save()
-                        user_file.save()
                 except:
                     sys.stderr.write('Error in saving DJFile: {}\n'.format(traceback.format_exc()))
             except:

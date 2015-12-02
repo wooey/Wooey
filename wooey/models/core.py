@@ -534,6 +534,9 @@ class UserFile(WooeyPy2Mixin, models.Model):
     system_file = models.ForeignKey('WooeyFile')
     parameter = models.ForeignKey('ScriptParameters', null=True, blank=True)
 
+    class Meta:
+        app_label = 'wooey'
+
     def __str__(self):
         return '{}: {}'.format(self.job.job_name, self.system_file.filepath.name)
 

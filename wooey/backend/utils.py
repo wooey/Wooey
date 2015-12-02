@@ -49,7 +49,6 @@ def purge_output(job=None):
     from ..models import UserFile
     # cleanup the old files, we need to be somewhat aggressive here.
     local_storage = get_storage(local=True)
-    # import pdb; pdb.set_trace();
     for user_file in UserFile.objects.filter(job=job):
         if user_file.parameter is None or user_file.parameter.parameter.is_output:
             system_file = user_file.system_file

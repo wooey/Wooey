@@ -198,7 +198,6 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         task_kwargs = {'wooey_job': self.pk, 'rerun': kwargs.pop('rerun', False)}
 
         if task_kwargs.get('rerun'):
-            import pdb; pdb.set_trace();
             utils.purge_output(job=self)
         if wooey_settings.WOOEY_CELERY:
             results = tasks.submit_script.delay(**task_kwargs)

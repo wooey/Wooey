@@ -487,13 +487,13 @@ def create_job_fileinfo(job):
                         try:
                             os.remove(local_storage.path(full_path))
                         except:
-                            sys.stderr.write('Error in deleting duplicate file:\n{}'.format(traceback.format_exc()))
+                            sys.stderr.write('Error in deleting duplicate file {}:\n{}'.format(full_path, traceback.format_exc()))
                             pass
                         full_path = existing_file_path
                 try:
                     storage_file = get_storage_object(full_path)
                 except:
-                    sys.stderr.write('Error in accessing stored file:\n{}'.format(traceback.format_exc()))
+                    sys.stderr.write('Error in accessing stored file {}:\n{}'.format(full_path, traceback.format_exc()))
                     continue
                 d = {'name': filename, 'file': storage_file, 'size_bytes': storage_file.size, 'checksum': checksum}
                 if filename.endswith('.tar.gz') or filename.endswith('.zip'):
@@ -545,13 +545,18 @@ def create_job_fileinfo(job):
                     wooey_file.filepreview = preview
                     wooey_file.size_bytes = size_bytes
                     wooey_file.filepath.name = save_path
-                UserFile.objects.get_or_create(job=job, parameter=group_file.get('parameter'),
-                                               system_file=wooey_file, filename=os.path.split(filepath)[1])
+                userfile_kwargs = {
+                    'job': job,
+                    'parameter': group_file.get('parameter'),
+                    'system_file': wooey_file,
+                    'filename': os.path.split(filepath)[1]
+                }
                 try:
                     with transaction.atomic():
                         if file_created:
                             wooey_file.save()
                         job.save()
+                        UserFile.objects.get_or_create(**userfile_kwargs)
                 except:
                     sys.stderr.write('Error in saving DJFile: {}\n'.format(traceback.format_exc()))
             except:

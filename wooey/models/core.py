@@ -535,7 +535,7 @@ class UserFile(WooeyPy2Mixin, models.Model):
     parameter = models.ForeignKey('ScriptParameters', null=True, blank=True)
 
     def __str__(self):
-        return '{}: {}'.format(self.job.job_name, self.system_file.filepath)
+        return '{}: {}'.format(self.job.job_name, self.system_file.filepath.name)
 
 
 class WooeyFile(WooeyPy2Mixin, models.Model):
@@ -551,4 +551,4 @@ class WooeyFile(WooeyPy2Mixin, models.Model):
         verbose_name_plural = _('wooey files')
 
     def __str__(self):
-        return self.filepath
+        return self.filepath.name

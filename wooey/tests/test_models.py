@@ -104,9 +104,9 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMix
         job2 = utils.create_wooey_job(script_version_pk=script.pk, data={'job_name': 'job2', script_slug: new_file})
         job2 = job2.submit_to_celery()
         from ..models import UserFile
-        job1_files = filter(lambda x: x.parameter.parameter.slug == script_slug, UserFile.objects.filter(job=job, parameter__isnull=False))
+        job1_files = [i for i in UserFile.objects.filter(job=job, parameter__isnull=False) if i.parameter.parameter.slug == script_slug]
         job1_file = job1_files[0]
-        job2_files = filter(lambda x: x.parameter.parameter.slug == script_slug, UserFile.objects.filter(job=job2, parameter__isnull=False))
+        job2_files = [i for i in UserFile.objects.filter(job=job2, parameter__isnull=False) if i.parameter.parameter.slug == script_slug]
         job2_file = job2_files[0]
         self.assertNotEqual(job1_file.pk, job2_file.pk)
         self.assertEqual(job1_file.system_file, job2_file.system_file)

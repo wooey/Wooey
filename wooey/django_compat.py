@@ -1,4 +1,4 @@
-from . version import DJANGO_VERSION, DJ18, DJ17, DJ16
+from . version import DJANGO_VERSION, DJ18, DJ17, DJ16, DJ19
 from django.conf import settings
 
 try:
@@ -42,13 +42,11 @@ else:
         def from_string(code):
             return Template(code)
 
-
-# GenericForeignKey compatibility fixes
-if DJANGO_VERSION < DJ18:
-    from django.contrib.contenttypes.generic import GenericForeignKey
-
+if DJANGO_VERSION < DJ19:
+    from django.template.base import TagHelperNode, parse_bits
 else:
-    from django.contrib.contenttypes.fields import GenericForeignKey
+    from django.template.library import TagHelperNode, parse_bits
+
 
 
 if DJANGO_VERSION < DJ17:

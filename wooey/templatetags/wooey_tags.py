@@ -3,7 +3,8 @@ from django import template
 from .. import settings as wooey_settings
 from django.utils.safestring import mark_safe
 from django.contrib.contenttypes.models import ContentType
-from django.template.base import TemplateSyntaxError, TagHelperNode, parse_bits
+from django.template.base import TemplateSyntaxError
+from ..django_compat import TagHelperNode, parse_bits
 
 from inspect import getargspec
 import urllib

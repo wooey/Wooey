@@ -571,10 +571,10 @@ def get_checksum(path, extra=None):
     if extra:
         if isinstance(extra, (list, tuple)):
             for i in extra:
-                hasher.update(str(i))
-        elif isinstance(extra, basestring):
+                hasher.update(six.u(str(i)).encode('utf-8'))
+        elif isinstance(extra, six.string_types):
             hasher.update(extra)
-    if isinstance(path, basestring):
+    if isinstance(path, six.string_types):
         with open(path, 'rb') as afile:
             buf = afile.read(BLOCKSIZE)
             while len(buf) > 0:
@@ -585,6 +585,8 @@ def get_checksum(path, extra=None):
         path.seek(0)
         buf = path.read(BLOCKSIZE)
         while len(buf) > 0:
+            if isinstance(buf, six.string_types):
+                buf = buf.encode('utf-8')
             hasher.update(buf)
             buf = path.read(BLOCKSIZE)
         path.seek(start)

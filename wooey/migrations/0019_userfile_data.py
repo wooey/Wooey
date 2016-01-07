@@ -28,7 +28,9 @@ def gen_userfiles(apps, schema_editor):
         user_file = UserFile(filename=os.path.split(obj.filepath.name)[1], job=obj.job,
                              parameter=obj.parameter, system_file=first_file)
         user_file.save()
-        Favorite.objects.filter(content_type=ctype, object_id=obj.id).update(content_object=first_file, content_type=new_ctype)
+        favorites = Favorite.objects.filter(content_type=ctype, object_id=obj.id)
+        if favorites.count():
+             favorites.update(content_object=first_file, content_type=new_ctype)
         if first_file != obj:
             to_delete.append(obj.pk)
     # remove redundant wooeyfiles

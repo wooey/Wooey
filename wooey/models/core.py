@@ -503,9 +503,10 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
                         local_path = local_storage.save(path, value)
                     else:
                         local_path = local_storage.path(path)
+                        local_path = os.path.join(os.path.split(path)[0], os.path.split(local_path)[1])
                     remote_storage = utils.get_storage(local=False)
                     if not remote_storage.exists(path) or (filesize is not None and remote_storage.size(path) != filesize):
-                        remote_storage.save(local_path, value)
+                        local_path = remote_storage.save(local_path, value)
                     add_file = True
                     value = local_path
         self._value = json.dumps(value)

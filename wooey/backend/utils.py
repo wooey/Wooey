@@ -352,7 +352,7 @@ def get_upload_path(filepath, checksum=None):
 def get_file_info(filepath):
     # returns info about the file
     filetype, preview = False, None
-    tests = [('tabular', test_delimited), ('fasta', test_fastx)]
+    tests = [('tabular', test_delimited), ('fasta', test_fastx), ('image', test_image)]
     while filetype is False and tests:
         ptype, pmethod = tests.pop()
         filetype, preview = pmethod(filepath)
@@ -365,6 +365,11 @@ def get_file_info(filepath):
         sys.stderr.write('Error encountered in file preview:\n {}\n'.format(traceback.format_exc()))
         json_preview = json.dumps(None)
     return {'type': filetype, 'preview': json_preview}
+
+
+def test_image(filepath):
+    import imghdr
+    return imghdr.what(filepath) != None, None
 
 
 def test_delimited(filepath):
@@ -504,11 +509,7 @@ def create_job_fileinfo(job):
 
     # establish grouping by inferring common things
     file_groups['all'] = files
-    import imghdr
     file_groups['image'] = []
-    for filemodel in files:
-        if imghdr.what(filemodel['file'].path):
-            file_groups['image'].append(filemodel)
     file_groups['tabular'] = []
     file_groups['fasta'] = []
 

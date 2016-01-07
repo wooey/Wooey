@@ -342,6 +342,13 @@ def mkdirs(path):
             raise
 
 
+def get_upload_path(filepath, checksum=None):
+    filename = os.path.split(filepath)[1]
+    if checksum is None:
+        checksum = get_checksum(filepath)
+    return os.path.join(wooey_settings.WOOEY_FILE_DIR, checksum, filename)
+
+
 def get_file_info(filepath):
     # returns info about the file
     filetype, preview = False, None
@@ -455,6 +462,10 @@ def create_job_fileinfo(job):
                             sys.stderr.write('{}\n'.format(traceback.format_exc()))
                         continue
                 d = {'parameter': field, 'file': value}
+                if field.parameter.is_output:
+                    full_path = os.path.join(job.save_path, os.path.split(local_storage.path(value))[1])
+                    checksum = get_checksum(value, extra=[job.pk, full_path,'output'])
+                    d['checksum'] = checksum
                 files.append(d)
         except ValueError:
             continue
@@ -474,22 +485,9 @@ def create_job_fileinfo(job):
                 if os.path.isdir(filepath):
                     continue
                 full_path = os.path.join(job.save_path, filename)
-                # check if we have it already
-                checksum = get_checksum(filepath)
-                existing_file = list(WooeyFile.objects.filter(checksum=checksum))
-                if existing_file:
-                    # reference the old file and delete this file
-                    existing_file = existing_file[0]
-                    existing_file_path = existing_file.filepath.name
-                    # check that this file is not the originating file
-                    if existing_file_path != full_path:
-                        # it isn't, delete it
-                        try:
-                            os.remove(local_storage.path(full_path))
-                        except:
-                            sys.stderr.write('Error in deleting duplicate file {}:\n{}'.format(full_path, traceback.format_exc()))
-                            pass
-                        full_path = existing_file_path
+                # this is to make the job output have a unique checksum. If this file is then re-uploaded, it will create
+                # a new file to reference in the uploads directory and not link back to the job output.
+                checksum = get_checksum(filepath, extra=[job.pk, full_path, 'output'])
                 try:
                     storage_file = get_storage_object(full_path)
                 except:
@@ -536,6 +534,7 @@ def create_job_fileinfo(job):
 
                 filepath = group_file['file'].path
                 save_path = job.get_relative_path(filepath)
+                parameter = group_file.get('parameter')
 
                 # get the checksum of the file to see if we need to save it
                 checksum = group_file.get('checksum', get_checksum(filepath))
@@ -547,7 +546,7 @@ def create_job_fileinfo(job):
                     wooey_file.filepath.name = save_path
                 userfile_kwargs = {
                     'job': job,
-                    'parameter': group_file.get('parameter'),
+                    'parameter': parameter,
                     'system_file': wooey_file,
                     'filename': os.path.split(filepath)[1]
                 }
@@ -564,15 +563,30 @@ def create_job_fileinfo(job):
                 continue
 
 
-def get_checksum(path):
+def get_checksum(path, extra=None):
     import hashlib
     BLOCKSIZE = 65536
     hasher = hashlib.sha1()
-    with open(path, 'rb') as afile:
-        buf = afile.read(BLOCKSIZE)
+    if extra:
+        if isinstance(extra, (list, tuple)):
+            for i in extra:
+                hasher.update(str(i))
+        elif isinstance(extra, basestring):
+            hasher.update(extra)
+    if isinstance(path, basestring):
+        with open(path, 'rb') as afile:
+            buf = afile.read(BLOCKSIZE)
+            while len(buf) > 0:
+                hasher.update(buf)
+                buf = afile.read(BLOCKSIZE)
+    else:
+        start = path.tell()
+        path.seek(0)
+        buf = path.read(BLOCKSIZE)
         while len(buf) > 0:
             hasher.update(buf)
-            buf = afile.read(BLOCKSIZE)
+            buf = path.read(BLOCKSIZE)
+        path.seek(start)
     return hasher.hexdigest()
 
 

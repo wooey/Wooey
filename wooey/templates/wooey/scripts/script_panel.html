@@ -1,6 +1,6 @@
 {% load i18n %}
 {% load wooey_tags %}
-{% get_wooey_setting "WOOEY_SHOW_LOCKED_SCRIPTS" as wooey_show_locked_scripts %}
+{% assign_wooey_setting "WOOEY_SHOW_LOCKED_SCRIPTS" as wooey_show_locked_scripts %}
 {% if script.is_active or wooey_show_locked_scripts %}
 <div class="col-sm-6 col-md-4">
 

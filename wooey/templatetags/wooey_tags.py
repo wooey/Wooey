@@ -1,73 +1,16 @@
 from __future__ import division, absolute_import
+
 from django import template
-from .. import settings as wooey_settings
 from django.utils.safestring import mark_safe
 from django.contrib.contenttypes.models import ContentType
-from django.template.base import TemplateSyntaxError
-from ..django_compat import TagHelperNode, parse_bits
+from django.template import Library
 
-from inspect import getargspec
 import urllib
 import hashlib
 
+from .. import settings as wooey_settings
+from ..version import DJ18, DJANGO_VERSION
 
-class Library(template.Library):
-    def simple_assignment_tag(self, func=None, takes_context=None, name=None):
-        '''
-        Like assignment_tag but when "as" not provided, falls back to simple_tag behavior!
-        NOTE: this is based on Django's assignment_tag implementation, modified as needed.
-
-        https://gist.github.com/natevw/f14812604be62c073461
-        '''
-        # (nvw) imports necessary to match original context
-
-        def dec(func):
-            params, varargs, varkw, defaults = getargspec(func)
-
-            # (nvw) added from Django's simple_tag implementation
-            class SimpleNode(TagHelperNode):
-                def render(self, context):
-                    resolved_args, resolved_kwargs = self.get_resolved_arguments(context)
-                    return func(*resolved_args, **resolved_kwargs)
-
-            class AssignmentNode(TagHelperNode):
-                def __init__(self, takes_context, args, kwargs, target_var):
-                    super(AssignmentNode, self).__init__(takes_context, args, kwargs)
-                    self.target_var = target_var
-
-                def render(self, context):
-                    resolved_args, resolved_kwargs = self.get_resolved_arguments(context)
-                    context[self.target_var] = func(*resolved_args, **resolved_kwargs)
-                    return ''
-
-            function_name = (name or
-                getattr(func, '_decorated_function', func).__name__)
-
-            def compile_func(parser, token):
-                bits = token.split_contents()[1:]
-                if len(bits) > 2 and bits[-2] == 'as':
-                    target_var = bits[-1]
-                    bits = bits[:-2]
-                    args, kwargs = parse_bits(parser, bits, params,
-                        varargs, varkw, defaults, takes_context, function_name)
-                    return AssignmentNode(takes_context, args, kwargs, target_var)
-                else:
-                    args, kwargs = parse_bits(parser, bits, params,
-                        varargs, varkw, defaults, takes_context, function_name)
-                    return SimpleNode(takes_context, args, kwargs)
-
-            compile_func.__doc__ = func.__doc__
-            self.tag(function_name, compile_func)
-            return func
-
-        if func is None:
-            # @register.assignment_tag(...)
-            return dec
-        elif callable(func):
-            # @register.assignment_tag
-            return dec(func)
-        else:
-            raise TemplateSyntaxError("Invalid arguments provided to assignment_tag")
 
 register = Library()
 
@@ -81,7 +24,18 @@ def get_user_favorite_count(user, app, model):
     return str(favorites_count)
 
 
-@register.simple_assignment_tag
+def assign_wooey_setting(name):
+    return getattr(wooey_settings, name, "")
+
+
+# Django 1.9 > Support for assign wooey setting
+if DJANGO_VERSION <= DJ18:
+    register.assignment_tag(assign_wooey_setting)
+else:
+    register.simple_tag(assign_wooey_setting)
+
+
+@register.simple_tag
 def get_wooey_setting(name):
     return getattr(wooey_settings, name, "")
 
@@ -182,7 +136,12 @@ def get_range(value):
     return range(int(value))
 
 
-@register.simple_assignment_tag(takes_context=True)
 def absolute_url(context, url):
     request = context['request']
     return request.build_absolute_uri(url)
+
+# Django 1.9 > Support for assign wooey setting
+if DJANGO_VERSION <= DJ18:
+    register.assignment_tag(absolute_url, takes_context=True)
+else:
+    register.simple_tag(absolute_url, takes_context=True)

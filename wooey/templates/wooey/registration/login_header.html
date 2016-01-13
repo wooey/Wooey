@@ -10,7 +10,7 @@
   </div>
     <input type="hidden" name="next" value="{{ request.path }}" />
   <button type="submit" class="btn btn-default btn-sm" id="wooey-login">{% trans "Login" %}</button>
-{% get_wooey_setting "WOOEY_REGISTER_URL" as registration_url %}
+{% assign_wooey_setting "WOOEY_REGISTER_URL" as registration_url %}
 {% if registration_url %}
 {#    This is a hack but it gets register aligned properly without any work#}
     <div class="form-group"><li>&nbsp;&nbsp;<a href="{% url "wooey:wooey_register" %}">{% trans "Register" %}</a></li></div>

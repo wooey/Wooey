@@ -1,12 +1,15 @@
 from __future__ import division, absolute_import
+
 from django import template
-from .. import settings as wooey_settings
 from django.utils.safestring import mark_safe
 from django.contrib.contenttypes.models import ContentType
 from django.template import Library
 
 import urllib
 import hashlib
+
+from .. import settings as wooey_settings
+from ..version import DJ18, DJANGO_VERSION
 
 
 register = Library()

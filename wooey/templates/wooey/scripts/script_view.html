@@ -32,7 +32,10 @@
         {% csrf_token %}
 
         <div class="panel panel-default">
-        <div class="panel-heading">{% trans "Settings" %} <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-settings" href="#collapse-settings"></a></div>
+        <div class="panel-heading">
+            {% trans "Settings" %}
+            <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-settings" href="#collapse-settings"></a>
+        </div>
 
         <div id="collapse-settings" class="panel-collapse collapse in">
 
@@ -49,7 +52,6 @@
         <div class="panel-body">
         <div class="tab-content">
         {% for group in form.groups %}
-
         {% with group.group_name|slugify as group_slug %}
 
           <div id="optiongroup-{{ group_slug }}" class="tab-pane fade in {% if forloop.first %}active{% endif %}">
@@ -95,7 +97,7 @@
             </div>
             </div>
 
-
+        <input type="hidden" name="wooey_type" value="{{ form.wooey_type }}">
         <input name="wooey_clone_task_id" id="wooey_clone_task_id" type="hidden">
         <div class="pull-right">
             <button id="wooey-form-submit" type="submit" class="btn btn-primary">{% trans "Submit" %}</button>

@@ -28,6 +28,8 @@ from clinto.parser import Parser
 
 from .. import settings as wooey_settings
 
+from titlecase import titlecase
+
 
 def sanitize_name(name):
     return name.replace(' ', '_').replace('-', '_')
@@ -35,6 +37,11 @@ def sanitize_name(name):
 
 def sanitize_string(value):
     return value.replace('"', '\\"')
+
+
+def titlecase_name(name):
+    name = name.replace('_', ' ').replace('-', ' ')
+    return titlecase(name)
 
 
 def get_storage(local=True):
@@ -169,17 +176,22 @@ def get_storage_object(path, local=False):
     return obj
 
 
-def add_wooey_script(script_version=None, script_path=None, group=None):
-    # There is a class called 'Script' which contains the general information about a script. However, that is not where the file details
-    # of the script lie. That is the ScriptVersion model. This allows the end user to tag a script as a favorite/etc. and set
-    # information such as script descriptions/names that do not constantly need to be updated with every version change. Thus,
-    # a ScriptVersion stores the file info and such.
+def add_wooey_script(script_version=None, script_path=None, group=None, script_name=None):
+    """
+    There is a class called 'Script' which contains the general information about a script. However, that is not where the file details
+    of the script lie. That is the ScriptVersion model. This allows the end user to tag a script as a favorite/etc. and set
+    information such as script descriptions/names that do not constantly need to be updated with every version change. Thus,
+    a ScriptVersion stores the file info and such.
+    """
+
     from ..models import Script, ScriptGroup, ScriptParameter, ScriptParameterGroup, ScriptVersion
-    # if we are adding through the admin, at this point the file will be saved already and this method will be receiving
-    # the scriptversion object. Otherwise, we are adding through the managementment command. In this case, the file will be
-    # a location and we need to setup the Script and ScriptVersion in here.
+
+    # If we are adding through the admin, at this point the file will be saved already and this method will be receiving
+    # the scriptversion object. Otherwise, we are adding through the managementment command. In this case, the file
+    # will be a location and we need to setup the Script and ScriptVersion in here.
 
     local_storage = get_storage(local=True)
+
     if script_version is not None:
         # we are updating the script here or creating it through the admin
 
@@ -223,7 +235,8 @@ def add_wooey_script(script_version=None, script_path=None, group=None):
     if isinstance(group, ScriptGroup):
         group = group.group_name
     if group is None:
-        group = 'Wooey Scripts'
+        group = wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP
+
     basename, extension = os.path.splitext(script)
     filename = os.path.split(basename)[1]
 
@@ -241,9 +254,13 @@ def add_wooey_script(script_version=None, script_path=None, group=None):
     except:
         sys.stderr.write('Error parsing version, defaulting to 1. Error message:\n {}'.format(traceback.format_exc()))
         version_string = '1'
+
+    if script_name is None:
+        script_name = d['name']
+
     if script_version is None:
         # we are being loaded from the management command, create/update our script/version
-        script_kwargs = {'script_group': script_group, 'script_name': d['name']}
+        script_kwargs = {'script_group': script_group, 'script_name': script_name}
         version_kwargs = {'script_version': version_string, 'script_path': local_file, 'default_version': True}
         # does this script already exist in the database?
         script_created = Script.objects.filter(**script_kwargs).count() == 0
@@ -269,17 +286,20 @@ def add_wooey_script(script_version=None, script_path=None, group=None):
             else:
                 # get the largest iteration and add 1 to it
                 next_iteration = sorted([i.script_iteration for i in current_versions])[-1]+1
+                current_versions.update(default_version=False)
+
             version_kwargs.update({'script_iteration': next_iteration})
         version_kwargs.update({'script': wooey_script})
         script_version = ScriptVersion(**version_kwargs)
         script_version._script_cl_creation = True
+        script_version.default_version = True
         script_version.save()
     else:
         # we are being created/updated from the admin
         if not script_version.script.script_description:
             script_version.script.script_description = d['description']
         if not script_version.script.script_name:
-            script_version.script.script_name = d['name']
+            script_version.script.script_name = script_name
         past_versions = ScriptVersion.objects.filter(script=script_version.script, script_version=version_string).exclude(pk=script_version.pk)
         script_version.script_iteration = past_versions.count()+1
         past_versions.update(default_version=False)

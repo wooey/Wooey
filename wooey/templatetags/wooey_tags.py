@@ -24,9 +24,15 @@ def get_user_favorite_count(user, app, model):
     return str(favorites_count)
 
 
-@register.assignment_tag
 def assign_wooey_setting(name):
     return getattr(wooey_settings, name, "")
+
+
+# Django 1.9 > Support for assign wooey setting
+if DJANGO_VERSION <= DJ18:
+    register.assignment_tag(assign_wooey_setting)
+else:
+    register.simple_tag(assign_wooey_setting)
 
 
 @register.simple_tag
@@ -130,7 +136,12 @@ def get_range(value):
     return range(int(value))
 
 
-@register.assignment_tag(takes_context=True)
 def absolute_url(context, url):
     request = context['request']
     return request.build_absolute_uri(url)
+
+# Django 1.9 > Support for assign wooey setting
+if DJANGO_VERSION <= DJ18:
+    register.assignment_tag(absolute_url, takes_context=True)
+else:
+    register.simple_tag(absolute_url, takes_context=True)

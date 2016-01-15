@@ -45,7 +45,7 @@ class BaseJobFactory(factory.DjangoModelFactory):
 
 
 def generate_script(script_path):
-    filename = os.path.join(script_path)[1]
+    filename = os.path.split(script_path)[1]
     filename = os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, filename)
     new_file = default_storage.save(filename, open(script_path))
     from ..backend import utils

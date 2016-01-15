@@ -9,3 +9,5 @@ clinto==0.1.2
 tox
 boto
 django-storages-redux
+sphinx
+mock

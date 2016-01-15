@@ -43,6 +43,18 @@ def bootstrap(env=None, cwd=None):
     env['DJANGO_SETTINGS_MODULE'] = ''
     admin_command = [sys.executable] if sys.executable else []
     admin_path = which('django-admin.py')
+    if admin_path is None:
+        # on windows, we may need to look for django-admin.exe
+        platform = sys.platform
+        if platform == "win32":
+            admin_path = which('django-admin')
+            if admin_path is None:
+                admin_path = which('django-admin.exe')
+                if admin_path is not None:
+                    admin_command = []
+    if admin_path is None:
+        sys.stderr.write('Unable to find django-admin command. Please check your PATH and ensure django-admin is accessible.\n')
+        sys.exit(1)
     admin_command.extend([admin_path, 'startproject', project_name])
     admin_kwargs = {'env': env}
     if cwd is not None:

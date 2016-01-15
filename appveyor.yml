@@ -6,6 +6,7 @@ environment:
     - PYTHON: "C:/Python34"
 init:
   - "ECHO %PYTHON%"
+  - "ECHO %path%"
   - ps: "ls C:/Python*"
 install:
   - ps: (new-object net.webclient).DownloadFile('https://raw.github.com/pypa/pip/master/contrib/get-pip.py', 'C:/get-pip.py')

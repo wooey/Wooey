@@ -13,6 +13,8 @@ install:
   - "%PYTHON%/python.exe C:/get-pip.py"
   - "%PYTHON%/Scripts/pip.exe install -r requirements.txt"
   - "%PYTHON%/Scripts/pip.exe install -e ."
+# setup our path to include python scripts
+  - cmd: SET PATH=%PATH%;%PYTHON%/Scripts
 build: off
 test_script:
   - "%PYTHON%/Scripts/pip.exe --version"

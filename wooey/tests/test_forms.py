@@ -72,3 +72,14 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase)
         file_param = 'multiple_file_choices'
         files = [i.value for i in job.get_parameters() if i.parameter.slug == file_param]
         self.assertEqual(len(files), len(fdict.get(file_param)))
+
+    def test_without_args_form(self):
+        script_version = self.without_args
+        form = utils.get_master_form(script_version=script_version)
+        # check our wrapper is in the form render
+        utils.validate_form(form=form)
+        self.assertTrue(form.is_valid())
+        # test we can create a job from this form
+        # this is implemented to put data and files in the same dictionary, so update it
+        form.cleaned_data.update(fdict)
+        job = utils.create_wooey_job(script_version_pk=script_version.pk, data=form.cleaned_data)

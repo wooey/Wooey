@@ -36,4 +36,5 @@ class ScriptFactoryMixin(object):
     def setUp(self):
         self.translate_script = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate.py'))
         self.choice_script = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'choices.py'))
+        self.without_args = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'without_args.py'))
         super(ScriptFactoryMixin, self).setUp()

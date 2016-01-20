@@ -37,5 +37,12 @@ SCRIPT_DATA = {
                                           File(open(os.path.join(WOOEY_TEST_SCRIPTS, 'crop.py'), 'rb'))
                                           ]
             }
+        },
+    'without_args':
+        {
+            'data': {
+                'job_name': ['abc'],
+            }
+
         }
 }

@@ -5,9 +5,9 @@ from ..backend import utils
 from ..forms import WooeyForm
 from ..forms import config as forms_config
 
-from . import factories
 from . import config
 from . import mixins
+from ..models import WooeyJob
 
 
 class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
@@ -77,9 +77,16 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase)
         script_version = self.without_args
         form = utils.get_master_form(script_version=script_version)
         # check our wrapper is in the form render
-        utils.validate_form(form=form)
-        self.assertTrue(form.is_valid())
+        # in a normal POST request, the data will contain {'wooey_type': script_pk}. This will cause the is_bound
+        # attribute of the form to be set. Otherwise, this test will always fail. It is OK to set this data
+        # in the test, since it is how it will be recapitulated in the normal use case
+        form_data = form.initial
+        form_data.update(config.SCRIPT_DATA['without_args'].get('data'))
+        utils.validate_form(form=form, data=form_data)
+        self.assertTrue(form.is_valid(), form.errors)
         # test we can create a job from this form
-        # this is implemented to put data and files in the same dictionary, so update it
-        form.cleaned_data.update(fdict)
         job = utils.create_wooey_job(script_version_pk=script_version.pk, data=form.cleaned_data)
+        job.submit_to_celery()
+        # get the job again
+        job = WooeyJob.objects.get(pk=job.pk)
+        self.assertEqual(job.status, WooeyJob.COMPLETED)

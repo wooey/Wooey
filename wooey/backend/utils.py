@@ -197,7 +197,9 @@ def add_wooey_script(script_version=None, script_path=None, group=None):
 
         # remove the old file
         if old_name != new_name:
+            current_file.close()
             current_storage.delete(old_name)
+            current_file = current_storage.open(new_path)
 
         script_version._rename_script = True
         script_version.script_path.name = new_name

@@ -16,7 +16,8 @@ class ScriptAdditionTests(mixins.ScriptFactoryMixin, TestCase):
 
     def test_command_order(self):
         script = os.path.join(config.WOOEY_TEST_SCRIPTS, 'command_order.py')
-        new_file = self.storage.save(self.filename_func('command_order.py'), open(script))
+        with open(script) as o:
+            new_file = self.storage.save(self.filename_func('command_order.py'), o)
         res = utils.add_wooey_script(script_path=new_file, group=None)
         self.assertEqual(res['valid'], True, res['errors'])
         job = utils.create_wooey_job(script_version_pk=1, data={'job_name': 'abc', 'link': 'alink', 'name': 'aname'})
@@ -31,12 +32,14 @@ class ScriptAdditionTests(mixins.ScriptFactoryMixin, TestCase):
 
     def test_script_upgrade(self):
         script_path = os.path.join(config.WOOEY_TEST_SCRIPTS, 'command_order.py')
-        new_file = self.storage.save(self.filename_func('command_order.py'), open(script_path))
+        with open(script_path) as o:
+            new_file = self.storage.save(self.filename_func('command_order.py'), o)
         res = utils.add_wooey_script(script_path=new_file, group=None)
         self.assertEqual(res['valid'], True, res['errors'])
         # upgrade script
         script = ScriptVersion.objects.get(pk=1)
-        new_script = self.storage.save(self.filename_func('command_order.py'), open(script_path))
+        with open(script_path) as o:
+            new_script = self.storage.save(self.filename_func('command_order.py'), o)
         script.script_path = new_script
         # we are going to be cloning this, so we lose the old object
         old_pk, old_iter = script.pk, script.script_iteration

@@ -48,6 +48,8 @@ class ScriptGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
 
     class Meta:
         app_label = 'wooey'
+        verbose_name = _('script group')
+        verbose_name_plural = _('script groups')
 
     def __str__(self):
         return self.group_name
@@ -75,6 +77,8 @@ class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
 
     class Meta:
         app_label = 'wooey'
+        verbose_name = _('script')
+        verbose_name_plural = _('scripts')
 
     def __str__(self):
         return self.script_name
@@ -111,6 +115,8 @@ class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
 
     class Meta:
         app_label = 'wooey'
+        verbose_name = _('script version')
+        verbose_name_plural = _('script versions')
 
     def __str__(self):
         return '{}({}: {})'.format(self.script.script_name, self.script_version, self.script_iteration)
@@ -159,6 +165,8 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
 
     class Meta:
         app_label = 'wooey'
+        verbose_name = _('wooey job')
+        verbose_name_plural = _('wooey jobs')
 
     def __str__(self):
         return self.job_name
@@ -230,6 +238,8 @@ class ScriptParameterGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
 
     class Meta:
         app_label = 'wooey'
+        verbose_name = _('script parameter group')
+        verbose_name_plural = _('script parameter groups')
 
     def __str__(self):
         return '{}: {}'.format(self.script_version.script.script_name, self.group_name)
@@ -259,6 +269,8 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
 
     class Meta:
         app_label = 'wooey'
+        verbose_name = _('script parameter')
+        verbose_name_plural = _('script parameters')
 
     @property
     def multiple_choice(self):
@@ -291,7 +303,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
         return '{}: {}'.format(self.script_version.script.script_name, self.script_param)
 
 
-# TODO: find a better name for this class
+# TODO: find a better name for this class. Job parameter? SelectedParameter?
 class ScriptParameters(WooeyPy2Mixin, models.Model):
     """
         This holds the actual parameters sent with the submission
@@ -319,6 +331,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
 
     class Meta:
         app_label = 'wooey'
+        verbose_name = _('script parameters')
 
     def __str__(self):
         try:
@@ -479,6 +492,8 @@ class WooeyFile(WooeyPy2Mixin, models.Model):
 
     class Meta:
         app_label = 'wooey'
+        verbose_name = _('wooey file')
+        verbose_name_plural = _('wooey files')
 
     def __str__(self):
         return '{}: {}'.format(self.job.job_name, self.filepath)

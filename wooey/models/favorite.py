@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.utils.translation import ugettext_lazy as _
 from ..version import DJANGO_VERSION, DJ18
 
 # This cannot be in django_compat due to the other modules which import it prior to application loading.
@@ -25,3 +26,6 @@ class Favorite(models.Model):
 
     class Meta:
         unique_together = ('user', 'content_type', 'object_id', )
+        app_label = 'wooey'
+        verbose_name = _('favorite')
+        verbose_name_plural = _('favorites')

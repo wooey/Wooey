@@ -374,7 +374,7 @@
             </ol>
 
             <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1">
-                <span class="sr-only">Toggle navigation</span>
+                <span class="sr-only">{% trans "Toggle navigation" %}</span>
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
@@ -644,7 +644,7 @@
                         /* Now add "more" links if count > length */
                         if(total_jobs > job_data.length){
                             items.push('<li role="separator" class="divider"></li>');
-                            items.push('<li><a href="'+ wooey_job_list_urls[table_key] +'">More...</a>');
+                            items.push('<li><a href="'+ wooey_job_list_urls[table_key] +'">{% trans "More..." %}</a>');
                         }
 
                         /* Empty the list: might be nicer to replace, edit, more intelligently */

@@ -41,7 +41,7 @@
             </a>
             <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                 <span class="caret"></span>
-                <span class="sr-only">Toggle Dropdown</span>
+                <span class="sr-only">{% trans "Toggle Dropdown" %}</span>
             </button>
             <ul class="dropdown-menu" role="menu">
                 {% for archive in job_info.archives %}
@@ -58,13 +58,13 @@
             </a>
             <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                 <span class="caret"></span>
-                <span class="sr-only">Toggle Dropdown</span>
+                <span class="sr-only">{% trans "Toggle Dropdown" %}</span>
             </button>
             <ul class="dropdown-menu" role="menu">
                 <!-- <li><a href="""><span class="glyphicon glyphicon-figshare"></span> Figshare</a></li> -->
-                <li><a href="{{ permalink }}" onclick="$('#modal-permalink').modal(); return false;"><span class="glyphicon glyphicon-link"></span> Permalink</a></li>
+                <li><a href="{{ permalink }}" onclick="$('#modal-permalink').modal(); return false;"><span class="glyphicon glyphicon-link"></span> {% trans "Permalink" %}</a></li>
 
-                <li><a href="mailto:?subject=Wooey Job #{{ job_info.job.id }} is {{ job_info.job.status }}&body=You can see the result and any outputs at the following link:%0D%0A{{ permalink }}"><span class="glyphicon glyphicon-envelope"></span> Email</a></li>
+                <li><a href="mailto:?subject={% blocktrans with job_id=job_info.job.id job_status=job_info.job.status %}Wooey Job #{{ job_id }} is {{ job_status }}{% endblocktrans %}&body={% blocktrans with permalink=permalink %}You can see the result and any outputs at the following link:%0D%0A{{ permalink }}{% endblocktrans %}"><span class="glyphicon glyphicon-envelope"></span> {% trans "Email" %}</a></li>
             </ul>
             </div>
 
@@ -107,22 +107,22 @@
 
 
   <div class="job-metadata">
-      • Priority 1
-      • Submitted {{ job_info.job.created_date|timesince }} ago by {{ job_info.job.user }}
-      • Updated {{ job_info.last_modified|timesince }} ago
+      • {% trans "Priority 1" %}
+      • {% blocktrans with job_submission_date=job_info.job.created_date|timesince job_user=job_info.job.user %}Submitted {{ job_submission_date }} ago by {{ job_user }}{% endblocktrans %}
+      • {% blocktrans with job_last_modified_date=job_info.last_modified|timesince %}Updated {{ job_last_modified_date }} ago{% endblocktrans %}
 
 
 
     {% if job_info.job.status == 'completed' %}
-    <span class="label label-success"><span class="glyphicon glyphicon-ok"></span> Success</span>
+    <span class="label label-success"><span class="glyphicon glyphicon-ok"></span> {% trans "Success" %}</span>
     {% elif job_info.job.status == 'running' %}
-    <span class="label label-success"><span class="glyphicon glyphicon-refresh spinning"></span> Executing</span>
+    <span class="label label-success"><span class="glyphicon glyphicon-refresh spinning"></span> {% trans "Executing" %}</span>
     {% elif job_info.job.status == 'pending' %}
-    <span class="label label-default"><span class="glyphicon time"></span> Queued</span>
+    <span class="label label-default"><span class="glyphicon time"></span> {% trans "Queued" %}</span>
     {% elif job_info.job.status == 'revoked' %}
-    <span class="label label-danger"><span class="glyphicon glyphicon-stop"></span> Halted</span>
+    <span class="label label-danger"><span class="glyphicon glyphicon-stop"></span> {% trans "Halted" %}</span>
     {% elif job_info.job.status == 'submitted' %}
-    <span class="label label-default"><span class="glyphicon glyphicon-hourglass"></span> Waiting</span>
+    <span class="label label-default"><span class="glyphicon glyphicon-hourglass"></span> {% trans "Waiting" %}</span>
     {% endif %}
 
   </div>
@@ -175,11 +175,11 @@
                 <div class="panel-body panel-nopad">
                     <table class="table table-striped">
                         <tr>
-                            <th>Filename</th>
-                            <th>Parameter</th>
+                            <th>{% trans "Filename" %}</th>
+                            <th>{% trans "Parameter" %}</th>
                             <th></th>
                             <th></th>
-                            <th style="text-align:center;">Size</th>
+                            <th style="text-align:center;">{% trans "Size" %}</th>
                         </tr>
                         {% for file in job_info.all_files %}
                             <tr>

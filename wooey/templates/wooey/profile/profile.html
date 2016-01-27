@@ -18,13 +18,15 @@
 
 
   <div class="profile-metadata">
-    Joined {{ profile_user.date_joined|timesince }} ago
+    {% blocktrans with join_date=profile_user.date_joined|timesince %}
+    Joined {{ join_date }} ago
+    {% endblocktrans %}
     {% if profile_user.is_superuser %}
-        • <span class="glyphicon glyphicon-fire"></span> Superuser
+        • <span class="glyphicon glyphicon-fire"></span> {% trans "Superuser" %}
     {% endif %}
 
     {% if profile_user.is_staff %}
-        • <span class="glyphicon glyphicon-education"></span> Staff
+        • <span class="glyphicon glyphicon-education"></span> {% trans "Staff" %}
     {% endif %}
 
   </div>

@@ -79,10 +79,11 @@ class WooeyFormFactory(object):
         field_kwargs = {'label': param.script_param.replace('_', ' ').title(),
                         'required': param.required,
                         'help_text': param.param_help,
-                        'initial': param.default,
                         }
         multiple_choices = param.multiple_choice
         choice_limit = param.max_choices
+        if initial is None and param.default is not None:
+            initial = param.default
         if choices:
             form_field = 'MultipleChoiceField' if multiple_choices else 'ChoiceField'
             base_choices = [(None, '----')] if not param.required and not multiple_choices else []

@@ -297,7 +297,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None):
             is_out = True if param.get('upload', None) is False and param.get('type') == 'file' else not param.get('upload', False)
             script_param, created = ScriptParameter.objects.get_or_create(script_version=script_version, short_param=param['param'], script_param=param['name'],
                                                                           is_output=is_out, required=param.get('required', False),
-                                                                          form_field=param['model'], default=param.get('default'), input_type=param.get('type'),
+                                                                          form_field=param['model'], default=param.get('value'), input_type=param.get('type'),
                                                                           choices=json.dumps(param.get('choices')), choice_limit=json.dumps(param.get('choice_limit', 1)),
                                                                           param_help=param.get('help'), is_checked=param.get('checked', False),
                                                                           parameter_group=param_group)

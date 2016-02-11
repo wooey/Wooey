@@ -5,8 +5,9 @@ from django.contrib.contenttypes.models import ContentType
 from django.template.base import TemplateSyntaxError
 
 from inspect import getargspec
-import urllib
 import hashlib
+
+from six.moves.urllib_parse import urlencode
 
 from .. import settings as wooey_settings
 from ..django_compat import TagHelperNode, parse_bits
@@ -165,8 +166,8 @@ class GravatarUrlNode(template.Node):
         except template.VariableDoesNotExist:
             return ''
 
-        url = "http://www.gravatar.com/avatar/" + hashlib.md5(email.lower()).hexdigest() + "?"
-        url += urllib.urlencode({'s': str(size)})
+        url = "http://www.gravatar.com/avatar/" + hashlib.md5(email.lower().decode()).hexdigest() + "?"
+        url += urlencode({'s': str(size)})
 
         return url
 

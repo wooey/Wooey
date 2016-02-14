@@ -14,7 +14,6 @@ from django.db import models
 from django.conf import settings
 from django.core.files.storage import SuspiciousFileOperation
 from django.core.urlresolvers import reverse_lazy, reverse
-from django.core.cache import caches
 from django.contrib.auth.models import Group
 from django.utils.translation import ugettext_lazy as _
 from django.db import transaction
@@ -26,6 +25,7 @@ from celery import states
 
 from .. import settings as wooey_settings
 from .. backend import utils
+from ..django_compat import get_cache
 
 from . mixins import UpdateScriptsMixin, ModelDiffMixin, WooeyPy2Mixin
 from .. import django_compat
@@ -232,8 +232,8 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
             self.stdout = stdout
             self.stderr = stderr
             self.save()
-        else:
-            cache = caches[wooey_cache]
+        elif wooey_cache is not None:
+            cache = get_cache(wooey_cache)
             if delete:
                 cache.delete(self.get_realtime_key())
             else:
@@ -242,7 +242,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
     def get_realtime(self):
         wooey_cache = wooey_settings.WOOEY_REALTIME_CACHE
         if wooey_cache is not None:
-            cache = caches[wooey_cache]
+            cache = get_cache(wooey_cache)
             out = cache.get(self.get_realtime_key())
             if out:
                 return json.loads(out)

@@ -54,3 +54,11 @@ if DJANGO_VERSION < DJ17:
 
 else:
     from django.forms.utils import flatatt, format_html
+
+def get_cache(cache):
+    if DJANGO_VERSION < DJ17:
+        from django.core.cache import get_cache
+        return get_cache(cache)
+    else:
+        from django.core.cache import caches
+        return caches[cache]

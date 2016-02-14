@@ -14,6 +14,7 @@ from django.db import models
 from django.conf import settings
 from django.core.files.storage import SuspiciousFileOperation
 from django.core.urlresolvers import reverse_lazy, reverse
+from django.core.cache import caches
 from django.contrib.auth.models import Group
 from django.utils.translation import ugettext_lazy as _
 from django.db import transaction
@@ -229,6 +230,45 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         # machines. We also want to omit any leading path separators so we can join the path to whatever
         # MEDIA_ROOT is currently at work instead of giving a path from a root
         return path[path.find(self.get_output_path()):].lstrip(os.path.sep)
+
+    def get_realtime_key(self):
+        return 'wooeyjob_{}_rt'.format(self.pk)
+
+    def update_realtime(self, stdout='', stderr='', delete=False):
+        wooey_cache = wooey_settings.WOOEY_REALTIME_CACHE
+        if delete is False and wooey_cache is None:
+            self.stdout = stdout
+            self.stderr = stderr
+            self.save()
+        else:
+            cache = caches[wooey_cache]
+            if delete:
+                cache.delete(self.get_realtime_key())
+            else:
+                cache.set(self.get_realtime_key(), json.dumps({'stdout': stdout, 'stderr': stderr}))
+
+    def get_realtime(self):
+        wooey_cache = wooey_settings.WOOEY_REALTIME_CACHE
+        if wooey_cache is not None:
+            cache = caches[wooey_cache]
+            out = cache.get(self.get_realtime_key())
+            if out:
+                return json.loads(out)
+        return {'stdout': self.stdout, 'stderr': self.stderr}
+
+    def get_stdout(self):
+        if self.status != WooeyJob.COMPLETED:
+            rt = self.get_realtime().get('stdout')
+            if rt:
+                return rt
+        return self.stdout
+
+    def get_stderr(self):
+        if self.status != WooeyJob.COMPLETED:
+            rt = self.get_realtime().get('stderr')
+            if rt:
+                return rt
+        return self.stderr
 
 
 class ScriptParameterGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):

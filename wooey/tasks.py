@@ -119,10 +119,7 @@ def submit_script(**kwargs):
 
         # If there are changes, update the db
         if (stdout, stderr) != prev_std:
-            job.stdout = stdout
-            job.stderr = stderr
-            job.save()
-
+            job.update_realtime(stdout=stdout, stderr=stderr)
             prev_std = (stdout, stderr)
 
     # tar/zip up the generated content for bulk downloads
@@ -182,6 +179,7 @@ def submit_script(**kwargs):
     job.stdout = stdout
     job.stderr = stderr
     job.status = WooeyJob.COMPLETED
+    job.update_realtime(delete=True)
     job.save()
 
     return (stdout, stderr)

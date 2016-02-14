@@ -233,8 +233,8 @@ class JobJSONHTML(JobBase):
 
         return JsonResponse({
             'status': context['job_info']['status'].lower(),
-            'stdout': context['job_info']['job'].stdout,
-            'stderr': context['job_info']['job'].stderr,
+            'stdout': context['job_info']['job'].get_stdout(),
+            'stderr': context['job_info']['job'].get_stderr(),
             'outputs_html': outputs,
         })
 

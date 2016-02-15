@@ -12,6 +12,10 @@ from celery.signals import task_postrun, task_prerun, task_revoked
 def task_completed(sender=None, **kwargs):
     task_kwargs = kwargs.get('kwargs')
     job_id = task_kwargs.get('wooey_job')
+    # Just return if it is not a wooey_job!
+    if not job_id:
+        return
+
     from .models import WooeyJob
     from celery import states
     try:

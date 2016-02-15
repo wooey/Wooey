@@ -1,0 +1,61 @@
+environment:
+  PYTHONIOENCODING: "utf-8"
+  matrix:
+    - PYTHON: "C:/Python27"
+      DJANGO: "Django==1.6.*"
+    - PYTHON: "C:/Python27"
+      DJANGO: "Django==1.7.*"
+    - PYTHON: "C:/Python27"
+      DJANGO: "Django==1.8.*"
+
+    # keep this to just maintain the latest version
+    - PYTHON: "C:/Python27"
+      DJANGO: "Django"
+
+    - PYTHON: "C:/Python34"
+      DJANGO: "Django==1.6.*"
+    - PYTHON: "C:/Python34"
+      DJANGO: "Django==1.7.*"
+    - PYTHON: "C:/Python34"
+      DJANGO: "Django==1.8.*"
+
+    # keep this to just maintain the latest version
+    - PYTHON: "C:/Python34"
+      DJANGO: "Django"
+
+    # These versions of Django are not supported with Python3.5
+    #- PYTHON: "C:/Python35"
+    #  DJANGO: "Django==1.6.*"
+    #- PYTHON: "C:/Python35"
+    #  DJANGO: "Django==1.7.*"
+    - PYTHON: "C:/Python35"
+      DJANGO: "Django==1.8.*"
+
+    # keep this to just maintain the latest version
+    - PYTHON: "C:/Python35"
+      DJANGO: "Django"
+
+
+init:
+  - "ECHO %PYTHON%"
+  - "ECHO %path%"
+  - ps: "ls C:/Python*"
+install:
+  - ps: (new-object net.webclient).DownloadFile('https://bootstrap.pypa.io/get-pip.py', 'C:/get-pip.py')
+  - "%PYTHON%/python.exe C:/get-pip.py"
+  - "%PYTHON%/Scripts/pip.exe install -r requirements.txt"
+  - "%PYTHON%/Scripts/pip.exe install --upgrade %DJANGO%"
+  - "%PYTHON%/Scripts/pip.exe install -e ."
+# setup our path to include python scripts
+  - cmd: SET PATH=%PATH%;%PYTHON%/Scripts
+build: off
+test_script:
+  - "%PYTHON%/Scripts/pip.exe --version"
+  - "%PYTHON%/Scripts/nosetests.exe --with-coverage --cover-erase --cover-package=wooey tests"
+  - ps:
+      if($env:DJANGO -eq "Django==1.6.*"){
+        "%PYTHON%/Scripts/django-admin test --settings=wooey.test_settings wooey.tests"
+      }
+      else {
+        "%PYTHON%/Scripts/django-admin.exe test --settings=wooey.test_settings wooey.tests"
+      }

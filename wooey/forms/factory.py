@@ -126,11 +126,13 @@ class WooeyFormFactory(object):
                 if (version.PY_MINOR_VERSION == version.PY34 and version.PY_FULL_VERSION >= version.PY343) or \
                         (version.PY_MINOR_VERSION == version.PY33 and version.PY_FULL_VERSION >= version.PY336):
                     return copy.deepcopy(self.wooey_forms[pk]['groups'])
-        params = ScriptParameter.objects.filter(script_version=script_version).order_by('pk')
+        params = ScriptParameter.objects.filter(script_version=script_version, hidden=False).order_by('pk')
         # set a reference to the object type for POST methods to use
         script_id_field = forms.CharField(widget=forms.HiddenInput)
         group_map = {}
         for param in params:
+            if param.parameter_group.hidden:
+                continue
             initial_values = initial_dict.get(param.slug, None)
             field = self.get_field(param, initial=initial_values)
             field.name = param.slug
@@ -144,8 +146,7 @@ class WooeyFormFactory(object):
             group_map[group_id] = group
         # create individual forms for each group
         group_map = OrderedDict([(i, group_map[i]) for i in sorted(group_map.keys())])
-        d = {'action': script_version.get_url()}
-        d['groups'] = []
+        d = {'action': script_version.get_url(), 'groups': []}
         pk = script_version.pk
         for group_index, group in enumerate(six.iteritems(group_map)):
             group_pk, group_info = group
@@ -178,10 +179,10 @@ class WooeyFormFactory(object):
                     return copy.deepcopy(self.wooey_forms[pk]['master'])
         if script_version is None and pk is not None:
             script_version = ScriptVersion.objects.get(pk=pk)
-        master_form = WooeyForm()
+        pk = script_version.pk
+        master_form = WooeyForm(initial={'wooey_type': pk})
         params = ScriptParameter.objects.filter(script_version=script_version).order_by('pk')
         # set a reference to the object type for POST methods to use
-        pk = script_version.pk
         script_id_field = forms.CharField(widget=forms.HiddenInput)
         master_form.fields['wooey_type'] = script_id_field
         master_form.fields['wooey_type'].initial = pk

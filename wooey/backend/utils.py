@@ -79,10 +79,13 @@ def get_job_commands(job=None):
         if subproc_value:
             param_dict[subproc_param].append(subproc_value)
     for param, values in param_dict.items():
-        for value in values:
-            if param:
-                com.append(param)
-            com.append(value)
+        if param and not values:
+            com.append(param)
+        else:
+            for value in values:
+                if param:
+                    com.append(param)
+                com.append(value)
     return com
 
 
@@ -194,7 +197,9 @@ def add_wooey_script(script_version=None, script_path=None, group=None):
 
         # remove the old file
         if old_name != new_name:
+            current_file.close()
             current_storage.delete(old_name)
+            current_file = current_storage.open(new_path)
 
         script_version._rename_script = True
         script_version.script_path.name = new_name

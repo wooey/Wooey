@@ -9,14 +9,14 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='wooey',
-    version='0.9.1',
+    version='0.9.2',
     packages=find_packages(),
     scripts=['scripts/wooify'],
     entry_points={'console_scripts': ['wooify = wooey.backend.command_line:bootstrap', ]},
     install_requires = ['Django>=1.6', 'django-autoslug', 'django-celery', 'six', 'clinto==0.1.2'],
     include_package_data=True,
     description='A Django app which creates a web GUI and task interface for argparse scripts',
-    url='http://www.github.com/wooey/django-djangui',
+    url='http://www.github.com/wooey/wooey',
     author='Chris Mitchell <chris.mit7@gmail.com>, Martin Fitzpatrick <martin.fitzpatrick@gmail.com>',
     classifiers=[
         'Environment :: Web Environment',

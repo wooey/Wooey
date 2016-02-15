@@ -104,12 +104,12 @@
       • {% blocktrans with job_submission_date=job_info.job.created_date|timesince job_user=job_info.job.user %}Submitted {{ job_submission_date }} ago by {{ job_user }}{% endblocktrans %}
       • {% blocktrans with job_last_modified_date=job_info.last_modified|timesince %}Updated {{ job_last_modified_date }} ago{% endblocktrans %}
 
-    <span class="status-submitted-toggle label label-default"><span class="glyphicon glyphicon-hourglass"></span> Waiting</span>
-    <span class="status-pending-toggle label label-default"><span class="glyphicon time"></span> Queued</span>
-    <span class="status-running-toggle label label-success"><span class="glyphicon glyphicon-refresh spinning"></span> Executing</span>
-    <span class="status-completed-toggle label label-success"><span class="glyphicon glyphicon-ok"></span> Success</span>
-    <span class="status-revoked-toggle label label-danger"><span class="glyphicon glyphicon-stop"></span> Halted</span>
-    <span class="status-failure-toggle label label-danger"><span class="glyphicon glyphicon-exclamation-sign"></span> Error</span>
+    <span class="status-submitted-toggle label label-default"><span class="glyphicon glyphicon-hourglass"></span> {%  trans "Waiting" %}</span>
+    <span class="status-pending-toggle label label-default"><span class="glyphicon time"></span> {% trans "Queued" %}</span>
+    <span class="status-running-toggle label label-success"><span class="glyphicon glyphicon-refresh spinning"></span> {% trans "Executing" %}</span>
+    <span class="status-completed-toggle label label-success"><span class="glyphicon glyphicon-ok"></span> {% trans "Success" %}</span>
+    <span class="status-revoked-toggle label label-danger"><span class="glyphicon glyphicon-stop"></span> {% trans "Halted" %}</span>
+    <span class="status-failure-toggle label label-danger"><span class="glyphicon glyphicon-exclamation-sign"></span> {% trans "Error" %}</span>
 
   </div>
 </div>

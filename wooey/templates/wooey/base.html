@@ -352,6 +352,27 @@
         }
 
 
+        .status-submitted-toggle,
+        .status-pending-toggle,
+        .status-running-toggle,
+        .status-completed-toggle,
+        .status-revoked-toggle,
+        .status-failure-toggle {
+            display: none;
+        }
+
+        .status-submitted .status-submitted-toggle,
+        .status-pending .status-pending-toggle,
+        .status-running .status-running-toggle,
+        .status-completed .status-completed-toggle,
+        .status-revoked .status-revoked-toggle,
+        .status-failure .status-failure-toggle
+        {
+            display: unset !important;
+        }
+
+
+
         {% block extra_style %}
         {% endblock extra_style %}
     </style>
@@ -446,7 +467,7 @@
         </div>
         <!-- /#sidebar-wrapper -->
 
-    <div id="page-content-wrapper">
+    <div id="page-content-wrapper" class="{% block page_content_class %}{% endblock page_content_class %}">
     {% block outer_content %}{% endblock %}
     {% block center %}
         <div class="center-div {% block center_content_class %}col-md-10 col-xs-6{% endblock center_content_class %}">

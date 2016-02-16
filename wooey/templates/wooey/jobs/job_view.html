@@ -142,13 +142,6 @@
                 <div id="collapse-console" class="panel-collapse collapse in">
                 <div class="panel-body console">
                   <pre class="console-body console-command">{{ job_info.job.command }}</pre>
-                  {% if job_info.job.stdout %}
-                  <pre id='console-stdout' class="console-body console-stdout">{{ job_info.job.stdout|linebreaks }}</pre>
-                  {% endif  %}
-                  {% if job_info.job.stderr %}
-                  <pre id='console-stderr' class="console-body console-stderr">{{ job_info.job.stderr|linebreaks }}</pre>
-                  {% endif %}
-
                 </div>
                 </div>
             </div>
@@ -233,12 +226,27 @@
             return true;
         });
 
-
+        function createConsoles() {
+            var $console = $('.panel-body.console');
+            {% if job_info.job_status|lower == 'completed' %}
+                {% if job_info.job.stdout %}
+                    $console.append('<pre id="console-stdout" class="console-body console-stdout">{{ job_info.job.stdout|linebreaks }}</pre>');
+                {% endif %}
+                {% if job_info.job.stderr %}
+                    $console.append('<pre id="console-stderr" class="console-body console-stderr">{{ job_info.job.stderr|linebreaks }}</pre>');
+                {% endif %}
+            {% else %}
+                $console.append('<pre id="console-stdout" class="console-body console-stdout">{{ job_info.job.stdout|linebreaks }}</pre>');
+                $console.append('<pre id="console-stderr" class="console-body console-stderr">{{ job_info.job.stderr|linebreaks }}</pre>');
+            {% endif %}
+        }
 
         function jobRefresh() {
             /* Update the job data, items, outputs etc. */
             $.get("{% url "wooey:celery_results_json_html" job_info.job.id  %}", function(data){
                 $('#page-content-wrapper').removeClass().addClass('status-' + data['status']);
+                if($('#console-stdout').length == 0)
+                    createConsoles();
                 $('#console-stdout').text(data['stdout']);
                 $('#console-stderr').text(data['stderr']);
 
@@ -257,8 +265,9 @@
             /* Update the interface ~3 secs */
             refreshtimerID = window.setInterval(jobRefresh, 3 * 1000);
         }
-
-        refreshtimerID = window.setInterval(jobRefresh, 3 * 1000);
+        else {
+            createConsoles();
+        }
 
     });
 </script>

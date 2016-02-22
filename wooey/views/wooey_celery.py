@@ -19,6 +19,7 @@ from ..backend.utils import valid_user, get_file_previews
 from ..django_compat import JsonResponse
 from django.db.models import Q
 from django.views.generic import ListView
+from django.template.loader import render_to_string
 
 SPANBASE = "<span title='{}' class='glyphicon {}'></span> "
 MAXIMUM_JOBS_NAVBAR = 10
@@ -201,6 +202,41 @@ class JobJSON(JobBase):
 
     def render_to_response(self, context, *args, **kwargs):
         return JsonResponse(context)
+
+
+class JobJSONHTML(JobBase):
+    """
+    Return the required data to update the rendered content for the job, e.g.
+    status
+    stdout, stderr
+    rendered outputs (template)
+    file_list (rendered, or data only)
+    """
+    def render_to_response(self, context, *args, **kwargs):
+        """
+        Build dictionary of content
+        """
+        outputs = []
+        base_ctx = context
+
+        for output_group, output_files in context['job_info']['file_groups'].items():
+            for output_file_content in output_files:
+                if output_group:
+                    base_ctx.update({
+                                     'job_info': context['job_info'],
+                                     'output_group': output_group,
+                                     'output_file_content': output_file_content,
+                                    })
+                    s = render_to_string('wooey/preview/%s.html' % output_group, base_ctx)
+                    outputs.append(s)
+
+
+        return JsonResponse({
+            'status': context['job_info']['status'].lower(),
+            'stdout': context['job_info']['job'].get_stdout(),
+            'stderr': context['job_info']['job'].get_stderr(),
+            'outputs_html': outputs,
+        })
 
 
 class JobListBase(ListView):

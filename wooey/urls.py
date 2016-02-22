@@ -23,6 +23,7 @@ wooey_patterns = [
 
     url(r'^jobs/(?P<job_id>[0-9\-]+)/$', views.JobView.as_view(), name='celery_results'),
     url(r'^jobs/(?P<job_id>[0-9\-]+)/json$', views.JobJSON.as_view(), name='celery_results_json'),
+    url(r'^jobs/(?P<job_id>[0-9\-]+)/jsonhtml$', views.JobJSONHTML.as_view(), name='celery_results_json_html'),
 
     # Global public access via uuid
     url(r'^jobs/(?P<uuid>[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12})/$', views.JobView.as_view(), name='celery_results_uuid'),

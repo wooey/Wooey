@@ -4,7 +4,17 @@ import subprocess
 import shutil
 from argparse import ArgumentParser
 from django.template import Context
+
+# This is needed on django 1.9
+from .. version import DJANGO_VERSION, DJ19
+if DJANGO_VERSION >= DJ19:
+    from django.conf import settings
+    import django
+    settings.configure()
+    django.setup()
+
 import wooey
+
 from .. import django_compat
 
 

@@ -166,7 +166,7 @@ class GravatarUrlNode(template.Node):
         except template.VariableDoesNotExist:
             return ''
 
-        url = "http://www.gravatar.com/avatar/" + hashlib.md5(email.lower().decode()).hexdigest() + "?"
+        url = "http://www.gravatar.com/avatar/" + hashlib.md5(email.lower().encode()).hexdigest() + "?"
         url += urlencode({'s': str(size)})
 
         return url

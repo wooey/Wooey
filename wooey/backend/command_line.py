@@ -80,7 +80,7 @@ def bootstrap(env=None, cwd=None):
     for template_file, dest_dir in template_files:
         template_file = open(template_file)
         content = template_file.read()
-        template = django_compat.Engine().from_string(content)
+        template = django_compat.get_template_from_string(content)
         content = template.render(context)
         content = content.encode('utf-8')
         to_name = os.path.join(dest_dir, os.path.split(template_file.name)[1])

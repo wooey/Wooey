@@ -30,23 +30,16 @@ if DJANGO_VERSION < DJ17:
 else:
     from django.http import JsonResponse
 
-if DJANGO_VERSION >= DJ18:
-    from django.template import Engine
-
-else:
-    from django.template import Template
-
-
-    class Engine(object):
-        @staticmethod
-        def from_string(code):
-            return Template(code)
-
 if DJANGO_VERSION < DJ19:
     from django.template.base import TagHelperNode, parse_bits
 else:
     from django.template.library import TagHelperNode, parse_bits
 
+if DJANGO_VERSION >= DJ18:
+    from django.template import Engine
+    get_template_from_string = Engine.get_default().from_string
+else:
+    from django.template.loader import get_template_from_string
 
 
 if DJANGO_VERSION < DJ17:

@@ -13,6 +13,7 @@ from django.conf import settings
 
 from celery import Task
 from celery import app
+from celery.schedules import crontab
 from celery.signals import worker_process_init
 
 from . import settings as wooey_settings
@@ -183,3 +184,26 @@ def submit_script(**kwargs):
     job.save()
 
     return (stdout, stderr)
+
+@celery_app.task(base=WooeyTask)
+def cleanup_wooey_jobs(**kwargs):
+    from datetime import timedelta, datetime
+    from .models import WooeyJob
+    # get the list of jobs that need deleting
+    cleanup_settings = wooey_settings.WOOEY_JOB_EXPIRATION
+    anon_settings = cleanup_settings.get('anonymous')
+    now = datetime.now()
+    if anon_settings:
+        WooeyJob.objects.filter(user=None, created_date__lte=now-anon_settings).delete()
+    user_settings = cleanup_settings.get('user')
+    if user_settings:
+        WooeyJob.objects.filter(user=None, created_date__lte=now-user_settings).delete()
+
+celery_app.conf.update(
+    CELERYBEAT_SCHEDULE = {
+        'cleanup-old-jobs': {
+            'task': 'wooey.tasks.cleanup_wooey_jobs',
+            'schedule': crontab(hour=0, minute=0), # cleanup at midnight each day
+        },
+    }
+)

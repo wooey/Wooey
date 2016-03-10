@@ -187,17 +187,17 @@ def submit_script(**kwargs):
 
 @celery_app.task(base=WooeyTask)
 def cleanup_wooey_jobs(**kwargs):
-    from datetime import timedelta, datetime
+    from django.utils import timezone
     from .models import WooeyJob
-    # get the list of jobs that need deleting
+
     cleanup_settings = wooey_settings.WOOEY_JOB_EXPIRATION
     anon_settings = cleanup_settings.get('anonymous')
-    now = datetime.now()
+    now = timezone.now()
     if anon_settings:
         WooeyJob.objects.filter(user=None, created_date__lte=now-anon_settings).delete()
     user_settings = cleanup_settings.get('user')
     if user_settings:
-        WooeyJob.objects.filter(user=None, created_date__lte=now-user_settings).delete()
+        WooeyJob.objects.filter(user__isnull=False, created_date__lte=now-user_settings).delete()
 
 celery_app.conf.update(
     CELERYBEAT_SCHEDULE = {

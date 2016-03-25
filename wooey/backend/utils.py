@@ -585,8 +585,6 @@ def get_checksum(path, extra=None):
         path.seek(0)
         buf = path.read(BLOCKSIZE)
         while len(buf) > 0:
-            if isinstance(buf, six.string_types):
-                buf = buf.encode('utf-8')
             hasher.update(buf)
             buf = path.read(BLOCKSIZE)
         path.seek(start)

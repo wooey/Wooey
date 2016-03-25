@@ -469,7 +469,7 @@ def create_job_fileinfo(job):
                 d = {'parameter': field, 'file': value}
                 if field.parameter.is_output:
                     full_path = os.path.join(job.save_path, os.path.split(local_storage.path(value))[1])
-                    checksum = get_checksum(value, extra=[job.pk, full_path,'output'])
+                    checksum = get_checksum(value, extra=[job.pk, full_path, 'output'])
                     d['checksum'] = checksum
                 files.append(d)
         except ValueError:

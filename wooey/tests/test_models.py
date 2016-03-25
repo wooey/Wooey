@@ -81,9 +81,17 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMix
                 self.assertEqual(response.status_code, 200)
 
         # check our download links are ok
+        # upload the file first to our storage engine so this works in tests
+        local_storage = utils.get_storage(local=True)
+        fasta_path = local_storage.save('fasta.fasta', open(os.path.join(config.WOOEY_TEST_DATA, 'fasta.fasta')))
+        fasta_file = local_storage.open(fasta_path)
         job = utils.create_wooey_job(script_version_pk=script.pk,
-                                        data={'fasta': open(os.path.join(config.WOOEY_TEST_DATA, 'fasta.fasta')),
-                                              'out': 'abc', 'job_name': 'abc'})
+                                        data={
+                                            'fasta': fasta_file,
+                                            'out': 'abc',
+                                            'job_name': 'abc'
+                                        }
+                                     )
 
         # check our upload link is ok
         file_previews = utils.get_file_previews(job)

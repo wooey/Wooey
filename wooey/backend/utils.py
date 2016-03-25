@@ -346,7 +346,7 @@ def get_upload_path(filepath, checksum=None):
     filename = os.path.split(filepath)[1]
     if checksum is None:
         checksum = get_checksum(filepath)
-    return os.path.join(wooey_settings.WOOEY_FILE_DIR, checksum[:2], checksum[-2:], filename)
+    return os.path.join(wooey_settings.WOOEY_FILE_DIR, checksum[:2], checksum[-2:], checksum, filename)
 
 
 def get_file_info(filepath):

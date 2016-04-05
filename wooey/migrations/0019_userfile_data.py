@@ -25,12 +25,16 @@ def gen_userfiles(apps, schema_editor):
     for obj in WooeyFile.objects.all():
         checksum = obj.checksum
         first_file = checksums.get(checksum, obj)
+        if checksum not in checksums:
+            checksums[checksum] = first_file
         user_file = UserFile(filename=os.path.split(obj.filepath.name)[1], job=obj.job,
                              parameter=obj.parameter, system_file=first_file)
         user_file.save()
         favorites = Favorite.objects.filter(content_type=ctype, object_id=obj.id)
-        if favorites.count():
-             favorites.update(content_object=first_file, content_type=new_ctype)
+        for favorite in favorites:
+            favorite.content_object = user_file
+            favorite.content_type = new_ctype
+            favorite.save()
         if first_file != obj:
             to_delete.append(obj.pk)
     # remove redundant wooeyfiles

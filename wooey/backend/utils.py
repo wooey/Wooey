@@ -300,7 +300,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None):
         param_group, created = ScriptParameterGroup.objects.get_or_create(group_name=param_group_info.get('group'), script_version=script_version)
         for param in param_group_info.get('nodes'):
             # TODO: fix 'file' to be global in argparse
-            is_out = True if (param.get('upload', None) is False and param.get('type') == 'file') else not param.get('upload', False)
+            is_out = True if (param.get('upload', None) == False and param.get('type') == 'file') else not param.get('upload', False)
             script_param, created = ScriptParameter.objects.get_or_create(script_version=script_version, short_param=param['param'], script_param=param['name'],
                                                                           is_output=is_out, required=param.get('required', False),
                                                                           form_field=param['model'], default=param.get('value'), input_type=param.get('type'),

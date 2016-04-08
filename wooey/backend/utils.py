@@ -13,6 +13,7 @@ from collections import OrderedDict, defaultdict
 from pkg_resources import parse_version
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.utils import OperationalError
 from django.core.files.storage import default_storage
@@ -539,12 +540,18 @@ def create_job_fileinfo(job):
 
                 # get the checksum of the file to see if we need to save it
                 checksum = group_file.get('checksum', get_checksum(filepath))
-                wooey_file, file_created = WooeyFile.objects.get_or_create(checksum=checksum)
-                if file_created:
-                    wooey_file.filetype = file_type
-                    wooey_file.filepreview = preview
-                    wooey_file.size_bytes = size_bytes
-                    wooey_file.filepath.name = save_path
+                try:
+                    wooey_file = WooeyFile.objects.get(checksum=checksum)
+                    file_created = False
+                except ObjectDoesNotExist:
+                    wooey_file = WooeyFile(
+                        checksum=checksum,
+                        filetype=file_type,
+                        filepreview=preview,
+                        size_bytes=size_bytes,
+                        filepath=save_path
+                    )
+                    file_created = True
                 userfile_kwargs = {
                     'job': job,
                     'parameter': parameter,

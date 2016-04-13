@@ -13,6 +13,7 @@ from collections import OrderedDict, defaultdict
 from pkg_resources import parse_version
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.utils import OperationalError
 from django.core.files.storage import default_storage
@@ -46,20 +47,26 @@ def get_storage(local=True):
 
 
 def purge_output(job=None):
-    from ..models import WooeyFile
+    from ..models import UserFile
     # cleanup the old files, we need to be somewhat aggressive here.
     local_storage = get_storage(local=True)
-    for dj_file in WooeyFile.objects.filter(job=job):
-        if dj_file.parameter is None or dj_file.parameter.parameter.is_output:
-            wooey_file = dj_file.filepath.name
-            # this will delete the default file -- which if we are using an ephemeral file system will be the
-            # remote instance
-            dj_file.filepath.delete(False)
-            dj_file.delete()
-            # check our local storage and remove it if it is there as well
-            path = local_storage.path(wooey_file)
-            if local_storage.exists(path):
-                local_storage.delete(path)
+    for user_file in UserFile.objects.filter(job=job):
+        if user_file.parameter is None or user_file.parameter.parameter.is_output:
+            system_file = user_file.system_file
+            matching_files = UserFile.objects.filter(system_file=system_file).exclude(job=user_file.job)
+            # nothing else references this file, delete it
+            if matching_files.count() == 0:
+                wooey_file = system_file.filepath.name
+                # this will delete the default file -- which if we are using an ephemeral file system will be the
+                # remote instance
+                system_file.filepath.delete(False)
+                system_file.delete()
+                # check our local storage and remove it if it is there as well
+                path = local_storage.path(wooey_file)
+                if local_storage.exists(path):
+                    local_storage.delete(path)
+            # delete all copies this user has of this file.
+            user_file.delete()
 
 
 def get_job_commands(job=None):
@@ -294,7 +301,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None):
         param_group, created = ScriptParameterGroup.objects.get_or_create(group_name=param_group_info.get('group'), script_version=script_version)
         for param in param_group_info.get('nodes'):
             # TODO: fix 'file' to be global in argparse
-            is_out = True if param.get('upload', None) is False and param.get('type') == 'file' else not param.get('upload', False)
+            is_out = True if (param.get('upload', None) == False and param.get('type') == 'file') else not param.get('upload', False)
             script_param, created = ScriptParameter.objects.get_or_create(script_version=script_version, short_param=param['param'], script_param=param['name'],
                                                                           is_output=is_out, required=param.get('required', False),
                                                                           form_field=param['model'], default=param.get('value'), input_type=param.get('type'),
@@ -336,10 +343,17 @@ def mkdirs(path):
             raise
 
 
+def get_upload_path(filepath, checksum=None):
+    filename = os.path.split(filepath)[1]
+    if checksum is None:
+        checksum = get_checksum(filepath)
+    return os.path.join(wooey_settings.WOOEY_FILE_DIR, checksum[:2], checksum[-2:], checksum, filename)
+
+
 def get_file_info(filepath):
     # returns info about the file
     filetype, preview = False, None
-    tests = [('tabular', test_delimited), ('fasta', test_fastx)]
+    tests = [('tabular', test_delimited), ('fasta', test_fastx), ('image', test_image)]
     while filetype is False and tests:
         ptype, pmethod = tests.pop()
         filetype, preview = pmethod(filepath)
@@ -352,6 +366,11 @@ def get_file_info(filepath):
         sys.stderr.write('Error encountered in file preview:\n {}\n'.format(traceback.format_exc()))
         json_preview = json.dumps(None)
     return {'type': filetype, 'preview': json_preview}
+
+
+def test_image(filepath):
+    import imghdr
+    return imghdr.what(filepath) != None, None
 
 
 def test_delimited(filepath):
@@ -424,16 +443,16 @@ def test_fastx(filepath):
 
 def create_job_fileinfo(job):
     parameters = job.get_parameters()
-    from ..models import WooeyFile
+    from ..models import WooeyFile, UserFile
     # first, create a reference to things the script explicitly created that is a parameter
     files = []
+    local_storage = get_storage(local=True)
     for field in parameters:
         try:
             if field.parameter.form_field == 'FileField':
                 value = field.value
                 if value is None:
                     continue
-                local_storage = get_storage(local=True)
                 if isinstance(value, six.string_types):
                     # check if this was ever created and make a fileobject if so
                     if local_storage.exists(value):
@@ -449,6 +468,10 @@ def create_job_fileinfo(job):
                             sys.stderr.write('{}\n'.format(traceback.format_exc()))
                         continue
                 d = {'parameter': field, 'file': value}
+                if field.parameter.is_output:
+                    full_path = os.path.join(job.save_path, os.path.split(local_storage.path(value))[1])
+                    checksum = get_checksum(value, extra=[job.pk, full_path, 'output'])
+                    d['checksum'] = checksum
                 files.append(d)
         except ValueError:
             continue
@@ -458,36 +481,36 @@ def create_job_fileinfo(job):
     # generated them without an explicit arguments reference in the script
     file_groups = {'archives': []}
     absbase = os.path.join(settings.MEDIA_ROOT, job.save_path)
-    for filename in os.listdir(absbase):
-        new_name = os.path.join(job.save_path, filename)
-        if any([i.endswith(new_name) for i in known_files]):
-            continue
-        try:
-            filepath = os.path.join(absbase, filename)
-            if os.path.isdir(filepath):
+    for root, dirs, dir_files in os.walk(absbase):
+        for filename in dir_files:
+            new_name = os.path.join(job.save_path, filename)
+            if any([i.endswith(new_name) for i in known_files]):
                 continue
-            full_path = os.path.join(job.save_path, filename)
             try:
-                storage_file = get_storage_object(full_path)
-            except:
-                sys.stderr.write('Error in accessing stored file:\n{}'.format(traceback.format_exc()))
+                filepath = os.path.join(root, filename)
+                if os.path.isdir(filepath):
+                    continue
+                full_path = os.path.join(job.save_path, filename)
+                # this is to make the job output have a unique checksum. If this file is then re-uploaded, it will create
+                # a new file to reference in the uploads directory and not link back to the job output.
+                checksum = get_checksum(filepath, extra=[job.pk, full_path, 'output'])
+                try:
+                    storage_file = get_storage_object(full_path)
+                except:
+                    sys.stderr.write('Error in accessing stored file {}:\n{}'.format(full_path, traceback.format_exc()))
+                    continue
+                d = {'name': filename, 'file': storage_file, 'size_bytes': storage_file.size, 'checksum': checksum}
+                if filename.endswith('.tar.gz') or filename.endswith('.zip'):
+                    file_groups['archives'].append(d)
+                else:
+                    files.append(d)
+            except IOError:
+                sys.stderr.write('{}'.format(traceback.format_exc()))
                 continue
-            d = {'name': filename, 'file': storage_file, 'size_bytes': storage_file.size}
-            if filename.endswith('.tar.gz') or filename.endswith('.zip'):
-                file_groups['archives'].append(d)
-            else:
-                files.append(d)
-        except IOError:
-            sys.stderr.write('{}'.format(traceback.format_exc()))
-            continue
 
     # establish grouping by inferring common things
     file_groups['all'] = files
-    import imghdr
     file_groups['image'] = []
-    for filemodel in files:
-        if imghdr.what(filemodel['file'].path):
-            file_groups['image'].append(filemodel)
     file_groups['tabular'] = []
     file_groups['fasta'] = []
 
@@ -511,14 +534,36 @@ def create_job_fileinfo(job):
                 preview = group_file.get('preview')
                 size_bytes = group_file.get('size_bytes')
 
-                dj_file = WooeyFile(job=job, filetype=file_type, filepreview=preview, size_bytes=size_bytes,
-                                    parameter=group_file.get('parameter'))
                 filepath = group_file['file'].path
                 save_path = job.get_relative_path(filepath)
-                dj_file.filepath.name = save_path
+                parameter = group_file.get('parameter')
+
+                # get the checksum of the file to see if we need to save it
+                checksum = group_file.get('checksum', get_checksum(filepath))
+                try:
+                    wooey_file = WooeyFile.objects.get(checksum=checksum)
+                    file_created = False
+                except ObjectDoesNotExist:
+                    wooey_file = WooeyFile(
+                        checksum=checksum,
+                        filetype=file_type,
+                        filepreview=preview,
+                        size_bytes=size_bytes,
+                        filepath=save_path
+                    )
+                    file_created = True
+                userfile_kwargs = {
+                    'job': job,
+                    'parameter': parameter,
+                    'system_file': wooey_file,
+                    'filename': os.path.split(filepath)[1]
+                }
                 try:
                     with transaction.atomic():
-                        dj_file.save()
+                        if file_created:
+                            wooey_file.save()
+                        job.save()
+                        UserFile.objects.get_or_create(**userfile_kwargs)
                 except:
                     sys.stderr.write('Error in saving DJFile: {}\n'.format(traceback.format_exc()))
             except:
@@ -526,38 +571,66 @@ def create_job_fileinfo(job):
                 continue
 
 
+def get_checksum(path, extra=None):
+    import hashlib
+    BLOCKSIZE = 65536
+    hasher = hashlib.sha1()
+    if extra:
+        if isinstance(extra, (list, tuple)):
+            for i in extra:
+                hasher.update(six.u(str(i)).encode('utf-8'))
+        elif isinstance(extra, six.string_types):
+            hasher.update(extra)
+    if isinstance(path, six.string_types):
+        with open(path, 'rb') as afile:
+            buf = afile.read(BLOCKSIZE)
+            while len(buf) > 0:
+                hasher.update(buf)
+                buf = afile.read(BLOCKSIZE)
+    else:
+        start = path.tell()
+        path.seek(0)
+        buf = path.read(BLOCKSIZE)
+        while len(buf) > 0:
+            hasher.update(buf)
+            buf = path.read(BLOCKSIZE)
+        path.seek(start)
+    return hasher.hexdigest()
+
+
 def get_grouped_file_previews(files):
     groups = {'all': []}
     for file_info in files:
+        system_file = file_info.system_file
 
-        filedict = {'id': file_info.id,
-                    'object': file_info,
-                    'name': file_info.filepath.name,
-                    'preview': json.loads(file_info.filepreview) if file_info.filepreview else None,
-                    'url': get_storage(local=False).url(file_info.filepath.name),
+        filedict = {'id': system_file.id,
+                    'object': system_file,
+                    'name': file_info.filename,
+                    'preview': json.loads(system_file.filepreview) if system_file.filepreview else None,
+                    'url': get_storage(local=False).url(system_file.filepath.name),
                     'slug': file_info.parameter.parameter.script_param if file_info.parameter else None,
-                    'basename': os.path.basename(file_info.filepath.name),
-                    'filetype': file_info.filetype,
-                    'size_bytes': file_info.size_bytes,
+                    'basename': os.path.basename(system_file.filepath.name),
+                    'filetype': system_file.filetype,
+                    'size_bytes': system_file.size_bytes,
                     }
         try:
-            groups[file_info.filetype].append(filedict)
+            groups[system_file.filetype].append(filedict)
         except KeyError:
-            groups[file_info.filetype] = [filedict]
-        if file_info.filetype != 'all':
+            groups[system_file.filetype] = [filedict]
+        if system_file.filetype != 'all':
             groups['all'].append(filedict)
     return groups
 
 
 def get_file_previews(job):
-    from ..models import WooeyFile
-    files = WooeyFile.objects.filter(job=job)
+    from ..models import UserFile
+    files = UserFile.objects.filter(job=job)
     return get_grouped_file_previews(files)
 
 
 def get_file_previews_by_ids(ids):
-    from ..models import WooeyFile
-    files = WooeyFile.objects.filter(pk__in=ids)
+    from ..models import UserFile
+    files = UserFile.objects.filter(pk__in=ids)
     return get_grouped_file_previews(files)
 
 

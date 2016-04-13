@@ -5,7 +5,7 @@ from django.contrib.admin import ModelAdmin, site, TabularInline
 from django.forms import ModelForm, ValidationError
 from django.utils.translation import ugettext_lazy as _
 
-from .models import Script, ScriptVersion, ScriptGroup, ScriptParameter, WooeyJob, ScriptParameterGroup, WooeyFile
+from .models import Script, ScriptVersion, ScriptGroup, ScriptParameter, WooeyJob, ScriptParameterGroup, UserFile
 
 
 class JobAdmin(ModelAdmin):
@@ -43,7 +43,7 @@ class FileAdmin(ModelAdmin):
     pass
 
 site.register(WooeyJob, JobAdmin)
-site.register(WooeyFile, FileAdmin)
+site.register(UserFile, FileAdmin)
 site.register(Script, ScriptAdmin)
 site.register(ScriptParameter, ParameterAdmin)
 site.register(ScriptGroup, GroupAdmin)

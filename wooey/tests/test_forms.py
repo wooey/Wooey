@@ -1,5 +1,8 @@
+import os
+
 from django.test import TestCase
 from django.http.request import MultiValueDict
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from ..backend import utils
 from ..forms import WooeyForm
@@ -61,17 +64,25 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase)
         self.assertTrue(forms_config.WOOEY_MULTI_WIDGET_ATTR in form_str)
         qdict = self.get_mvdict(config.SCRIPT_DATA['choices'].get('data'))
         fdict = config.SCRIPT_DATA['choices'].get('files')
+        uploaded_files = {}
+        storage = utils.get_storage(local=True)
+        for file_key, files in fdict.items():
+            uploaded_files[file_key] = []
+            for file_location in files:
+                file_name = os.path.split(file_location.name)[1]
+                uploaded_files[file_key].append(SimpleUploadedFile(file_name, file_location.read()))
+
         utils.validate_form(form=form, data=qdict,
-                            files=fdict)
+                            files=uploaded_files)
         self.assertTrue(form.is_valid())
         # test we can create a job from this form
         # this is implemented to put data and files in the same dictionary, so update it
-        form.cleaned_data.update(fdict)
+        form.cleaned_data.update(uploaded_files)
         job = utils.create_wooey_job(script_version_pk=script_version.pk, data=form.cleaned_data)
         # check the files are here
         file_param = 'multiple_file_choices'
         files = [i.value for i in job.get_parameters() if i.parameter.slug == file_param]
-        self.assertEqual(len(files), len(fdict.get(file_param)))
+        self.assertEqual(len(files), len(uploaded_files.get(file_param)))
 
     def test_without_args_form(self):
         script_version = self.without_args

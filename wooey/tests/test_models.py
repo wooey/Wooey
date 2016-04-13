@@ -41,7 +41,7 @@ class ScriptGroupTestCase(TestCase):
         group = factories.ScriptGroupFactory()
 
 
-class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
+class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMixin, TestCase):
     urls = 'wooey.test_urls'
 
     def get_local_url(self, fileinfo):
@@ -58,11 +58,12 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         new_job = job.submit_to_celery(resubmit=True)
         self.assertNotEqual(old_pk, new_job.pk)
         # test rerunning, our output should be removed
-        from ..models import WooeyFile
-        old_output = sorted([i.pk for i in WooeyFile.objects.filter(job=new_job)])
-        job.submit_to_celery(rerun=True)
+        from ..models import UserFile
+        old_output = sorted([i.pk for i in UserFile.objects.filter(job=new_job)])
+        # the pk will not change here since we are using rerun=True
+        new_job.submit_to_celery(rerun=True)
         # check that we overwrite our output
-        new_output = sorted([i.pk for i in WooeyFile.objects.filter(job=new_job)])
+        new_output = sorted([i.pk for i in UserFile.objects.filter(job=new_job)])
         # Django 1.6 has a bug where they are reusing pk numbers
         if version.DJANGO_VERSION >= version.DJ17:
             self.assertNotEqual(old_output, new_output)
@@ -70,7 +71,7 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         # check the old entries are gone
         if version.DJANGO_VERSION >= version.DJ17:
             # Django 1.6 has a bug where they are reusing pk numbers, so once again we cannot use this check
-            self.assertEqual([], list(WooeyFile.objects.filter(pk__in=old_output)))
+            self.assertEqual([], list(UserFile.objects.filter(pk__in=old_output)))
 
         file_previews = utils.get_file_previews(job)
         for group, files in file_previews.items():
@@ -80,9 +81,17 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
                 self.assertEqual(response.status_code, 200)
 
         # check our download links are ok
+        # upload the file first to our storage engine so this works in tests
+        local_storage = utils.get_storage(local=True)
+        fasta_path = local_storage.save('fasta.fasta', open(os.path.join(config.WOOEY_TEST_DATA, 'fasta.fasta')))
+        fasta_file = local_storage.open(fasta_path)
         job = utils.create_wooey_job(script_version_pk=script.pk,
-                                        data={'fasta': open(os.path.join(config.WOOEY_TEST_DATA, 'fasta.fasta')),
-                                              'out': 'abc', 'job_name': 'abc'})
+                                        data={
+                                            'fasta': fasta_file,
+                                            'out': 'abc',
+                                            'job_name': 'abc'
+                                        }
+                                     )
 
         # check our upload link is ok
         file_previews = utils.get_file_previews(job)
@@ -90,6 +99,26 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
             for fileinfo in files:
                 response = Client().get(self.get_local_url(fileinfo))
                 self.assertEqual(response.status_code, 200)
+
+    def test_file_sharing(self):
+        # this tests whether a file uploaded by one job will be referenced by a second job instead of being duplicated
+        # on the file system
+        new_file = self.storage.open(self.get_any_file())
+        script_slug = 'multiple_file_choices'
+        script = self.choice_script
+        from ..backend import utils
+        job = utils.create_wooey_job(script_version_pk=script.pk, data={'job_name': 'job1', script_slug: new_file})
+        job = job.submit_to_celery()
+        job2 = utils.create_wooey_job(script_version_pk=script.pk, data={'job_name': 'job2', script_slug: new_file})
+        job2 = job2.submit_to_celery()
+        from ..models import UserFile
+        job1_files = [i for i in UserFile.objects.filter(job=job, parameter__isnull=False) if i.parameter.parameter.slug == script_slug]
+        job1_file = job1_files[0]
+        job2_files = [i for i in UserFile.objects.filter(job=job2, parameter__isnull=False) if i.parameter.parameter.slug == script_slug]
+        job2_file = job2_files[0]
+        self.assertNotEqual(job1_file.pk, job2_file.pk)
+        self.assertEqual(job1_file.system_file, job2_file.system_file)
+
 
     def test_multiplechoices(self):
         script = self.choice_script

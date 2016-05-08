@@ -295,10 +295,12 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     slug = AutoSlugField(populate_from='script_param', unique=True)
     is_output = models.BooleanField(default=None)
     required = models.BooleanField(default=False)
-    # output_path = models.FilePathField(path=settings.MEDIA_ROOT, allow_folders=True, allow_files=False,
-    #                                    recursive=True, max_length=255)
     choices = models.CharField(max_length=255, null=True, blank=True)
     choice_limit = models.CharField(max_length=10, null=True, blank=True)
+    collapse_arguments = models.BooleanField(
+        default=True,
+        help_text=_('Collapse separate inputs to a given argument to a single input (ie: --arg 1 --arg 2 becomes --arg 1 2)')
+    )
     form_field = models.CharField(max_length=255)
     default = models.CharField(max_length=255, null=True, blank=True)
     input_type = models.CharField(max_length=255)
@@ -388,7 +390,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
             return None
         field = self.parameter.form_field
         param = self.parameter.short_param
-        com = {'parameter': param}
+        com = {'parameter': param, 'script_parameter': self.parameter}
         if field == self.BOOLEAN:
             if value:
                 return com

@@ -5,34 +5,34 @@ Wooey Settings
 --------------
 
 :code:`WOOEY_FILE_DIR`: String, where the files uploaded by the user will
-be saved (Default: wooey\_files)
+be saved (Default: ``wooey_files``)
 
-:code:`WOOEY\_CELERY`: Boolean, whether or not celery is enabled. If
-disabled, tasks will run locally and block execution. (Default: True)
+:code:`WOOEY_CELERY`: Boolean, whether or not celery is enabled. If
+disabled, tasks will run locally and block execution. (Default: ``True``)
 
-:code:`WOOEY\_CELERY\_TASKS`: String, the name of the celery tasks for
-Wooey. (Default: 'wooey.tasks')
+:code:`WOOEY_CELERY_TASKS`: String, the name of the celery tasks for
+Wooey. (Default: ``'wooey.tasks'``)
 
-:code:`WOOEY\_ALLOW\_ANONYMOUS`: Boolean, whether to allow submission of
-jobs by anonymous users. (Default: True)
+:code:`WOOEY_ALLOW_ANONYMOUS`: Boolean, whether to allow submission of
+jobs by anonymous users. (Default: ``True``)
 
 By default, Wooey has a basic user account system. It is very basic, and
 doesn't confirm registrations via email.
 
-:code:`WOOEY\_AUTH`: Boolean, whether to use the authorization system of
-Wooey for simple login/registration. (Default: True)
+:code:`WOOEY_AUTH`: Boolean, whether to use the authorization system of
+Wooey for simple login/registration. (Default: ``True``)
 
-:code:`WOOEY\_LOGIN\_URL`: String, if you have an existing authorization
-system, the login url: (Default: settings.LOGIN\_URL
+:code:`WOOEY_LOGIN_URL`: String, if you have an existing authorization
+system, the login url: (Default: ``settings.LOGIN_URL``)
 
-:code:`WOOEY\_REGISTER\_URL`: String, if you have an existing authorization
-system, the registration url: (Default: /accounts/register/)
+:code:`WOOEY_REGISTER_URL`: String, if you have an existing authorization
+system, the registration url: (Default: ``'/accounts/register/'``)
 
-:code:`WOOEY\_EPHEMERAL\_FILES`: Boolean, if your file system changes with
-each restart. (Default: False)
+:code:`WOOEY_EPHEMERAL_FILES`: Boolean, if your file system changes with
+each restart. (Default: ``False``)
 
-:code:`WOOEY\_SHOW\_LOCKED\_SCRIPTS`: Boolean, whether to show locked
-scripts as disabled or hide them entirely. (Defalt: True -- show as
+:code:`WOOEY_SHOW_LOCKED_SCRIPTS`: Boolean, whether to show locked
+scripts as disabled or hide them entirely. (Defalt: ``True`` -- show as
 disabled)
 
 
@@ -50,14 +50,14 @@ For example to set the interface to French, you would use:
 
 .. code:: python
 
-  LANGUADE_CODE = 'fr'
+  LANGUAGE_CODE = 'fr'
 
 
 For German you would use:
 
 .. code:: python
 
-  LANGUADE_CODE = 'de'
+  LANGUAGE_CODE = 'de'
 
 
 If you want the user interface to automatically change to the preferred language

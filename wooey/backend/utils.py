@@ -75,22 +75,25 @@ def get_job_commands(job=None):
     com.extend([script_version.get_script_path()])
     parameters = job.get_parameters()
     param_dict = OrderedDict()
+    param_info_dict = {}
     for param in parameters:
         subproc_dict = param.get_subprocess_value()
         if subproc_dict is None:
             continue
         subproc_param = subproc_dict['parameter']
+        param_info_dict[subproc_param] = subproc_dict['script_parameter']
         if subproc_param not in param_dict:
             param_dict[subproc_param] = []
         subproc_value = subproc_dict.get('value', None)
         if subproc_value:
             param_dict[subproc_param].append(subproc_value)
     for param, values in param_dict.items():
+        param_info = param_info_dict.get(param, None)
         if param and not values:
             com.append(param)
         else:
-            for value in values:
-                if param:
+            for index, value in enumerate(values):
+                if param and (param_info is None or param_info.collapse_arguments == False or index == 0):
                     com.append(param)
                 com.append(value)
     return com
@@ -105,6 +108,9 @@ def create_wooey_job(user=None, script_version_pk=None, data=None):
     job = WooeyJob(user=user, job_name=data.pop('job_name', None), job_description=data.pop('job_description', None),
                      script_version=script_version)
     job.save()
+    # Because we use slugs, we do not need to filter by script_version=script_version here. We are going to eventually
+    # have a setup where Script points at ScriptParameter instead of SP->SV. This will let us reuse slugs for
+    # a script class
     parameters = OrderedDict([(i.slug, i) for i in ScriptParameter.objects.filter(slug__in=data.keys()).order_by('pk')])
     for slug, param in six.iteritems(parameters):
         slug_values = data.get(slug)
@@ -302,12 +308,22 @@ def add_wooey_script(script_version=None, script_path=None, group=None):
         for param in param_group_info.get('nodes'):
             # TODO: fix 'file' to be global in argparse
             is_out = True if (param.get('upload', None) == False and param.get('type') == 'file') else not param.get('upload', False)
-            script_param, created = ScriptParameter.objects.get_or_create(script_version=script_version, short_param=param['param'], script_param=param['name'],
-                                                                          is_output=is_out, required=param.get('required', False),
-                                                                          form_field=param['model'], default=param.get('value'), input_type=param.get('type'),
-                                                                          choices=json.dumps(param.get('choices')), choice_limit=json.dumps(param.get('choice_limit', 1)),
-                                                                          param_help=param.get('help'), is_checked=param.get('checked', False),
-                                                                          parameter_group=param_group)
+            script_param, created = ScriptParameter.objects.get_or_create(
+                script_version=script_version,
+                short_param=param['param'],
+                script_param=param['name'],
+                is_output=is_out,
+                required=param.get('required', False),
+                form_field=param['model'],
+                default=param.get('value'),
+                input_type=param.get('type'),
+                choices=json.dumps(param.get('choices')),
+                choice_limit=json.dumps(param.get('choice_limit', 1)),
+                param_help=param.get('help'),
+                is_checked=param.get('checked', False),
+                parameter_group=param_group,
+                collapse_arguments='collapse_arguments' in param.get('param_action', set())
+            )
     return {'valid': True, 'errors': None, 'script': script_version}
 
 

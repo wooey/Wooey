@@ -26,10 +26,10 @@ environment:
     # These versions of Django are not supported with Python3.5
     #- PYTHON: "C:/Python35"
     #  DJANGO: "Django==1.6.*"
-    #- PYTHON: "C:/Python35"
-    #  DJANGO: "Django==1.7.*"
     - PYTHON: "C:/Python35"
       DJANGO: "Django==1.8.*"
+    - PYTHON: "C:/Python35"
+      DJANGO: "Django==1.9.*"
 
     # keep this to just maintain the latest version
     - PYTHON: "C:/Python35"

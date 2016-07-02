@@ -9,7 +9,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0022_add collapse arguments'),
+        ('wooey', '0022_add_collapse_arguments'),
     ]
 
     operations = [

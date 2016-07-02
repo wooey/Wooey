@@ -21,6 +21,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='scriptparameter',
             name='script_version',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='scriptparameter', to='wooey.ScriptVersion'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='scriptparameter', to='wooey.ScriptVersion'),
         ),
     ]

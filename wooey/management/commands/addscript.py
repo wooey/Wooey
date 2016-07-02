@@ -61,6 +61,7 @@ class Command(BaseCommand):
                     existing_script = Script.objects.filter(script_name=base_name)
                     if len(existing_script) == 1:
                         script_version = existing_script[0].latest_version
+                        script_version.script_path = script
                         add_kwargs['script_version'] = script_version
                 res = add_wooey_script(**add_kwargs)
                 if res['valid']:

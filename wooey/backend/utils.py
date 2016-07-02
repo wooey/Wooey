@@ -291,39 +291,53 @@ def add_wooey_script(script_version=None, script_path=None, group=None):
         script_version.save()
     else:
         # we are being created/updated from the admin
-        if not script_version.script.script_description:
-            script_version.script.script_description = d['description']
-        if not script_version.script.script_name:
-            script_version.script.script_name = d['name']
-        past_versions = ScriptVersion.objects.filter(script=script_version.script, script_version=version_string).exclude(pk=script_version.pk)
+        wooey_script = script_version.script
+        if not wooey_script.script_description:
+            wooey_script.script_description = d['description']
+        if not wooey_script.script_name:
+            wooey_script.script_name = d['name']
+        past_versions = ScriptVersion.objects.filter(script=wooey_script, script_version=version_string).exclude(pk=script_version.pk)
         script_version.script_iteration = past_versions.count()+1
         past_versions.update(default_version=False)
         script_version.default_version = True
-        script_version.script.save()
+        wooey_script.save()
         script_version.save()
 
     # make our parameters
     for param_group_info in d['inputs']:
-        param_group, created = ScriptParameterGroup.objects.get_or_create(group_name=param_group_info.get('group'), script_version=script_version)
+        param_group_name = param_group_info.get('group')
+        param_group, created = ScriptParameterGroup.objects.get_or_create(group_name=param_group_name, script_version=script_version)
         for param in param_group_info.get('nodes'):
             # TODO: fix 'file' to be global in argparse
             is_out = True if (param.get('upload', None) == False and param.get('type') == 'file') else not param.get('upload', False)
-            script_param, created = ScriptParameter.objects.get_or_create(
-                script_version=script_version,
-                short_param=param['param'],
-                script_param=param['name'],
-                is_output=is_out,
-                required=param.get('required', False),
-                form_field=param['model'],
-                default=param.get('value'),
-                input_type=param.get('type'),
-                choices=json.dumps(param.get('choices')),
-                choice_limit=json.dumps(param.get('choice_limit', 1)),
-                param_help=param.get('help'),
-                is_checked=param.get('checked', False),
-                parameter_group=param_group,
-                collapse_arguments='collapse_arguments' in param.get('param_action', set())
-            )
+            script_param_kwargs = {
+                'short_param': param['param'],
+                'script_param': param['name'],
+                'is_output': is_out,
+                'required': param.get('required', False),
+                'form_field': param['model'],
+                'default': param.get('value'),
+                'input_type': param.get('type'),
+                'choices': json.dumps(param.get('choices')),
+                'choice_limit': json.dumps(param.get('choice_limit', 1)),
+                'param_help': param.get('help'),
+                'is_checked': param.get('checked', False),
+                # parameter_group': param_group,
+                'collapse_arguments': 'collapse_arguments' in param.get('param_action', set())
+            }
+            script_params = ScriptParameter.objects.filter(**script_param_kwargs).filter(script_version__script=wooey_script, parameter_group__group_name=param_group_name)
+            if not script_params:
+                script_param_kwargs['parameter_group'] = param_group
+                script_param, created = ScriptParameter.objects.get_or_create(**script_param_kwargs)
+                script_param.script_version.add(script_version)
+            else:
+                # If we are here, the script parameter exists and has not changed since the last update. We can simply
+                # point the new script at the old script parameter. This lets us clone old scriptversions and have their
+                # parameters still auto populate.
+                script_param = script_params[0]
+                script_param.script_version.add(script_version)
+                script_param.save()
+
     return {'valid': True, 'errors': None, 'script': script_version}
 
 

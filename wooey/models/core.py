@@ -289,7 +289,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     """
         This holds the parameter mapping for each script, and enforces uniqueness by each script via a FK.
     """
-    script_version = models.ForeignKey('ScriptVersion')
+    script_version = models.ManyToManyField('ScriptVersion')
     short_param = models.CharField(max_length=255, blank=True)
     script_param = models.CharField(max_length=255)
     slug = AutoSlugField(populate_from='script_param', unique=True)
@@ -342,7 +342,8 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
             return choice_limit
 
     def __str__(self):
-        return '{}: {}'.format(self.script_version.script.script_name, self.script_param)
+        scripts = ', '.join([i.script.script_name for i in self.script_version.all()])
+        return '{}: {}'.format(scripts, self.script_param)
 
 
 # TODO: find a better name for this class. Job parameter? SelectedParameter?

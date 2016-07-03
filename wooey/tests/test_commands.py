@@ -6,11 +6,13 @@ from django.test import TestCase
 from ..models import ScriptVersion
 
 from . import config
-from ..backend import utils
 from . import mixins
 
 
 class FormTestCase(mixins.ScriptFactoryMixin, TestCase):
+    def setUp(self):
+        # don't setup scripts, but we want to still tear down after each test
+        pass
 
     def test_addscript(self):
         call_command('addscript', os.path.join(config.WOOEY_TEST_SCRIPTS, 'choices.py'))

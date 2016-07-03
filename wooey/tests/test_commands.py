@@ -21,7 +21,7 @@ class FormTestCase(mixins.ScriptFactoryMixin, TestCase):
         new_version = ScriptVersion.objects.latest('created_date')
 
         # make sure we updated
-        self.assertEqual(new_version.script_iteration, 2)
+        self.assertEqual(new_version.script_iteration, script_version.script_iteration + 1)
 
         # Make sure the parameters have not changed
         self.assertListEqual(old_parameters, list(new_version.get_parameters()))

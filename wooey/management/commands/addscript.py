@@ -64,6 +64,7 @@ class Command(BaseCommand):
                     if len(existing_script) == 1:
                         script_version = existing_script[0].latest_version
                         script_version.script_path = script
+                        script_version.default_version = False
                         add_script = False
                         script_version.save()
                         converted += 1

@@ -31,7 +31,7 @@ class Command(BaseCommand):
         script = options.get('script')
         if not script:
             if len(args):
-                script = args[0]
+                script = args[-1]
             else:
                 raise CommandError('You must provide a script path or directory containing scripts.')
         if not os.path.exists(script):

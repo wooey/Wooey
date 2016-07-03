@@ -111,7 +111,7 @@ def create_wooey_job(user=None, script_version_pk=None, data=None):
     # Because we use slugs, we do not need to filter by script_version=script_version here. We are going to eventually
     # have a setup where Script points at ScriptParameter instead of SP->SV. This will let us reuse slugs for
     # a script class
-    parameters = OrderedDict([(i.slug, i) for i in ScriptParameter.objects.filter(slug__in=data.keys()).order_by('pk')])
+    parameters = OrderedDict([(i.slug, i) for i in ScriptParameter.objects.filter(slug__in=data.keys()).order_by('param_order', 'pk')])
     for slug, param in six.iteritems(parameters):
         slug_values = data.get(slug)
         slug_values = slug_values if isinstance(slug_values, list) else [slug_values]
@@ -304,6 +304,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None):
         script_version.save()
 
     # make our parameters
+    parameter_index = 0
     for param_group_info in d['inputs']:
         param_group_name = param_group_info.get('group')
         param_group, created = ScriptParameterGroup.objects.get_or_create(group_name=param_group_name, script_version=script_version)
@@ -323,8 +324,10 @@ def add_wooey_script(script_version=None, script_path=None, group=None):
                 'param_help': param.get('help'),
                 'is_checked': param.get('checked', False),
                 # parameter_group': param_group,
-                'collapse_arguments': 'collapse_arguments' in param.get('param_action', set())
+                'collapse_arguments': 'collapse_arguments' in param.get('param_action', set()),
+                'param_order': parameter_index,
             }
+            parameter_index += 1
             script_params = ScriptParameter.objects.filter(**script_param_kwargs).filter(script_version__script=wooey_script, parameter_group__group_name=param_group_name)
             if not script_params:
                 script_param_kwargs['parameter_group'] = param_group

@@ -43,7 +43,7 @@ class ScriptAdditionTests(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase)
         res = utils.add_wooey_script(script_path=new_file, group=None)
         self.assertEqual(res['valid'], True, res['errors'])
         # upgrade script
-        script = ScriptVersion.objects.get(pk=1)
+        script = ScriptVersion.objects.get(pk=res['script'].pk)
         with open(script_path) as o:
             new_script = self.storage.save(self.filename_func('command_order.py'), o)
         script.script_path = new_script
@@ -56,3 +56,31 @@ class ScriptAdditionTests(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase)
         self.assertIn(script, [i.latest_version for i in utils.get_current_scripts()])
         old_script = ScriptVersion.objects.get(pk=old_pk)
         self.assertNotIn(old_script, [i.latest_version for i in utils.get_current_scripts()])
+
+    def test_script_parameter_upgrade(self):
+        script_path = os.path.join(config.WOOEY_TEST_SCRIPTS, 'choices.py')
+        script_2_path = os.path.join(config.WOOEY_TEST_SCRIPTS, 'choices_2.py')
+        with open(script_path) as o:
+            new_file = self.storage.save(self.filename_func('choices.py'), o)
+        res = utils.add_wooey_script(script_path=new_file, group=None)
+        self.assertEqual(res['valid'], True, res['errors'])
+        # upgrade script
+        script = ScriptVersion.objects.get(pk=res['script'].pk)
+        with open(script_2_path) as o:
+            new_script = self.storage.save(self.filename_func('choices.py'), o)
+        script.script_path = new_script
+        # we are going to be cloning this, so we lose the old object
+        old_pk, old_iter = script.pk, script.script_iteration
+        script.save()
+        self.assertNotEqual(old_pk, script.pk)
+        self.assertNotEqual(old_iter, script.script_iteration)
+        # asset we are using the latest script in the frontend
+        self.assertIn(script, [i.latest_version for i in utils.get_current_scripts()])
+        old_script = ScriptVersion.objects.get(pk=old_pk)
+        self.assertNotIn(old_script, [i.latest_version for i in utils.get_current_scripts()])
+        # Assert that the 'one_choice' parameter is different between the versions, but all else is the same
+        old_parameters = list(old_script.get_parameters())
+        new_parameters = list(script.get_parameters())
+        self.assertListEqual(old_parameters[1:], new_parameters[1:])
+        self.assertTrue(new_parameters[0].short_param, '--one-choice-added')
+        self.assertTrue(old_parameters[0].short_param, '--one-choice')

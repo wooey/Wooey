@@ -130,6 +130,9 @@ class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
         path = local_storage.path(self.script_path.path)
         return path if self.script.execute_full_path else os.path.split(path)[1]
 
+    def get_parameters(self):
+        return ScriptParameter.objects.filter(script_version=self).order_by('param_order', 'pk')
+
 
 class WooeyJob(WooeyPy2Mixin, models.Model):
     """
@@ -308,6 +311,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     is_checked = models.BooleanField(default=False)
     hidden = models.BooleanField(default=False)
     parameter_group = models.ForeignKey('ScriptParameterGroup')
+    param_order = models.SmallIntegerField('The order the parameter appears to the user.', default=0)
 
     class Meta:
         app_label = 'wooey'

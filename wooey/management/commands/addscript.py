@@ -54,16 +54,22 @@ class Command(BaseCommand):
                         local_storage.save(os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, os.path.split(script)[1]), File(f))
                 add_kwargs = {
                     'script_path': script,
-                    'group': group
+                    'group': group,
+                    'script_name': base_name,
                 }
+                add_script = True
                 if options.get('update'):
                     from wooey.models import Script
                     existing_script = Script.objects.filter(script_name=base_name)
                     if len(existing_script) == 1:
                         script_version = existing_script[0].latest_version
                         script_version.script_path = script
-                        add_kwargs['script_version'] = script_version
-                res = add_wooey_script(**add_kwargs)
-                if res['valid']:
-                    converted += 1
+                        add_script = False
+                        script_version.save()
+                        converted += 1
+                        # add_kwargs['script_version'] = script_version
+                if add_script:
+                    res = add_wooey_script(**add_kwargs)
+                    if res['valid']:
+                        converted += 1
         sys.stdout.write('Converted {} scripts\n'.format(converted))

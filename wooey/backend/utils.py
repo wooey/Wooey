@@ -182,7 +182,7 @@ def get_storage_object(path, local=False):
     return obj
 
 
-def add_wooey_script(script_version=None, script_path=None, group=None):
+def add_wooey_script(script_version=None, script_path=None, group=None, script_name=None):
     # There is a class called 'Script' which contains the general information about a script. However, that is not where the file details
     # of the script lie. That is the ScriptVersion model. This allows the end user to tag a script as a favorite/etc. and set
     # information such as script descriptions/names that do not constantly need to be updated with every version change. Thus,
@@ -258,7 +258,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None):
         version_string = '1'
     if script_version is None:
         # we are being loaded from the management command, create/update our script/version
-        script_kwargs = {'script_group': script_group, 'script_name': d['name']}
+        script_kwargs = {'script_group': script_group, 'script_name': script_name or d['name']}
         version_kwargs = {'script_version': version_string, 'script_path': local_file, 'default_version': True}
         # does this script already exist in the database?
         script_created = Script.objects.filter(**script_kwargs).count() == 0
@@ -295,7 +295,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None):
         if not wooey_script.script_description:
             wooey_script.script_description = d['description']
         if not wooey_script.script_name:
-            wooey_script.script_name = d['name']
+            wooey_script.script_name = script_name or d['name']
         past_versions = ScriptVersion.objects.filter(script=wooey_script, script_version=version_string).exclude(pk=script_version.pk)
         script_version.script_iteration = past_versions.count()+1
         past_versions.update(default_version=False)

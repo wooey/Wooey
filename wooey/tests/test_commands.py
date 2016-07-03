@@ -9,7 +9,7 @@ from . import config
 from . import mixins
 
 
-class FormTestCase(mixins.ScriptFactoryMixin, TestCase):
+class CommandTests(mixins.ScriptFactoryMixin, TestCase):
     def setUp(self):
         # don't setup scripts, but we want to still tear down after each test
         pass

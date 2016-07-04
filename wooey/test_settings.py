@@ -2,6 +2,7 @@
 import os
 import django
 DEBUG = True
+TESTING = True
 
 TEST_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'tests')
 

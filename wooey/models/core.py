@@ -130,6 +130,9 @@ class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
         path = local_storage.path(self.script_path.path)
         return path if self.script.execute_full_path else os.path.split(path)[1]
 
+    def get_parameters(self):
+        return ScriptParameter.objects.filter(script_version=self).order_by('param_order', 'pk')
+
 
 class WooeyJob(WooeyPy2Mixin, models.Model):
     """
@@ -289,7 +292,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     """
         This holds the parameter mapping for each script, and enforces uniqueness by each script via a FK.
     """
-    script_version = models.ForeignKey('ScriptVersion')
+    script_version = models.ManyToManyField('ScriptVersion')
     short_param = models.CharField(max_length=255, blank=True)
     script_param = models.CharField(max_length=255)
     slug = AutoSlugField(populate_from='script_param', unique=True)
@@ -308,6 +311,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     is_checked = models.BooleanField(default=False)
     hidden = models.BooleanField(default=False)
     parameter_group = models.ForeignKey('ScriptParameterGroup')
+    param_order = models.SmallIntegerField('The order the parameter appears to the user.', default=0)
 
     class Meta:
         app_label = 'wooey'
@@ -342,7 +346,8 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
             return choice_limit
 
     def __str__(self):
-        return '{}: {}'.format(self.script_version.script.script_name, self.script_param)
+        scripts = ', '.join([i.script.script_name for i in self.script_version.all()])
+        return '{}: {}'.format(scripts, self.script_param)
 
 
 # TODO: find a better name for this class. Job parameter? SelectedParameter?

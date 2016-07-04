@@ -28,7 +28,10 @@ class ScriptAdmin(ModelAdmin):
 
 
 class ParameterAdmin(ModelAdmin):
-    list_display = ('script_version', 'parameter_group', 'short_param')
+    list_display = ('script_versions', 'parameter_group', 'short_param')
+
+    def script_versions(self, obj):
+        return ', '.join(['{}: {}'.format(script_version.script.script_name, script_version.script_iteration) for script_version in obj.script_version.all()])
 
 
 class GroupAdmin(ModelAdmin):

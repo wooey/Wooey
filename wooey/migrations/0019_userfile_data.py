@@ -123,12 +123,14 @@ def setup_wooey_files(apps, schema_editor):
         filepath=file1,
         job=job,
         parameter=script_parameters,
+        checksum='abc123',
     )
 
     wooey_file1_copy = WooeyFile.objects.create(
         filepath=file2,
         job=job2,
         parameter=script_parameters2,
+        checksum='abc123',
     )
 
     # make the second a favorite file

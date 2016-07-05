@@ -46,13 +46,17 @@ wooey_patterns = [
     url(r'^$', views.WooeyHomeView.as_view(), name='wooey_home'),
     url(r'^$', views.WooeyHomeView.as_view(), name='wooey_job_launcher'),
     url('^{}'.format(wooey_settings.WOOEY_LOGIN_URL.lstrip('/')), views.wooey_login, name='wooey_login'),
-    url('^{}'.format(wooey_settings.WOOEY_REGISTER_URL.lstrip('/')), views.WooeyRegister.as_view(), name='wooey_register'),
 
     url(r'^favorite/toggle$', views.toggle_favorite, name='toggle_favorite'),
 
     url(r'^scrapbook$', views.WooeyScrapbookView.as_view(), name='scrapbook'),
 
 ]
+
+if wooey_settings.WOOEY_REGISTER_URL:
+    wooey_patterns += [
+        url('^{}'.format(wooey_settings.WOOEY_REGISTER_URL.lstrip('/')), views.WooeyRegister.as_view(), name='wooey_register'),
+    ]
 
 urlpatterns = [
     url('^', include(wooey_patterns, namespace='wooey')),

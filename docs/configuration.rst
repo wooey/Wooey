@@ -38,6 +38,13 @@ disabled)
 :code:`WOOEY_REALTIME_CACHE`: String, the name of the cache to use for
 storing real time updates from running jobs.
 
+:code:`WOOEY_JOB_EXPIRATION`: Dictionary, A dictionary with two keys:
+:code:`user` and :code:`anonymous`. The values for each is a timedelta
+specifying how much time should be elapsed before a job is automatically
+deleted. If a key is not provided or :code:`None`, the job for that user
+type wll not be deleted.
+
+
 
 Internationlization (i18n)
 --------------------------

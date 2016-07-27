@@ -3,14 +3,17 @@
 __author__ = 'Chris Mitchell'
 
 import argparse
-import sys
 import os
+import socket
+import sys
 from urllib import FancyURLopener
 from apiclient import discovery
 
 description = """
 This will find you cats, and optionally, kitties.
 """
+
+socket.setdefaulttimeout(10)
 
 parser = argparse.ArgumentParser(description = description)
 parser.add_argument('--count', help='The number of cats to find (max: 10)', type=int, default=1)
@@ -46,7 +49,10 @@ def main():
     for item in response.get('items', []):
         url = item.get('link')
         filename = url.split('/')[-1]
-        myopener.retrieve(url, filename)
+        try:
+            myopener.retrieve(url, filename)
+        except IOError:
+            continue
 
 
 if __name__ == "__main__":

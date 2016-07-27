@@ -35,6 +35,9 @@ each restart. (Default: ``False``)
 scripts as disabled or hide them entirely. (Defalt: ``True`` -- show as
 disabled)
 
+:code:`WOOEY_REALTIME_CACHE`: String, the name of the cache to use for
+storing real time updates from running jobs.
+
 
 Internationlization (i18n)
 --------------------------

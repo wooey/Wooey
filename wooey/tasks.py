@@ -6,6 +6,7 @@ import zipfile
 import six
 import sys
 import traceback
+from threading import Thread
 
 from django.utils.text import get_valid_filename
 from django.core.files import File
@@ -18,11 +19,10 @@ from celery.signals import worker_process_init
 
 from . import settings as wooey_settings
 
-from billiard import Process, Queue
 try:
-    from Queue import Empty
+    from Queue import Empty, Queue
 except ImportError:
-    from queue import Empty  # python 3.x
+    from queue import Empty, Queue  # python 3.x
 
 ON_POSIX = 'posix' in sys.builtin_module_names
 
@@ -37,7 +37,7 @@ def enqueue_output(out, q):
 
 def output_monitor_queue(out):
     q = Queue()
-    p = Process(target=enqueue_output, args=(out, q))
+    p = Thread(target=enqueue_output, args=(out, q))
     p.start()
     return q, p
 

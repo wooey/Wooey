@@ -101,7 +101,7 @@ def submit_script(**kwargs):
     job.save()
 
     stdout, stderr = '', ''
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=abscwd)
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=abscwd, universal_newlines=True)
 
     # We need to use subprocesses to capture the IO, otherwise they will block one another
     # i.e. a check against stderr will sit waiting on stderr before returning

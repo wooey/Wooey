@@ -25,6 +25,7 @@ except ImportError:
     from queue import Empty, Queue  # python 3.x
 
 ON_POSIX = 'posix' in sys.builtin_module_names
+ON_WINDOWS = os.name == 'nt'
 
 celery_app = app.app_or_default()
 
@@ -101,7 +102,7 @@ def submit_script(**kwargs):
     job.save()
 
     stdout, stderr = '', ''
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=abscwd, universal_newlines=True)
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=abscwd, universal_newlines=True if ON_WINDOWS else False)
 
     # We need to use subprocesses to capture the IO, otherwise they will block one another
     # i.e. a check against stderr will sit waiting on stderr before returning

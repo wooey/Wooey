@@ -31,7 +31,11 @@ celery_app = app.app_or_default()
 
 
 def enqueue_output(out, q):
-    for line in iter(out.readline, b''):
+    for line in iter(out.readline, '' if ON_WINDOWS else b''):
+        q.put(line)
+    # get anything left buffered in the stream
+    out.flush()
+    for line in out.readlines():
         q.put(line)
     out.close()
 

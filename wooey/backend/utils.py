@@ -359,7 +359,7 @@ def valid_user(obj, user):
             ret['error'] = _('You are not permitted to use this script')
         if not groups and obj.is_active:
             ret['valid'] = True
-        if obj.is_active is True:
+        if obj.is_active == True:
             if set(list(user.groups.all())) & set(list(groups)):
                 ret['valid'] = True
     ret['display'] = 'disabled' if wooey_settings.WOOEY_SHOW_LOCKED_SCRIPTS else 'hide'
@@ -387,12 +387,12 @@ def get_file_info(filepath):
     # returns info about the file
     filetype, preview = False, None
     tests = [('tabular', test_delimited), ('fasta', test_fastx), ('image', test_image)]
-    while filetype is False and tests:
+    while filetype == False and tests:
         ptype, pmethod = tests.pop()
         filetype, preview = pmethod(filepath)
         filetype = ptype if filetype else filetype
-    preview = None if filetype is False else preview
-    filetype = None if filetype is False else filetype
+    preview = None if filetype == False else preview
+    filetype = None if filetype == False else filetype
     try:
         json_preview = json.dumps(preview)
     except:
@@ -451,11 +451,11 @@ def test_fastx(filepath):
                 break
             if not row.strip():
                 continue
-            if found_caret is False and row[0] != '>':
+            if found_caret == False and row[0] != '>':
                 if row[0] == ';':
                     continue
                 break
-            elif found_caret is False and row[0] == '>':
+            elif found_caret == False and row[0] == '>':
                 found_caret = True
             if row and row[0] == '>':
                 if seq:

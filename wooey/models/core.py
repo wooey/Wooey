@@ -483,7 +483,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
         elif field == self.INTEGER:
             value = self.WOOEY_FIELD_MAP[field](value) if isinstance(value, int) or str(value).isdigit() else None
         elif field == self.BOOLEAN:
-            if value is None or value is False:
+            if value is None or value == False:
                 value = None
             if value:
                 value = True

@@ -52,7 +52,7 @@ def script_version_postsave(instance, created, **kwargs):
         instance._script_upgrade = False
         instance._script_cl_creation = False
         instance._rename_script = False
-        if res['valid'] is False:
+        if res['valid'] == False:
             # delete the model on exceptions.
             # TODO: use django messages backend to propogate this message to the admin
             instance.delete()

@@ -114,7 +114,7 @@ def celery_task_command(request):
     job = WooeyJob.objects.get(pk=job_id)
     response = {'valid': False, }
     valid = valid_user(job.script_version.script, request.user)
-    if valid.get('valid') is True:
+    if valid.get('valid') == True:
         user = request.user if request.user.is_authenticated() else None
         if user == job.user or job.user == None:
             if command == 'resubmit':

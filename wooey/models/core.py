@@ -239,7 +239,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
 
     def update_realtime(self, stdout='', stderr='', delete=False):
         wooey_cache = wooey_settings.WOOEY_REALTIME_CACHE
-        if delete is False and wooey_cache is None:
+        if delete == False and wooey_cache is None:
             self.stdout = stdout
             self.stderr = stderr
             self.save()

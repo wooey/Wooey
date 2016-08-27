@@ -30,7 +30,7 @@ ON_WINDOWS = os.name == 'nt'
 
 if ON_WINDOWS:
     import msvcrt
-    from billiard.reduction import steal_handle
+    from multiprocessing.reduction import steal_handle
 
 celery_app = app.app_or_default()
 

@@ -1,0 +1,15 @@
+{% load i18n %}
+{% load wooey_tags %}
+<tr>
+    <th>
+        {% if file.filetype == 'images' %}<span class="glyphicon glyphicon-picture"></span>
+        {% elif file.filetype == 'fasta' %}<span class="glyphicon glyphicon-list-alt"></span>
+        {% elif file.filetype == 'tabular' %}<span class="glyphicon glyphicon-list-alt"></span>
+        {% else %}<span class="glyphicon glyphicon-file"></span>{% endif %}
+        <a href="{{ file.url }}">{{ file.basename }}</a>
+    </th>
+    <td>{% if file.slug %}{{ file.slug }}{% endif %}</td>
+    <td></td>
+    <td></td>
+    <td>{% if file.size_bytes %}{{ file.size_bytes|filesizeformat|numericalign }}{% endif %}</td>
+</tr>

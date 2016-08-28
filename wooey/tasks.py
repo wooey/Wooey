@@ -7,7 +7,8 @@ import six
 import sys
 import traceback
 
-from billiard import Process, Queue
+from billiard import Process#, Queue
+from threading import Thread
 
 from django.utils.text import get_valid_filename
 from django.core.files import File
@@ -21,12 +22,12 @@ from celery.signals import worker_process_init
 from . import settings as wooey_settings
 
 try:
-    from Queue import Empty
+    from Queue import Empty, Queue
 except ImportError:
-    from queue import Empty  # python 3.x
+    from queue import Empty, Queue  # python 3.x
 
 ON_POSIX = 'posix' in sys.builtin_module_names
-ON_WINDOWS = os.name == 'nt'
+ON_WINDOWS = False#os.name == 'nt'
 
 if ON_WINDOWS:
     import msvcrt
@@ -49,7 +50,7 @@ def enqueue_output(out, q):
 
 
 def output_monitor_queue(queue, out):
-    p = Process(target=enqueue_output, args=(msvcrt.get_osfhandle(out.fileno()) if ON_WINDOWS else out, queue))
+    p = Thread(target=enqueue_output, args=(msvcrt.get_osfhandle(out.fileno()) if ON_WINDOWS else out, queue))
     p.start()
     return p
 

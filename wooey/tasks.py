@@ -7,7 +7,6 @@ import six
 import sys
 import traceback
 
-from billiard import Process#, Queue
 from threading import Thread
 
 from django.utils.text import get_valid_filename
@@ -27,20 +26,11 @@ except ImportError:
     from queue import Empty, Queue  # python 3.x
 
 ON_POSIX = 'posix' in sys.builtin_module_names
-ON_WINDOWS = False#os.name == 'nt'
-
-if ON_WINDOWS:
-    import msvcrt
-    from multiprocessing.reduction import steal_handle
 
 celery_app = app.app_or_default()
 
 
 def enqueue_output(out, q):
-    if ON_WINDOWS:
-        new_handle = steal_handle(os.getppid(), out)
-        fd = msvcrt.open_osfhandle(new_handle, os.O_RDONLY | os.O_BINARY)
-        out = open(fd, 'rb')
     for line in iter(out.readline, b''):
         q.put(line.decode('utf-8'))
     try:
@@ -50,7 +40,7 @@ def enqueue_output(out, q):
 
 
 def output_monitor_queue(queue, out):
-    p = Thread(target=enqueue_output, args=(msvcrt.get_osfhandle(out.fileno()) if ON_WINDOWS else out, queue))
+    p = Thread(target=enqueue_output, args=(out, queue))
     p.start()
     return p
 

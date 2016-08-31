@@ -137,12 +137,13 @@
         <!-- Output command and stderr, stdout in console-style view -->
         <div class="col-sm-12 col-md-12">
           <div class="thumbnail panel panel-{% if job_info.job.stderr %}danger{% else %}default{% endif %}">
-                <div class="panel-heading"><span class="glyphicon glyphicon-console"></span> {% trans "Console" %} <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-console" href="#collapse-console"></a></div>
-
-                <div id="collapse-console" class="panel-collapse collapse in">
-                <div class="panel-body console">
-                  <pre class="console-body console-command">{{ job_info.job.command }}</pre>
+                <div class="panel-heading">
+                    <span class="glyphicon glyphicon-console"></span> {% trans "Console" %} <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-console" href="#collapse-console"></a>
                 </div>
+                <div id="collapse-console" class="panel-collapse collapse in">
+                    <div class="panel-body console">
+                      <pre id="job-command" class="console-body console-command">{{ job_info.job.command }}</pre>
+                    </div>
                 </div>
             </div>
         </div>
@@ -236,9 +237,16 @@
             /* Update the job data, items, outputs etc. */
             $.get("{% url "wooey:celery_results_json_html" job_info.job.id  %}", function(data){
                 $('#page-content-wrapper').removeClass().addClass('status-' + data['status']);
-                if($('#console-stdout').length == 0)
+                var $commandText = $('#job-command');
+                var $stdoutConsole = $('#console-stdout');
+                if($stdoutConsole.length == 0) {
                     createConsoles();
-                $('#console-stdout').text(data['stdout']);
+                    $stdoutConsole = $('#console-stdout');
+                }
+                if ($commandText.text().length == 0){
+                    $commandText.html(data['command']);
+                }
+                $stdoutConsole.text(data['stdout']);
                 $('#console-stderr').text(data['stderr']);
 
                 $('#job-outputs').html(data['preview_outputs_html']);

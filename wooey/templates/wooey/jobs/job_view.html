@@ -220,16 +220,16 @@
 
         function createConsoles() {
             var $console = $('.panel-body.console');
-            {% if job_info.job_status|lower == 'completed' %}
+            {% if job_info.job.status|lower == 'completed' %}
                 {% if job_info.job.stdout %}
-                    $console.append('<pre id="console-stdout" class="console-body console-stdout">{{ job_info.job.stdout|linebreaks }}</pre>');
+                    $console.append('<pre id="console-stdout" class="console-body console-stdout">{{ job_info.job.stdout|linebreaks|escapejs }}</pre>');
                 {% endif %}
                 {% if job_info.job.stderr %}
-                    $console.append('<pre id="console-stderr" class="console-body console-stderr">{{ job_info.job.stderr|linebreaks }}</pre>');
+                    $console.append('<pre id="console-stderr" class="console-body console-stderr">{{ job_info.job.stderr|linebreaks|escapejs }}</pre>');
                 {% endif %}
             {% else %}
-                $console.append('<pre id="console-stdout" class="console-body console-stdout">{{ job_info.job.stdout|linebreaks }}</pre>');
-                $console.append('<pre id="console-stderr" class="console-body console-stderr">{{ job_info.job.stderr|linebreaks }}</pre>');
+                $console.append('<pre id="console-stdout" class="console-body console-stdout">{{ job_info.job.stdout|linebreaks|escapejs }}</pre>');
+                $console.append('<pre id="console-stderr" class="console-body console-stderr">{{ job_info.job.stderr|linebreaks|escapejs }}</pre>');
             {% endif %}
         }
 

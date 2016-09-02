@@ -239,7 +239,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
 
     def update_realtime(self, stdout='', stderr='', delete=False):
         wooey_cache = wooey_settings.WOOEY_REALTIME_CACHE
-        if delete is False and wooey_cache is None:
+        if delete == False and wooey_cache is None:
             self.stdout = stdout
             self.stderr = stderr
             self.save()
@@ -483,7 +483,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
         elif field == self.INTEGER:
             value = self.WOOEY_FIELD_MAP[field](value) if isinstance(value, int) or str(value).isdigit() else None
         elif field == self.BOOLEAN:
-            if value is None or value is False:
+            if value is None or value == False:
                 value = None
             if value:
                 value = True

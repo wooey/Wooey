@@ -2,8 +2,6 @@ environment:
   PYTHONIOENCODING: "utf-8"
   matrix:
     - PYTHON: "C:/Python27"
-      DJANGO: "Django==1.6.*"
-    - PYTHON: "C:/Python27"
       DJANGO: "Django==1.7.*"
     - PYTHON: "C:/Python27"
       DJANGO: "Django==1.8.*"
@@ -12,8 +10,6 @@ environment:
     - PYTHON: "C:/Python27"
       DJANGO: "Django"
 
-    - PYTHON: "C:/Python34"
-      DJANGO: "Django==1.6.*"
     - PYTHON: "C:/Python34"
       DJANGO: "Django==1.7.*"
     - PYTHON: "C:/Python34"
@@ -52,10 +48,4 @@ build: off
 test_script:
   - "%PYTHON%/Scripts/pip.exe --version"
   - "%PYTHON%/Scripts/nosetests.exe --with-coverage --cover-erase --cover-package=wooey tests"
-  - ps:
-      if($env:DJANGO -eq "Django==1.6.*"){
-        "%PYTHON%/Scripts/django-admin test --settings=wooey.test_settings wooey.tests"
-      }
-      else {
-        "%PYTHON%/Scripts/django-admin.exe test --settings=wooey.test_settings wooey.tests"
-      }
+  - "%PYTHON%/Scripts/django-admin test --settings=wooey.test_settings wooey.tests"

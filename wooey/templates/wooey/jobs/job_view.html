@@ -137,12 +137,13 @@
         <!-- Output command and stderr, stdout in console-style view -->
         <div class="col-sm-12 col-md-12">
           <div class="thumbnail panel panel-{% if job_info.job.stderr %}danger{% else %}default{% endif %}">
-                <div class="panel-heading"><span class="glyphicon glyphicon-console"></span> {% trans "Console" %} <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-console" href="#collapse-console"></a></div>
-
-                <div id="collapse-console" class="panel-collapse collapse in">
-                <div class="panel-body console">
-                  <pre class="console-body console-command">{{ job_info.job.command }}</pre>
+                <div class="panel-heading">
+                    <span class="glyphicon glyphicon-console"></span> {% trans "Console" %} <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-console" href="#collapse-console"></a>
                 </div>
+                <div id="collapse-console" class="panel-collapse collapse in">
+                    <div class="panel-body console">
+                      <pre id="job-command" class="console-body console-command">{{ job_info.job.command }}</pre>
+                    </div>
                 </div>
             </div>
         </div>
@@ -154,30 +155,21 @@
 
                 <div id="collapse-files" class="panel-collapse collapse in">
                 <div class="panel-body panel-nopad">
-                    <table class="table table-striped">
-                        <tr>
-                            <th>{% trans "Filename" %}</th>
-                            <th>{% trans "Parameter" %}</th>
-                            <th></th>
-                            <th></th>
-                            <th style="text-align:center;">{% trans "Size" %}</th>
-                        </tr>
-                        {% for file in job_info.all_files %}
+                    <table id="job-files" class="table table-striped">
+                        <thead>
                             <tr>
-                            <th>
-                                {% if file.filetype == 'images' %}<span class="glyphicon glyphicon-picture"></span>
-                                {% elif file.filetype == 'fasta' %}<span class="glyphicon glyphicon-list-alt"></span>
-                                {% elif file.filetype == 'tabular' %}<span class="glyphicon glyphicon-list-alt"></span>
-                                {% else %}<span class="glyphicon glyphicon-file"></span>{% endif %}
-
-                                <a href="{{ file.url }}">{{ file.basename }}</a>
-                            </th>
-                            <td>{% if file.slug %}{{ file.slug }}{% endif %}</td>
-                            <td></td>
-                            <td></td>
-                            <td>{% if file.size_bytes %}{{ file.size_bytes|filesizeformat|numericalign }}{% endif %}</td>
+                                <th>{% trans "Filename" %}</th>
+                                <th>{% trans "Parameter" %}</th>
+                                <th></th>
+                                <th></th>
+                                <th style="text-align:center;">{% trans "Size" %}</th>
                             </tr>
+                        </thead>
+                        <tbody>
+                        {% for file in job_info.all_files %}
+                            {% include 'wooey/jobs/results/table_row.html' with file=file only %}
                         {% endfor %}
+                        </tbody>
                     </table>
                 </div>
                 </div>
@@ -228,16 +220,16 @@
 
         function createConsoles() {
             var $console = $('.panel-body.console');
-            {% if job_info.job_status|lower == 'completed' %}
+            {% if job_info.job.status|lower == 'completed' %}
                 {% if job_info.job.stdout %}
-                    $console.append('<pre id="console-stdout" class="console-body console-stdout">{{ job_info.job.stdout|linebreaks }}</pre>');
+                    $console.append('<pre id="console-stdout" class="console-body console-stdout">{{ job_info.job.stdout|linebreaks|escapejs }}</pre>');
                 {% endif %}
                 {% if job_info.job.stderr %}
-                    $console.append('<pre id="console-stderr" class="console-body console-stderr">{{ job_info.job.stderr|linebreaks }}</pre>');
+                    $console.append('<pre id="console-stderr" class="console-body console-stderr">{{ job_info.job.stderr|linebreaks|escapejs }}</pre>');
                 {% endif %}
             {% else %}
-                $console.append('<pre id="console-stdout" class="console-body console-stdout">{{ job_info.job.stdout|linebreaks }}</pre>');
-                $console.append('<pre id="console-stderr" class="console-body console-stderr">{{ job_info.job.stderr|linebreaks }}</pre>');
+                $console.append('<pre id="console-stdout" class="console-body console-stdout">{{ job_info.job.stdout|linebreaks|escapejs }}</pre>');
+                $console.append('<pre id="console-stderr" class="console-body console-stderr">{{ job_info.job.stderr|linebreaks|escapejs }}</pre>');
             {% endif %}
         }
 
@@ -245,12 +237,20 @@
             /* Update the job data, items, outputs etc. */
             $.get("{% url "wooey:celery_results_json_html" job_info.job.id  %}", function(data){
                 $('#page-content-wrapper').removeClass().addClass('status-' + data['status']);
-                if($('#console-stdout').length == 0)
+                var $commandText = $('#job-command');
+                var $stdoutConsole = $('#console-stdout');
+                if($stdoutConsole.length == 0) {
                     createConsoles();
-                $('#console-stdout').text(data['stdout']);
+                    $stdoutConsole = $('#console-stdout');
+                }
+                if ($commandText.text().length == 0){
+                    $commandText.html(data['command']);
+                }
+                $stdoutConsole.text(data['stdout']);
                 $('#console-stderr').text(data['stderr']);
 
-                $('#job-outputs').html(data['outputs_html']);
+                $('#job-outputs').html(data['preview_outputs_html']);
+                $('#job-files > tbody').html(data['file_outputs_html']);
                 $("a[data-favorite]").click(toggleFavorite);
 
                 if(data['status'] == 'completed'){

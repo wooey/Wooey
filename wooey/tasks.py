@@ -7,6 +7,8 @@ import six
 import sys
 import traceback
 
+from threading import Thread
+
 from django.utils.text import get_valid_filename
 from django.core.files import File
 from django.conf import settings
@@ -18,11 +20,10 @@ from celery.signals import worker_process_init
 
 from . import settings as wooey_settings
 
-from billiard import Process, Queue
 try:
-    from Queue import Empty
+    from Queue import Empty, Queue
 except ImportError:
-    from queue import Empty  # python 3.x
+    from queue import Empty, Queue  # python 3.x
 
 ON_POSIX = 'posix' in sys.builtin_module_names
 
@@ -31,26 +32,30 @@ celery_app = app.app_or_default()
 
 def enqueue_output(out, q):
     for line in iter(out.readline, b''):
-        q.put(line)
-    out.close()
-
-
-def output_monitor_queue(out):
-    q = Queue()
-    p = Process(target=enqueue_output, args=(out, q))
-    p.start()
-    return q, p
-
-
-def update_from_output_queue(q, out):
+        q.put(line.decode('utf-8'))
     try:
-        line = q.get_nowait()
-    except Empty:
-        return out
+        out.close()
+    except IOError:
+        pass
 
-    out += str(line)
+
+def output_monitor_queue(queue, out):
+    p = Thread(target=enqueue_output, args=(out, queue))
+    p.start()
+    return p
+
+
+def update_from_output_queue(queue, out):
+    lines = []
+    while True:
+        try:
+            line = queue.get_nowait()
+            lines.append(line)
+        except Empty:
+            break
+
+    out += ''.join(map(str, lines))
     return out
-
 
 
 @worker_process_init.connect
@@ -101,19 +106,18 @@ def submit_script(**kwargs):
     job.save()
 
     stdout, stderr = '', ''
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=abscwd)
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=abscwd, bufsize=0)
 
     # We need to use subprocesses to capture the IO, otherwise they will block one another
     # i.e. a check against stderr will sit waiting on stderr before returning
     # we use Queues to communicate
-    qout, pout = output_monitor_queue(proc.stdout)
-    qerr, perr = output_monitor_queue(proc.stderr)
+    qout, qerr = Queue(), Queue()
+    pout = output_monitor_queue(qout, proc.stdout)
+    perr = output_monitor_queue(qerr, proc.stderr)
 
     prev_std = None
 
-    # Loop until the process is complete + both stdout/stderr have EOFd
-    while proc.poll() is None or pout.is_alive() or perr.is_alive():
-
+    def check_output(job, stdout, stderr, prev_std):
         # Check for updates from either (non-blocking)
         stdout = update_from_output_queue(qout, stdout)
         stderr = update_from_output_queue(qerr, stderr)
@@ -122,6 +126,19 @@ def submit_script(**kwargs):
         if (stdout, stderr) != prev_std:
             job.update_realtime(stdout=stdout, stderr=stderr)
             prev_std = (stdout, stderr)
+
+        return stdout, stderr, prev_std
+
+    # Loop until the process is complete + both stdout/stderr have EOFd
+    while proc.poll() is None or pout.is_alive() or perr.is_alive():
+        stdout, stderr, prev_std = check_output(job, stdout, stderr, prev_std)
+
+    # Catch any remaining output
+    try:
+        proc.stdout.flush()
+    except ValueError:  # Handle if stdout is closed
+        pass
+    stdout, stderr, prev_std = check_output(job, stdout, stderr, prev_std)
 
     # tar/zip up the generated content for bulk downloads
     def get_valid_file(cwd, name, ext):
@@ -185,6 +202,7 @@ def submit_script(**kwargs):
 
     return (stdout, stderr)
 
+
 @celery_app.task(base=WooeyTask)
 def cleanup_wooey_jobs(**kwargs):
     from django.utils import timezone
@@ -199,11 +217,12 @@ def cleanup_wooey_jobs(**kwargs):
     if user_settings:
         WooeyJob.objects.filter(user__isnull=False, created_date__lte=now-user_settings).delete()
 
+
 celery_app.conf.update(
-    CELERYBEAT_SCHEDULE = {
+    CELERYBEAT_SCHEDULE={
         'cleanup-old-jobs': {
             'task': 'wooey.tasks.cleanup_wooey_jobs',
-            'schedule': crontab(hour=0, minute=0), # cleanup at midnight each day
+            'schedule': crontab(hour=0, minute=0),  # cleanup at midnight each day
         },
     }
 )

@@ -30,6 +30,7 @@
 
     <form id="wooey-job-form" method="POST" action="{{ form.action }}" enctype="multipart/form-data">
         {% csrf_token %}
+        {{ form.wooey_form }}
 
         <div class="panel panel-default">
         <div class="panel-heading">

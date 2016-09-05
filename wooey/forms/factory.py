@@ -145,16 +145,19 @@ class WooeyFormFactory(object):
             })
             group['fields'][param.slug] = field
             group_map[group_id] = group
-        # create individual forms for each group
-        group_map = OrderedDict([(i, group_map[i]) for i in sorted(group_map.keys())])
-        d = {'action': script_version.get_url(), 'groups': []}
+
         pk = script_version.pk
+        form = WooeyForm(initial={'wooey_type': pk})
+        form.fields['wooey_type'] = script_id_field
+        form.fields['wooey_type'].initial = pk
+        d = {'action': script_version.get_url(), 'wooey_form': form}
+
+        # create individual forms for each group
+        d['groups'] = []
+        group_map = OrderedDict([(i, group_map[i]) for i in sorted(group_map.keys())])
         for group_index, group in enumerate(six.iteritems(group_map)):
             group_pk, group_info = group
             form = WooeyForm()
-            if group_index == 0:
-                form.fields['wooey_type'] = script_id_field
-                form.fields['wooey_type'].initial = pk
             for field_pk, field in six.iteritems(group_info['fields']):
                 form.fields[field_pk] = field
 

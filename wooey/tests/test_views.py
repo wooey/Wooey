@@ -182,7 +182,6 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         script_version = self.without_args
         forms = utils.get_form_groups(script_version=self.without_args)
         data = {}
-        import pdb; pdb.set_trace();
         for form in chain(forms['groups'], [forms['wooey_form']]):
             initial = form.initial
             initial.update(config.SCRIPT_DATA['without_args'].get('data'))

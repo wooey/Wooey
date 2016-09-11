@@ -1,6 +1,7 @@
 # TODO: Test for viewing a user's job as an anonymous user (fail case)
 
 import json
+from itertools import chain
 
 from django.test import TestCase, RequestFactory, Client
 from django.core.urlresolvers import reverse
@@ -10,6 +11,7 @@ from django.http import Http404
 from nose.tools import raises
 
 from . import factories, mixins, config
+from ..backend import utils
 from ..views import wooey_celery
 from .. import views as wooey_views
 from .. import settings
@@ -173,3 +175,22 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         job = WooeyJob.objects.latest('created_date')
         new_files = [i.value.url for i in job.get_parameters() if i.parameter.slug == 'multiple_file_choices']
         self.assertEqual(len(new_files), len(files))
+
+
+    def test_form_groups(self):
+        # Make sure forms groups work to validate
+        script_version = self.without_args
+        forms = utils.get_form_groups(script_version=self.without_args)
+        data = {}
+        for form in chain(forms['groups'], [forms['wooey_form']]):
+            initial = form.initial
+            initial.update(config.SCRIPT_DATA['without_args'].get('data'))
+            data.update(initial)
+
+        url = reverse('wooey:wooey_script', kwargs={'slug': script_version.script.slug})
+        request = self.factory.post(url, data=data)
+        user = factories.UserFactory()
+        request.user = user
+        response = self.script_view_func(request)
+        d = load_JSON_dict(response.content)
+        self.assertTrue(d['valid'], d)

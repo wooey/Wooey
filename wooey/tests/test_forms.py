@@ -101,3 +101,10 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase)
         # get the job again
         job = WooeyJob.objects.get(pk=job.pk)
         self.assertEqual(job.status, WooeyJob.COMPLETED)
+
+    def test_wooey_form(self):
+        # Make sure wooey form exists and has everything we need in it
+        script_version = self.without_args
+        forms = utils.get_form_groups(script_version=self.without_args)
+        wooey_form = forms['wooey_form']
+        self.assertDictEqual(wooey_form.initial, {'wooey_type': script_version.pk})

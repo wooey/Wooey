@@ -1,0 +1,351 @@
+a:hover {
+    text-decoration: none;
+}
+
+body {
+    padding-top: 40px; /* navbar */
+
+}
+
+.wooey_script_thumbnail .wooey_script_icons {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+}
+
+
+.wooey_script_thumbnail {
+    position: relative;
+}
+
+.wooey_script_disabled:hover {
+    background: none;
+}
+
+.wooey-script-group {
+    text-transform: uppercase;
+    color: #ccc;
+    font-size:0.8em;
+    font-weight:bold;
+
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+}
+
+.wooey_script_disabled {
+    color: #ccc !important;
+}
+
+
+.navbar {
+    border-radius: 0;
+}
+
+ol.navbar-breadcrumb {
+    float: left;
+}
+
+
+.navbar-breadcrumb {
+    margin-left: -5px;
+    color: #9d9d9d;
+    background-color: inherit;
+    font-family: "Helvetica Neue",Helvetica,Roboto,Arial,sans-serif;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 400;
+    margin-bottom: 0;
+    border-radius: 0;
+    padding: 0;
+}
+
+.navbar-breadcrumb > li {
+    line-height: 20px;
+    padding: 15px 0px;
+}
+
+
+h5 {
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 1em;
+    color: #555;
+}
+
+
+.wooey {
+    font-family: 'Pacifico',cursive;
+    color: #fff !important;
+}
+
+.jumbotron.frontpage {
+    background-color: #004D66;
+    text-align: center;
+    margin-bottom:0px;
+}
+
+.jumbotron.frontpage h1 {
+    font-size: 80px;
+    color: #fff;
+}
+.jumbotron.frontpage p {
+    font-size: 25.6px;
+    color: #eee;
+    margin-top: 1em;
+    font-weight: 100;
+}
+
+.navbar-header {
+    font-size: 2em;
+    padding-bottom: 0px;
+}
+
+.navbar-brand {
+    padding: 0px 0px 0px 15px;
+    height: 0;
+}
+
+.navbar-title
+{
+    position: absolute;
+    left: 0;
+    top: 0;
+    text-align: center;
+    margin: auto;
+    margin-left: 50% !important;
+    margin-right: 50% !important;
+  height:100%;
+}
+
+.navbar-title a
+{
+    text-decoration: none;
+    color: #333;
+}
+
+.wooey-affix{
+ max-height: 100%;
+ overflow-y: auto;
+}
+
+.navbar-nav li {
+ line-height: 40px;
+}
+
+.navbar-nav li.register {
+    margin-top: 5px;
+}
+
+.nav-tabs > li.no-hover > a:hover {
+    background-color: #fff;
+    border-top-color: #fff;
+    border-left-color: #fff;
+    border-right-color: #fff;
+}
+
+#wooey-job-table a {
+    display: block;
+    width: 110px;
+    word-wrap: break-word;
+}
+
+@media(max-width: 1200px){
+    .wooey-affix{
+        position: relative !important;
+    }
+}
+
+.glyphicon.spinning {
+    animation: spin 1s infinite linear;
+    -webkit-animation: spin2 1s infinite linear;
+}
+
+@keyframes spin {
+    from { transform: scale(1) rotate(0deg);}
+    to { transform: scale(1) rotate(360deg);}
+}
+
+@-webkit-keyframes spin2 {
+    from { -webkit-transform: rotate(0deg);}
+    to { -webkit-transform: rotate(360deg);}
+}
+
+.jobs-badge { display: none; }
+
+.console {
+    background-color:#222;
+    font-family:"Courier New",Courier,monospace
+}
+
+.console-body {
+    background: none;
+    border: none;
+}
+
+.console-stdout { color: #0f0; }
+.console-stderr { color: #f00; }
+.console-command { color: #fff; }
+
+
+.thumbnail.panel {
+    padding: 0;
+    aborder-width: 0;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.panel-body .form-group {
+    margin-left: 1em;
+    margin-right: 1em;
+
+}
+
+.panel-nopad {
+    padding: 0;
+}
+
+.panel-heading {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.page-header {
+    margin: -20px -15px 20px;
+    padding: 20px 20px 20px;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.center-div {
+    padding-top: 30px;
+}
+
+.panel-heading h4 { margin: 0px; }
+
+.glyphicon { font-weight: normal; }
+
+a.icon:after {
+    font-family:'Glyphicons Halflings';
+    color: rgba(0,0,0,0.3);
+    float: right;
+    font-weight: normal;
+    padding-left: 5px;
+}
+
+a.icon-collapse:after { content:"\e114"; }
+a.icon-collapse.collapsed:after { content:"\e080"; }
+
+a.icon-download:after { content:"\e025"; }
+a.icon-download:hover:after { color: #337AB7 !important; }
+
+a.icon-locked:after { content:"\e033"; }
+
+a.icon-favorite:after { content:"\e006"; }
+a.icon-favorite:hover:after { color: #F0AD4E !important; }
+a.icon-favorite:hover:after, .is-favorite a.icon-favorite:after { color: #F0AD4E !important; }
+
+a.icon-pushpin:after { content:"\e146"; }
+a.icon-pushpin:hover:after, .is-favorite a.icon-pushpin:after { color: #F0AD4E !important; }
+
+.job-metadata, .profile-metadata {
+    font-size: 0.9em;
+}
+
+.job-metadata .label, .profile-metadata .label {
+    font-size: 1em;
+}
+
+.success { color: #5CB85C }
+.warning { color: #F0AD4E }
+.danger { color: #D9534F }
+
+.center-div { background: url('{% static "wooey/images/pinstripe.png" %}'); }
+
+.page-header { background: #fff; }
+
+.numericalign { width: 49%; display: inline-block; }
+.numericalign.numericpart { text-align:right; }
+
+.preview-table tr, .preview-table th, .preview-table td { text-overflow: ellipsis; white-space: nowrap; }
+.preview-metadata { font-size: 0.8em; }
+
+.ellided-continuation > td { padding: 0 8px 8px 8px !important; }
+
+.profile-gravatar-adjust {
+    margin-top: -86px;
+    margin-left: 80px;
+}
+
+.panel-table {
+    padding: 0px;
+}
+
+.panel-table .table {
+    margin-bottom: 0px;
+}
+
+.panel-nav-tabs {
+    position: relative;
+}
+
+.panel-nav-tabs ul {
+    position: absolute;
+    top: -42px;
+}
+
+.panel-nav-tabs ul:first-child {
+    margin-left: 100px;
+}
+
+.user-is-anonymous .requires-login { display: none; }
+
+#page-content-wrapper {
+    margin: 0;
+    padding: 0;
+}
+
+.sidebar-nav {
+    margin-top: 10px;
+}
+
+#menu-toggle {
+    float: left;
+    /* margin-right: 0; */
+    display: block;
+}
+
+#sidebarsearchform {
+    color: #fff;
+    border-radius: 0;
+    border: 0;
+    background-color: #555;
+}
+
+li > a.tab-error {
+    color: #A94442;
+    background-color: #F2DEDE;
+}
+
+li.active > a.tab-error {
+    color: #A94442;
+    background-color: #fff;
+}
+
+
+.status-submitted-toggle,
+.status-pending-toggle,
+.status-running-toggle,
+.status-completed-toggle,
+.status-revoked-toggle,
+.status-failure-toggle {
+    display: none;
+}
+
+.status-submitted .status-submitted-toggle,
+.status-pending .status-pending-toggle,
+.status-running .status-running-toggle,
+.status-completed .status-completed-toggle,
+.status-revoked .status-revoked-toggle,
+.status-failure .status-failure-toggle
+{
+    display: unset !important;
+}

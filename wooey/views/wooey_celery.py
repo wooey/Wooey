@@ -231,15 +231,16 @@ class JobJSONHTML(JobBase):
                     })
                     preview = render_to_string('wooey/preview/%s.html' % output_group, bast_ctx)
                     preview_outputs.append(preview)
-                    if output_file_content and output_file_content.get('name') not in added:
-                        row_ctx = dict(
-                            file=output_file_content,
-                            **context
-                        )
-                        table_row = render_to_string('wooey/jobs/results/table_row.html', row_ctx)
-                        file_outputs.append(table_row)
-                        added.add(output_file_content.get('name'))
 
+        for file_info in context['job_info']['all_files']:
+            if file_info and file_info.get('name') not in added:
+                row_ctx = dict(
+                    file=file_info,
+                    **context
+                )
+                table_row = render_to_string('wooey/jobs/results/table_row.html', row_ctx)
+                file_outputs.append(table_row)
+                added.add(file_info.get('name'))
 
         return JsonResponse({
             'status': context['job_info']['status'].lower(),

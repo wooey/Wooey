@@ -1,4 +1,4 @@
-from . version import DJANGO_VERSION, DJ18, DJ17, DJ16, DJ19
+from . version import DJANGO_VERSION, DJ18, DJ17, DJ16, DJ19, DJ110
 from django.conf import settings
 
 try:

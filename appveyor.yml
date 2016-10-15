@@ -26,6 +26,8 @@ environment:
       DJANGO: "Django==1.8.*"
     - PYTHON: "C:/Python35"
       DJANGO: "Django==1.9.*"
+    - PYTHON: "C:/Python35"
+      DJANGO: "Django==1.10.*"
 
     # keep this to just maintain the latest version
     - PYTHON: "C:/Python35"

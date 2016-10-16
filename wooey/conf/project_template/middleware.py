@@ -8,7 +8,7 @@ if DJANGO_VERSION >= DJ110:
 else:
     MiddlewareMixin = object
 
-class ProcessExceptionMiddleware(MiddlewareMixin, object):
+class ProcessExceptionMiddleware(MiddlewareMixin):
     def process_response(self, request, response):
         if response.status_code != 200:
             try:

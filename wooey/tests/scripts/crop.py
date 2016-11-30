@@ -16,12 +16,12 @@ parser.add_argument('--save', help='Where to save the new image', type=argparse.
 
 def main():
     args = parser.parse_args()
-    im = Image.open(args.image)
+    im = Image.open(args.image.name)
     width, height = im.size
     right = width-args.right
     bottom = height-args.bottom
     new = im.crop((args.left, args.top, right, bottom))
-    new.save(args.save)
+    new.save(args.save.name)
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -141,9 +141,39 @@ msgstr "克隆"
 msgid "Delete"
 msgstr "删除"
 
+#: templates/wooey/jobs/job_view.html:103
+msgid "Priority 1"
+msgstr "优先级 1"
+
+#: templates/wooey/jobs/job_view.html:104
+#, python-format
+msgid "Submitted %(job_submission_date)s ago by %(job_user)s"
+msgstr "%(job_user)s 提交于 %(job_submission_date)s 前"
+
+#: templates/wooey/jobs/job_view.html:105
+#, python-format
+msgid "Updated %(job_last_modified_date)s ago"
+msgstr "更新于 %(job_last_modified_date)s 前"
+
+#: templates/wooey/jobs/job_view.html:112
+msgid "Error"
+msgstr "错误"
+
 #: templates/wooey/jobs/job_view.html:151
 msgid "Console"
-msgstr "控制"
+msgstr "控制台"
+
+#: templates/wooey/jobs/job_view.html:161
+msgid "Filename"
+msgstr "文件名"
+
+#: templates/wooey/jobs/job_view.html:162
+msgid "Parameter"
+msgstr "参数"
+
+#: templates/wooey/jobs/job_view.html:165
+msgid "Size"
+msgstr "大小"
 
 #: templates/wooey/jobs/job_view.html:172
 msgid "All Files"
@@ -181,6 +211,38 @@ msgstr "结果下载"
 msgid "Pin in scrapbook"
 msgstr "钉到剪贴板"
 
+#: realcloud/templates/wooey/preview/base.html:16
+#, python-format
+msgid ""
+"\n"
+"                Output from <a href=\"%(result_url)s\">%(job_name)s</a> job "
+"<a href=\"%(celery_results_url)s\">#%(job_id)s</a>\n"
+"                "
+msgstr
+"\n"
+"                输出自 <a href=\"%(result_url)s\">%(job_name)s</a> 任务 "
+"<a href=\"%(celery_results_url)s\">#%(job_id)s</a>\n"
+"                "
+
+#: realcloud/templates/wooey/profile/profile.html:21
+#, python-format
+msgid ""
+"\n"
+"    Joined %(join_date)s ago\n"
+"    "
+msgstr
+"\n"
+"    加入于 %(join_date)s 前\n"
+"    "
+
+#: templates/wooey/profile/profile.html:25
+msgid "Superuser"
+msgstr "管理员"
+
+#: templates/wooey/profile/profile.html:29
+msgid "Staff"
+msgstr "用户"
+
 #: templates/wooey/registration/login.html:10
 #: templates/wooey/registration/login.html:12
 #: templates/wooey/registration/login_header.html:6
@@ -188,6 +250,13 @@ msgstr "钉到剪贴板"
 #: templates/wooey/registration/register.html:12
 msgid "Username"
 msgstr "用户名"
+
+#: templates/wooey/registration/login.html:19
+#: templates/wooey/registration/login.html:21
+#: templates/wooey/registration/register.html:28
+#: templates/wooey/registration/register.html:30
+msgid "Password"
+msgstr "密码"
 
 #: templates/wooey/registration/login_header.html:12
 msgid "Login"
@@ -275,7 +344,7 @@ msgstr "成功"
 
 #: views/wooey_celery.py:28
 msgid "Executing"
-msgstr "执行中"
+msgstr "运行中"
 
 #: views/wooey_celery.py:29
 msgid "Queued"

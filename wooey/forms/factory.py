@@ -120,6 +120,7 @@ class WooeyFormFactory(object):
 
     def get_group_forms(self, script_version=None, pk=None, initial_dict=None, render_fn=None):
         pk = int(pk) if pk is not None else pk
+        REQUIRED_GROUP = 'Required'
         if initial_dict is None:
             initial_dict = {}
         if pk is not None and pk in self.wooey_forms and initial_dict is None:
@@ -130,20 +131,24 @@ class WooeyFormFactory(object):
         params = [i for i in script_version.get_parameters() if not i.hidden]
         # set a reference to the object type for POST methods to use
         script_id_field = forms.CharField(widget=forms.HiddenInput)
-        group_map = {}
+        group_map = OrderedDict({REQUIRED_GROUP: {'group': REQUIRED_GROUP, 'fields': OrderedDict()}})
         for param in params:
             if param.parameter_group.hidden:
                 continue
             initial_values = initial_dict.get(param.slug, None)
             field = self.get_field(param, initial=initial_values)
             field.name = param.slug
-            group_name = 'Required' if param.required else param.parameter_group.group_name
+            group_name = REQUIRED_GROUP if param.required else param.parameter_group.group_name
             group = group_map.get(group_name, {
                 'group': group_name,
                 'fields': OrderedDict()
             })
             group['fields'][param.slug] = field
             group_map[group_name] = group
+
+        # If there are no required groups, remove it
+        if not len(group_map[REQUIRED_GROUP]['fields']):
+            del group_map[REQUIRED_GROUP]
 
         pk = script_version.pk
         form = WooeyForm(initial={'wooey_type': pk})
@@ -153,7 +158,6 @@ class WooeyFormFactory(object):
 
         # create individual forms for each group
         d['groups'] = []
-        group_map = OrderedDict([(i, group_map[i]) for i in sorted(group_map.keys())])
         for group_index, group in enumerate(six.iteritems(group_map)):
             group_pk, group_info = group
             form = WooeyForm()

@@ -7,10 +7,10 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from ..backend import utils
 from ..forms import WooeyForm
 from ..forms import config as forms_config
+from ..models import ScriptVersion, WooeyJob
 
 from . import config
 from . import mixins
-from ..models import WooeyJob
 
 
 class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
@@ -27,6 +27,30 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase)
         utils.validate_form(form=form, data=qdict,
                             files=config.SCRIPT_DATA['translate'].get('files'))
         self.assertTrue(form.is_valid())
+
+    def test_groups_dont_duplicate(self):
+        # fixes https://github.com/wooey/Wooey/issues/163
+        # Update the translate script and make sure we do not duplicate form groups
+        # Make a new script version
+        old_translate_pk = self.translate_script.pk
+        new_translate = self.translate_script
+        new_translate.pk = None
+        new_translate.save()
+        old_translate = ScriptVersion.objects.get(pk=old_translate_pk)
+        new_translate = utils.add_wooey_script(script_version=new_translate, script_path=os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate.py'))['script']
+
+        # Assert we updated correctly
+        self.assertEqual(old_translate.script.pk, new_translate.script.pk)
+        self.assertEqual(old_translate.script_iteration, 1)
+        self.assertEqual(new_translate.script_iteration, 2)
+
+        # Make sure we still have the same number of groups after updating
+        new_form = utils.get_form_groups(script_version=new_translate)
+        old_form = utils.get_form_groups(script_version=old_translate)
+        for i, j in zip(new_form['groups'], old_form['groups']):
+            self.assertEqual(i['group_name'], j['group_name'])
+
+        self.assertEqual(len(new_form['groups']), len(old_form['groups']))
 
     def test_group_form(self):
         script_version = self.translate_script

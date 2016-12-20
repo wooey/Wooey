@@ -325,12 +325,13 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
                 'is_checked': param.get('checked', False),
                 # parameter_group': param_group,
                 'collapse_arguments': 'collapse_arguments' in param.get('param_action', set()),
-                'param_order': parameter_index,
             }
             parameter_index += 1
             script_params = ScriptParameter.objects.filter(**script_param_kwargs).filter(script_version__script=wooey_script, parameter_group__group_name=param_group_name)
             if not script_params:
                 script_param_kwargs['parameter_group'] = param_group
+                script_param_kwargs['param_order'] = parameter_index
+
                 script_param, created = ScriptParameter.objects.get_or_create(**script_param_kwargs)
                 script_param.script_version.add(script_version)
             else:
@@ -338,6 +339,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
                 # point the new script at the old script parameter. This lets us clone old scriptversions and have their
                 # parameters still auto populate.
                 script_param = script_params[0]
+                script_param.param_order = parameter_index
                 script_param.script_version.add(script_version)
                 script_param.save()
 

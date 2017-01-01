@@ -1,4 +1,5 @@
 from .django_settings import *
+from wooey.version import DJANGO_VERSION, DJ17
 from django.utils.translation import ugettext_lazy as _
 
 INSTALLED_APPS += (
@@ -12,7 +13,7 @@ LANGUAGES = [
   ('fr', _('French')),
   ('ja', _('Japanese')),
   ('nl', _('Dutch')),
-  ('zh-hans', _('Simplified Chinese')),
+  ('zh-hans' if DJANGO_VERSION >= DJ17 else 'zh-cn', _('Simplified Chinese')),
 ]
 
 NEW_MIDDLEWARE = []

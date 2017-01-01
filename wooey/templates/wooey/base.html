@@ -77,16 +77,33 @@
                   </ul>
 
               </li>
-
-              {% if request.user.is_authenticated %}
-              <li class="dropdown" id="job-list-user">
-                  <a href="{% url 'wooey:scrapbook' %}" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Scrapbook" %} <span class="badge scrapbook-badge" id="favorite-wooey-wooeyfile-count">{% get_user_favorite_count request.user 'wooey' 'wooeyfile' %}</span></a>
+              <li>
+                  <form id="language-selector" class="navbar-form form-inline" action="{% url 'wooey:set_language' %}" method="post">{% csrf_token %}
+                    <input name="next" type="hidden" value="{{ redirect_to }}" />
+                    {% get_current_language as LANGUAGE_CODE %}
+                    {% get_language_info for LANGUAGE_CODE as lang_info %}
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{ lang_info.name_local }}<span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                    {% get_available_languages as LANGUAGES %}
+                    {% get_language_info_list for LANGUAGES as languages %}
+                    {% for language in languages %}
+                      {% if language.code != lang_info.code %}
+                      <li><button name="language" class="btn btn-link" type="submit" value="{{ language.code }}">{{ language.name_local }} ({{ language.code }})</button></li>
+                      {% endif %}
+                    {% endfor %}
+                    </ul>
+                  </form>
               </li>
 
-              <li><a href="{% url 'wooey:profile_home' %}"><span class="glyphicon glyphicon-user"> </span> {{ request.user.username }}</a></li>
-              <li><a href="{% url "logout" %}?next={{ request.path }}">{% trans "Logout" %}</a></li>
+              {% if request.user.is_authenticated %}
+                <li class="dropdown" id="job-list-user">
+                  <a href="{% url 'wooey:scrapbook' %}" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Scrapbook" %} <span class="badge scrapbook-badge" id="favorite-wooey-wooeyfile-count">{% get_user_favorite_count request.user 'wooey' 'wooeyfile' %}</span></a>
+                </li>
+
+                <li><a href="{% url 'wooey:profile_home' %}"><span class="glyphicon glyphicon-user"> </span> {{ request.user.username }}</a></li>
+                <li><a href="{% url "logout" %}?next={{ request.path }}">{% trans "Logout" %}</a></li>
               {% else %}
-                  <li>{% include "wooey/registration/login_header.html" %}</li>
+                <li>{% include "wooey/registration/login_header.html" %}</li>
               {% endif %}
           </ul>
         </div><!-- /.navbar-collapse -->
@@ -94,7 +111,7 @@
     </nav>
 
 
-<div id="wrapper">
+    <div id="wrapper">
 
         <!-- Sidebar -->
         <div id="sidebar-wrapper" class="sidebar-wrapper">
@@ -112,18 +129,18 @@
         </div>
         <!-- /#sidebar-wrapper -->
 
-    <div id="page-content-wrapper" class="{% block page_content_class %}{% endblock page_content_class %}">
-    {% block outer_content %}{% endblock %}
-    {% block center %}
-        <div class="center-div {% block center_content_class %}col-md-10 col-xs-6{% endblock center_content_class %}">
-            {% block center_content %}
-            {% endblock center_content %}
+        <div id="page-content-wrapper" class="{% block page_content_class %}{% endblock page_content_class %}">
+        {% block outer_content %}{% endblock %}
+        {% block center %}
+            <div class="center-div {% block center_content_class %}col-md-10 col-xs-6{% endblock center_content_class %}">
+                {% block center_content %}
+                {% endblock center_content %}
+            </div>
+
+        {% endblock center %}
         </div>
 
-    {% endblock center %}
     </div>
-
-</div>
 
 
     {% block js %}
@@ -140,7 +157,7 @@
 
     <div id="inline-js">
     {% block inline_js %}
-    <script  type="text/javascript">
+    <script type="text/javascript">
 
             (function($) {
                 // https://github.com/bgrins/bindWithDelay/blob/master/bindWithDelay.js

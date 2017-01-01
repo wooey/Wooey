@@ -1,0 +1,371 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <xujm@realbio.cn>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2015-09-08 17:37+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: Junming Xu <xujm@realbio.cn>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: backend/utils.py:311
+msgid "You are not permitted to use this script"
+msgstr "您没有权限使用该脚本"
+
+#: models/core.py:146 templates/wooey/home.html:69
+#: templates/wooey/home.html.py:85
+msgid "Submitted"
+msgstr "提交"
+
+#: models/core.py:147
+msgid "Running"
+msgstr "运行"
+
+#: models/core.py:148
+msgid "Completed"
+msgstr "完成"
+
+#: models/core.py:149
+msgid "Deleted"
+msgstr "删除"
+
+#: models/core.py:325
+msgid "FILE NOT FOUND"
+msgstr "未找到文件"
+
+#: models/core.py:327
+msgid "File outside of project"
+msgstr "非本项目文件"
+
+#: settings.py:20
+msgid "Scripts"
+msgstr "脚本"
+
+#: settings.py:21
+msgid "Wooey!"
+msgstr "Wooey!"
+
+#: settings.py:22
+msgid "A web UI for Python scripts"
+msgstr "Python脚本WEB界面化"
+
+#: templates/wooey/base.html:389
+msgid "Queue"
+msgstr "队列"
+
+#: templates/wooey/base.html:399
+msgid "Jobs"
+msgstr "任务"
+
+#: templates/wooey/base.html:408
+msgid "Results"
+msgstr "结果"
+
+#: templates/wooey/base.html:417
+msgid "Scrapbook"
+msgstr "剪贴本"
+
+#: templates/wooey/base.html:421
+msgid "Logout"
+msgstr "登出"
+
+#: templates/wooey/base.html:439
+msgid "Search for scripts..."
+msgstr "搜索脚本..."
+
+#: templates/wooey/home.html:51
+msgid "Your Jobs"
+msgstr "您的任务"
+
+#: templates/wooey/home.html:53
+msgid "All Jobs"
+msgstr "所有任务"
+
+#: templates/wooey/home.html:57
+msgid "Auto"
+msgstr "自动"
+
+#: templates/wooey/home.html:66 templates/wooey/home.html.py:82
+msgid "Id"
+msgstr "编号"
+
+#: templates/wooey/home.html:67 templates/wooey/home.html.py:83
+msgid "Name"
+msgstr "名字"
+
+#: templates/wooey/home.html:68 templates/wooey/home.html.py:84
+msgid "Status"
+msgstr "状态"
+
+#: templates/wooey/jobs/job_view.html:7
+#, python-format
+msgid "Job # %(job_id)s"
+msgstr "任务 # %(job_id)s"
+
+#: templates/wooey/jobs/job_view.html:40
+msgid "Download"
+msgstr "下载"
+
+#: templates/wooey/jobs/job_view.html:57
+msgid "Share"
+msgstr "分享"
+
+#: templates/wooey/jobs/job_view.html:82
+msgid "Stop"
+msgstr "停止"
+
+#: templates/wooey/jobs/job_view.html:86
+msgid "Re-run"
+msgstr "重跑"
+
+#: templates/wooey/jobs/job_view.html:90
+msgid "Resubmit"
+msgstr "重提交"
+
+#: templates/wooey/jobs/job_view.html:93
+msgid "Clone"
+msgstr "克隆"
+
+#: templates/wooey/jobs/job_view.html:97
+msgid "Delete"
+msgstr "删除"
+
+#: templates/wooey/jobs/job_view.html:103
+msgid "Priority 1"
+msgstr "优先级 1"
+
+#: templates/wooey/jobs/job_view.html:104
+#, python-format
+msgid "Submitted %(job_submission_date)s ago by %(job_user)s"
+msgstr "%(job_user)s 提交于 %(job_submission_date)s 前"
+
+#: templates/wooey/jobs/job_view.html:105
+#, python-format
+msgid "Updated %(job_last_modified_date)s ago"
+msgstr "更新于 %(job_last_modified_date)s 前"
+
+#: templates/wooey/jobs/job_view.html:112
+msgid "Error"
+msgstr "错误"
+
+#: templates/wooey/jobs/job_view.html:151
+msgid "Console"
+msgstr "控制台"
+
+#: templates/wooey/jobs/job_view.html:161
+msgid "Filename"
+msgstr "文件名"
+
+#: templates/wooey/jobs/job_view.html:162
+msgid "Parameter"
+msgstr "参数"
+
+#: templates/wooey/jobs/job_view.html:165
+msgid "Size"
+msgstr "大小"
+
+#: templates/wooey/jobs/job_view.html:172
+msgid "All Files"
+msgstr "所有文件"
+
+#: templates/wooey/modals/base_modal.html:13
+msgid "Close"
+msgstr "关闭"
+
+#: templates/wooey/modals/permalink_modal.html:4
+msgid "Permanant link to these results"
+msgstr "结果链接"
+
+#: templates/wooey/modals/permalink_modal.html:6
+msgid "You can share the following link to give open access to your results:"
+msgstr "您可将结果分享给他人:"
+
+#: templates/wooey/modals/resubmit_modal.html:4
+msgid "Resubmission Complete"
+msgstr "重提交完成"
+
+#: templates/wooey/modals/resubmit_modal.html:5
+msgid "Your job has been successfully resubmitted."
+msgstr "您的任务已成功重提交."
+
+#: templates/wooey/modals/resubmit_modal.html:7
+msgid "View Job"
+msgstr "查看任务"
+
+#: templates/wooey/preview/base.html:7
+msgid "Download this output"
+msgstr "结果下载"
+
+#: templates/wooey/preview/base.html:8
+msgid "Pin in scrapbook"
+msgstr "钉到剪贴板"
+
+#: realcloud/templates/wooey/preview/base.html:16
+#, python-format
+msgid ""
+"\n"
+"                Output from <a href=\"%(result_url)s\">%(job_name)s</a> job "
+"<a href=\"%(celery_results_url)s\">#%(job_id)s</a>\n"
+"                "
+msgstr
+"\n"
+"                输出自 <a href=\"%(result_url)s\">%(job_name)s</a> 任务 "
+"<a href=\"%(celery_results_url)s\">#%(job_id)s</a>\n"
+"                "
+
+#: realcloud/templates/wooey/profile/profile.html:21
+#, python-format
+msgid ""
+"\n"
+"    Joined %(join_date)s ago\n"
+"    "
+msgstr
+"\n"
+"    加入于 %(join_date)s 前\n"
+"    "
+
+#: templates/wooey/profile/profile.html:25
+msgid "Superuser"
+msgstr "管理员"
+
+#: templates/wooey/profile/profile.html:29
+msgid "Staff"
+msgstr "用户"
+
+#: templates/wooey/registration/login.html:10
+#: templates/wooey/registration/login.html:12
+#: templates/wooey/registration/login_header.html:6
+#: templates/wooey/registration/register.html:10
+#: templates/wooey/registration/register.html:12
+msgid "Username"
+msgstr "用户名"
+
+#: templates/wooey/registration/login.html:19
+#: templates/wooey/registration/login.html:21
+#: templates/wooey/registration/register.html:28
+#: templates/wooey/registration/register.html:30
+msgid "Password"
+msgstr "密码"
+
+#: templates/wooey/registration/login_header.html:12
+msgid "Login"
+msgstr "登录"
+
+#: templates/wooey/registration/login_header.html:16
+msgid "Register"
+msgstr "注册"
+
+#: templates/wooey/registration/register.html:19
+#: templates/wooey/registration/register.html:21
+msgid "Email"
+msgstr "邮箱"
+
+#: templates/wooey/scripts/script_panel.html:23
+#, python-format
+msgid "Version %(version)s"
+msgstr "版本 %(version)s"
+
+#: templates/wooey/scripts/script_panel.html:26
+#, python-format
+msgid "Iteration %(iteration)s"
+msgstr "迭代 %(iteration)s"
+
+#: templates/wooey/scripts/script_view.html:23
+msgid "Documentation"
+msgstr "文档"
+
+#: templates/wooey/scripts/script_view.html:35
+msgid "Settings"
+msgstr "设置"
+
+#: templates/wooey/scripts/script_view.html:82
+msgid "Metadata"
+msgstr "元数据"
+
+#: templates/wooey/scripts/script_view.html:87
+#: templates/wooey/scripts/script_view.html:88
+msgid "Job Name"
+msgstr "任务名"
+
+#: templates/wooey/scripts/script_view.html:91
+msgid "Job Description"
+msgstr "任务描述"
+
+#: templates/wooey/scripts/script_view.html:92
+msgid "Enter job description here..."
+msgstr "请输入任务描述 ..."
+
+#: templates/wooey/scripts/script_view.html:101
+msgid "Submit"
+msgstr "提交"
+
+#: templates/wooey/scripts/script_view.html:124
+msgid "No more choices may be added for this selection"
+msgstr "没有更多的选项"
+
+#: views/authentication.py:31
+msgid "Passwords do not match."
+msgstr "密码不匹配."
+
+#: views/authentication.py:33
+msgid "Reserved username."
+msgstr "保留的用户名."
+
+#: views/authentication.py:35
+msgid "Please enter your email address."
+msgstr "请输入您的邮箱地址."
+
+#: views/authentication.py:66
+msgid "You have entered an invalid username or password."
+msgstr "您输入的用户名或密码无效."
+
+#: views/views.py:59
+msgid "No %(verbose_name)s found matching the query"
+msgstr "没有搜索到%(verbose_name)"
+
+#: views/views.py:89 views/views.py:134
+msgid "You are not permitted to access this script."
+msgstr "您没有权限查看该脚本."
+
+#: views/wooey_celery.py:27
+msgid "Success"
+msgstr "成功"
+
+#: views/wooey_celery.py:28
+msgid "Executing"
+msgstr "运行中"
+
+#: views/wooey_celery.py:29
+msgid "Queued"
+msgstr "排队"
+
+#: views/wooey_celery.py:30
+msgid "Halted"
+msgstr "挂起"
+
+#: views/wooey_celery.py:31
+msgid "Failure"
+msgstr "失败"
+
+#: views/wooey_celery.py:32
+msgid "Waiting"
+msgstr "等待中"
+
+#: views/wooey_celery.py:137
+msgid "Unknown Command"
+msgstr "未知命令"
+
+#: views/wooey_celery.py:192
+msgid "You are not authenticated to view this job."
+msgstr "您无权限查看该任务."

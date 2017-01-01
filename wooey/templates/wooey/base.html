@@ -83,7 +83,7 @@
                     {% get_current_language as LANGUAGE_CODE %}
                     {% get_language_info for LANGUAGE_CODE as lang_info %}
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{ lang_info.name_local }}<span class="caret"></span></a>
-                    <ul class="dropdown-menu">
+                    <ul id="language-dropdown" class="dropdown-menu">
                     {% get_available_languages as LANGUAGES %}
                     {% get_language_info_list for LANGUAGES as languages %}
                     {% for language in languages %}

@@ -16,6 +16,11 @@ body {
     margin-top: 6px;
 }
 
+#language-dropdown {
+    max-height: 250px;
+    overflow-y: scroll;
+}
+
 .wooey_script_thumbnail .wooey_script_icons {
     position: absolute;
     top: 5px;

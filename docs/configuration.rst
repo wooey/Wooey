@@ -51,11 +51,11 @@ Internationlization (i18n)
 
 Wooey supports the use of Django internationalization settings to present
 the interface in your own language. Currently we provide limited support
-for French, German and Dutch. We welcome contributions for translation
-extensions, fixes and new languages from our users.
+for French, German, Dutch, Japanese, and Simplifed Chinese. We welcome
+contributions for translation extensions, fixes and new languages from our users.
 
-If you want your installation to only use a single language, you can
-specify this using the :code:`LANGUAGE_CODE` setting in :code:`django_settings.py`.
+To specify the default language for your installation, you can specify this using
+the :code:`LANGUAGE_CODE` setting in :code:`django_settings.py`.
 For example to set the interface to French, you would use:
 
 .. code:: python
@@ -71,10 +71,12 @@ For German you would use:
 
 
 If you want the user interface to automatically change to the preferred language
-for your visitors, you must use the Django internationalization middelware.
-To do this add :code:`django.middleware.locale.LocaleMiddleware` to your :code:`MIDDLEWARE_CLASSES`
+for your visitors, you must use the Django internationalization middleware.
+By default, the bootstrapped version of Wooey will add in the necessary middleware,
+but for projects using Wooey as a separate app, these projects will need to add
+:code:`django.middleware.locale.LocaleMiddleware` to their :code:`MIDDLEWARE_CLASSES`
 block in :code:`django_settings.py`. Note that it must come *after* the Session
-middelware, and before the CommonMiddleware e.g.
+middleware, and before the CommonMiddleware e.g.
 
 .. code:: python
 

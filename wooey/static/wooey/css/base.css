@@ -21,6 +21,10 @@ body {
     overflow-y: scroll;
 }
 
+.btn-link[name=language]:hover, .btn-link[name=language]:focus, .btn-link[name=language]:active, .btn-link[name=language]:active:focus {
+    color: black;
+}
+
 .wooey_script_thumbnail .wooey_script_icons {
     position: absolute;
     top: 5px;

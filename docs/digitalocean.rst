@@ -92,7 +92,7 @@ Then I set-up a second server block to listen on port 80 and rewrite to https:
         listen   80;
         listen   [::]:80;
 
-        server_name  46.101.9.192;
+        server_name  enter_hostname;
 
         return 301 https://$server_name$request_uri;
     }

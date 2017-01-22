@@ -66,6 +66,7 @@ For examples not listed here, you are free to open up an `issue <https://github.
    :maxdepth: 1
 
    heroku
+   digitalocean
    openshift
    aws
    celery

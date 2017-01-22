@@ -176,3 +176,5 @@ All this other set-up means you then can't use honcho to run celery, because it 
 nohup python manage.py celery worker -c 1 --beat -l info & #you probably want to pipe this output somewhere sensible
 
 Which means you can then run the server with the command above uwsgi command shown above.
+
+[Contributed by dom-devel](https://github.com/dom-devel)

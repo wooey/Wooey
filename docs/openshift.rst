@@ -150,7 +150,7 @@ Next, you want to setup a database and a message broker for Celery
    ::
 
     STATIC_ROOT = os.path.join(os.environ.get('OPENSHIFT_REPO_DIR'), 'wsgi', 'static', 'static')
-    MEDIA_ROOT = MEDIA_ROOT = os.path.join(os.environ.get('OPENSHIFT_DATA_DIR'), 'user_uploads')
+    MEDIA_ROOT = os.path.join(os.environ.get('OPENSHIFT_DATA_DIR'), 'user_uploads')
 
 
 7. Remove DEBUG mode. In user_settings.py, add:

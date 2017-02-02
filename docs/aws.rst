@@ -50,15 +50,17 @@ Steps to Follow
         )
 
 
-        # We have user authentication -- we need to use https (django-sslify)if not DEBUG:
-            MIDDLEWARE_CLASSES = ['sslify.middleware.SSLifyMiddleware']+list(MIDDLEWARE_CLASSES)
+        # We have user authentication -- we need to use https (django-sslify)
+        if not DEBUG:
+            MIDDLEWARE_CLASSES = ['sslify.middleware.SSLifyMiddleware'] + list(MIDDLEWARE_CLASSES)
             SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
         ALLOWED_HOSTS = (
             'localhost',
             '127.0.0.1',
-            "wooey.herokuapp.com",# put your site here)
+            "wooey.herokuapp.com",  # put your site here
+        )
 
 
         AWS_CALLING_FORMAT = VHostCallingFormat
@@ -68,8 +70,10 @@ Steps to Follow
         AWS_SECRET_ACCESS_KEY = environ.get('AWS_SECRET_ACCESS_KEY', '')
         AWS_STORAGE_BUCKET_NAME = environ.get('AWS_STORAGE_BUCKET_NAME', '')
         AWS_AUTO_CREATE_BUCKET = True
-        AWS_QUERYSTRING_AUTH = FalseAWS_S3_SECURE_URLS = True
-        AWS_FILE_OVERWRITE = FalseAWS_PRELOAD_METADATA = True
+        AWS_QUERYSTRING_AUTH = False
+        AWS_S3_SECURE_URLS = True
+        AWS_FILE_OVERWRITE = False
+        AWS_PRELOAD_METADATA = True
         AWS_S3_CUSTOM_DOMAIN = environ.get('AWS_S3_CUSTOM_DOMAIN', '')
 
 
@@ -81,7 +85,8 @@ Steps to Follow
         )
 
 
-        AWS_EXPIREY = 60 * 60 * 7AWS_HEADERS = {
+        AWS_EXPIREY = 60 * 60 * 7
+        AWS_HEADERS = {
             'Cache-Control': 'max-age=%d, s-maxage=%d, must-revalidate' % (AWS_EXPIREY,
                 AWS_EXPIREY)
         }
@@ -89,24 +94,23 @@ Steps to Follow
 
         STATIC_URL = 'http://%s.s3.amazonaws.com/' % AWS_STORAGE_BUCKET_NAME
         MEDIA_URL = '/user-uploads/'
-        STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = 'wooey.wooeystorage.CachedS3BotoStorage'WOOEY_EPHEMERAL_FILES = True
+        STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = 'wooey.wooeystorage.CachedS3BotoStorage'
+        WOOEY_EPHEMERAL_FILES = True
 
 In the above step, make sure you change wooey.herokuapp.com to your app's address.
 
 Configuration Settings
 ----------------------
 
-Next, as part of any good app -- you should be storing your secret information in environmental variables instead of hard-coding them into the app. You will want to
-set these variables:
+Next, as part of any good app -- you should be storing your secret information in environmental
+variables instead of hard-coding them into the app. You will want to set these variables::
 
-  ::
     AWS_ACCESS_KEY_ID=access_key
     AWS_SECRET_ACCESS_KEY=secret_key
     AWS_STORAGE_BUCKET_NAME=bucket_name
 
-* If you are using Heroku, you can set them as follows:
-  ::
+If you are using Heroku, you can set them as follows::
 
-      heroku config:set -a wooey AWS_ACCESS_KEY_ID=access_key
-      heroku config:set -a wooey AWS_SECRET_ACCESS_KEY=secret_key
-      heroku config:set -a wooey AWS_STORAGE_BUCKET_NAME=bucket_name
+    heroku config:set -a wooey AWS_ACCESS_KEY_ID=access_key
+    heroku config:set -a wooey AWS_SECRET_ACCESS_KEY=secret_key
+    heroku config:set -a wooey AWS_STORAGE_BUCKET_NAME=bucket_name

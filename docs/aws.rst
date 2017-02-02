@@ -11,7 +11,7 @@ Before getting started, this guide assumes you have several things setup:
 * An AWS account
 * An S3 Bucket
 * An IAM user/group with full access to the S3 bucket (remember to add your user to the IAM group controlling the bucket!)
-* Are using a storage app in Django. We recommend `django-storages-redux <https://github.com/jschneier/django-storages>`_ as it is actively maintained as compared to django-storages.
+* Are using a storage app in Django. We recommend `django-storages <https://github.com/jschneier/django-storages>`_.
 
 
 Steps to Follow

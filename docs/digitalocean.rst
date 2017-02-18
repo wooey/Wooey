@@ -15,7 +15,8 @@ Install Nginx & uWSGI
 
 Next we need to install Nginx, which will make setting up SSL easy and uWSGI which is how Django and Nginx talk.
 
-There are instructions on how to install the stable branch of Nginx [here](https://www.digitalocean.com/community/tutorials/how-to-install-the-latest-version-of-nginx-on-ubuntu-12-10).
+There are instructions on how to install the stable branch of Nginx `here
+<https://www.digitalocean.com/community/tutorials/how-to-install-the-latest-version-of-nginx-on-ubuntu-12-10>`_.
 
 uWSGI you can install with `pip`.
 
@@ -29,13 +30,15 @@ You could at this point have Wooey listen to port 80 (assuming it's open) with t
 
     python manage.py runserver 0.0.0.0:80
 
-But this leaves us widly insecure, because all our passwords will be transmitted over HTTP. I had problems working with non-standard ports on UFW so for the purposes of this tutorial, so I set-up my ports using this [iptables linode tutorial](https://www.linode.com/docs/security/firewalls/control-network-traffic-with-iptables).
+But this leaves us widly insecure, because all our passwords will be transmitted over HTTP. I had problems working with non-standard ports on UFW so for the purposes of this tutorial, so I set-up my ports using this `iptables linode tutorial
+<https://www.linode.com/docs/security/firewalls/control-network-traffic-with-iptables>`_.
 
 
 Getting Wooey to talk to Nginx & uWSGI
 ---------------------
 
-We will basically follow the tutorial [here](http://uwsgi-docs.readthedocs.io/en/latest/tutorials/Django_and_nginx.html). If you installed Wooey in a virtualenv from the get go, then follow all those steps, if not you can ignore that set:
+We will basically follow the tutorial `here
+<http://uwsgi-docs.readthedocs.io/en/latest/tutorials/Django_and_nginx.html>`_. If you installed Wooey in a virtualenv from the get go, then follow all those steps, if not you can ignore that set:
 
 Then we can follow the guide along with a couple changes:
 
@@ -76,7 +79,8 @@ Forcing SSL with Nginx
 
 I have forced SSL with the following settings. (I think I might be running two SSL redirects, one on the Nginx side and one on the Django side which is never necessary because Nginx comes first, any clarification would be welcome, however for those following along:)
 
-I switched the main nginx block to HTTPS (there's a good tutorial [here](https://www.digitalocean.com/community/tutorials/how-to-create-an-ssl-certificate-on-nginx-for-ubuntu-14-04) if you haven't done this before).
+I switched the main nginx block to HTTPS (there's a good tutorial `here
+<https://www.digitalocean.com/community/tutorials/how-to-create-an-ssl-certificate-on-nginx-for-ubuntu-14-04>`_ if you haven't done this before).
 
 I also added an HTTPS header to the server block listening on 443 so Django knows it's HTTPS:
 
@@ -107,7 +111,8 @@ Then on the Django side I added the following flags to my config in user_setting
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 
-Finally I then added HTTP authentication, there is a good tutorial on this [here](https://www.digitalocean.com/community/tutorials/how-to-set-up-http-authentication-with-nginx-on-ubuntu-12-10). You only need to reach the first part of step 3, adding the `auth_basic` lines to your HTTPs block.
+Finally I then added HTTP authentication, there is a good tutorial on this `here
+<https://www.digitalocean.com/community/tutorials/how-to-set-up-http-authentication-with-nginx-on-ubuntu-12-10>`_. You only need to reach the first part of step 3, adding the `auth_basic` lines to your HTTPs block.
 
 Here's an example of what my final Nginx setup file in `/etc/nginx/sites-available/django` looked like:
 
@@ -177,4 +182,5 @@ nohup python manage.py celery worker -c 1 --beat -l info & #you probably want to
 
 Which means you can then run the server with the command above uwsgi command shown above.
 
-[Contributed by dom-devel](https://github.com/dom-devel)
+Contributed by `dom-devel
+<https://github.com/dom-devel>`_.

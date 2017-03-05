@@ -320,11 +320,12 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     form_field = models.CharField(max_length=255)
     default = JSONCharField(max_length=255, null=True, blank=True)
     input_type = models.CharField(max_length=255)
-    param_help = models.TextField(verbose_name='help', null=True, blank=True)
+    custom_widget = models.ForeignKey('WooeyWidget', null=True, blank=True)
+    param_help = models.TextField(verbose_name=_('help'), null=True, blank=True)
     is_checked = models.BooleanField(default=False)
     hidden = models.BooleanField(default=False)
     parameter_group = models.ForeignKey('ScriptParameterGroup')
-    param_order = models.SmallIntegerField('The order the parameter appears to the user.', default=0)
+    param_order = models.SmallIntegerField(help_text=_('The order the parameter appears to the user.'), default=0)
 
     class Meta:
         app_label = 'wooey'

@@ -49,17 +49,20 @@ Your server can then be run by the simple command:
     
 On Windows, the ``--beat`` option may not be supported.
 
-
 Production installation of Wooey utilizing NGINX and uWSGI
 ----------------------------------------------------------
 
 1. add a domain name to ALLOWED_HOSTS in django_settings.py in the settings dir of your project
 2. specify a static dir you like in STATIC_ROOT- default is OK
 3. make sure the entire directory tree is chmodded and chgrouped appropriately for the webserver user..sqlite db needs to be writable by them, etc.
-4. 
+4. add these config blocks to nginx, or use these as your files if only thing hosted
+5. add the further down uwsgi ini wherever uwsgi will pick it up on restart
+
+(initial configuration of uwsgi and nginx is beyond the scope of this tutorial)
 
 
 sample nginx config
+-------------------
 
 ::
     server {
@@ -78,6 +81,7 @@ sample nginx config
     }
 
 sample uwsgi config
+-------------------
 
 ::
   
@@ -102,5 +106,5 @@ sample uwsgi config
     attach-daemon = python manage.py celery worker -c 1 --beat -l info
   
 
-
+Finally, restart/start NGINX/uWSGI services.
 

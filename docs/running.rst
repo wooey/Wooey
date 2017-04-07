@@ -64,7 +64,7 @@ Production installation of Wooey utilizing NGINX and uWSGI
 sample nginx config
 -------------------
 
-::
+```
     server {
         listen 80;
         server_name <YOUR_DOMAIN>;
@@ -79,12 +79,12 @@ sample nginx config
         uwsgi_read_timeout 300;
     }
     }
+```
 
 sample uwsgi config
 -------------------
 
-::
-  
+```  
    [uwsgi]
    # variables
    plugin = </path/to/your/built/uwsgi/python/plugin> #may just need to say "python", depending how you've installed uwsgi
@@ -104,7 +104,7 @@ sample uwsgi config
     chmod-socket = 666
     logto = </somewhere/the/webserver/can/write>
     attach-daemon = python manage.py celery worker -c 1 --beat -l info
-  
+```
 
 Finally, restart/start NGINX/uWSGI services.
 

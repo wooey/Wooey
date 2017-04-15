@@ -7,6 +7,8 @@ These are the people who have provided various forms of contributions to Wooey (
 
 * **[Mike DePalatis](https://github.com/mivade)**
 
+* **[Padraic Harley](https://github.com/pauricthelodger)**
+
 * **[Hottwaj](https://github.com/hottwaj)**
 
 * **[Ryosuke Ito](https://github.com/manicmaniac)**

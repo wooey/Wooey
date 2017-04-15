@@ -3,8 +3,26 @@ a:hover {
 }
 
 body {
-    padding-top: 40px; /* navbar */
+    padding-top: 50px; /* navbar */
+}
 
+@media(min-width:768px) {
+    body {
+        padding-top: 57px; /* The form in the navbar adds margin-top 8px when shown (+7px looks better than +8px though) */
+    }
+}
+
+#language-selector {
+    margin-top: 6px;
+}
+
+#language-dropdown {
+    max-height: 250px;
+    overflow-y: scroll;
+}
+
+.btn-link[name=language]:hover, .btn-link[name=language]:focus, .btn-link[name=language]:active, .btn-link[name=language]:active:focus {
+    color: black;
 }
 
 .wooey_script_thumbnail .wooey_script_icons {

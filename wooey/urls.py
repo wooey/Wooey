@@ -51,6 +51,9 @@ wooey_patterns = [
 
     url(r'^scrapbook$', views.WooeyScrapbookView.as_view(), name='scrapbook'),
 
+
+    url(r'^i18n/', include('django.conf.urls.i18n'), name='set_language'),
+
 ]
 
 if wooey_settings.WOOEY_REGISTER_URL:

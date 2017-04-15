@@ -73,6 +73,7 @@ STATIC_URL = '/static/'
 # )
 
 ## We have user authentication -- we need to use https (django-sslify)
+## NOTE: This is MIDDLEWARE and not MIDDLEWARE_CLASSES in Django 1.10+!
 # if not DEBUG:
 #     MIDDLEWARE_CLASSES = ['sslify.middleware.SSLifyMiddleware']+list(MIDDLEWARE_CLASSES)
 #     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

@@ -6,11 +6,14 @@ from argparse import ArgumentParser
 from django.template import Context
 
 # This is needed on django 1.9
-from .. version import DJANGO_VERSION, DJ19
+from .. version import DJANGO_VERSION, DJ19, DJ110
 if DJANGO_VERSION >= DJ19:
     from django.conf import settings
     import django
-    settings.configure()
+    extra_settings = {}
+    if DJANGO_VERSION >= DJ110:
+        extra_settings['TEMPLATES'] = [{'BACKEND': 'django.template.backends.django.DjangoTemplates',}]
+    settings.configure(**extra_settings)
     django.setup()
 
 import wooey

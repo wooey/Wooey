@@ -42,7 +42,6 @@ class ScriptGroupTestCase(TestCase):
 
 
 class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMixin, TestCase):
-    urls = 'wooey.test_urls'
 
     def get_local_url(self, fileinfo):
         from ..backend import utils

@@ -5,6 +5,9 @@ Installation
 
     pip install wooey
 
+Currently, Wooey supports Django versions 1.8+. To use Wooey in a project which is still running Django 1.6 or 1.7, you must may install
+version 0.9.8.
+
 A Wooey only project
 --------------------
 
@@ -61,6 +64,7 @@ Installation on remote servers
 
 We have provided guides for several available services that host sites, as well as guides for steps common to multiple services (such as using Amazon Web Services).
 For examples not listed here, you are free to open up an `issue <https://github.com/wooey/wooey/issues>`_. (or document it and send a pull request!).
+
 
 .. toctree::
    :maxdepth: 1

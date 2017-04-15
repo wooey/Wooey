@@ -39,6 +39,22 @@ STATIC_URL = '/static/'
 
 STATIC_ROOT = os.path.join(TEST_DIR, 'static')
 
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
 MEDIA_URL = '/files/'
 MEDIA_ROOT = os.path.join(TEST_DIR, 'media')
 
@@ -52,8 +68,9 @@ PASSWORD_HASHERS = (
 )
 
 MIDDLEWARE_CLASSES = []
+MIDDLEWARE = []
 
-ROOT_URLCONF = 'wooey.urls'
+ROOT_URLCONF = 'wooey.test_urls'
 
 WOOEY_EPHEMERAL_FILES = True
 WOOEY_CELERY = False

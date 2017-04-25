@@ -39,43 +39,62 @@
         </div>
 
         <div id="collapse-settings" class="panel-collapse collapse in">
-
+        
         <div class="panel-nav-tabs">
-        <ul class="nav nav-tabs">
-        {% for group in form.groups %}
-            {% with group.group_name|slugify as group_slug %}
-            <li class="{% if forloop.first %}active{% endif %}"><a data-toggle="tab" href="#optiongroup-{{ group_slug }}">{{ group.group_name|title }}</a></li>
-            {% endwith %}
-        {% endfor %}
-        </ul>
+          <ul class="nav nav-tabs">
+          {% for parser_pk, parser_name in form.parsers.iterkeys %}
+            <li class="{% if forloop.first %}active{% endif %}"><a data-toggle="tab" href="#parsergroup-{{ parser_pk }}">{{ parser_name|title }}</a></li>
+          {% endfor %}
+          </ul>
         </div>
-
+        
         <div class="panel-body">
-        <div class="tab-content">
-        {% for group in form.groups %}
-        {% with group.group_name|slugify as group_slug %}
+          <div class="tab-content">
+          {% for parser_info, parser_groups in form.parsers.iteritems %}
+          {% with parser_info.0 as parser_pk %}
 
-          <div id="optiongroup-{{ group_slug }}" class="tab-pane fade in {% if forloop.first %}active{% endif %}">
+            <div id="parsergroup-{{ parser_pk }}" class="tab-pane fade in {% if forloop.first %}active{% endif %}">
+              <div class="panel-nav-tabs">
+                <ul class="nav nav-tabs">
+                {% for group in parser_groups %}
+                  {% with group.group_name|slugify as group_slug %}
+                  <li class="{% if forloop.first %}active{% endif %}"><a data-toggle="tab" href="#optiongroup-{{ parser_pk }}-{{ group_slug }}">{{ group.group_name|title }}</a></li>
+                  {% endwith %}
+                {% endfor %}
+                </ul>
+              </div>
 
-            {% for field in group.form %}
-                <div class="form-group row">
-                {{ field.errors }}
-                {% if not field.is_hidden %}
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {% endif %}
-                {{ field }}
-                {% if not field.is_hidden %}
-                <p class="help-block">{{ field.help_text }}</p>
-                {% endif %}
+              <div class="panel-body">
+                <div class="tab-content">
+                {% for group in parser_groups %}
+                  {% with group.group_name|slugify as group_slug %}
+
+                  <div id="optiongroup-{{ parser_pk }}-{{ group_slug }}" class="tab-pane fade in {% if forloop.first %}active{% endif %}">
+
+                  {% for field in group.form %}
+                    <div class="form-group row">
+                      {{ field.errors }}
+                      {% if not field.is_hidden %}
+                      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                      {% endif %}
+                      {{ field }}
+                      {% if not field.is_hidden %}
+                      <p class="help-block">{{ field.help_text }}</p>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                  </div>
+
+                  {% endwith %}
+                {% endfor %}
+
                 </div>
-            {% endfor %}
-          </div>
+              </div>
+            </div>
+            {% endwith %}
+          {% endfor %}
 
-        {% endwith %}
-        {% endfor %}
-
-        </div>
-        </div>
+        
         </div>
 
         </div>

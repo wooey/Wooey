@@ -288,10 +288,19 @@ class ScriptParameterGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
         return '{}: {}'.format(self.script_version.script.script_name, self.group_name)
 
 
+class ScriptParser(WooeyPy2Mixin, models.Model):
+    name = models.CharField(max_length=255, blank=True, null=True)
+    script_version = models.ForeignKey('ScriptVersion')
+
+    def __str__(self):
+        return '{}: {}'.format(self.script_version.script.script_name, self.name)
+
+
 class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     """
         This holds the parameter mapping for each script, and enforces uniqueness by each script via a FK.
     """
+    parser = models.ForeignKey('ScriptParser')
     script_version = models.ManyToManyField('ScriptVersion')
     short_param = models.CharField(max_length=255, blank=True)
     script_param = models.CharField(max_length=255)

@@ -131,10 +131,19 @@ class WooeyFormFactory(object):
         params = [i for i in script_version.get_parameters() if not i.hidden]
         # set a reference to the object type for POST methods to use
         script_id_field = forms.CharField(widget=forms.HiddenInput)
-        group_map = OrderedDict({REQUIRED_GROUP: {'group': REQUIRED_GROUP, 'fields': OrderedDict()}})
+        base_group_map = OrderedDict({
+            REQUIRED_GROUP: {
+                'group': REQUIRED_GROUP,
+                'fields': OrderedDict(),
+            }
+        })
+        parser_group_map = OrderedDict()
+
         for param in params:
             if param.parameter_group.hidden:
                 continue
+            parser = (param.parser_id, param.parser.name or '')
+            group_map = parser_group_map.setdefault(parser, copy.deepcopy(base_group_map))
             initial_values = initial_dict.get(param.slug, None)
             field = self.get_field(param, initial=initial_values)
             field.name = param.slug
@@ -146,36 +155,47 @@ class WooeyFormFactory(object):
             group['fields'][param.slug] = field
             group_map[group_name] = group
 
-        # If there are no required groups, remove it
-        if not len(group_map[REQUIRED_GROUP]['fields']):
-            del group_map[REQUIRED_GROUP]
+        # If there are no required groups in a parser, remove them
+        for parser, group_map in six.iteritems(parser_group_map):
+            if not len(group_map[REQUIRED_GROUP]['fields']):
+                del group_map[REQUIRED_GROUP]
 
         pk = script_version.pk
-        form = WooeyForm(initial={'wooey_type': pk})
-        form.fields['wooey_type'] = script_id_field
-        form.fields['wooey_type'].initial = pk
-        d = {'action': script_version.get_url(), 'wooey_form': form}
+        wooey_form = WooeyForm(initial={'wooey_type': pk})
+        wooey_form.fields['wooey_type'] = script_id_field
+        wooey_form.fields['wooey_type'].initial = pk
+        wooey_form.fields['wooey_parser'] = script_id_field
+        script_info = {
+            'action': script_version.get_url(),
+            'parsers': OrderedDict(),
+            'wooey_form': wooey_form,
+        }
 
-        # create individual forms for each group
-        d['groups'] = []
-        for group_index, group in enumerate(six.iteritems(group_map)):
-            group_pk, group_info = group
-            form = WooeyForm()
-            for field_pk, field in six.iteritems(group_info['fields']):
-                form.fields[field_pk] = field
+        # create individual forms for each group and subparser
+        for parser, group_map in six.iteritems(parser_group_map):
+            if wooey_form.fields['wooey_parser'].initial is None:
+                wooey_form.fields['wooey_parser'].initial = parser
+            parser_groups = script_info['parsers'].setdefault(parser, [])
+            for group_index, group in enumerate(six.iteritems(group_map)):
+                group_pk, group_info = group
+                form = WooeyForm()
+                for field_pk, field in six.iteritems(group_info['fields']):
+                    form.fields[field_pk] = field
 
-            if render_fn:
-                form = render_fn(form)
+                if render_fn:
+                    form = render_fn(form)
 
-            d['groups'].append({'group_name': group_info['group'], 'form': form})
+                parser_groups.append({'group_name': group_info['group'], 'form': form})
         try:
-            self.wooey_forms[pk]['groups'] = d
+            self.wooey_forms[pk]['parsers'] = script_info
         except KeyError:
-            self.wooey_forms[pk] = {'groups': d}
+            self.wooey_forms[pk] = {'parsers': script_info}
+
         # if the master form doesn't exist, create it while we have the model
         if 'master' not in self.wooey_forms[pk]:
             self.get_master_form(script_version=script_version, pk=pk)
-        return d
+
+        return script_info
 
     def get_master_form(self, script_version=None, pk=None):
         pk = int(pk) if pk is not None else pk
@@ -187,23 +207,32 @@ class WooeyFormFactory(object):
         if script_version is None and pk is not None:
             script_version = ScriptVersion.objects.get(pk=pk)
         pk = script_version.pk
-        master_form = WooeyForm(initial={'wooey_type': pk})
-        params = script_version.get_parameters()
-        # set a reference to the object type for POST methods to use
-        script_id_field = forms.CharField(widget=forms.HiddenInput)
-        master_form.fields['wooey_type'] = script_id_field
-        master_form.fields['wooey_type'].initial = pk
 
+        def generate_master_form(pk):
+            master_form = WooeyForm(initial={'wooey_type': pk})
+            # set a reference to the object type for POST methods to use
+            script_id_field = forms.CharField(widget=forms.HiddenInput)
+            master_form.fields['wooey_type'] = script_id_field
+            master_form.fields['wooey_type'].initial = pk
+            return master_form
+
+        master_forms = {}
+
+        params = script_version.get_parameters()
         for param in params:
+            master_form = master_forms.setdefault(param.parser_id, generate_master_form(pk))
             field = self.get_field(param)
             master_form.fields[param.slug] = field
+
         try:
-            self.wooey_forms[pk]['master'] = master_form
+            self.wooey_forms[pk]['master'] = master_forms
         except KeyError:
-            self.wooey_forms[pk] = {'master': master_form}
+            self.wooey_forms[pk] = {'master': master_forms}
+
         # create the group forms while we have the model
         if 'groups' not in self.wooey_forms[pk]:
             self.get_group_forms(script_version=script_version, pk=pk)
+
         return master_form
 
     def reset_forms(self, script_version=None):

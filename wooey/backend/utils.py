@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-__author__ = 'chris'
 import json
 import errno
 import os

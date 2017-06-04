@@ -312,6 +312,19 @@ a.icon-pushpin:hover:after, .is-favorite a.icon-pushpin:after { color: #F0AD4E !
     margin-left: 100px;
 }
 
+.subparsers .panel-nav-tabs ul:first-child {
+    margin-left: 230px;
+}
+
+.subparsers .panel-heading .panel-btn-group {
+    position: relative;
+}
+
+.subparsers .panel-heading .btn {
+    position: absolute;
+    top: -18px;
+}
+
 .user-is-anonymous .requires-login { display: none; }
 
 #page-content-wrapper {

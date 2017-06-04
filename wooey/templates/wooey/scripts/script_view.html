@@ -32,56 +32,65 @@
       {% csrf_token %}
       {{ form.wooey_form }}
 
-        <div class="panel panel-default {% if form.parsers|length != 1 %}subparsers{% endif %}">
+        <div class="panel panel-default argument-group-panel {% if form.parsers|length != 1 %}subparsers{% endif %}">
           <div class="panel-heading">
             {% if form.parsers|length != 1 %}
-              <div class="panel-btn-group">
-                <div class="btn-group">
-                  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    {% trans "Select subparser/command" %} <span class="caret"></span>
-                  </button>
-                  <ul class="dropdown-menu">
-                    {% for parser_info, parser_groups in form.parsers.iteritems %}
-                      {% with parser_pk=parser_info.0 parser_name=parser_info.1 %}
-                        <li class="{% if forloop.first %}active{% endif %}"><a data-toggle="tab" href="#parsergroup-{{ parser_pk }}">{% if not parser_name %}{% trans "Main Parser Parameters" %}{% else %}{{ parser_name|title }}{% endif %}</a></li>
-                        {% if not parser_name %}
-                          <li role="separator" class="divider"></li>
-                        {% endif %}
-                      {% endwith %}
-                    {% endfor %}
-                  </ul>
-                </div>
+              <div class="btn-group">
+                <button id="selected-subparser" type="button" class="btn btn-default">
+                  {% with parser_name=form.parsers.0.1 %}
+                    {% if not parser_name %}{% trans "Main Parser Parameters" %}{% else %}{{ parser_name|title }}{% endif %}
+                  {% endwith %}
+                </button>
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                  {% for parser_info, parser_groups in form.parsers.iteritems %}
+                    {% with parser_pk=parser_info.0 parser_name=parser_info.1 %}
+                      <li class="{% if forloop.first %}active{% endif %}"><a data-toggle="tab" href="#parsergroup-{{ parser_pk }}">{% if not parser_name %}{% trans "Main Parser Parameters" %}{% else %}{{ parser_name|title }}{% endif %}</a></li>
+                      {% if forloop.first %}
+                        <li role="separator" class="divider"></li>
+                      {% endif %}
+                    {% endwith %}
+                  {% endfor %}
+                </ul>
               </div>
             {% else %}
-              {% trans "Settings" %}
+              <div class="info">
+                {% trans "Settings" %}
+              </div>
             {% endif %}
 
-            {% for parser_info, parser_groups in form.parsers.iteritems %}
-            {% with parser_pk=parser_info.0 parser_name=parser_info.1 %}
-              <div id="parsergroup-{{ parser_pk }}" class="tab-pane fade in {% if forloop.first %}active{% endif %}">
-                <div class="panel-nav-tabs">
-                  <ul class="nav nav-tabs">
-                    {% for group in parser_groups %}
-                      {% with group.group_name|slugify as group_slug %}
-                        <li class="{% if forloop.first %}active{% endif %}"><a data-toggle="tab" href="#optiongroup-{{ parser_pk }}-{{ group_slug }}">{{ group.group_name|title }}</a></li>
-                      {% endwith %}
-                    {% endfor %}
-                  </ul>
+
+            <div class="tab-content">
+              {% for parser_info, parser_groups in form.parsers.iteritems %}
+              {% with parser_pk=parser_info.0 parser_name=parser_info.1 %}
+                <div id="parsergroup-{{ parser_pk }}" class="tab-pane fade{% if forloop.first %} in active{% endif %}">
+                  <div class="panel-nav-tabs">
+                    <ul class="nav nav-tabs">
+                      {% for group in parser_groups %}
+                        {% with group.group_name|slugify as group_slug %}
+                          <li class="{% if forloop.first %}active{% endif %}"><a data-toggle="tab" href="#optiongroup-{{ parser_pk }}-{{ group_slug }}">{{ group.group_name|title }}</a></li>
+                        {% endwith %}
+                      {% endfor %}
+                    </ul>
+                  </div>
                 </div>
-              </div>
-            {% endwith %}
-            {% endfor %}
+              {% endwith %}
+              {% endfor %}
+            </div>
 
             <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-settings" href="#collapse-settings"></a>
 
           </div>
 
-          <div id="collapse-settings" class="panel-collapse collapse in">
-            <div class="panel-body">
-              <div class="tab-content">
+          <div id="collapse-settings" class="panel-collapse collapse in panel-body">
+            <div class="tab-content">
+              {% for parser_info, parser_groups in form.parsers.iteritems %}
+              {% with parser_pk=parser_info.0 parser_name=parser_info.1 %}
                 {% for group in parser_groups %}
                   {% with group.group_name|slugify as group_slug %}
-                    <div id="optiongroup-{{ parser_pk }}-{{ group_slug }}" class="tab-pane fade in {% if forloop.first %}active{% endif %}">
+                    <div id="optiongroup-{{ parser_pk }}-{{ group_slug }}" class="tab-pane fade in{% if forloop.first %} active{% endif %}">
                       {% for field in group.form %}
                         <div class="form-group row">
                           {{ field.errors }}
@@ -97,7 +106,8 @@
                     </div>
                   {% endwith %}
                 {% endfor %}
-              </div>
+              {% endwith %}
+              {% endfor %}
             </div>
           </div>
       </div>
@@ -145,6 +155,26 @@
             var wooey_parser_selector = 'a[href^=parsergroup]';
             var wooey_choice_limit = 'wooey-choice-limit';
             var wooey_parser = 'id_wooey_parser';
+            var selected_subparser = 'selected-subparser';
+
+            $('[href^=#parsergroup-]').click(function(evt){
+              var $this = $(evt.target);
+              var $parser_group = $($this.attr('href'));
+              // Set the selected subparser text
+              $('#' + selected_subparser).text($this.text());
+
+              // We need to manually remove the 'active' class from the subparser dropdown menu on selection.
+              // Not entirely sure why bootstrap isn't doing this for us.
+              $this.parent('li').siblings('li').removeClass('active');
+
+              // We need to re-trigger whatever tab is currently selected for the given subparser so its
+              // content populates the parameter selection div
+              var $previously_active_tab = $parser_group.find('li.active > a');
+              // We remove the active class so bootstrap will re-trigger the tab show event
+              $previously_active_tab.parent('li').removeClass('active');
+              $previously_active_tab.trigger('click');
+
+            });
 
             var maxChoices = function($element){
                 $element.popover({

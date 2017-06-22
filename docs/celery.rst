@@ -7,7 +7,7 @@ Celery
 ------
 
 `Celery
-<https://http://celery.readthedocs.org/en/stable/>`_ is an app designed to pass messages. This has broad implications, such as the ability to have a distributed setup where
+<https://celery.readthedocs.org/en/stable/>`_ is an app designed to pass messages. This has broad implications, such as the ability to have a distributed setup where
 workers perform the work, with a central node delegating the tasks (without halting the server to perform these tasks).
 
 The backend

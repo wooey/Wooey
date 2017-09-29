@@ -276,8 +276,6 @@ a.icon-pushpin:hover:after, .is-favorite a.icon-pushpin:after { color: #F0AD4E !
 .warning { color: #F0AD4E }
 .danger { color: #D9534F }
 
-.center-div { background: url('{% static "wooey/images/pinstripe.png" %}'); }
-
 .page-header { background: #fff; }
 
 .numericalign { width: 49%; display: inline-block; }

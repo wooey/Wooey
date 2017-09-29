@@ -18,8 +18,11 @@
 
 
     <style>
-        {% block extra_style %}
-        {% endblock extra_style %}
+      .center-div {
+        background: url('{% static "wooey/images/pinstripe.png" %}');
+      }
+      {% block extra_style %}
+      {% endblock extra_style %}
     </style>
 </head>
 <body class="{% if user.is_authenticated %}user-is-authenticated{% else %}user-is-anonymous{% endif %}">

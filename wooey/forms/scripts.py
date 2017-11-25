@@ -3,6 +3,8 @@ from django import forms
 
 
 class WooeyForm(forms.Form):
+    wooey_type = forms.IntegerField(widget=forms.HiddenInput)
+    wooey_parser = forms.IntegerField(widget=forms.HiddenInput)
 
     def add_wooey_fields(self):
         # This adds fields such as job name, description that we like to validate on but don't want to include in

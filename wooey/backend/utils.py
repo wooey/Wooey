@@ -99,25 +99,43 @@ def get_job_commands(job=None):
 
 
 @transaction.atomic
-def create_wooey_job(user=None, script_version_pk=None, data=None):
-    from ..models import Script, WooeyJob, ScriptParameter, ScriptParameters, ScriptVersion
+def create_wooey_job(user=None, script_version_pk=None, script_parser_pk=None, data=None):
+    from ..models import Script, WooeyJob, ScriptParameter, ScriptParameters, ScriptParser, ScriptVersion
     script_version = ScriptVersion.objects.select_related('script').get(pk=script_version_pk)
     if data is None:
         data = {}
-    job = WooeyJob(user=user, job_name=data.pop('job_name', None), job_description=data.pop('job_description', None),
-                     script_version=script_version)
+    job = WooeyJob(
+        user=user,
+        job_name=data.pop('job_name', None),
+        job_description=data.pop('job_description', None),
+        script_version=script_version,
+    )
     job.save()
+
     # Because we use slugs, we do not need to filter by script_version=script_version here. We are going to eventually
     # have a setup where Script points at ScriptParameter instead of SP->SV. This will let us reuse slugs for
     # a script class
-    parameters = OrderedDict([(i.slug, i) for i in ScriptParameter.objects.filter(slug__in=data.keys()).order_by('param_order', 'pk')])
+    parameters = OrderedDict([
+        (i.slug, i) for i in ScriptParameter.objects
+        .select_related('parser')
+        .filter(slug__in=[i[2:] for i in data.keys()])
+        .filter(Q(parser_id=script_parser_pk) | Q(parser__name__isnull=True))
+        .order_by('param_order', 'pk')
+    ])
+
     for slug, param in six.iteritems(parameters):
-        slug_values = data.get(slug)
+        # If the parser has no name, it indicates it is the base parser. Otherwise, only parametrize the
+        # chosen parser
+        if param.parser_id != script_parser_pk and param.parser.name:
+            continue
+
+        slug_values = data.get('{}-{}'.format(param.parser_id, slug))
         slug_values = slug_values if isinstance(slug_values, list) else [slug_values]
         for slug_value in slug_values:
             new_param = ScriptParameters(job=job, parameter=param)
             new_param.value = slug_value
             new_param.save()
+
     return job
 
 

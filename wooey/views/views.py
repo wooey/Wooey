@@ -122,12 +122,18 @@ class WooeyScriptBase(DetailView):
         if not form.errors:
             # data = form.cleaned_data
             version_pk = form.cleaned_data.get('wooey_type')
-            script_version = ScriptVersion.objects.get(pk=version_pk)
+            parser_pk = form.cleaned_data.get('wooey_parser')
+            script_version = ScriptVersion.objects.get(pk=version_pk, scriptparser=parser_pk)
             valid = utils.valid_user(script_version.script, request.user).get('valid')
             if valid == True:
                 group_valid = utils.valid_user(script_version.script.script_group, request.user).get('valid')
                 if valid == True and group_valid == True:
-                    job = utils.create_wooey_job(script_version_pk=version_pk, user=user, data=form.cleaned_data)
+                    job = utils.create_wooey_job(
+                        script_parser_pk=parser_pk,
+                        script_version_pk=version_pk,
+                        user=user,
+                        data=form.cleaned_data
+                    )
                     job.submit_to_celery()
                     return {'valid': True, 'job_id': job.id}
 

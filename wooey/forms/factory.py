@@ -129,8 +129,6 @@ class WooeyFormFactory(object):
                         (version.PY_MINOR_VERSION == version.PY33 and version.PY_FULL_VERSION >= version.PY336):
                     return copy.deepcopy(self.wooey_forms[pk]['groups'])
         params = [i for i in script_version.get_parameters() if not i.hidden]
-        # set a reference to the object type for POST methods to use
-        script_id_field = forms.CharField(widget=forms.HiddenInput)
         base_group_map = OrderedDict({
             REQUIRED_GROUP: {
                 'group': REQUIRED_GROUP,
@@ -162,9 +160,6 @@ class WooeyFormFactory(object):
 
         pk = script_version.pk
         wooey_form = WooeyForm(initial={'wooey_type': pk})
-        wooey_form.fields['wooey_type'] = script_id_field
-        wooey_form.fields['wooey_type'].initial = pk
-        wooey_form.fields['wooey_parser'] = script_id_field
         script_info = {
             'action': script_version.get_url(),
             'parsers': OrderedDict(),
@@ -173,14 +168,15 @@ class WooeyFormFactory(object):
 
         # create individual forms for each group and subparser
         for parser, group_map in six.iteritems(parser_group_map):
+            parser_pk = parser[0]
             if wooey_form.fields['wooey_parser'].initial is None:
-                wooey_form.fields['wooey_parser'].initial = parser
+                wooey_form.fields['wooey_parser'].initial = parser_pk
             parser_groups = script_info['parsers'].setdefault(parser, [])
             for group_index, group in enumerate(six.iteritems(group_map)):
                 group_pk, group_info = group
-                form = WooeyForm()
+                form = forms.Form()
                 for field_pk, field in six.iteritems(group_info['fields']):
-                    form.fields[field_pk] = field
+                    form.fields['{}-{}'.format(parser_pk, field_pk)] = field
 
                 if render_fn:
                     form = render_fn(form)
@@ -210,10 +206,6 @@ class WooeyFormFactory(object):
 
         def generate_master_form(pk):
             master_form = WooeyForm(initial={'wooey_type': pk})
-            # set a reference to the object type for POST methods to use
-            script_id_field = forms.CharField(widget=forms.HiddenInput)
-            master_form.fields['wooey_type'] = script_id_field
-            master_form.fields['wooey_type'].initial = pk
             return master_form
 
         master_forms = {}
@@ -222,7 +214,7 @@ class WooeyFormFactory(object):
         for param in params:
             master_form = master_forms.setdefault(param.parser_id, generate_master_form(pk))
             field = self.get_field(param)
-            master_form.fields[param.slug] = field
+            master_form.fields['{}-{}'.format(param.parser_id, param.slug)] = field
 
         try:
             self.wooey_forms[pk]['master'] = master_forms

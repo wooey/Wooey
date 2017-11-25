@@ -7,6 +7,7 @@ import sys
 import six
 import uuid
 import traceback
+from itertools import chain
 from operator import itemgetter
 from collections import OrderedDict, defaultdict
 from pkg_resources import parse_version
@@ -72,10 +73,15 @@ def get_job_commands(job=None):
     script_version = job.script_version
     com = [sys.executable] if sys.executable else []
     com.extend([script_version.get_script_path()])
+
     parameters = job.get_parameters()
+    base_parameters = [i for i in parameters if not i.parameter.parser.name]
+    command_parameters = [i for i in parameters if i.parameter.parser.name]
+
     param_dict = OrderedDict()
     param_info_dict = {}
-    for param in parameters:
+
+    for param in chain(base_parameters, command_parameters):
         subproc_dict = param.get_subprocess_value()
         if subproc_dict is None:
             continue
@@ -86,15 +92,27 @@ def get_job_commands(job=None):
         subproc_value = subproc_dict.get('value', None)
         if subproc_value:
             param_dict[subproc_param].append(subproc_value)
+
+    added_parsers = set()
+
+    def append_parser(param_info):
+        if param_info and param_info.parser.pk not in added_parsers:
+            added_parsers.add(param_info.parser.pk)
+            if param_info.parser.name:
+                com.append(param_info.parser.name)
+
     for param, values in param_dict.items():
         param_info = param_info_dict.get(param, None)
         if param and not values:
+            append_parser(param_info)
             com.append(param)
         else:
             for index, value in enumerate(values):
+                append_parser(param_info)
                 if param and (param_info is None or param_info.collapse_arguments == False or index == 0):
                     com.append(param)
                 com.append(value)
+
     return com
 
 
@@ -102,8 +120,8 @@ def get_job_commands(job=None):
 def create_wooey_job(user=None, script_version_pk=None, script_parser_pk=None, data=None):
     from ..models import Script, WooeyJob, ScriptParameter, ScriptParameters, ScriptParser, ScriptVersion
     script_version = ScriptVersion.objects.select_related('script').get(pk=script_version_pk)
-    if data is None:
-        data = {}
+    data = data or {}
+
     job = WooeyJob(
         user=user,
         job_name=data.pop('job_name', None),
@@ -119,7 +137,7 @@ def create_wooey_job(user=None, script_version_pk=None, script_parser_pk=None, d
         (i.form_slug, i) for i in ScriptParameter.objects
         .select_related('parser')
         .filter(slug__in=[i[2:] for i in data.keys()])
-        .filter(Q(parser_id=script_parser_pk) | Q(parser__name__isnull=True))
+        .filter(Q(parser_id=script_parser_pk) | Q(parser__name=''))
         .order_by('param_order', 'pk')
     ])
 

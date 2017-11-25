@@ -142,7 +142,7 @@ class WooeyFormFactory(object):
                 continue
             parser = (param.parser_id, param.parser.name or '')
             group_map = parser_group_map.setdefault(parser, copy.deepcopy(base_group_map))
-            initial_values = initial_dict.get(param.slug, None)
+            initial_values = initial_dict.get(param.form_slug, None)
             field = self.get_field(param, initial=initial_values)
             field.name = param.form_slug
             group_name = REQUIRED_GROUP if param.required else param.parameter_group.group_name
@@ -204,22 +204,17 @@ class WooeyFormFactory(object):
             script_version = ScriptVersion.objects.get(pk=pk)
         pk = script_version.pk
 
-        def generate_master_form(pk):
-            master_form = WooeyForm(initial={'wooey_type': pk})
-            return master_form
-
-        master_forms = {}
+        master_form = WooeyForm(initial={'wooey_type': pk})
 
         params = script_version.get_parameters()
         for param in params:
-            master_form = master_forms.setdefault(param.parser_id, generate_master_form(pk))
             field = self.get_field(param)
             master_form.fields[param.form_slug] = field
 
         try:
-            self.wooey_forms[pk]['master'] = master_forms
+            self.wooey_forms[pk]['master'] = master_form
         except KeyError:
-            self.wooey_forms[pk] = {'master': master_forms}
+            self.wooey_forms[pk] = {'master': master_form}
 
         # create the group forms while we have the model
         if 'groups' not in self.wooey_forms[pk]:

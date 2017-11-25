@@ -176,7 +176,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         return self.job_name
 
     def get_parameters(self):
-        return ScriptParameters.objects.filter(job=self).order_by('pk')
+        return ScriptParameters.objects.select_related('parameter').filter(job=self).order_by('pk')
 
     def submit_to_celery(self, **kwargs):
         if kwargs.get('resubmit'):
@@ -289,7 +289,7 @@ class ScriptParameterGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
 
 
 class ScriptParser(WooeyPy2Mixin, models.Model):
-    name = models.CharField(max_length=255, blank=True, null=True)
+    name = models.CharField(max_length=255, blank=True, default='')
     script_version = models.ForeignKey('ScriptVersion')
 
     def __str__(self):

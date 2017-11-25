@@ -120,7 +120,6 @@ class WooeyScriptBase(DetailView):
                 form.cleaned_data[i] = list(set(cleaned).union(set(v)))
 
         if not form.errors:
-            # data = form.cleaned_data
             version_pk = form.cleaned_data.get('wooey_type')
             parser_pk = form.cleaned_data.get('wooey_parser')
             script_version = ScriptVersion.objects.get(pk=version_pk, scriptparser=parser_pk)

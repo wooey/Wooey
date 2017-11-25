@@ -144,13 +144,13 @@ class WooeyFormFactory(object):
             group_map = parser_group_map.setdefault(parser, copy.deepcopy(base_group_map))
             initial_values = initial_dict.get(param.slug, None)
             field = self.get_field(param, initial=initial_values)
-            field.name = param.slug
+            field.name = param.form_slug
             group_name = REQUIRED_GROUP if param.required else param.parameter_group.group_name
             group = group_map.get(group_name, {
                 'group': group_name,
                 'fields': OrderedDict()
             })
-            group['fields'][param.slug] = field
+            group['fields'][param.form_slug] = field
             group_map[group_name] = group
 
         # If there are no required groups in a parser, remove them
@@ -175,8 +175,8 @@ class WooeyFormFactory(object):
             for group_index, group in enumerate(six.iteritems(group_map)):
                 group_pk, group_info = group
                 form = forms.Form()
-                for field_pk, field in six.iteritems(group_info['fields']):
-                    form.fields['{}-{}'.format(parser_pk, field_pk)] = field
+                for form_slug, field in six.iteritems(group_info['fields']):
+                    form.fields[form_slug] = field
 
                 if render_fn:
                     form = render_fn(form)
@@ -214,7 +214,7 @@ class WooeyFormFactory(object):
         for param in params:
             master_form = master_forms.setdefault(param.parser_id, generate_master_form(pk))
             field = self.get_field(param)
-            master_form.fields['{}-{}'.format(param.parser_id, param.slug)] = field
+            master_form.fields[param.form_slug] = field
 
         try:
             self.wooey_forms[pk]['master'] = master_forms

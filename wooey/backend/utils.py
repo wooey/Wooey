@@ -116,20 +116,20 @@ def create_wooey_job(user=None, script_version_pk=None, script_parser_pk=None, d
     # have a setup where Script points at ScriptParameter instead of SP->SV. This will let us reuse slugs for
     # a script class
     parameters = OrderedDict([
-        (i.slug, i) for i in ScriptParameter.objects
+        (i.form_slug, i) for i in ScriptParameter.objects
         .select_related('parser')
         .filter(slug__in=[i[2:] for i in data.keys()])
         .filter(Q(parser_id=script_parser_pk) | Q(parser__name__isnull=True))
         .order_by('param_order', 'pk')
     ])
 
-    for slug, param in six.iteritems(parameters):
+    for form_slug, param in six.iteritems(parameters):
         # If the parser has no name, it indicates it is the base parser. Otherwise, only parametrize the
         # chosen parser
         if param.parser_id != script_parser_pk and param.parser.name:
             continue
 
-        slug_values = data.get('{}-{}'.format(param.parser_id, slug))
+        slug_values = data.get(form_slug)
         slug_values = slug_values if isinstance(slug_values, list) else [slug_values]
         for slug_value in slug_values:
             new_param = ScriptParameters(job=job, parameter=param)

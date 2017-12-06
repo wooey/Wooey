@@ -134,7 +134,7 @@
                 $(wooey_multiple_selector).parent().each(
                     function(element, value){
                         var $wooey_multiples = $(value).find(wooey_multiple_selector);
-                        if($wooey_multiples.length != 1) {
+                        if($wooey_multiples.length !== 1) {
                             for (var i = 0; i < $wooey_multiples.length; i++) {
                                 var $remove_button = removeMultiInput();
                                 $remove_button.appendTo($wooey_multiples[i]);
@@ -151,7 +151,7 @@
                     var $containers = $this.siblings(wooey_multiple_selector);
                     // check the choice limit, are we at it?
                     var choice_limit = $this.data(wooey_choice_limit);
-                    if(choice_limit && ($containers.length == choice_limit)){
+                    if(choice_limit && ($containers.length === choice_limit)){
                         // give a notice
                         maxChoices($this);
                         return;
@@ -159,7 +159,7 @@
 
                     var $container = $containers.first();
                     // if the container doesn't have a remove button since it's the first one, add one
-                    if($container.find(wooey_remove_selector).length == 0){
+                    if($container.find(wooey_remove_selector).length === 0){
                         removeMultiInput().appendTo($container);
                     }
                     var $new_target = $container.clone();

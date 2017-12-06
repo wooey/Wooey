@@ -77,7 +77,7 @@ class WooeyScriptBase(DetailView):
                 for i in job.get_parameters():
                     value = i.value
                     if value is not None:
-                        initial[i.parameter.slug].append(value)
+                        initial[i.parameter.form_slug].append(value)
 
         context['form'] = utils.get_form_groups(script_version=self.object.latest_version, initial_dict=initial, render_fn=self.render_fn, pk=self.object.pk)
         return context

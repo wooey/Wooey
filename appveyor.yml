@@ -5,10 +5,14 @@ environment:
       DJANGO: "Django==1.7.*"
     - PYTHON: "C:/Python27"
       DJANGO: "Django==1.8.*"
-
-    # keep this to just maintain the latest version
     - PYTHON: "C:/Python27"
-      DJANGO: "Django"
+      DJANGO: "Django==1.9.*"
+    - PYTHON: "C:/Python27"
+      DJANGO: "Django==1.10.*"
+
+    # The latest version of Django is no longer python2 compatible
+    #- PYTHON: "C:/Python27"
+    #  DJANGO: "Django"
 
     - PYTHON: "C:/Python34"
       DJANGO: "Django==1.7.*"

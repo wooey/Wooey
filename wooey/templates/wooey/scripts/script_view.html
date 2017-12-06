@@ -204,49 +204,12 @@
                 return $remove_input;
             };
 
-            var loadWooeyScript = function(url, params, form){
-                $.get(url, params, function(data){
-                    form.attr('action', data.action);
-                    var $wooey_tabs = form.find('#wooey-script-tabs');
-                    var $wooey_content = form.find('#wooey-script-content');
-                    for(var i=0;i<data.groups.length;i++){
-                        $wooey_tabs.append('<li class="wooey-dynamic-tabs" role="presentation"><a href="#wooey_dynamic_tab'+i+'" aria-controls="profile" role="tab" data-toggle="tab">'+data.groups[i].group_name+'</a></li>');
-                        var new_panel = $('<div role="tabpanel" class="tab-pane wooey-dynamic-tabs" id="wooey_dynamic_tab'+i+'"></div>');
-                        new_panel.html(data.groups[i].form);
-                        $wooey_content.append(new_panel);
-                    }
-                    var $first = $('a[href="#wooey_dynamic_tab0"]');
-                    if($first.length)
-                        $first.trigger('click');
-                    initializeWooeyScript();
-                }, "json");
-            };
-
-            var updateScriptInfo = function(url){
-                // set the details of what script we clicked
-                $('.wooey-dynamic-tabs').remove();
-                var $scriptBox = $("a[data-href='"+url+"']");
-                var title = $scriptBox.find('.wooey-script-title').text();
-                var desc = $scriptBox.find('.wooey-script-description').text();
-                $('#wooey-script-description').text(desc);
-                var $title = $('#wooey-script-title');
-                $title.text(title);
-                var currentTop = $(document).scrollTop();
-                var scriptTop = $title.closest('.center-div').offset().top;
-                if (currentTop > scriptTop)
-                    window.scrollTo(0, scriptTop);
-            };
-
             {% if job_info %}
                 // Track file changes
                 $("input:file").change(function (){
                    var fileName = $(this).val();
                    filesUploaded[$(this).attr('name')] = fileName;
                  });
-                var $jobform = $('#wooey-job-form');
-                updateScriptInfo('{{ job_info.data_url }}');
-                loadWooeyScript('{{ job_info.url }}', {job_id: '{{ job_info.job_id }}'}, $jobform);
-                $jobform.find('#wooey_clone_job_id').val("{{ job_info.job_id }}");
             {% endif %}
             initializeWooeyScript();
 

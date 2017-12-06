@@ -87,10 +87,10 @@
           <div id="collapse-settings" class="panel-collapse collapse in panel-body">
             <div class="tab-content">
               {% for parser_info, parser_groups in form.parsers.items %}
-              {% with parser_pk=parser_info.0 parser_name=parser_info.1 %}
+              {% with parser_pk=parser_info.0 parser_name=parser_info.1 first_parser=forloop.first %}
                 {% for group in parser_groups %}
                   {% with group.group_name|slugify as group_slug %}
-                    <div id="optiongroup-{{ parser_pk }}-{{ group_slug }}" class="tab-pane fade in{% if forloop.first %} active{% endif %}">
+                    <div id="optiongroup-{{ parser_pk }}-{{ group_slug }}" class="tab-pane fade in{% if first_parser %} active{% endif %}">
                       {% for field in group.form %}
                         <div class="form-group row">
                           {{ field.errors }}

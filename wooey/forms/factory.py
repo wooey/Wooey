@@ -159,7 +159,7 @@ class WooeyFormFactory(object):
                 del group_map[REQUIRED_GROUP]
 
         pk = script_version.pk
-        wooey_form = WooeyForm(initial={'wooey_type': pk})
+        wooey_form = WooeyForm(initial={'wooey_type': pk, 'wooey_parser': initial_dict.get('wooey_parser')})
         script_info = {
             'action': script_version.get_url(),
             'parsers': OrderedDict(),

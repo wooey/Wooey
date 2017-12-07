@@ -251,6 +251,11 @@
                 } else {
                     selectWooeyParser($('div[id^=parsergroup-]'))
                 }
+
+                var $initial_parser = $("a[data-parser-pk=" + $wooey_parser.val() + "]");
+                if ($initial_parser.length) {
+                    $initial_parser.click();
+                }
             };
 
 

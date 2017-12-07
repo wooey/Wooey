@@ -74,10 +74,17 @@ class WooeyScriptBase(DetailView):
             if job.user is None or (self.request.user.is_authenticated() and job.user == self.request.user):
                 context['job_info'] = {'job_id': job_id}
 
+                parser_used = None
                 for i in job.get_parameters():
                     value = i.value
                     if value is not None:
-                        initial[i.parameter.form_slug].append(value)
+                        script_parameter = i.parameter
+                        if script_parameter.parser.name:
+                            parser_used = script_parameter.parser.pk
+                        initial[script_parameter.form_slug].append(value)
+
+                if parser_used is not None:
+                    initial['wooey_parser'] = parser_used
 
         context['form'] = utils.get_form_groups(script_version=self.object.latest_version, initial_dict=initial, render_fn=self.render_fn, pk=self.object.pk)
         return context

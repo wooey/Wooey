@@ -3,7 +3,7 @@ import os
 from django.test import TestCase
 from django.conf import settings
 
-from . import config, mixins
+from . import config, mixins, utils as test_utils
 from ..backend import utils
 from ..models import ScriptVersion
 from .. import settings as wooey_settings
@@ -17,7 +17,16 @@ class ScriptAdditionTests(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase)
             new_file = self.storage.save(self.filename_func('command_order.py'), o)
         res = utils.add_wooey_script(script_path=new_file, group=None)
         self.assertEqual(res['valid'], True, res['errors'])
-        job = utils.create_wooey_job(script_version_pk=res['script'].pk, data={'job_name': 'abc', 'link': 'alink', 'name': 'aname'})
+        link_slug = test_utils.get_subparser_form_slug(res['script'], 'link')
+        name_slug = test_utils.get_subparser_form_slug(res['script'], 'name')
+        job = utils.create_wooey_job(
+            script_version_pk=res['script'].pk,
+            data={
+                'job_name': 'abc',
+                link_slug: 'alink',
+                name_slug: 'aname'
+            }
+        )
         # These are positional arguments -- we DO NOT want them returning anything
         self.assertEqual(['', ''], [i.parameter.short_param for i in job.get_parameters()])
         # These are the params shown to the user, we want them returning their destination
@@ -28,11 +37,25 @@ class ScriptAdditionTests(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase)
         self.assertEqual(['alink', 'aname'], commands)
 
     def test_collapse_arguments(self):
-        job = utils.create_wooey_job(script_version_pk=self.choice_script.pk, data={'job_name': 'abc', 'need_at_least_one_numbers': [1,2]})
+        slug = test_utils.get_subparser_form_slug(self.choice_script, 'need_at_least_one_numbers')
+        job = utils.create_wooey_job(
+            script_version_pk=self.choice_script.pk,
+            data={
+                'job_name': 'abc',
+                slug: [1, 2]
+            }
+        )
         commands = utils.get_job_commands(job=job)[2:]
         self.assertEqual(commands, ['--need-at-least-one-numbers', '1', '2'])
-        job = utils.create_wooey_job(script_version_pk=self.choice_script.pk,
-                                     data={'job_name': 'abc', 'choices_str': [1, 2, 3]})
+
+        slug = test_utils.get_subparser_form_slug(self.choice_script, 'choices_str')
+        job = utils.create_wooey_job(
+            script_version_pk=self.choice_script.pk,
+            data={
+                'job_name': 'abc',
+                slug: [1, 2, 3]
+            }
+        )
         commands = utils.get_job_commands(job=job)[2:]
         self.assertEqual(commands, ['--choices-str', '1', '--choices-str', '2', '--choices-str', '3'])
 

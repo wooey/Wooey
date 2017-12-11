@@ -120,6 +120,14 @@ def get_job_commands(job=None):
 def create_wooey_job(user=None, script_version_pk=None, script_parser_pk=None, data=None):
     from ..models import Script, WooeyJob, ScriptParameter, ScriptParameters, ScriptParser, ScriptVersion
     script_version = ScriptVersion.objects.select_related('script').get(pk=script_version_pk)
+    if script_parser_pk is None:
+        script_parsers = list(script_version.scriptparser_set.all())
+        if len(script_parsers) == 1:
+            script_parser_pk = script_parsers[0]
+        elif len(script_parsers) > 1:
+            raise Exception(
+                "A script_version with multiple subparsers was passed without indicating selected subparser."
+            )
     data = data or {}
 
     job = WooeyJob(

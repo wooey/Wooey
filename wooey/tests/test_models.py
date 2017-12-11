@@ -3,7 +3,7 @@ import uuid
 
 from django.test import TestCase, Client
 
-from . import factories, config, mixins
+from . import factories, config, mixins, utils as test_utils
 from .. import version
 
 
@@ -51,7 +51,17 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMix
     def test_jobs(self):
         script = self.translate_script
         from ..backend import utils
-        job = utils.create_wooey_job(script_version_pk=script.pk, data={'job_name': 'abc', 'sequence': 'aaa', 'out': 'abc'})
+        sequence_slug = test_utils.get_subparser_form_slug(script, 'sequence')
+        out_slug = test_utils.get_subparser_form_slug(script, 'out')
+        fasta_slug = test_utils.get_subparser_form_slug(script, 'fasta')
+        job = utils.create_wooey_job(
+            script_version_pk=script.pk,
+            data={
+                'job_name': 'abc',
+                sequence_slug: 'aaa',
+                out_slug: 'abc'
+            }
+        )
         job = job.submit_to_celery()
         old_pk = job.pk
         new_job = job.submit_to_celery(resubmit=True)
@@ -84,13 +94,14 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMix
         local_storage = utils.get_storage(local=True)
         fasta_path = local_storage.save('fasta.fasta', open(os.path.join(config.WOOEY_TEST_DATA, 'fasta.fasta')))
         fasta_file = local_storage.open(fasta_path)
-        job = utils.create_wooey_job(script_version_pk=script.pk,
-                                        data={
-                                            'fasta': fasta_file,
-                                            'out': 'abc',
-                                            'job_name': 'abc'
-                                        }
-                                     )
+        job = utils.create_wooey_job(
+            script_version_pk=script.pk,
+            data={
+                fasta_slug: fasta_file,
+                out_slug: 'abc',
+                'job_name': 'abc'
+            }
+        )
 
         # check our upload link is ok
         file_previews = utils.get_file_previews(job)
@@ -103,17 +114,17 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMix
         # this tests whether a file uploaded by one job will be referenced by a second job instead of being duplicated
         # on the file system
         new_file = self.storage.open(self.get_any_file())
-        script_slug = 'multiple_file_choices'
         script = self.choice_script
+        script_slug = test_utils.get_subparser_form_slug(script, 'multiple_file_choices')
         from ..backend import utils
         job = utils.create_wooey_job(script_version_pk=script.pk, data={'job_name': 'job1', script_slug: new_file})
         job = job.submit_to_celery()
         job2 = utils.create_wooey_job(script_version_pk=script.pk, data={'job_name': 'job2', script_slug: new_file})
         job2 = job2.submit_to_celery()
         from ..models import UserFile
-        job1_files = [i for i in UserFile.objects.filter(job=job, parameter__isnull=False) if i.parameter.parameter.slug == script_slug]
+        job1_files = [i for i in UserFile.objects.filter(job=job, parameter__isnull=False) if i.parameter.parameter.form_slug == script_slug]
         job1_file = job1_files[0]
-        job2_files = [i for i in UserFile.objects.filter(job=job2, parameter__isnull=False) if i.parameter.parameter.slug == script_slug]
+        job2_files = [i for i in UserFile.objects.filter(job=job2, parameter__isnull=False) if i.parameter.parameter.form_slug == script_slug]
         job2_file = job2_files[0]
         self.assertNotEqual(job1_file.pk, job2_file.pk)
         self.assertEqual(job1_file.system_file, job2_file.system_file)
@@ -122,11 +133,17 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMix
     def test_multiplechoices(self):
         script = self.choice_script
         choices = ['2', '1', '3']
-        choice_param = 'two_choices'
+        choice_slug = test_utils.get_subparser_form_slug(script, 'two_choices')
 
         from ..backend import utils
-        job = utils.create_wooey_job(script_version_pk=script.pk, data={'job_name': 'abc', choice_param: choices})
+        job = utils.create_wooey_job(
+            script_version_pk=script.pk,
+            data={
+                'job_name': 'abc',
+                choice_slug: choices
+            }
+        )
         # make sure we have our choices in the parameters
-        choice_params = [i.value for i in job.get_parameters() if i.parameter.slug == choice_param]
+        choice_params = [i.value for i in job.get_parameters() if i.parameter.form_slug == choice_slug]
         self.assertEqual(choices, choice_params)
         job = job.submit_to_celery()

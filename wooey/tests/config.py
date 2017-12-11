@@ -33,9 +33,10 @@ SCRIPT_DATA = {
                 'two_choices': [1, 2],
             },
             'files': {
-                'multiple_file_choices': [File(open(os.path.join(WOOEY_TEST_SCRIPTS, 'choices.py'), 'rb')),
-                                          File(open(os.path.join(WOOEY_TEST_SCRIPTS, 'crop.py'), 'rb'))
-                                          ]
+                'multiple_file_choices': [
+                    File(open(os.path.join(WOOEY_TEST_SCRIPTS, 'choices.py'), 'rb')),
+                    File(open(os.path.join(WOOEY_TEST_SCRIPTS, 'crop.py'), 'rb'))
+                ]
             }
         },
     'without_args':

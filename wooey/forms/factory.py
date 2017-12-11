@@ -159,7 +159,12 @@ class WooeyFormFactory(object):
                 del group_map[REQUIRED_GROUP]
 
         pk = script_version.pk
-        wooey_form = WooeyForm(initial={'wooey_type': pk, 'wooey_parser': initial_dict.get('wooey_parser')})
+        form_initial = {
+            'wooey_type': pk,
+        }
+        if initial_dict.get('wooey_parser') is not None:
+            form_initial['wooey_parser'] = initial_dict['wooey_parser']
+        wooey_form = WooeyForm(initial=form_initial)
         script_info = {
             'action': script_version.get_url(),
             'parsers': OrderedDict(),
@@ -169,7 +174,7 @@ class WooeyFormFactory(object):
         # create individual forms for each group and subparser
         for parser, group_map in six.iteritems(parser_group_map):
             parser_pk = parser[0]
-            if wooey_form.fields['wooey_parser'].initial is None:
+            if wooey_form.fields['wooey_parser'].initial is None and parser_pk is not None:
                 wooey_form.fields['wooey_parser'].initial = parser_pk
             parser_groups = script_info['parsers'].setdefault(parser, [])
             for group_index, group in enumerate(six.iteritems(group_map)):

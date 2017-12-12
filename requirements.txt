@@ -1,4 +1,4 @@
-django
+django<2
 django-autoslug
 django-celery
 nose

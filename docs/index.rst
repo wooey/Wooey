@@ -34,8 +34,9 @@ Getting Started
 
    install
    configuration
-   running
+   running_wooey
    scripts
+   using_wooey
    remote
 
 

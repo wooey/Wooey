@@ -1,12 +1,15 @@
 Wooey UI
 =============
 
-Wooey's homepage provides a list of all scripts available to a user. From here,
-a user can choose a script to configure for execution. On all pages a header menu
-is available that provides the number of running scripts, the number of queued
-scripts, and the number of scripts that has finished executing. Users can
-select these header items for further inspection of pending or completed jobs.
-Additionally, there is a *scrapbook* where a user can save results from previous
+Wooey's homepage provides a list of all scripts available to a user.
+
+.. image:: src/Wooey Home.png
+
+From here, a user can choose a script to configure for execution. On all pages
+a header menu is available that provides the number of running scripts, the
+number of queued scripts, and the number of scripts that has finished executing.
+Users can select these header items for further inspection of pending or completed
+jobs. Additionally, there is a *scrapbook* where a user can save results from previous
 jobs for easy access and a language menu item for translation of Wooey's interface
 to various languages (If your language is not currently supported, we would love to
 add it!).

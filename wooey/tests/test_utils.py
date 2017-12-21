@@ -9,7 +9,7 @@ from . import config
 from . import mixins
 
 
-class TestUtils(mixins.ScriptFactoryMixin, TestCase):
+class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase):
     def test_sanitize_name(self):
         assert(utils.sanitize_name('abc')) == 'abc'
         assert(utils.sanitize_name('ab c')) == 'ab_c'
@@ -55,6 +55,31 @@ class TestUtils(mixins.ScriptFactoryMixin, TestCase):
         user.groups.add(test_group)
         d = utils.valid_user(script, user)
         self.assertTrue(d['valid'])
+
+    def test_create_job_fileinfo(self):
+        # Run a script that creates a file
+        from wooey.models import WooeyJob, UserFile
+        script = os.path.join(config.WOOEY_TEST_SCRIPTS, 'file_maker.py')
+        with open(script) as o:
+            new_file = self.storage.save(self.filename_func('file_maker.py'), o)
+        res = utils.add_wooey_script(script_path=new_file, group=None)
+        self.assertEqual(res['valid'], True, res['errors'])
+        job = utils.create_wooey_job(
+            script_version_pk=res['script'].pk,
+            data={'job_name': 'abc'}
+        )
+        # Get the new job
+        job.submit_to_celery()
+        job = WooeyJob.objects.get(pk=job.pk)
+        utils.create_job_fileinfo(job)
+
+        # Make sure the file info is correct
+        for job_file in UserFile.objects.filter(job=job):
+            wooey_file = job_file.system_file
+            self.assertEqual(
+                os.path.getsize(self.storage.path(wooey_file.filepath.name)),
+                wooey_file.size_bytes,
+            )
 
 
 class TestFileDetectors(TestCase):

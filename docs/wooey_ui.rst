@@ -22,8 +22,8 @@ exposed on the script execution page via a button on the upper left of the
 script parameter panel (in a non-subparser script, this simply has the text
 *Settings*. Because most subparsers have a "main" parser, such as Django's
 `manage.py`, these settings can be specified via the *Main Parser Parameter*
-button, and parameters for various subparsers can be found via the dropdown
-menu.
+button. To select and parameterize a given subparser, the subparser command
+and its parameters are available by selecting it via the dropdown menu.
 
 Running previous versions of a script
 -------------------------------------

@@ -1,4 +1,6 @@
 import os
+import six
+import zipfile
 
 from django.test import TestCase
 
@@ -56,7 +58,7 @@ class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase):
         d = utils.valid_user(script, user)
         self.assertTrue(d['valid'])
 
-    def test_create_job_fileinfo(self):
+    def test_job_file_outputs(self):
         # Run a script that creates a file
         from wooey.models import WooeyJob, UserFile
         script = os.path.join(config.WOOEY_TEST_SCRIPTS, 'file_maker.py')
@@ -80,6 +82,12 @@ class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase):
                 os.path.getsize(self.storage.path(wooey_file.filepath.name)),
                 wooey_file.size_bytes,
             )
+
+        # Check for the zip file overwrite in for https://github.com/wooey/Wooey/issues/202
+        zip_file = UserFile.objects.get(job=job, filename__endswith='zip')
+        _zip = zipfile.ZipFile(zip_file.system_file.filepath)
+        files = [filename.filename for filename in _zip.filelist]
+        six.assertCountEqual(self, files, ['abc/', 'abc/test_file', 'abc/test_dir/test_file'])
 
 
 class TestFileDetectors(TestCase):

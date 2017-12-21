@@ -163,15 +163,20 @@ def submit_script(**kwargs):
         zip = zipfile.ZipFile(zip_out, "w")
         arcname = os.path.splitext(os.path.split(zip_out)[1])[0]
         zip.write(abscwd, arcname=arcname)
-        for root, folders, filenames in os.walk(os.path.split(zip_out)[0]):
+        base_dir = os.path.split(zip_out)[0]
+        for root, folders, filenames in os.walk(base_dir):
             for filename in filenames:
                 path = os.path.join(root, filename)
+                archive_name = path.replace(base_dir, '')
+                if archive_name.startswith(os.path.sep):
+                    archive_name = archive_name.replace(os.path.sep, '', 1)
+                archive_name = os.path.join(arcname, archive_name)
                 if path == tar_out:
                     continue
                 if path == zip_out:
                     continue
                 try:
-                    zip.write(path, arcname=os.path.join(arcname, filename))
+                    zip.write(path, arcname=archive_name)
                 except:
                     stderr = '{}\n{}'.format(stderr, traceback.format_exc())
         try:

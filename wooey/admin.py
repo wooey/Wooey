@@ -52,7 +52,13 @@ class ParameterGroupAdmin(ModelAdmin):
 
 
 class ScriptParserAdmin(ModelAdmin):
-    list_display = ('script_version', 'name')
+    list_display = ('script_version', 'subparser_command')
+
+    def subparser_command(self, obj):
+        return obj.name or 'Main Entrypoint'
+
+    subparser_command.short_description = 'Subparser Command'
+    subparser_command.admin_order_field = 'name'
 
 
 class FileAdmin(ModelAdmin):

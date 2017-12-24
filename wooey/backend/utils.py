@@ -232,6 +232,15 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
     # if we are adding through the admin, at this point the file will be saved already and this method will be receiving
     # the scriptversion object. Otherwise, we are adding through the managementment command. In this case, the file will be
     # a location and we need to setup the Script and ScriptVersion in here.
+    # check if the script exists
+    checksum = get_checksum(script_path)
+    existing_version = ScriptVersion.objects.get(checksum=checksum)
+    if existing_version:
+        return {
+            'valid': True,
+            'errors': None,
+            'script': existing_version,
+        }
 
     local_storage = get_storage(local=True)
     if script_version is not None:
@@ -299,8 +308,16 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
         version_string = '1'
     if script_version is None:
         # we are being loaded from the management command, create/update our script/version
-        script_kwargs = {'script_group': script_group, 'script_name': script_name or script_schema['name']}
-        version_kwargs = {'script_version': version_string, 'script_path': local_file, 'default_version': True}
+        script_kwargs = {
+            'script_group': script_group,
+            'script_name': script_name or script_schema['name']
+        }
+        version_kwargs = {
+            'script_version': version_string,
+            'script_path': local_file,
+            'default_version': True,
+            'checksum': checksum
+        }
         # does this script already exist in the database?
         script_created = Script.objects.filter(**script_kwargs).count() == 0
         if script_created:

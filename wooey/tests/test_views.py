@@ -10,7 +10,7 @@ from django.http import Http404
 
 from nose.tools import raises
 
-from . import factories, mixins, config
+from . import config, factories, mixins, utils as test_utils
 from ..backend import utils
 from ..views import wooey_celery
 from .. import views as wooey_views
@@ -145,11 +145,17 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         user = factories.UserFactory()
         script_version = self.choice_script
         script = script_version.script
+        two_choices_slug = test_utils.get_subparser_form_slug(script_version, 'two_choices')
         url = reverse('wooey:wooey_script', kwargs={'slug': script.slug})
-        data = {'job_name': 'abc', 'wooey_type': script_version.pk, 'two_choices': ['2', '1', '3']}
+        data = {
+            'job_name': 'abc',
+            'wooey_type': script_version.pk,
+            'wooey_parser': script_version.scriptparser_set.first().pk,
+            two_choices_slug: ['2', '1', '3']}
         filecount = 0
         for i, v in config.SCRIPT_DATA['choices']['files'].items():
-            data[i] = v
+            slug = test_utils.get_subparser_form_slug(script_version, i)
+            data[slug] = v
             filecount += len(v)
         request = self.factory.post(url, data=data)
         request.user = user
@@ -182,7 +188,7 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         script_version = self.without_args
         forms = utils.get_form_groups(script_version=self.without_args)
         data = {}
-        for form in chain(forms['groups'], [forms['wooey_form']]):
+        for form in chain(forms['parsers'], [forms['wooey_form']]):
             initial = form.initial
             initial.update(config.SCRIPT_DATA['without_args'].get('data'))
             data.update(initial)

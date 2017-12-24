@@ -5,7 +5,16 @@ from django.contrib.admin import ModelAdmin, site, TabularInline
 from django.forms import ModelForm, ValidationError
 from django.utils.translation import ugettext_lazy as _
 
-from .models import Script, ScriptVersion, ScriptGroup, ScriptParameter, WooeyJob, ScriptParameterGroup, UserFile
+from .models import (
+    Script,
+    ScriptVersion,
+    ScriptGroup,
+    ScriptParameter,
+    ScriptParameterGroup,
+    ScriptParser,
+    UserFile,
+    WooeyJob,
+)
 
 
 class JobAdmin(ModelAdmin):
@@ -42,6 +51,16 @@ class ParameterGroupAdmin(ModelAdmin):
     list_display = ('script_version', 'group_name')
 
 
+class ScriptParserAdmin(ModelAdmin):
+    list_display = ('script_version', 'subparser_command')
+
+    def subparser_command(self, obj):
+        return obj.name or 'Main Entrypoint'
+
+    subparser_command.short_description = 'Subparser Command'
+    subparser_command.admin_order_field = 'name'
+
+
 class FileAdmin(ModelAdmin):
     pass
 
@@ -51,3 +70,4 @@ site.register(Script, ScriptAdmin)
 site.register(ScriptParameter, ParameterAdmin)
 site.register(ScriptGroup, GroupAdmin)
 site.register(ScriptParameterGroup, ParameterGroupAdmin)
+site.register(ScriptParser, ScriptParserAdmin)

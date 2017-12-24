@@ -176,7 +176,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         return self.job_name
 
     def get_parameters(self):
-        return ScriptParameters.objects.filter(job=self).order_by('pk')
+        return ScriptParameters.objects.select_related('parameter').filter(job=self).order_by('pk')
 
     def submit_to_celery(self, **kwargs):
         if kwargs.get('resubmit'):
@@ -288,10 +288,19 @@ class ScriptParameterGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
         return '{}: {}'.format(self.script_version.script.script_name, self.group_name)
 
 
+class ScriptParser(WooeyPy2Mixin, models.Model):
+    name = models.CharField(max_length=255, blank=True, default='')
+    script_version = models.ForeignKey('ScriptVersion')
+
+    def __str__(self):
+        return '{}: {}'.format(self.script_version.script.script_name, self.name)
+
+
 class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     """
         This holds the parameter mapping for each script, and enforces uniqueness by each script via a FK.
     """
+    parser = models.ForeignKey('ScriptParser')
     script_version = models.ManyToManyField('ScriptVersion')
     short_param = models.CharField(max_length=255, blank=True)
     script_param = models.CharField(max_length=255)
@@ -317,6 +326,10 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
         app_label = 'wooey'
         verbose_name = _('script parameter')
         verbose_name_plural = _('script parameters')
+
+    @property
+    def form_slug(self):
+        return '{}-{}'.format(self.parser.pk, self.slug)
 
     @property
     def multiple_choice(self):

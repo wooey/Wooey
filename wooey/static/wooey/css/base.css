@@ -65,7 +65,7 @@ ol.navbar-breadcrumb {
 }
 
 
-.navbar-breadcrumb {
+.navbar-breadcrumb, .panel-nav-tabs {
     margin-left: -5px;
     color: #9d9d9d;
     background-color: inherit;
@@ -300,16 +300,39 @@ a.icon-pushpin:hover:after, .is-favorite a.icon-pushpin:after { color: #F0AD4E !
 }
 
 .panel-nav-tabs {
-    position: relative;
-}
-
-.panel-nav-tabs ul {
-    position: absolute;
-    top: -42px;
+    display: inline-block;
+    margin-bottom: -5px;
 }
 
 .panel-nav-tabs ul:first-child {
-    margin-left: 100px;
+    margin-left: 10px;
+}
+
+.argument-group-panel .panel-heading {
+    border-bottom: none;
+    padding-bottom: 0;
+    padding-top: 0;
+}
+
+.argument-group-panel .panel-heading .info {
+    display: inline-block;
+    bottom: 10px;
+    position: relative;
+}
+
+.argument-group-panel .panel-heading .icon-collapse {
+    position: relative;
+    display: block;
+    bottom: 30px
+}
+
+.subparsers .panel-heading .btn-group {
+    display: block;
+    top: 4px;
+}
+
+.tab-content {
+    display: inline-block;
 }
 
 .user-is-anonymous .requires-login { display: none; }

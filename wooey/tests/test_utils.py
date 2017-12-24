@@ -76,6 +76,7 @@ class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase):
         utils.create_job_fileinfo(job)
 
         # Make sure the file info is correct
+        self.assertEqual(UserFile.objects.filter(job=job).count(), 4)
         for job_file in UserFile.objects.filter(job=job):
             wooey_file = job_file.system_file
             self.assertEqual(

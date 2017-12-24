@@ -14,16 +14,20 @@ jobs for easy access and a language menu item for translation of Wooey's interfa
 to various languages (If your language is not currently supported, we would love to
 add it!).
 
-Running scripts with Subparsers
--------------------------------
+Running scripts
+---------------
 
-Wooey v0.10 introduced subparser support. Various subparsers of a script are
-exposed on the script execution page via a button on the upper left of the
-script parameter panel (in a non-subparser script, this simply has the text
-*Settings*. Because most subparsers have a "main" parser, such as Django's
-`manage.py`, these settings can be specified via the *Main Parser Parameter*
-button. To select and parameterize a given subparser, the subparser command
-and its parameters are available by selecting it via the dropdown menu.
+Scripts may be accessed via the homepage or by searching for scripts in the
+script search. Searching for scripts is accssible via the left menu sidebar
+that is viewable by clicking the menu button on the left side of the header.
+From the script panel, scripts can be parameterized and executed by Wooey.
+If a script has subparsers, they are accessible via a dropdown menu on
+the upper left of the script parameter panel (in a script with subparsers,
+this simply has the text *Settings*). Because most subparsers have a "main"
+parser, such as Django's `manage.py`, these settings can be specified via
+the *Main Parser Parameter* button. To select and parameterize a given
+subparser, the subparser command and its parameters are available by
+selecting it via the dropdown menu.
 
 Running previous versions of a script
 -------------------------------------

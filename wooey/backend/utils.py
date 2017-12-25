@@ -349,11 +349,11 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
     # make our parameters
     parameter_index = 0
     for parser_name, parser_inputs in six.iteritems(script_schema['inputs']):
+        parser, created = ScriptParser.objects.get_or_create(name=parser_name, script_version=script_version)
+
         for param_group_info in parser_inputs:
             param_group_name = param_group_info.get('group')
             param_group, created = ScriptParameterGroup.objects.get_or_create(group_name=param_group_name, script_version=script_version)
-
-            parser, created = ScriptParser.objects.get_or_create(name=parser_name, script_version=script_version)
 
             for param in param_group_info.get('nodes'):
                 # TODO: fix 'file' to be global in argparse

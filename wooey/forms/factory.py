@@ -135,7 +135,9 @@ class WooeyFormFactory(object):
                 'fields': OrderedDict(),
             }
         })
-        parser_group_map = OrderedDict()
+        parser_group_map = OrderedDict(
+            [((parser.id, parser.name), copy.deepcopy(base_group_map)) for parser in script_version.scriptparser_set.order_by('pk')]
+        )
 
         for param in params:
             if param.parameter_group.hidden:

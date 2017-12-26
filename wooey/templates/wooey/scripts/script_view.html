@@ -72,6 +72,8 @@
                         {% with group.group_name|slugify as group_slug %}
                           <li class="{% if forloop.first %}active{% endif %}"><a data-toggle="tab" href="#optiongroup-{{ parser_pk }}-{{ group_slug }}">{{ group.group_name|title }}</a></li>
                         {% endwith %}
+                      {% empty %}
+                          <li class="no-parser-spacer"></li>
                       {% endfor %}
                     </ul>
                   </div>

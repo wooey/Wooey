@@ -191,7 +191,7 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         data.update(config.SCRIPT_DATA['without_args'].get('data'))
         wooey_form = forms['wooey_form']
         data.update(wooey_form.initial)
-        subparser = forms['parsers'].keys()[0][0]
+        subparser = list(forms['parsers'].keys())[0][0]
         data['wooey_parser'] = subparser
 
         url = reverse('wooey:wooey_script', kwargs={'slug': script_version.script.slug})

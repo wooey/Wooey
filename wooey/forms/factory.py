@@ -135,9 +135,7 @@ class WooeyFormFactory(object):
                 'fields': OrderedDict(),
             }
         })
-        parser_group_map = OrderedDict(
-            [((parser.id, parser.name), copy.deepcopy(base_group_map)) for parser in script_version.scriptparser_set.order_by('pk')]
-        )
+        parser_group_map = OrderedDict()
 
         for param in params:
             if param.parameter_group.hidden:
@@ -154,6 +152,12 @@ class WooeyFormFactory(object):
             })
             group['fields'][param.form_slug] = field
             group_map[group_name] = group
+
+        # Add any missing parsers. This is needed if the script has no parameters
+        added_subparsers = {i[1] for i in parser_group_map.keys()}
+        for parser in script_version.scriptparser_set.order_by('pk'):
+            if parser.name not in added_subparsers:
+                parser_group_map[(parser.id, parser.name)] = copy.deepcopy(base_group_map)
 
         # If there are no required groups in a parser, remove them
         for parser, group_map in six.iteritems(parser_group_map):
@@ -190,9 +194,9 @@ class WooeyFormFactory(object):
 
                 parser_groups.append({'group_name': group_info['group'], 'form': form})
         try:
-            self.wooey_forms[pk]['parsers'] = script_info
+            self.wooey_forms[pk]['groups'] = script_info
         except KeyError:
-            self.wooey_forms[pk] = {'parsers': script_info}
+            self.wooey_forms[pk] = {'groups': script_info}
 
         # if the master form doesn't exist, create it while we have the model
         if 'master' not in self.wooey_forms[pk]:

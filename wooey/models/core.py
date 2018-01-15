@@ -277,7 +277,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
 class ScriptParameterGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     group_name = models.TextField()
     hidden = models.BooleanField(default=False)
-    script_version = models.ForeignKey('ScriptVersion')
+    script_version = models.ManyToManyField('ScriptVersion')
 
     class Meta:
         app_label = 'wooey'
@@ -290,7 +290,7 @@ class ScriptParameterGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
 
 class ScriptParser(WooeyPy2Mixin, models.Model):
     name = models.CharField(max_length=255, blank=True, default='')
-    script_version = models.ForeignKey('ScriptVersion')
+    script_version = models.ManyToManyField('ScriptVersion')
 
     def __str__(self):
         return '{}: {}'.format(self.script_version.script.script_name, self.name)

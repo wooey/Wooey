@@ -48,17 +48,23 @@ class GroupAdmin(ModelAdmin):
 
 
 class ParameterGroupAdmin(ModelAdmin):
-    list_display = ('script_version', 'group_name')
+    list_display = ('script_versions', 'group_name')
+
+    def script_versions(self, obj):
+        return ', '.join(['{}: {}'.format(script_version.script.script_name, script_version.script_iteration) for script_version in obj.script_version.all()])
 
 
 class ScriptParserAdmin(ModelAdmin):
-    list_display = ('script_version', 'subparser_command')
+    list_display = ('script_versions', 'subparser_command')
 
     def subparser_command(self, obj):
         return obj.name or 'Main Entrypoint'
 
     subparser_command.short_description = 'Subparser Command'
     subparser_command.admin_order_field = 'name'
+
+    def script_versions(self, obj):
+        return ', '.join(['{}: {}'.format(script_version.script.script_name, script_version.script_iteration) for script_version in obj.script_version.all()])
 
 
 class FileAdmin(ModelAdmin):

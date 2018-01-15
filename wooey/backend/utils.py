@@ -5,7 +5,6 @@ import os
 import re
 import sys
 import six
-import uuid
 import traceback
 from itertools import chain
 from operator import itemgetter
@@ -13,7 +12,7 @@ from collections import OrderedDict, defaultdict
 from pkg_resources import parse_version
 
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db import transaction
 from django.db.utils import OperationalError
 from django.core.files.storage import default_storage
@@ -341,7 +340,8 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
             wooey_script.script_name = script_name or script_schema['name']
         past_versions = ScriptVersion.objects.filter(script=wooey_script, script_version=version_string).exclude(pk=script_version.pk)
         script_version.script_iteration = past_versions.count()+1
-        past_versions.update(default_version=False)
+        # Make all old versions non-default
+        ScriptVersion.objects.filter(script=wooey_script).update(default_version=False)
         script_version.default_version = True
         wooey_script.save()
         script_version.save()
@@ -349,17 +349,33 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
     # make our parameters
     parameter_index = 0
     for parser_name, parser_inputs in six.iteritems(script_schema['inputs']):
-        parser, created = ScriptParser.objects.get_or_create(
-            name=parser_name,
-            script_version=script_version
-        )
+        parsers = ScriptParser.objects.filter(name=parser_name, script_version__script=wooey_script).distinct()
+        if len(parsers):
+            parser = parsers.first()
+        else:
+            parser = ScriptParser.objects.create(
+                name=parser_name,
+            )
+            parser.save()
+        parser.script_version.add(script_version)
 
         for param_group_info in parser_inputs:
             param_group_name = param_group_info.get('group')
-            param_group, created = ScriptParameterGroup.objects.get_or_create(
+
+            param_groups = ScriptParameterGroup.objects.filter(
                 group_name=param_group_name,
-                script_version=script_version,
-            )
+                script_version__script=wooey_script
+            ).distinct()
+
+            # TODO: There should only ever be one, should probably do a harder enforcement of this.
+            if len(param_groups):
+                param_group = param_groups.first()
+            else:
+                param_group = ScriptParameterGroup.objects.create(
+                    group_name=parser_name,
+                )
+                param_group.save()
+            param_group.script_version.add(script_version)
 
             for param in param_group_info.get('nodes'):
                 # TODO: fix 'file' to be global in argparse
@@ -380,11 +396,15 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
                     'collapse_arguments': 'collapse_arguments' in param.get('param_action', set()),
                 }
                 parameter_index += 1
-                script_params = ScriptParameter.objects.filter(**script_param_kwargs).filter(
+
+                script_params = ScriptParameter.objects.filter(
+                    **script_param_kwargs
+                ).filter(
                     script_version__script=wooey_script,
                     parameter_group__group_name=param_group_name,
-                    parser__name=parser_name,
-                )
+                    parser__name=parser_name
+                ).distinct()
+
                 if not script_params:
                     script_param_kwargs['parser'] = parser
                     script_param_kwargs['parameter_group'] = param_group

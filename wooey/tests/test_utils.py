@@ -90,6 +90,15 @@ class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase):
         files = [filename.filename for filename in _zip.filelist]
         six.assertCountEqual(self, files, ['abc/', 'abc/test_file', 'abc/test_dir/test_file'])
 
+    def test_add_wooey_script(self):
+        from wooey.models import ScriptParser
+        script = os.path.join(config.WOOEY_TEST_SCRIPTS, 'file_maker.py')
+        with open(script) as o:
+            new_file = self.storage.save(self.filename_func('file_maker.py'), o)
+        res = utils.add_wooey_script(script_path=new_file, group=None)
+        self.assertEqual(res['valid'], True, res['errors'])
+        parser = ScriptParser.objects.get(script_version=res['script'])
+        self.assertEqual(parser.name, u'')
 
 class TestFileDetectors(TestCase):
     def test_detector(self):

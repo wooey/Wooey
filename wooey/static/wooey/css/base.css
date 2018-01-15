@@ -308,6 +308,10 @@ a.icon-pushpin:hover:after, .is-favorite a.icon-pushpin:after { color: #F0AD4E !
     margin-left: 10px;
 }
 
+.no-parser-spacer {
+    height: 41px;
+}
+
 .argument-group-panel .panel-heading {
     border-bottom: none;
     padding-bottom: 0;

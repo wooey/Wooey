@@ -39,7 +39,10 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase)
         new_translate.pk = None
         new_translate.save()
         old_translate = ScriptVersion.objects.get(pk=old_translate_pk)
-        new_translate = utils.add_wooey_script(script_version=new_translate, script_path=os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate.py'))['script']
+        new_translate = utils.add_wooey_script(
+            script_version=new_translate,
+            script_path=os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate.py')
+        )['script']
 
         # Assert we updated correctly
         self.assertEqual(old_translate.script.pk, new_translate.script.pk)

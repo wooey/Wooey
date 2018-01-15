@@ -188,10 +188,11 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         script_version = self.without_args
         forms = utils.get_form_groups(script_version=self.without_args)
         data = {}
-        for form in chain(forms['parsers'], [forms['wooey_form']]):
-            initial = form.initial
-            initial.update(config.SCRIPT_DATA['without_args'].get('data'))
-            data.update(initial)
+        data.update(config.SCRIPT_DATA['without_args'].get('data'))
+        wooey_form = forms['wooey_form']
+        data.update(wooey_form.initial)
+        subparser = list(forms['parsers'].keys())[0][0]
+        data['wooey_parser'] = subparser
 
         url = reverse('wooey:wooey_script', kwargs={'slug': script_version.script.slug})
         request = self.factory.post(url, data=data)

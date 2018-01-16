@@ -12,7 +12,7 @@ from collections import OrderedDict, defaultdict
 from pkg_resources import parse_version
 
 from django.conf import settings
-from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.utils import OperationalError
 from django.core.files.storage import default_storage
@@ -20,7 +20,6 @@ from django.core.files import File
 from django.utils.translation import ugettext_lazy as _
 from django.db.models import Q
 
-from celery.contrib import rdb
 # Python2.7 encoding= support
 from io import open
 

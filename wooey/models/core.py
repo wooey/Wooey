@@ -285,7 +285,7 @@ class ScriptParameterGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
         verbose_name_plural = _('script parameter groups')
 
     def __str__(self):
-        return '{}: {}'.format(self.script_version.script.script_name, self.group_name)
+        return '{}: {}'.format(self.script_version.first().script.script_name, self.group_name)
 
 
 class ScriptParser(WooeyPy2Mixin, models.Model):
@@ -293,7 +293,7 @@ class ScriptParser(WooeyPy2Mixin, models.Model):
     script_version = models.ManyToManyField('ScriptVersion')
 
     def __str__(self):
-        return '{}: {}'.format(self.script_version.script.script_name, self.name)
+        return '{}: {}'.format(self.script_version.first().script.script_name, self.name)
 
 
 class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):

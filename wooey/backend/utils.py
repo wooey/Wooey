@@ -143,7 +143,7 @@ def create_wooey_job(user=None, script_version_pk=None, script_parser_pk=None, d
     parameters = OrderedDict([
         (i.form_slug, i) for i in ScriptParameter.objects
         .select_related('parser')
-        .filter(slug__in=[i[2:] for i in data.keys()])
+        .filter(slug__in=[i.split('-', 1)[-1] for i in data.keys()])
         .filter(Q(parser_id=script_parser_pk) | Q(parser__name=''))
         .order_by('param_order', 'pk')
     ])
@@ -372,7 +372,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
                 param_group = param_groups.first()
             else:
                 param_group = ScriptParameterGroup.objects.create(
-                    group_name=parser_name,
+                    group_name=param_group_name,
                 )
                 param_group.save()
             param_group.script_version.add(script_version)

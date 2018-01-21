@@ -338,6 +338,8 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
         if not wooey_script.script_name:
             wooey_script.script_name = script_name or script_schema['name']
         past_versions = ScriptVersion.objects.filter(script=wooey_script, script_version=version_string).exclude(pk=script_version.pk)
+        if len(past_versions) == 0:
+            script_version.script_version = version_string
         script_version.script_iteration = past_versions.count()+1
         # Make all old versions non-default
         ScriptVersion.objects.filter(script=wooey_script).update(default_version=False)

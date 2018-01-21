@@ -124,7 +124,7 @@ class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase):
         second_version = res['script']
         first_params = {i.pk for i in first_version.get_parameters()}
         second_params = {i.pk for i in second_version.get_parameters()}
-        self.assertTrue(first_params.is_subset(second_params))
+        self.assertTrue(first_params.issubset(second_params))
         self.assertTrue(len(second_params), 2)
 
         # update to v3, drops the second param

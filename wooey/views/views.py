@@ -60,10 +60,12 @@ class WooeyScriptBase(DetailView):
         script_version = ScriptVersion.objects.filter(
             script=self.object,
         )
-        script_version = script_version.filter(script_version=version) if version else script_version.order_by('script_version')
-        script_version = script_version.filter(script_iteration=iteration) if iteration else script_version.order_by('script_iteration')
+        if version:
+            script_version = script_version.filter(script_version=version)
+        if iteration:
+            script_version = script_version.filter(script_iteration=iteration)
 
-        script_version = script_version.last()
+        script_version = script_version.order_by('script_version', 'script_iteration').last()
 
         context['form'] = utils.get_form_groups(
             script_version=script_version,

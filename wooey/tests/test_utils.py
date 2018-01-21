@@ -134,7 +134,7 @@ class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase):
 
         res = utils.add_wooey_script(script_path=v3, script_name='test_versions')
         third_version = res['script']
-        third_params = {i.pk for i in third_version.get_parameters}
+        third_params = {i.pk for i in third_version.get_parameters()}
         self.assertEqual(first_params, third_params)
 
 

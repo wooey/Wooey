@@ -132,7 +132,7 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMix
 
     def test_multiplechoices(self):
         script = self.choice_script
-        choices = ['2', '1', '3']
+        choices = [2, 1, 3]
         choice_slug = test_utils.get_subparser_form_slug(script, 'two_choices')
 
         from ..backend import utils

@@ -31,39 +31,10 @@ class WooeyScriptBase(DetailView):
     def render_fn(s):
         return s
 
-    def get_object(self, queryset=None):
-        script_version = self.kwargs.get('script_verison')
-        script_iteration = self.kwargs.get('script_iteration')
-        if script_version is not None:
-            if queryset is None:
-                queryset = self.get_queryset()
-
-            slug = self.kwargs.get(self.slug_url_kwarg, None)
-
-            # Next, try looking up by slug.
-            if slug is not None:
-                slug_field = self.get_slug_field()
-                queryset = queryset.filter(**{slug_field: slug, 'script_version': script_version})
-                if script_iteration:
-                    queryset.filter(script_iteration=script_iteration)
-                else:
-                    queryset.latest('script_iteration')
-            else:
-                raise AttributeError("Generic detail view %s must be called with "
-                                     "either an object pk or a slug."
-                                     % self.__class__.__name__)
-            try:
-                # Get the single item from the filtered queryset
-                obj = queryset.get()
-            except queryset.model.DoesNotExist:
-                raise Http404(_("No %(verbose_name)s found matching the query") %
-                              {'verbose_name': queryset.model._meta.verbose_name})
-            return obj
-        else:
-            return super(WooeyScriptBase, self).get_object(queryset=queryset)
-
     def get_context_data(self, **kwargs):
         context = super(WooeyScriptBase, self).get_context_data(**kwargs)
+        version = self.kwargs.get('script_version')
+        iteration = self.kwargs.get('script_iteration')
 
         # returns the models required and optional fields as html
         job_id = self.kwargs.get('job_id')
@@ -86,7 +57,20 @@ class WooeyScriptBase(DetailView):
                 if parser_used is not None:
                     initial['wooey_parser'] = parser_used
 
-        context['form'] = utils.get_form_groups(script_version=self.object.latest_version, initial_dict=initial, render_fn=self.render_fn, pk=self.object.pk)
+        script_version = ScriptVersion.objects.filter(
+            script=self.object,
+        )
+        script_version = script_version.filter(script_version=version) if version else script_version.order_by('script_version')
+        script_version = script_version.filter(script_iteration=iteration) if iteration else script_version.order_by('script_iteration')
+
+        script_version = script_version.last()
+
+        context['form'] = utils.get_form_groups(
+            script_version=script_version,
+            initial_dict=initial,
+            render_fn=self.render_fn,
+            pk=self.object.pk
+        )
         return context
 
     def post(self, request, *args, **kwargs):

@@ -394,7 +394,14 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
                     # parameter_group': param_group,
                     'collapse_arguments': 'collapse_arguments' in param.get('param_action', set()),
                 }
+
                 parameter_index += 1
+
+                # This indicates the parameter is a positional argument. If these are changed between script versions,
+                # the script can break. Therefore, we have to add an additional filter on the parameter order that
+                # keyword arguments can ignore.
+                if not param['param']:
+                    script_param_kwargs['param_order'] = parameter_index
 
                 script_params = ScriptParameter.objects.filter(
                     **script_param_kwargs
@@ -407,7 +414,8 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
                 if not script_params:
                     script_param_kwargs['parser'] = parser
                     script_param_kwargs['parameter_group'] = param_group
-                    script_param_kwargs['param_order'] = parameter_index
+                    if 'param_order' not in script_param_kwargs:
+                        script_param_kwargs['param_order'] = parameter_index
 
                     script_param, created = ScriptParameter.objects.get_or_create(**script_param_kwargs)
                     script_param.script_version.add(script_version)
@@ -416,7 +424,8 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
                     # point the new script at the old script parameter. This lets us clone old scriptversions and have their
                     # parameters still auto populate.
                     script_param = script_params[0]
-                    script_param.param_order = parameter_index
+                    if 'param_order' not in script_param_kwargs:
+                        script_param.param_order = parameter_index
                     script_param.script_version.add(script_version)
                     script_param.save()
 

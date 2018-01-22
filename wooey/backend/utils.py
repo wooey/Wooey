@@ -5,7 +5,6 @@ import os
 import re
 import sys
 import six
-import uuid
 import traceback
 from itertools import chain
 from operator import itemgetter
@@ -21,7 +20,6 @@ from django.core.files import File
 from django.utils.translation import ugettext_lazy as _
 from django.db.models import Q
 
-from celery.contrib import rdb
 # Python2.7 encoding= support
 from io import open
 
@@ -144,7 +142,7 @@ def create_wooey_job(user=None, script_version_pk=None, script_parser_pk=None, d
     parameters = OrderedDict([
         (i.form_slug, i) for i in ScriptParameter.objects
         .select_related('parser')
-        .filter(slug__in=[i[2:] for i in data.keys()])
+        .filter(slug__in=[i.split('-', 1)[-1] for i in data.keys()])
         .filter(Q(parser_id=script_parser_pk) | Q(parser__name=''))
         .order_by('param_order', 'pk')
     ])
@@ -340,8 +338,11 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
         if not wooey_script.script_name:
             wooey_script.script_name = script_name or script_schema['name']
         past_versions = ScriptVersion.objects.filter(script=wooey_script, script_version=version_string).exclude(pk=script_version.pk)
+        if len(past_versions) == 0:
+            script_version.script_version = version_string
         script_version.script_iteration = past_versions.count()+1
-        past_versions.update(default_version=False)
+        # Make all old versions non-default
+        ScriptVersion.objects.filter(script=wooey_script).update(default_version=False)
         script_version.default_version = True
         wooey_script.save()
         script_version.save()
@@ -349,17 +350,33 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
     # make our parameters
     parameter_index = 0
     for parser_name, parser_inputs in six.iteritems(script_schema['inputs']):
-        parser, created = ScriptParser.objects.get_or_create(
-            name=parser_name,
-            script_version=script_version
-        )
+        parsers = ScriptParser.objects.filter(name=parser_name, script_version__script=wooey_script).distinct()
+        if len(parsers):
+            parser = parsers.first()
+        else:
+            parser = ScriptParser.objects.create(
+                name=parser_name,
+            )
+            parser.save()
+        parser.script_version.add(script_version)
 
         for param_group_info in parser_inputs:
             param_group_name = param_group_info.get('group')
-            param_group, created = ScriptParameterGroup.objects.get_or_create(
+
+            param_groups = ScriptParameterGroup.objects.filter(
                 group_name=param_group_name,
-                script_version=script_version,
-            )
+                script_version__script=wooey_script
+            ).distinct()
+
+            # TODO: There should only ever be one, should probably do a harder enforcement of this.
+            if len(param_groups):
+                param_group = param_groups.first()
+            else:
+                param_group = ScriptParameterGroup.objects.create(
+                    group_name=param_group_name,
+                )
+                param_group.save()
+            param_group.script_version.add(script_version)
 
             for param in param_group_info.get('nodes'):
                 # TODO: fix 'file' to be global in argparse
@@ -379,16 +396,28 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
                     # parameter_group': param_group,
                     'collapse_arguments': 'collapse_arguments' in param.get('param_action', set()),
                 }
+
                 parameter_index += 1
-                script_params = ScriptParameter.objects.filter(**script_param_kwargs).filter(
+
+                # This indicates the parameter is a positional argument. If these are changed between script versions,
+                # the script can break. Therefore, we have to add an additional filter on the parameter order that
+                # keyword arguments can ignore.
+                if not param['param']:
+                    script_param_kwargs['param_order'] = parameter_index
+
+                script_params = ScriptParameter.objects.filter(
+                    **script_param_kwargs
+                ).filter(
                     script_version__script=wooey_script,
                     parameter_group__group_name=param_group_name,
-                    parser__name=parser_name,
-                )
+                    parser__name=parser_name
+                ).distinct()
+
                 if not script_params:
                     script_param_kwargs['parser'] = parser
                     script_param_kwargs['parameter_group'] = param_group
-                    script_param_kwargs['param_order'] = parameter_index
+                    if 'param_order' not in script_param_kwargs:
+                        script_param_kwargs['param_order'] = parameter_index
 
                     script_param, created = ScriptParameter.objects.get_or_create(**script_param_kwargs)
                     script_param.script_version.add(script_version)
@@ -397,7 +426,8 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
                     # point the new script at the old script parameter. This lets us clone old scriptversions and have their
                     # parameters still auto populate.
                     script_param = script_params[0]
-                    script_param.param_order = parameter_index
+                    if 'param_order' not in script_param_kwargs:
+                        script_param.param_order = parameter_index
                     script_param.script_version.add(script_version)
                     script_param.save()
 

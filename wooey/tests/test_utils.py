@@ -92,13 +92,51 @@ class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase):
 
     def test_add_wooey_script(self):
         from wooey.models import ScriptParser
-        script = os.path.join(config.WOOEY_TEST_SCRIPTS, 'file_maker.py')
+        script = os.path.join(config.WOOEY_TEST_SCRIPTS, 'versioned_script', 'v1.py')
         with open(script) as o:
-            new_file = self.storage.save(self.filename_func('file_maker.py'), o)
-        res = utils.add_wooey_script(script_path=new_file, group=None)
+            v1 = self.storage.save(self.filename_func('v1.py'), o)
+        res = utils.add_wooey_script(script_path=v1, script_name='test_versions')
+        first_version = res['script']
         self.assertEqual(res['valid'], True, res['errors'])
         parser = ScriptParser.objects.get(script_version=res['script'])
         self.assertEqual(parser.name, u'')
+
+        # Test that adding the script again doesn't duplicate parameters but increments
+        # the script iteration. This will likely have to be changed once checksums
+        # are calculated on scripts
+        res = utils.add_wooey_script(script_path=v1, script_name='test_versions')
+        self.assertEqual(res['valid'], True, res['errors'])
+        dup_first_version = res['script']
+        self.assertEqual(
+            first_version.script_version,
+            dup_first_version.script_version
+        )
+        self.assertEqual(first_version.script_iteration, 1)
+        self.assertEqual(dup_first_version.script_iteration, 2)
+
+        # Test updating to script2 keeps the same reference to the --one parameter
+        # between scripts
+        script = os.path.join(config.WOOEY_TEST_SCRIPTS, 'versioned_script', 'v2.py')
+        with open(script) as o:
+            v2 = self.storage.save(self.filename_func('v2.py'), o)
+
+        res = utils.add_wooey_script(script_path=v2, script_name='test_versions')
+        second_version = res['script']
+        first_params = {i.pk for i in first_version.get_parameters()}
+        second_params = {i.pk for i in second_version.get_parameters()}
+        self.assertTrue(first_params.issubset(second_params))
+        self.assertTrue(len(second_params), 2)
+
+        # update to v3, drops the second param
+        script = os.path.join(config.WOOEY_TEST_SCRIPTS, 'versioned_script', 'v3.py')
+        with open(script) as o:
+            v3 = self.storage.save(self.filename_func('v3.py'), o)
+
+        res = utils.add_wooey_script(script_path=v3, script_name='test_versions')
+        third_version = res['script']
+        third_params = {i.pk for i in third_version.get_parameters()}
+        self.assertEqual(first_params, third_params)
+
 
 class TestFileDetectors(TestCase):
     def test_detector(self):

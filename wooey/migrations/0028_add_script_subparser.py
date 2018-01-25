@@ -8,11 +8,11 @@ import wooey.models.mixins
 
 
 def createParsers(apps, schema_editor):
-    ScriptParameters = apps.get_model('wooey', 'ScriptParameter')
+    ScriptParameter = apps.get_model('wooey', 'ScriptParameter')
     ScriptParser = apps.get_model('wooey', 'ScriptParser')
 
-    for param in ScriptParameters.objects.all():
-        script_version = param.script_version
+    for param in ScriptParameter.objects.all():
+        script_version = param.script_version.last()
         parser, created = ScriptParser.objects.get_or_create(script_version=script_version)
         param.parser = parser
         param.save()

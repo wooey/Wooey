@@ -1,11 +1,11 @@
 __author__ = 'chris'
+import argparse
 import os
 import sys
 from django.core.management.base import BaseCommand, CommandError
 from django.core.files import File
-from django.conf import settings
 
-from ...backend.utils import add_wooey_script, get_storage, default_storage
+from ...backend.utils import add_wooey_script, default_storage, get_storage
 from ... import settings as wooey_settings
 
 
@@ -21,14 +21,22 @@ class Command(BaseCommand):
             help='The name of the group to create scripts under. Default: Wooey Scripts'
         )
         parser.add_argument(
+            '--name',
+            dest='name',
+            default=None,
+            help='The name of the script. Default: None (uses the filename)'
+        )
+        parser.add_argument(
             '--update',
             dest='update',
             action='store_true',
-            help='If declared, attempt to match file names to script names and update scripts.'
+            help=argparse.SUPPRESS
         )
 
     def handle(self, *args, **options):
         script = options.get('script')
+        if options.get('update'):
+            sys.stdout.write('Explicit script updates are no longer required and this flag is ignored.')
         if not script:
             if len(args):
                 script = args[-1]
@@ -45,7 +53,7 @@ class Command(BaseCommand):
             if script.endswith('.py'):
                 sys.stdout.write('Converting {}\n'.format(script))
                 # copy the script to our storage
-                base_name = os.path.splitext(os.path.split(script)[1])[0]
+                base_name = options.get('name') or os.path.splitext(os.path.split(script)[1])[0]
                 with open(script, 'r') as f:
                     script = default_storage.save(os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, os.path.split(script)[1]), File(f))
                     if wooey_settings.WOOEY_EPHEMERAL_FILES:
@@ -57,20 +65,7 @@ class Command(BaseCommand):
                     'group': group,
                     'script_name': base_name,
                 }
-                add_script = True
-                if options.get('update'):
-                    from wooey.models import Script
-                    existing_script = Script.objects.filter(script_name=base_name)
-                    if len(existing_script) == 1:
-                        script_version = existing_script[0].latest_version
-                        script_version.script_path = script
-                        script_version.default_version = False
-                        add_script = False
-                        script_version.save()
-                        converted += 1
-                        # add_kwargs['script_version'] = script_version
-                if add_script:
-                    res = add_wooey_script(**add_kwargs)
-                    if res['valid']:
-                        converted += 1
+                res = add_wooey_script(**add_kwargs)
+                if res['valid']:
+                    converted += 1
         sys.stdout.write('Converted {} scripts\n'.format(converted))

@@ -101,9 +101,7 @@ class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase):
         parser = ScriptParser.objects.get(script_version=res['script'])
         self.assertEqual(parser.name, u'')
 
-        # Test that adding the script again doesn't duplicate parameters but increments
-        # the script iteration. This will likely have to be changed once checksums
-        # are calculated on scripts
+        # Test that adding the script again doesn't update anything
         res = utils.add_wooey_script(script_path=v1, script_name='test_versions')
         self.assertEqual(res['valid'], True, res['errors'])
         dup_first_version = res['script']
@@ -112,7 +110,7 @@ class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase):
             dup_first_version.script_version
         )
         self.assertEqual(first_version.script_iteration, 1)
-        self.assertEqual(dup_first_version.script_iteration, 2)
+        self.assertEqual(dup_first_version.script_iteration, 1)
 
         # Test updating to script2 keeps the same reference to the --one parameter
         # between scripts

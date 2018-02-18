@@ -39,9 +39,12 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase)
         new_translate.pk = None
         new_translate.save()
         old_translate = ScriptVersion.objects.get(pk=old_translate_pk)
+
+        # Use a script that is slightly different but the same form groups
+        script_path = test_utils.save_script_path(os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate2.py'))
         new_translate = utils.add_wooey_script(
             script_version=new_translate,
-            script_path=os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate.py')
+            script_path=script_path,
         )['script']
 
         # Assert we updated correctly

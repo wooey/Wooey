@@ -233,14 +233,19 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
     # the scriptversion object. Otherwise, we are adding through the managementment command. In this case, the file will be
     # a location and we need to setup the Script and ScriptVersion in here.
     # check if the script exists
-    checksum = get_checksum(script_path)
-    existing_version = ScriptVersion.objects.get(checksum=checksum)
-    if existing_version:
-        return {
-            'valid': True,
-            'errors': None,
-            'script': existing_version,
-        }
+    script_path = script_path or script_version.script_path.name
+    script_name = script_name or (script_version.script.script_name if script_version else os.path.basename(os.path.splitext(script_path)[0]))
+    checksum = get_checksum(get_storage_object(script_path).path)
+    try:
+        existing_version = ScriptVersion.objects.get(checksum=checksum, script__script_name=script_name)
+        if existing_version:
+            return {
+                'valid': True,
+                'errors': None,
+                'script': existing_version,
+            }
+    except ObjectDoesNotExist:
+        pass
 
     local_storage = get_storage(local=True)
     if script_version is not None:

@@ -43,7 +43,7 @@ def script_version_presave(instance, **kwargs):
         if 'script_path' in instance.changed_fields and not skip_script(instance):
             # If the script checksum is not changed, do not run the script addition code (but update the
             # path)
-            checksum = utils.get_checksum(instance.script_path.path)
+            checksum = utils.get_checksum(instance.script_path)
             if checksum != instance.checksum:
                 instance.script_iteration += 1
                 instance._script_upgrade = True

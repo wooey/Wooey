@@ -359,6 +359,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
         version_kwargs.update({'script': wooey_script})
         script_version = ScriptVersion(**version_kwargs)
         script_version._script_cl_creation = True
+        script_version.checksum = checksum
         script_version.save()
     else:
         # we are being created/updated from the admin
@@ -374,6 +375,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
         # Make all old versions non-default
         ScriptVersion.objects.filter(script=wooey_script).update(default_version=False)
         script_version.default_version = True
+        script_version.checksum = checksum
         wooey_script.save()
         script_version.save()
 

@@ -110,6 +110,7 @@ class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     script_path = models.FileField() if django_compat.DJANGO_VERSION >= django_compat.DJ17 else models.FileField(upload_to=wooey_settings.WOOEY_SCRIPT_DIR)
     default_version = models.BooleanField(default=False)
     script = models.ForeignKey('Script', related_name='script_version')
+    checksum = models.CharField(max_length=40, blank=True)
 
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)

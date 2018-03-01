@@ -2,8 +2,6 @@ environment:
   PYTHONIOENCODING: "utf-8"
   matrix:
     - PYTHON: "C:/Python27"
-      DJANGO: "Django==1.7.*"
-    - PYTHON: "C:/Python27"
       DJANGO: "Django==1.8.*"
     - PYTHON: "C:/Python27"
       DJANGO: "Django==1.9.*"
@@ -14,8 +12,6 @@ environment:
     #- PYTHON: "C:/Python27"
     #  DJANGO: "Django"
 
-    - PYTHON: "C:/Python34"
-      DJANGO: "Django==1.7.*"
     - PYTHON: "C:/Python34"
       DJANGO: "Django==1.8.*"
 

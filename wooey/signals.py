@@ -1,10 +1,10 @@
 from __future__ import absolute_import
 
-from django.db.models.signals import post_delete, pre_save, post_save
+from django.db.models.signals import pre_save, post_save
 from django.db.utils import InterfaceError, DatabaseError
 from django import db
 
-from celery.signals import task_postrun, task_prerun, task_revoked
+from celery.signals import task_postrun, task_prerun
 
 
 @task_postrun.connect
@@ -38,11 +38,17 @@ def skip_script(instance):
 
 def script_version_presave(instance, **kwargs):
     created = instance.pk is None
+    from .backend import utils
     if not created:
         if 'script_path' in instance.changed_fields and not skip_script(instance):
-            instance.script_iteration += 1
-            instance._script_upgrade = True
-            instance.pk = None
+            # If the script checksum is not changed, do not run the script addition code (but update the
+            # path)
+            with instance.script_path as handle:
+                checksum = utils.get_checksum(handle)
+                if checksum != instance.checksum:
+                    instance.script_iteration += 1
+                    instance._script_upgrade = True
+                    instance.pk = None
 
 
 def script_version_postsave(instance, created, **kwargs):

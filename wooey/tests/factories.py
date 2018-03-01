@@ -1,14 +1,9 @@
 import factory
-import os
 import six
-import uuid
-
 from django.contrib.auth import get_user_model
-from django.core.files.storage import default_storage
 
-from ..models import WooeyJob, ScriptGroup, Script, ScriptParameter, ScriptParameterGroup, ScriptParameters
-
-from .. import settings as wooey_settings
+from ..models import WooeyJob, ScriptGroup, Script
+from . import utils as test_utils
 
 
 class ScriptGroupFactory(factory.DjangoModelFactory):
@@ -45,9 +40,7 @@ class BaseJobFactory(factory.DjangoModelFactory):
 
 
 def generate_script(script_path):
-    filename = os.path.split(script_path)[1]
-    filename = os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, filename)
-    new_file = default_storage.save(filename, open(script_path))
+    new_file = test_utils.save_script_path(script_path)
     from ..backend import utils
     res = utils.add_wooey_script(script_path=new_file, group=None)
     return res['script']

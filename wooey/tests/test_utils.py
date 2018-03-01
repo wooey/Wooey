@@ -90,6 +90,28 @@ class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase):
         files = [filename.filename for filename in _zip.filelist]
         six.assertCountEqual(self, files, ['abc/', 'abc/test_file', 'abc/test_dir/test_file'])
 
+    def test_duplicate_scriptversion_checksums(self):
+        # Tests that script versions with duplicate checksums are correctly returned
+        script = os.path.join(config.WOOEY_TEST_SCRIPTS, 'versioned_script', 'v1.py')
+        with open(script) as o:
+            v1 = self.storage.save(self.filename_func('v1.py'), o)
+        res = utils.add_wooey_script(script_path=v1, script_name='test_versions')
+        first_version = res['script']
+        first_version_pk = first_version.pk
+        self.assertEqual(res['valid'], True, res['errors'])
+
+        # Force a duplication of the Script Version, this mimics legacy code that may
+        # have several script versions that were uploaded.
+
+        first_version.pk = None
+        first_version.script_iteration = first_version.script_iteration + 1
+        first_version.save()
+        second_version_pk = first_version.pk
+
+        # Add the script again, which should not fail on MultipleObjectsReturned
+        res = utils.add_wooey_script(script_path=v1, script_name='test_versions')
+        self.assertEqual(res['script'].pk, second_version_pk)
+
     def test_add_wooey_script(self):
         from wooey.models import ScriptParser
         script = os.path.join(config.WOOEY_TEST_SCRIPTS, 'versioned_script', 'v1.py')

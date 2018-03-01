@@ -12,7 +12,7 @@ from collections import OrderedDict, defaultdict
 from pkg_resources import parse_version
 
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db import transaction
 from django.db.utils import OperationalError
 from django.core.files.storage import default_storage
@@ -236,16 +236,24 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
     script_path = script_path or script_version.script_path.name
     script_name = script_name or (script_version.script.script_name if script_version else os.path.basename(os.path.splitext(script_path)[0]))
     checksum = get_checksum(get_storage_object(script_path).path)
+    existing_version = None
     try:
         existing_version = ScriptVersion.objects.get(checksum=checksum, script__script_name=script_name)
-        if existing_version:
-            return {
-                'valid': True,
-                'errors': None,
-                'script': existing_version,
-            }
     except ObjectDoesNotExist:
         pass
+    except MultipleObjectsReturned:
+        # This exists because previous versions did not enforce a checksum, so multiple scriptverisons are
+        # possible with the same checksum.
+        existing_version = ScriptVersion.objects.filter(
+            checksum=checksum,
+            script__script_name=script_name
+        ).order_by('script_version', 'script_iteration').first()
+    if existing_version is not None:
+        return {
+            'valid': True,
+            'errors': None,
+            'script': existing_version,
+        }
 
     local_storage = get_storage(local=True)
     if script_version is not None:

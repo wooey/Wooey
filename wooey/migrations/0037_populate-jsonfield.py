@@ -16,6 +16,13 @@ def populate_default(apps, schema_editor):
         obj.save()
 
 
+def reverse_populate_default(apps, schema_editor):
+    ScriptParameter = apps.get_model('wooey', 'ScriptParameter')
+    for obj in ScriptParameter.objects.all():
+        obj._default = json.dumps(obj.default)
+        obj.save()
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -23,5 +30,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(populate_default)
+        migrations.RunPython(populate_default, reverse_populate_default)
     ]

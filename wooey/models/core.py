@@ -6,7 +6,6 @@ import six
 import uuid
 from io import IOBase
 
-import jsonfield
 from autoslug import AutoSlugField
 from django.db import models
 from django.conf import settings
@@ -16,6 +15,7 @@ from django.contrib.auth.models import Group
 from django.utils.translation import ugettext_lazy as _
 from django.db import transaction
 from django.utils.text import get_valid_filename
+from jsonfield import JSONCharField
 
 from . mixins import UpdateScriptsMixin, ModelDiffMixin, WooeyPy2Mixin
 from .. import settings as wooey_settings
@@ -307,7 +307,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
         help_text=_('Collapse separate inputs to a given argument to a single input (ie: --arg 1 --arg 2 becomes --arg 1 2)')
     )
     form_field = models.CharField(max_length=255)
-    default = jsonfield.JSONField(null=True, blank=True)
+    default = JSONCharField(max_length=255, null=True, blank=True)
     input_type = models.CharField(max_length=255)
     param_help = models.TextField(verbose_name='help', null=True, blank=True)
     is_checked = models.BooleanField(default=False)

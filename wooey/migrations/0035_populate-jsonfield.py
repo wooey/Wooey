@@ -10,23 +10,20 @@ def populate_default(apps, schema_editor):
     ScriptParameter = apps.get_model('wooey', 'ScriptParameter')
     for obj in ScriptParameter.objects.all():
         try:
-            obj.default = json.loads(obj._default)
+            obj.default = json.loads(obj.default)
         except Exception:
-            obj.default = obj._default
+            obj.default = obj.default
         obj.save()
 
 
 def reverse_populate_default(apps, schema_editor):
-    ScriptParameter = apps.get_model('wooey', 'ScriptParameter')
-    for obj in ScriptParameter.objects.all():
-        obj._default = json.dumps(obj.default)
-        obj.save()
+    pass
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0036_add-jsonfield'),
+        ('wooey', '0034_update-checksums'),
     ]
 
     operations = [

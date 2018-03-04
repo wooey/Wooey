@@ -14,13 +14,13 @@ setup(
     scripts=['scripts/wooify'],
     entry_points={'console_scripts': ['wooify = wooey.backend.command_line:bootstrap', ]},
     install_requires=[
+        'celery>=3.1.15,<4.0'
+        'clinto>=0.2.0',
         'Django>=1.6,<1.10',
-        'django-jsonfield',
         'django-autoslug',
         'django-celery',
+        'jsonfield',
         'six',
-        'clinto>=0.2.0',
-        'celery>=3.1.15,<4.0'
     ],
     include_package_data=True,
     description='A Django app which creates a web GUI and task interface for argparse scripts',

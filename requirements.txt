@@ -1,5 +1,6 @@
 django<2
 django-autoslug
+django-jsonfield
 django-celery
 nose
 factory-boy

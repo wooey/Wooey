@@ -307,7 +307,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
         help_text=_('Collapse separate inputs to a given argument to a single input (ie: --arg 1 --arg 2 becomes --arg 1 2)')
     )
     form_field = models.CharField(max_length=255)
-    default = jsonfield.JSONField()
+    default = jsonfield.JSONField(null=True, blank=True)
     input_type = models.CharField(max_length=255)
     param_help = models.TextField(verbose_name='help', null=True, blank=True)
     is_checked = models.BooleanField(default=False)

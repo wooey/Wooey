@@ -16,6 +16,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='scriptparameter',
             name='default',
-            field=jsonfield.fields.JSONField(default=dict),
+            field=jsonfield.fields.JSONField(null=True, blank=True),
         ),
     ]

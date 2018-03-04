@@ -417,7 +417,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
                     'is_output': is_out,
                     'required': param.get('required', False),
                     'form_field': param['model'],
-                    'default': json.dumps(param.get('value')),
+                    'default': param.get('value'),
                     'input_type': param.get('type'),
                     'choices': json.dumps(param.get('choices')),
                     'choice_limit': json.dumps(param.get('choice_limit', 1)),

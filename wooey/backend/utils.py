@@ -248,7 +248,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
             checksum=checksum,
             script__script_name=script_name
         ).order_by('script_version', 'script_iteration').last()
-    if existing_version is not None:
+    if existing_version is not None and (script_version is not None and existing_version != script_version):
         return {
             'valid': True,
             'errors': None,

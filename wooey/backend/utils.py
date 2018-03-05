@@ -6,11 +6,14 @@ import re
 import sys
 import six
 import traceback
+from collections import OrderedDict, defaultdict
+# Python2.7 encoding= support
+from io import open
 from itertools import chain
 from operator import itemgetter
-from collections import OrderedDict, defaultdict
 from pkg_resources import parse_version
 
+from clinto.parser import Parser
 from django.conf import settings
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db import transaction
@@ -20,11 +23,7 @@ from django.core.files import File
 from django.utils.translation import ugettext_lazy as _
 from django.db.models import Q
 
-# Python2.7 encoding= support
-from io import open
-
-from clinto.parser import Parser
-
+from .. import errors
 from .. import settings as wooey_settings
 
 
@@ -252,7 +251,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
     if existing_version is not None and (script_version is None or existing_version != script_version):
         return {
             'valid': False,
-            'errors': ScriptVersion.error_messages['duplicate_script'],
+            'errors': errors.DuplicateScriptError(ScriptVersion.error_messages['duplicate_script']),
             'script': existing_version,
         }
 
@@ -308,7 +307,10 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
 
     parser = Parser(script_name=filename, script_path=local_storage.path(local_file))
     if not parser.valid:
-        return {'valid': False, 'errors': parser.error}
+        return {
+            'valid': False,
+            'errors': errors.ParserError(parser.error),
+        }
     # make our script
     script_schema = parser.get_script_description()
     script_group, created = ScriptGroup.objects.get_or_create(group_name=group)
@@ -464,7 +466,11 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
                     script_param.script_version.add(script_version)
                     script_param.save()
 
-    return {'valid': True, 'errors': None, 'script': script_version}
+    return {
+        'valid': True,
+        'errors': None,
+        'script': script_version,
+    }
 
 
 def valid_user(obj, user):

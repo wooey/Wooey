@@ -1,33 +1,25 @@
 from __future__ import absolute_import, print_function, unicode_literals
-__author__ = 'chris'
 import os
-import errno
 import importlib
 import json
 import six
 import uuid
 from io import IOBase
 
-from django.core.files.storage import default_storage
-from django.core.files.base import ContentFile
+from autoslug import AutoSlugField
 from django.db import models
 from django.conf import settings
 from django.core.files.storage import SuspiciousFileOperation
-from django.core.urlresolvers import reverse_lazy, reverse
+from django.core.urlresolvers import reverse
 from django.contrib.auth.models import Group
 from django.utils.translation import ugettext_lazy as _
 from django.db import transaction
 from django.utils.text import get_valid_filename
-
-from autoslug import AutoSlugField
-
-from celery import states
-
-from .. import settings as wooey_settings
-from .. backend import utils
-from ..django_compat import get_cache
+from jsonfield import JSONCharField
 
 from . mixins import UpdateScriptsMixin, ModelDiffMixin, WooeyPy2Mixin
+from .. import settings as wooey_settings
+from .. backend import utils
 from .. import django_compat
 
 # TODO: Handle cases where celery is not setup but specified to be used
@@ -245,7 +237,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
             self.stderr = stderr
             self.save()
         elif wooey_cache is not None:
-            cache = get_cache(wooey_cache)
+            cache = django_compat.get_cache(wooey_cache)
             if delete:
                 cache.delete(self.get_realtime_key())
             else:
@@ -254,7 +246,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
     def get_realtime(self):
         wooey_cache = wooey_settings.WOOEY_REALTIME_CACHE
         if wooey_cache is not None:
-            cache = get_cache(wooey_cache)
+            cache = django_compat.get_cache(wooey_cache)
             out = cache.get(self.get_realtime_key())
             if out:
                 return json.loads(out)
@@ -315,7 +307,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
         help_text=_('Collapse separate inputs to a given argument to a single input (ie: --arg 1 --arg 2 becomes --arg 1 2)')
     )
     form_field = models.CharField(max_length=255)
-    default = models.CharField(max_length=255, null=True, blank=True)
+    default = JSONCharField(max_length=255, null=True, blank=True)
     input_type = models.CharField(max_length=255)
     param_help = models.TextField(verbose_name='help', null=True, blank=True)
     is_checked = models.BooleanField(default=False)

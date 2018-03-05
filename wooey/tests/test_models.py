@@ -1,9 +1,9 @@
 import os
-import uuid
 
 from django.test import TestCase, Client
 
 from . import factories, config, mixins, utils as test_utils
+from .. import models
 from .. import version
 
 
@@ -17,20 +17,19 @@ class ScriptTestCase(mixins.ScriptFactoryMixin, TestCase):
         single_choice_param = 'one_choice'
         optional_choice_param = 'all_choices'
         # test that we are a multiple choice entry
-        from ..models import ScriptParameter
-        param = ScriptParameter.objects.get(slug=multiple_choice_param)
+        param = models.ScriptParameter.objects.get(slug=multiple_choice_param)
         self.assertTrue(param.multiple_choice)
 
         # test our limit
         self.assertEqual(param.max_choices, 2)
 
         # test with a singular case
-        param = ScriptParameter.objects.get(slug=single_choice_param)
+        param = models.ScriptParameter.objects.get(slug=single_choice_param)
         self.assertFalse(param.multiple_choice)
         self.assertEqual(param.max_choices, 1)
 
         # test cases that have variable requirements
-        param = ScriptParameter.objects.get(slug=optional_choice_param)
+        param = models.ScriptParameter.objects.get(slug=optional_choice_param)
         self.assertTrue(param.multiple_choice)
         self.assertEqual(param.max_choices, -1)
 
@@ -39,6 +38,16 @@ class ScriptGroupTestCase(TestCase):
 
     def test_script_group_creation(self):
         group = factories.ScriptGroupFactory()
+
+
+class ScriptParameterTestCase(TestCase):
+    def test_script_parameter_default(self):
+        script_parameter = factories.ScriptParameterFactory()
+        pk = script_parameter.pk
+        for test_value in [123, 'abc', {'abc': 5}]:
+            script_parameter.default = test_value
+            script_parameter.save()
+            self.assertEqual(models.ScriptParameter.objects.get(pk=pk).default, test_value)
 
 
 class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMixin, TestCase):
@@ -121,10 +130,9 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMix
         job = job.submit_to_celery()
         job2 = utils.create_wooey_job(script_version_pk=script.pk, data={'job_name': 'job2', script_slug: new_file})
         job2 = job2.submit_to_celery()
-        from ..models import UserFile
-        job1_files = [i for i in UserFile.objects.filter(job=job, parameter__isnull=False) if i.parameter.parameter.form_slug == script_slug]
+        job1_files = [i for i in models.UserFile.objects.filter(job=job, parameter__isnull=False) if i.parameter.parameter.form_slug == script_slug]
         job1_file = job1_files[0]
-        job2_files = [i for i in UserFile.objects.filter(job=job2, parameter__isnull=False) if i.parameter.parameter.form_slug == script_slug]
+        job2_files = [i for i in models.UserFile.objects.filter(job=job2, parameter__isnull=False) if i.parameter.parameter.form_slug == script_slug]
         job2_file = job2_files[0]
         self.assertNotEqual(job1_file.pk, job2_file.pk)
         self.assertEqual(job1_file.system_file, job2_file.system_file)

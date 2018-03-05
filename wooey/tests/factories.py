@@ -23,6 +23,7 @@ class ScriptParameterFactory(factory.DjangoModelFactory):
     class Meta:
         model = 'wooey.ScriptParameter'
 
+    script_param = 'script-param'
     is_output = False
     parameter_group = factory.SubFactory('wooey.tests.factories.ScriptParameterGroupFactory')
     parser = factory.SubFactory('wooey.tests.factories.ScriptParserFactory')

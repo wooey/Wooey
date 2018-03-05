@@ -1,12 +1,10 @@
 import os
 
 from django.test import TestCase
-from django.conf import settings
 
 from . import config, mixins, utils as test_utils
 from ..backend import utils
-from ..models import ScriptVersion
-from .. import settings as wooey_settings
+from ..models import ScriptParameter, ScriptVersion
 
 
 class ScriptAdditionTests(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase):
@@ -35,6 +33,15 @@ class ScriptAdditionTests(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase)
         # Check the job command
         commands = utils.get_job_commands(job=job)[2:]
         self.assertEqual(['alink', 'aname'], commands)
+
+    def test_default_parameters(self):
+        script_path = os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate.py')
+        with open(script_path) as o:
+            new_file = self.storage.save(self.filename_func('translate.py'), o)
+        res = utils.add_wooey_script(script_path=new_file, group=None)
+        script_version = res['script']
+        script_parameter = script_version.scriptparameter_set.get(script_param='frame')
+        self.assertEqual(script_parameter.default, '+1')
 
     def test_collapse_arguments(self):
         slug = test_utils.get_subparser_form_slug(self.choice_script, 'need_at_least_one_numbers')

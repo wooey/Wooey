@@ -126,7 +126,7 @@ class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase):
         # Test that adding the script again doesn't update anything
         res = utils.add_wooey_script(script_path=v1, script_name='test_versions')
         self.assertEqual(res['valid'], False)
-        self.assertEqual(res['errors'].message, ScriptVersion.error_messages['duplicate_script'])
+        self.assertEqual(str(res['errors']), ScriptVersion.error_messages['duplicate_script'])
         dup_first_version = res['script']
         self.assertEqual(
             first_version.script_version,

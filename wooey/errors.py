@@ -1,6 +1,6 @@
-class ParserError(BaseException):
+class ParserError(Exception):
     pass
 
 
-class DuplicateScriptError(BaseException):
+class DuplicateScriptError(Exception):
     pass

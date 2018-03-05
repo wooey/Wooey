@@ -6,6 +6,8 @@ from django import db
 
 from celery.signals import task_postrun, task_prerun
 
+from .models import ScriptVersion
+
 
 @task_postrun.connect
 @task_prerun.connect
@@ -28,8 +30,6 @@ def task_completed(sender=None, **kwargs):
         job.status = WooeyJob.COMPLETED if state == states.SUCCESS else state
     job.celery_id = kwargs.get('task_id')
     job.save()
-
-from .models import ScriptVersion
 
 
 def skip_script(instance):

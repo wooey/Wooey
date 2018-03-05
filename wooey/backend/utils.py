@@ -248,10 +248,11 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
             checksum=checksum,
             script__script_name=script_name
         ).order_by('script_version', 'script_iteration').last()
-    if existing_version is not None and (script_version is not None and existing_version != script_version):
+    # If script_verison is None, it likely came from `addscript`
+    if existing_version is not None and (script_version is None or existing_version != script_version):
         return {
-            'valid': True,
-            'errors': None,
+            'valid': False,
+            'errors': ScriptVersion.error_messages['duplicate_script'],
             'script': existing_version,
         }
 

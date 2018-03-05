@@ -14,6 +14,25 @@ class ScriptGroupFactory(factory.DjangoModelFactory):
     group_description = 'test desc'
 
 
+class ScriptParameterGroupFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = 'wooey.ScriptParameterGroup'
+
+
+class ScriptParameterFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = 'wooey.ScriptParameter'
+
+    is_output = False
+    parameter_group = factory.SubFactory('wooey.tests.factories.ScriptParameterGroupFactory')
+    parser = factory.SubFactory('wooey.tests.factories.ScriptParserFactory')
+
+
+class ScriptParserFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = 'wooey.ScriptParser'
+
+
 class ScriptFactory(factory.DjangoModelFactory):
     class Meta:
         model = Script

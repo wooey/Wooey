@@ -91,18 +91,22 @@ class ScriptAdditionTests(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase)
     def test_script_parameter_upgrade(self):
         script_path = os.path.join(config.WOOEY_TEST_SCRIPTS, 'choices.py')
         script_2_path = os.path.join(config.WOOEY_TEST_SCRIPTS, 'choices_2.py')
+
+        # Upload the script
         with open(script_path) as o:
             new_file = self.storage.save(self.filename_func('choices.py'), o)
         res = utils.add_wooey_script(script_path=new_file, group=None)
         self.assertEqual(res['valid'], True, res['errors'])
+
         # upgrade script
         script = ScriptVersion.objects.get(pk=res['script'].pk)
         with open(script_2_path) as o:
             new_script = self.storage.save(self.filename_func('choices.py'), o)
         script.script_path = new_script
-        # we are going to be cloning this, so we lose the old object
+        # we are going to be cloning this, so we lose the old object and we keep a reference here
         old_pk, old_iter = script.pk, script.script_iteration
         script.save()
+
         self.assertNotEqual(old_pk, script.pk)
         self.assertNotEqual(old_iter, script.script_iteration)
         # asset we are using the latest script in the frontend

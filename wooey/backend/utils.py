@@ -285,6 +285,10 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
         if not local_storage.exists(new_path):
             new_path = local_storage.save(new_path, current_file)
 
+        # Close the old file if it is not yet
+        if not current_file.closed:
+            current_file.close()
+
         script = get_storage_object(new_path, local=True).path
         local_file = local_storage.open(new_path).name
     else:

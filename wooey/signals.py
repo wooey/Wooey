@@ -6,6 +6,8 @@ from django import db
 
 from celery.signals import task_postrun, task_prerun
 
+from .models import ScriptVersion
+
 
 @task_postrun.connect
 @task_prerun.connect
@@ -29,8 +31,6 @@ def task_completed(sender=None, **kwargs):
     job.celery_id = kwargs.get('task_id')
     job.save()
 
-from .models import ScriptVersion
-
 
 def skip_script(instance):
     return getattr(instance, '_script_cl_creation', False) or getattr(instance, '_script_upgrade', False) or getattr(instance, '_rename_script', False)
@@ -43,12 +43,13 @@ def script_version_presave(instance, **kwargs):
         if 'script_path' in instance.changed_fields and not skip_script(instance):
             # If the script checksum is not changed, do not run the script addition code (but update the
             # path)
-            with instance.script_path as handle:
-                checksum = utils.get_checksum(handle)
-                if checksum != instance.checksum:
-                    instance.script_iteration += 1
-                    instance._script_upgrade = True
-                    instance.pk = None
+            with instance.script_path as script_handle:
+                checksum = utils.get_checksum(script_handle)
+            if checksum != instance.checksum and not ScriptVersion.objects.filter(checksum=checksum, script_id=instance.script_id).exists():
+                instance.checksum = checksum
+                instance.script_iteration += 1
+                instance._script_upgrade = True
+                instance.pk = None
 
 
 def script_version_postsave(instance, created, **kwargs):
@@ -60,9 +61,8 @@ def script_version_postsave(instance, created, **kwargs):
         instance._rename_script = False
         if res['valid'] == False:
             # delete the model on exceptions.
-            # TODO: use django messages backend to propogate this message to the admin
             instance.delete()
-            raise BaseException(res['errors'])
+            raise res['errors']
     utils.reset_form_factory(script_version=instance)
 
 pre_save.connect(script_version_presave, sender=ScriptVersion)

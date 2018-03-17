@@ -113,7 +113,7 @@ class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase):
         self.assertEqual(res['script'].pk, second_version_pk)
 
     def test_add_wooey_script(self):
-        from wooey.models import ScriptParser
+        from wooey.models import ScriptParser, ScriptVersion
         script = os.path.join(config.WOOEY_TEST_SCRIPTS, 'versioned_script', 'v1.py')
         with open(script) as o:
             v1 = self.storage.save(self.filename_func('v1.py'), o)
@@ -125,7 +125,8 @@ class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase):
 
         # Test that adding the script again doesn't update anything
         res = utils.add_wooey_script(script_path=v1, script_name='test_versions')
-        self.assertEqual(res['valid'], True, res['errors'])
+        self.assertEqual(res['valid'], False)
+        self.assertEqual(str(res['errors']), ScriptVersion.error_messages['duplicate_script'])
         dup_first_version = res['script']
         self.assertEqual(
             first_version.script_version,

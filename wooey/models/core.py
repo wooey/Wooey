@@ -107,6 +107,10 @@ class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
 
+    error_messages = {
+        'duplicate_script': _('This script already exists!'),
+    }
+
     class Meta:
         app_label = 'wooey'
         verbose_name = _('script version')

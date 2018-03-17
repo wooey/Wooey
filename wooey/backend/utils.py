@@ -6,11 +6,14 @@ import re
 import sys
 import six
 import traceback
+from collections import OrderedDict, defaultdict
+# Python2.7 encoding= support
+from io import open
 from itertools import chain
 from operator import itemgetter
-from collections import OrderedDict, defaultdict
 from pkg_resources import parse_version
 
+from clinto.parser import Parser
 from django.conf import settings
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db import transaction
@@ -20,11 +23,7 @@ from django.core.files import File
 from django.utils.translation import ugettext_lazy as _
 from django.db.models import Q
 
-# Python2.7 encoding= support
-from io import open
-
-from clinto.parser import Parser
-
+from .. import errors
 from .. import settings as wooey_settings
 
 
@@ -217,10 +216,10 @@ def get_current_scripts():
 
 def get_storage_object(path, local=False):
     storage = get_storage(local=local)
-    obj = storage.open(path)
-    obj.url = storage.url(path)
-    obj.path = storage.path(path)
-    return obj
+    with storage.open(path) as obj:
+        obj.url = storage.url(path)
+        obj.path = storage.path(path)
+        return obj
 
 
 def add_wooey_script(script_version=None, script_path=None, group=None, script_name=None):
@@ -248,10 +247,11 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
             checksum=checksum,
             script__script_name=script_name
         ).order_by('script_version', 'script_iteration').last()
-    if existing_version is not None:
+    # If script_verison is None, it likely came from `addscript`
+    if existing_version is not None and (script_version is None or existing_version != script_version):
         return {
-            'valid': True,
-            'errors': None,
+            'valid': False,
+            'errors': errors.DuplicateScriptError(ScriptVersion.error_messages['duplicate_script']),
             'script': existing_version,
         }
 
@@ -285,19 +285,24 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
         if not local_storage.exists(new_path):
             new_path = local_storage.save(new_path, current_file)
 
+        # Close the old file if it is not yet
+        if not current_file.closed:
+            current_file.close()
+
         script = get_storage_object(new_path, local=True).path
-        local_file = local_storage.open(new_path).name
+        with local_storage.open(new_path) as local_handle:
+            local_file = local_handle.name
     else:
         # we got a path, if we are using a remote file system, it will be located remotely by default
         # make sure we have it locally as well
         if wooey_settings.WOOEY_EPHEMERAL_FILES:
             remote_storage = get_storage(local=False)
-            remote_file = remote_storage.open(script_path)
-            local_file = local_storage.save(script_path, remote_file)
+            with remote_storage.open(script_path) as remote_file:
+                local_file = local_storage.save(script_path, remote_file)
         else:
-            local_file = local_storage.open(script_path).name
+            with local_storage.open(script_path) as local_handle:
+                local_file = local_handle.name
         script = get_storage_object(local_file, local=True).path
-
     if isinstance(group, ScriptGroup):
         group = group.group_name
     if group is None:
@@ -307,7 +312,10 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
 
     parser = Parser(script_name=filename, script_path=local_storage.path(local_file))
     if not parser.valid:
-        return {'valid': False, 'errors': parser.error}
+        return {
+            'valid': False,
+            'errors': errors.ParserError(parser.error),
+        }
     # make our script
     script_schema = parser.get_script_description()
     script_group, created = ScriptGroup.objects.get_or_create(group_name=group)
@@ -359,6 +367,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
         version_kwargs.update({'script': wooey_script})
         script_version = ScriptVersion(**version_kwargs)
         script_version._script_cl_creation = True
+        script_version.checksum = checksum
         script_version.save()
     else:
         # we are being created/updated from the admin
@@ -374,6 +383,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
         # Make all old versions non-default
         ScriptVersion.objects.filter(script=wooey_script).update(default_version=False)
         script_version.default_version = True
+        script_version.checksum = checksum
         wooey_script.save()
         script_version.save()
 
@@ -461,7 +471,11 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
                     script_param.script_version.add(script_version)
                     script_param.save()
 
-    return {'valid': True, 'errors': None, 'script': script_version}
+    return {
+        'valid': True,
+        'errors': None,
+        'script': script_version,
+    }
 
 
 def valid_user(obj, user):

@@ -216,10 +216,10 @@ def get_current_scripts():
 
 def get_storage_object(path, local=False):
     storage = get_storage(local=local)
-    obj = storage.open(path)
-    obj.url = storage.url(path)
-    obj.path = storage.path(path)
-    return obj
+    with storage.open(path) as obj:
+        obj.url = storage.url(path)
+        obj.path = storage.path(path)
+        return obj
 
 
 def add_wooey_script(script_version=None, script_path=None, group=None, script_name=None):
@@ -290,18 +290,19 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
             current_file.close()
 
         script = get_storage_object(new_path, local=True).path
-        local_file = local_storage.open(new_path).name
+        with local_storage.open(new_path) as local_handle:
+            local_file = local_handle.name
     else:
         # we got a path, if we are using a remote file system, it will be located remotely by default
         # make sure we have it locally as well
         if wooey_settings.WOOEY_EPHEMERAL_FILES:
             remote_storage = get_storage(local=False)
-            remote_file = remote_storage.open(script_path)
-            local_file = local_storage.save(script_path, remote_file)
+            with remote_storage.open(script_path) as remote_file:
+                local_file = local_storage.save(script_path, remote_file)
         else:
-            local_file = local_storage.open(script_path).name
+            with local_storage.open(script_path) as local_handle:
+                local_file = local_handle.name
         script = get_storage_object(local_file, local=True).path
-
     if isinstance(group, ScriptGroup):
         group = group.group_name
     if group is None:

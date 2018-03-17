@@ -11,4 +11,6 @@ def get_subparser_form_slug(script_version, slug):
 def save_script_path(script_path):
     filename = os.path.split(script_path)[1]
     filename = os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, filename)
-    return default_storage.save(filename, open(script_path))
+    with open(script_path) as script_handle:
+        path = default_storage.save(filename, script_handle)
+    return path

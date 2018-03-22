@@ -178,7 +178,7 @@ msgstr "Download deze uitgang"
 
 #: templates/wooey/preview/base.html:8
 msgid "Pin in scrapbook"
-msgstr "Pin in plakboek"
+msgstr "Zet vast in scrapbook"
 
 #: templates/wooey/registration/login.html:10
 #: templates/wooey/registration/login.html:12
@@ -194,7 +194,7 @@ msgstr "Log in"
 
 #: templates/wooey/registration/login_header.html:16
 msgid "Register"
-msgstr "Register"
+msgstr "Registreren"
 
 #: templates/wooey/registration/register.html:19
 #: templates/wooey/registration/register.html:21
@@ -204,7 +204,7 @@ msgstr "E-mail"
 #: templates/wooey/scripts/script_panel.html:23
 #, python-format
 msgid "Version %(version)s"
-msgstr "Version %(version)s"
+msgstr "Versie %(version)s"
 
 #: templates/wooey/scripts/script_panel.html:26
 #, python-format
@@ -226,23 +226,23 @@ msgstr "Metadata"
 #: templates/wooey/scripts/script_view.html:87
 #: templates/wooey/scripts/script_view.html:88
 msgid "Job Name"
-msgstr "Job Name"
+msgstr "Taaknaam"
 
 #: templates/wooey/scripts/script_view.html:91
 msgid "Job Description"
-msgstr "Baan beschrijving"
+msgstr "Taakbeschrijving"
 
 #: templates/wooey/scripts/script_view.html:92
 msgid "Enter job description here..."
-msgstr "Vul hier functieomschrijving ..."
+msgstr "Vul hier taakomschrijving in ..."
 
 #: templates/wooey/scripts/script_view.html:101
 msgid "Submit"
-msgstr "Voorleggen"
+msgstr "Indienen"
 
 #: templates/wooey/scripts/script_view.html:124
 msgid "No more choices may be added for this selection"
-msgstr "Niet meer keuzemogelijkheden worden toegevoegd hiervoor"
+msgstr "Er kunnen geen keuzes meer toegevoegd worden voor deze selectie"
 
 #: views/authentication.py:31
 msgid "Passwords do not match."
@@ -250,7 +250,7 @@ msgstr "Wachtwoorden komen niet overeen."
 
 #: views/authentication.py:33
 msgid "Reserved username."
-msgstr "Voorbehouden gebruikersnaam."
+msgstr "Gereserveerde gebruikersnaam."
 
 #: views/authentication.py:35
 msgid "Please enter your email address."
@@ -267,7 +267,7 @@ msgstr "Geen %(verbose_name)s gevonden voor uw zoekopdracht"
 
 #: views/views.py:89 views/views.py:134
 msgid "You are not permitted to access this script."
-msgstr "U bent niet toegestaan ​​om dit script."
+msgstr "U heeft geen toegang tot dit script."
 
 #: views/wooey_celery.py:27
 msgid "Success"
@@ -275,11 +275,11 @@ msgstr "Succes"
 
 #: views/wooey_celery.py:28
 msgid "Executing"
-msgstr "Uitvoeren"
+msgstr "Aan het uitvoeren"
 
 #: views/wooey_celery.py:29
 msgid "Queued"
-msgstr "Wachtrij"
+msgstr "In de wachtrij"
 
 #: views/wooey_celery.py:30
 msgid "Halted"
@@ -291,7 +291,7 @@ msgstr "Mislukking"
 
 #: views/wooey_celery.py:32
 msgid "Waiting"
-msgstr "Het wachten"
+msgstr "Aan het wachten"
 
 #: views/wooey_celery.py:137
 msgid "Unknown Command"
@@ -299,4 +299,4 @@ msgstr "Onbekend commando"
 
 #: views/wooey_celery.py:192
 msgid "You are not authenticated to view this job."
-msgstr "U bent niet geverifieerd om dit werk te bekijken."
+msgstr "U bent niet bevoegd om deze taak te bekijken."

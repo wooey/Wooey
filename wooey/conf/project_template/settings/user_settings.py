@@ -1,4 +1,5 @@
-from os import environ
+import errno
+import os
 from .wooey_settings import *
 # This file is where the user can override and customize their installation of wooey
 
@@ -11,13 +12,37 @@ INSTALLED_APPS += (
 WOOEY_ALLOW_ANONYMOUS = True
 
 ## Celery related options
+
 INSTALLED_APPS += (
-    'djcelery',
-    'kombu.transport.django',
+    'django_celery_results',
+    'kombu.transport.filesystem',
 )
 
-CELERY_RESULT_BACKEND='djcelery.backends.database:DatabaseBackend'
-BROKER_URL = 'django://'
+CELERY_RESULT_BACKEND='django-db'
+
+# This should absolutely be changed to a non-filesystem based broker for production deployments!
+# http://docs.celeryproject.org/en/latest/getting-started/brokers/
+CELERY_BROKER_URL = 'filesystem://'
+
+# This function exists just to ensure the filesystem has the correct folders
+def ensure_path(path):
+    try:
+        os.makedirs(path)
+    except Exception as e:
+        if e.errno == errno.EEXIST:
+            pass
+        else:
+            raise
+    return path
+
+broker_dir = ensure_path(os.path.join(BASE_DIR, '.broker'))
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    "data_folder_in": ensure_path(os.path.join(broker_dir, "out")),
+    "data_folder_out": ensure_path(os.path.join(broker_dir, "out")),
+    "data_folder_processed": ensure_path(os.path.join(broker_dir, "processed")),
+}
+
+
 CELERY_TRACK_STARTED = True
 WOOEY_CELERY = True
 CELERY_SEND_EVENTS = True

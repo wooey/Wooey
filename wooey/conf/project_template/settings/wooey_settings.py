@@ -10,10 +10,12 @@ INSTALLED_APPS += (
 if DJANGO_VERSION < DJ110:
     MIDDLEWARE_CLASSES = list(MIDDLEWARE_CLASSES)
     MIDDLEWARE_CLASSES.append('{{ project_name }}.middleware.ProcessExceptionMiddleware')
+    MIDDLEWARE_OBJ = MIDDLEWARE_CLASSES
 else:
     # Using Django 1.10 +
     MIDDLEWARE = list(MIDDLEWARE)
     MIDDLEWARE.append('{{ project_name }}.middleware.ProcessExceptionMiddleware')
+    MIDDLEWARE_OBJ = MIDDLEWARE
 
 LANGUAGES = [
   ('de', _('German')),
@@ -25,13 +27,16 @@ LANGUAGES = [
 ]
 
 NEW_MIDDLEWARE = []
-for i in MIDDLEWARE_CLASSES:
+for i in MIDDLEWARE_OBJ:
     NEW_MIDDLEWARE.append(i)
     if i == 'django.contrib.sessions.middleware.SessionMiddleware':
         NEW_MIDDLEWARE.append('django.middleware.locale.LocaleMiddleware')
 
 NEW_MIDDLEWARE.append('{{ project_name }}.middleware.ProcessExceptionMiddleware')
-MIDDLEWARE_CLASSES = NEW_MIDDLEWARE
+if DJANGO_VERSION < DJ110:
+    MIDDLEWARE_CLASSES = NEW_MIDDLEWARE
+else:
+    MIDDLEWARE = NEW_MIDDLEWARE
 
 PROJECT_NAME = "{{ project_name }}"
 WOOEY_CELERY_APP_NAME = 'wooey.celery'

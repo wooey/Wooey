@@ -178,7 +178,7 @@ Running Celery in the background
 
 All this other set-up means you then can't use honcho to run celery, because it doesn't seem to like (that's a technical term) the uWSGI command which means instead, you have to run it as a background process. This however just seems to work...
 
-nohup python manage.py celery worker -c 1 --beat -l info & #you probably want to pipe this output somewhere sensible
+nohup celery -A your_project_name worker -c 1 --beat -l info & #you probably want to pipe this output somewhere sensible
 
 Which means you can then run the server with the command above uwsgi command shown above.
 

@@ -19,9 +19,10 @@ from .. import version
 
 
 def mutli_render(render_func, appender_data_dict=None):
-    def render(name, values, attrs=None):
-        if not isinstance(values, (list, tuple)):
-            values = [values]
+    def render(name, value=None, attrs=None):
+        if not isinstance(value, (list, tuple)):
+            value = [value]
+        values = value
         # The tag is a marker for our javascript to reshuffle the elements. This is because some widgets have complex rendering with multiple fields
         pieces = ['<{tag} {multi_attr}>{widget}</{tag}>'.format(tag='div', multi_attr=config.WOOEY_MULTI_WIDGET_ATTR,
                                                                 widget=render_func(name, value, attrs)) for value in values]

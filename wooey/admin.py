@@ -23,7 +23,7 @@ class JobAdmin(ModelAdmin):
 
 class ScriptVersionInline(TabularInline):
     model = ScriptVersion
-    extra = 0
+    extra = 1
 
 
 class ScriptAdmin(ModelAdmin):

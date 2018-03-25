@@ -23,6 +23,16 @@ WOOEY_CELERY = True
 CELERY_SEND_EVENTS = True
 CELERY_IMPORTS = ('wooey.tasks')
 
+# A cache interface. This provides realtime updates for scriots and should definitely be changed
+# to use something like redis or memcached in production
+WOOEY_REALTIME_CACHE = 'default'
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'wooey_cache_table',
+    }
+}
+
 # Things you most likely do not need to change
 
 # the directory for uploads (physical directory)

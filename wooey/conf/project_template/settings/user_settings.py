@@ -25,6 +25,7 @@ CELERY_IMPORTS = ('wooey.tasks')
 
 # A cache interface. This provides realtime updates for scriots and should definitely be changed
 # to use something like redis or memcached in production
+WOOEY_REALTIME_CACHE = 'default'
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',

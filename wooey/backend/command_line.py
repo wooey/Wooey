@@ -109,12 +109,14 @@ def bootstrap(env=None, cwd=None):
     # do the same with urls
     shutil.move(os.path.join(project_base_dir, 'urls.py'), os.path.join(project_base_dir, 'urls', 'django_urls.py'))
     env['DJANGO_SETTINGS_MODULE'] = '.'.join([project_name, 'settings', 'user_settings'])
+    MANAGE_PATH = os.path.join(project_root, 'manage.py')
     if django_compat.DJANGO_VERSION >= django_compat.DJ17:
-        subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'makemigrations'], env=env)
-        subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'migrate'], env=env)
+        subprocess.call(['python', MANAGE_PATH, 'makemigrations'], env=env)
+        subprocess.call(['python', MANAGE_PATH, 'migrate'], env=env)
     else:
-        subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'syncdb', '--noinput'], env=env)
-    subprocess.call(['python', os.path.join(project_root, 'manage.py'), 'collectstatic', '--noinput'], env=env)
+        subprocess.call(['python', MANAGE_PATH, 'syncdb', '--noinput'], env=env)
+    subprocess.call(['python', MANAGE_PATH, 'createcachetable'], env=env)
+    subprocess.call(['python', MANAGE_PATH, 'collectstatic', '--noinput'], env=env)
     sys.stdout.write("Please enter the project directory {0}, and run python manage.py createsuperuser and"
                      " python manage.py runserver to start. The admin can be found at localhost:8000/admin. You may also want to set your "
                      "DJANGO_SETTINGS_MODULE environment variable to {0}.settings \n".format(project_name))

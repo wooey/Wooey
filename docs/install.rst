@@ -34,10 +34,7 @@ Installation with existing Django Projects
         you can have r'^wooey/'... as your router):
        
     3. Migrate your database:
-        # Django 1.6 and below:
-        ./manage.py syncdb
-        
-        # Django 1.7 and above
+        # Django 1.8 and above
         ./manage.py makemigrations
         ./manage.py migrate
         

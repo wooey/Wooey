@@ -2,7 +2,11 @@
 from __future__ import unicode_literals
 
 from django.apps import apps
-from django.contrib.contenttypes.management import update_contenttypes
+from wooey.django_compat import DJANGO_VERSION, DJ111
+if DJANGO_VERSION >= DJ111:
+    from django.contrib.contenttypes.management import create_contenttypes as init_contenttypes
+else:
+    from django.contrib.contenttypes.management import update_contenttypes as init_contenttypes
 from django.db import migrations
 
 from wooey.settings import get as get_setting
@@ -11,7 +15,7 @@ from wooey.settings import get as get_setting
 def update_all_contenttypes(**kwargs):
     # from http://stackoverflow.com/questions/29550102/importerror-cannot-import-name-update-all-contenttypes
     for app_config in apps.get_app_configs():
-        update_contenttypes(app_config, **kwargs)
+        init_contenttypes(app_config, **kwargs)
 
 def gen_userfiles(apps, schema_editor):
     WooeyFile = apps.get_model('wooey', 'WooeyFile')

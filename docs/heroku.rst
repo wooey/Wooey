@@ -67,7 +67,7 @@ Create a file, called Procfile, which tells Heroku how to run your app, with the
 ::
 
     web: waitress-serve --connection-limit 2000 --channel-timeout=300 --port=$PORT wooey_heroku.wsgi:application
-    worker: python manage.py celery worker -c 1 --beat -l info
+    worker: celery -A your_project_name worker -c 1 --beat -l info
 
 Setup Environment Vars on Heroku
 

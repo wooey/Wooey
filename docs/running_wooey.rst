@@ -22,7 +22,7 @@ separate process for each):
 
 ::
 
-    python manage.py celery worker -c 1 --beat -l info
+    celery -A your_project_name worker -c 1 --beat -l info
     python manage.py runserver
 
 On Windows, the ``--beat`` option may not be supported.
@@ -38,7 +38,7 @@ project (the same place as manage.py) with the following contents:
 ::
 
     web:  python manage.py runserver
-    worker: python manage.py celery worker -c 1 --beat -l info
+    worker: celery -A your_project_name worker -c 1 --beat -l info
     EOM
 
 Your server can then be run by the simple command:

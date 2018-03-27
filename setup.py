@@ -19,6 +19,7 @@ setup(
         'Django>=1.8,<2',
         'django-autoslug',
         'django-celery-results',
+        'eventlet;platform_system=="Windows"',
         'jsonfield',
         'six',
     ],

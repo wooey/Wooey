@@ -20,6 +20,7 @@ setup(
         'django-autoslug',
         'django-celery-results',
         'jsonfield',
+        'pypiwin32;platform_system=="Windows"',
         'six',
     ],
     include_package_data=True,

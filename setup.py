@@ -21,7 +21,7 @@ setup(
         'django-celery-results',
         'eventlet>=0.22.1 ;platform_system=="Windows"',
         'jsonfield',
-        'pypiwin32>=223 ;platform_system=="Windows"',
+        'pypiwin32>=221 ;platform_system=="Windows"',
         'six',
     ],
     include_package_data=True,

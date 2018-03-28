@@ -1,17 +1,17 @@
 from __future__ import absolute_import
-
 import os
 
-from django.conf import settings
+from celery import Celery
 
-from celery import app as celery_app
 
-app = celery_app.app_or_default()
-# app = Celery('{{ project_name }}')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', '{{ project_name }}.settings')
+
+app = Celery('{{ project_name }}')
 
 # Using a string here means the worker will not have to
 # pickle the object when using Windows.
-app.config_from_object('django.conf:settings')
+app.config_from_object('django.conf:settings', namespace='CELERY')
+app.autodiscover_tasks()
 
 
 @app.task(bind=True)

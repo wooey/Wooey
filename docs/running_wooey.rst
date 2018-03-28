@@ -25,7 +25,11 @@ separate process for each):
     celery -A your_project_name worker -c 1 --beat -l info
     python manage.py runserver
 
-On Windows, the ``--beat`` option may not be supported.
+On Windows, the ``--beat`` option may not be supported and the `eventlet`
+pool will need to be specified. This looks like:
+
+::
+    celery -A your_project_name worker --pool=eventlet -l info
 
 Through a Procfile
 ------------------

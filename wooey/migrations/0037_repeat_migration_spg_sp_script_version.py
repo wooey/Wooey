@@ -12,8 +12,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # These migrations was covered by 0029->0032 but for some reason Django wants to
-        # repeat it. It should be a pointless change.
+        # These migrations were covered by 0029->0032 but for some reason Django wants to
+        # repeat them. This should be a pointless change.
         migrations.AlterField(
             model_name='scriptparametergroup',
             name='script_version',

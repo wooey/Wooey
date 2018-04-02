@@ -34,11 +34,11 @@ class Migration(migrations.Migration):
             ],
             bases=(wooey.models.mixins.WooeyPy2Mixin, models.Model),
         ),
-        migrations.RunPython(createParsers),
         migrations.AddField(
             model_name='scriptparameter',
             name='parser',
             field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, to='wooey.ScriptParser'),
             preserve_default=False,
         ),
+        migrations.RunPython(createParsers),
     ]

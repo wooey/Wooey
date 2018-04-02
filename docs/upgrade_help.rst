@@ -22,11 +22,13 @@ prior to 1.8 are no longer officially supported.
     1) First, celery is no longer executed through
 
         .. code-block:: python
+
             python manage.py celery
 
         but instead via:
 
         .. code-block:: python
+
             celery -A your_project_name worker -l info (and any other arguments)
 
     2) Because `django-celery` is now deprecated and incompatible with newer Django and Celery versions,
@@ -69,6 +71,7 @@ prior to 1.8 are no longer officially supported.
        to
 
         .. code-block:: python
+
             CELERY_BROKER_URL = 'filesystem://'
             # This function exists just to ensure the filesystem has the correct folders
             def ensure_path(path):
@@ -94,6 +97,7 @@ prior to 1.8 are no longer officially supported.
     3) The celery app instance, located in `your_project_name/wooey_celery_app.py` must be updated to:
 
         .. code-block:: python
+
             from __future__ import absolute_import
             import os
 
@@ -108,7 +112,6 @@ prior to 1.8 are no longer officially supported.
             # pickle the object when using Windows.
             app.config_from_object('django.conf:settings', namespace='CELERY')
             app.autodiscover_tasks()
-
 
             @app.task(bind=True)
             def debug_task(self):

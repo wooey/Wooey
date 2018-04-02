@@ -2,8 +2,8 @@ Upgrade Help
 ============
 
 This document exists to help document changes between versions of Wooey and
-what existing bootstrap projects may need to do to migrate to a more
-recent version. The official changelog for releases is curated in
+what existing bootstrap projects may need to migrate to recent versions.
+The official changelog for releases is curated in
 `github releases <https://github.com/wooey/Wooey/releases>`_, which will
 document any major changes. Though every attempt is made to test upgrades, it
 is recommended to backup your database prior to an upgrade in case your particular
@@ -16,7 +16,7 @@ an `issue <https://github.com/wooey/issues>`_ on github.
 0.10 adds in support for Django 1.10 as well as Django 1.11. Django versions
 prior to 1.8 are no longer officially supported.
 
-# *Upgrading Celery*:
+# *Celery Changes*:
     Celery was upgraded to version 4.x and several changes are required:
 
     1) First, celery is no longer executed through
@@ -28,31 +28,29 @@ prior to 1.8 are no longer officially supported.
         :code: celery -A your_project_name worker -l info (and any other arguments)
 
     2) Because `django-celery` is now deprecated and incompatible with newer Django and Celery versions,
-     several settings in `settings/user_settings.py` must be updated:
+       several settings in `settings/user_settings.py` must be updated:
 
     a)
         :code:
-            ## Celery related options
             INSTALLED_APPS += (
                 'djcelery',
                 'kombu.transport.django',
             )
 
-        must be changed to:
+       must be changed to:
 
         :code:
-            ## Celery related options
             INSTALLED_APPS += (
                 'django_celery_results',
                 'kombu.transport.filesystem',
             )
 
-    b) If the default result backend was never changed, the backend must be changed from:
+    b) If the django-celery task result backend was in use, the backend must be changed from:
 
         :code:
             CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 
-        to:
+       to:
 
         :code:
             CELERY_RESULT_BACKEND = 'django-db'
@@ -63,7 +61,7 @@ prior to 1.8 are no longer officially supported.
 
             BROKER_URL = 'django://'
 
-        to
+       to
 
         :code:
             CELERY_BROKER_URL = 'filesystem://'
@@ -111,9 +109,7 @@ prior to 1.8 are no longer officially supported.
             def debug_task(self):
                 print('Request: {0!r}'.format(self.request))
 
-
-
-    updated and `django-celery` replaced with `
-
-Additional tweaks may be required for bootstrapped script's settings if a
-Django upgrade is performed, such as changing `MIDDLEWARE` to `MIDDLEWARE_CLASSES`.
+# *Django Upgrades*:
+    Additional tweaks may be required for if a Django upgrade is performed, such as
+    changing `MIDDLEWARE` to `MIDDLEWARE_CLASSES`. For these issues, the official
+    `Django Documentation <https://docs.djangoproject.com/>`_ should be referenced.

@@ -16,22 +16,24 @@ an `issue <https://github.com/wooey/issues>`_ on github.
 0.10 adds in support for Django 1.10 as well as Django 1.11. Django versions
 prior to 1.8 are no longer officially supported.
 
-# *Celery Changes*:
+1) *Celery Changes*:
     Celery was upgraded to version 4.x and several changes are required:
 
     1) First, celery is no longer executed through
 
-        :code: python manage.py celery
+        .. code-block:: python
+            python manage.py celery
 
         but instead via:
 
-        :code: celery -A your_project_name worker -l info (and any other arguments)
+        .. code-block:: python
+            celery -A your_project_name worker -l info (and any other arguments)
 
     2) Because `django-celery` is now deprecated and incompatible with newer Django and Celery versions,
        several settings in `settings/user_settings.py` must be updated:
 
-    a)
-        :code:
+        .. code-block:: python
+
             INSTALLED_APPS += (
                 'djcelery',
                 'kombu.transport.django',
@@ -39,31 +41,34 @@ prior to 1.8 are no longer officially supported.
 
        must be changed to:
 
-        :code:
+        .. code-block:: python
+
             INSTALLED_APPS += (
                 'django_celery_results',
                 'kombu.transport.filesystem',
             )
 
-    b) If the django-celery task result backend was in use, the backend must be changed from:
+       If the django-celery task result backend was in use, the backend must be changed from:
 
-        :code:
+        .. code-block:: python
+
             CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 
        to:
 
-        :code:
+        .. code-block:: python
+
             CELERY_RESULT_BACKEND = 'django-db'
 
-    c) If a broker was never specified, the default broker url must be changed from
+       If a broker was never specified, the default broker url must be changed from
 
-        :code:
+        .. code-block:: python
 
             BROKER_URL = 'django://'
 
        to
 
-        :code:
+        .. code-block:: python
             CELERY_BROKER_URL = 'filesystem://'
             # This function exists just to ensure the filesystem has the correct folders
             def ensure_path(path):
@@ -84,11 +89,11 @@ prior to 1.8 are no longer officially supported.
                 "data_folder_processed": ensure_path(os.path.join(broker_dir, "processed")),
             }
 
-    It is _highly_ recommended to not use this broker and use something such as rabbitmq or redis.
+      *Note*: It is **highly** recommended to not use this broker and use something such as rabbitmq or redis.
 
     3) The celery app instance, located in `your_project_name/wooey_celery_app.py` must be updated to:
 
-        :code:
+        .. code-block:: python
             from __future__ import absolute_import
             import os
 
@@ -109,7 +114,7 @@ prior to 1.8 are no longer officially supported.
             def debug_task(self):
                 print('Request: {0!r}'.format(self.request))
 
-# *Django Upgrades*:
+2) *Django Upgrades*:
     Additional tweaks may be required for if a Django upgrade is performed, such as
     changing `MIDDLEWARE` to `MIDDLEWARE_CLASSES`. For these issues, the official
     `Django Documentation <https://docs.djangoproject.com/>`_ should be referenced.

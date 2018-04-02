@@ -38,6 +38,7 @@ Getting Started
    scripts
    using_wooey
    remote
+   upgrade_help
 
 
 Developers

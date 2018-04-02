@@ -4,15 +4,6 @@ Configuration
 Wooey Settings
 --------------
 
-:code:`WOOEY_FILE_DIR`: String, where the files uploaded by the user will
-be saved (Default: ``wooey_files``)
-
-:code:`WOOEY_CELERY`: Boolean, whether or not celery is enabled. If
-disabled, tasks will run locally and block execution. (Default: ``True``)
-
-:code:`WOOEY_CELERY_TASKS`: String, the name of the celery tasks for
-Wooey. (Default: ``'wooey.tasks'``)
-
 :code:`WOOEY_ALLOW_ANONYMOUS`: Boolean, whether to allow submission of
 jobs by anonymous users. (Default: ``True``)
 
@@ -22,21 +13,20 @@ doesn't confirm registrations via email.
 :code:`WOOEY_AUTH`: Boolean, whether to use the authorization system of
 Wooey for simple login/registration. (Default: ``True``)
 
-:code:`WOOEY_LOGIN_URL`: String, if you have an existing authorization
-system, the login url: (Default: ``settings.LOGIN_URL``)
+:code:`WOOEY_CELERY`: Boolean, whether or not celery is enabled. If
+disabled, tasks will run locally and block execution. (Default: ``True``)
 
-:code:`WOOEY_REGISTER_URL`: String, if you have an existing authorization
-system, the registration url: (Default: ``'/accounts/register/'``)
+:code:`WOOEY_CELERY_TASKS`: String, the name of the celery tasks for
+Wooey. (Default: ``'wooey.tasks'``)
+
+:code:`WOOEY_DEFAULT_SCRIPT_GROUP`: String, the group scripts should be added
+to if no group is specified. (Default: ``'Scripts'``)
 
 :code:`WOOEY_EPHEMERAL_FILES`: Boolean, if your file system changes with
-each restart. (Default: ``False``)
+each restart (e.g. files are stored on S3). (Default: ``False``)
 
-:code:`WOOEY_SHOW_LOCKED_SCRIPTS`: Boolean, whether to show locked
-scripts as disabled or hide them entirely. (Defalt: ``True`` -- show as
-disabled)
-
-:code:`WOOEY_REALTIME_CACHE`: String, the name of the cache to use for
-storing real time updates from running jobs.
+:code:`WOOEY_FILE_DIR`: String, where the files uploaded by the user will
+be saved (Default: ``wooey_files``)
 
 :code:`WOOEY_JOB_EXPIRATION`: Dictionary, A dictionary with two keys:
 :code:`user` and :code:`anonymous`. The values for each is a timedelta
@@ -44,6 +34,25 @@ specifying how much time should be elapsed before a job is automatically
 deleted. If a key is not provided or :code:`None`, the job for that user
 type wll not be deleted.
 
+:code:`WOOEY_LOGIN_URL`: String, if you have an existing authorization
+system, the login url: (Default: ``settings.LOGIN_URL``)
+
+:code:`WOOEY_REALTIME_CACHE`: String, the name of the cache to use for
+storing real time updates from running jobs.
+
+:code:`WOOEY_REGISTER_URL`: String, if you have an existing authorization
+system, the registration url: (Default: ``'/accounts/register/'``)
+
+:code:`WOOEY_SCRIPT_DIR`: String, the folder to save scripts under. It should
+be a short, relative path to the storage root. (Defalt: ``wooey_scripts``)
+
+:code:`WOOEY_SHOW_LOCKED_SCRIPTS`: Boolean, whether to show locked
+scripts as disabled or hide them entirely. (Defalt: ``True`` -- show as
+disabled)
+
+:code:`WOOEY_SITE_NAME`: String, the name of the site to display. (Defalt: ``Wooey!``)
+
+:code:`WOOEY_SITE_TAG`: String, the tagline for the site. (Defalt: ``A web UI for Python Scripts``)
 
 
 Internationlization (i18n)

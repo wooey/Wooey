@@ -18,7 +18,7 @@ INSTALLED_APPS += (
     'kombu.transport.filesystem',
 )
 
-CELERY_RESULT_BACKEND='django-db'
+CELERY_RESULT_BACKEND = 'django-db'
 
 # This should absolutely be changed to a non-filesystem based broker for production deployments!
 # http://docs.celeryproject.org/en/latest/getting-started/brokers/

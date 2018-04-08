@@ -58,3 +58,6 @@ target/
 
 # IDE
 .idea
+
+# Template files
+docker/docker-compose.override.yml

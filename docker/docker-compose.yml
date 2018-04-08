@@ -1,0 +1,46 @@
+version: '2.1'
+volumes:
+  user_uploads:
+  wooey_db:
+
+services:
+  common:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: wooey:dev
+    volumes :
+      - ./user_settings.py:/docker_wooey/docker_wooey/settings/user_settings.py
+      - user_uploads:/docker_wooey/docker_wooey/user_uploads
+    environment:
+      AMQP_URL: amqp://rabbit:5672
+      DATABASE_NAME: wooey
+      DATABASE_USER: wooey
+      DATABASE_URL: db
+      DATABASE_PASSWORD: wooey
+    user: 1000:1000
+
+  wooey:
+    extends: common
+    ports:
+      - 8081:8080
+    depends_on:
+      - rabbit
+      - db
+    command: ./run-server
+
+  celery:
+    extends: common
+    command: celery worker -A docker_wooey -c 4 --beat -l info -s schedule
+
+  rabbit:
+    image: rabbitmq
+
+  db:
+    image: postgres
+    volumes:
+      - wooey_db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: wooey
+      POSTGRES_PASSWORD: wooey
+      POSTGRES_DB: wooey

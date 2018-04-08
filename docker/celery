@@ -1,0 +1,2 @@
+#!/bin/bash
+./wooey-compose run --rm --service-ports celery "$@"

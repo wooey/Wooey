@@ -1,20 +1,28 @@
 # TODO: Test for viewing a user's job as an anonymous user (fail case)
 
 import json
-from itertools import chain
 
-from django.test import TestCase, RequestFactory, Client
+from django.test import TestCase, RequestFactory
 from django.core.urlresolvers import reverse
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.http import Http404
-
 from nose.tools import raises
 
-from . import config, factories, mixins, utils as test_utils
+from . import (
+    config,
+    factories,
+    mixins,
+    utils as test_utils,
+)
 from ..backend import utils
 from ..views import wooey_celery
 from .. import views as wooey_views
+from .. import models
 from .. import settings
+
+
+User = get_user_model()
 
 
 def load_JSON_dict(d):
@@ -102,12 +110,14 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         request = self.factory.get(reverse('wooey:celery_results', kwargs={'job_id': job.pk}))
         request.user = AnonymousUser()
         response = view(request, job_id=job.pk)
+        response.render()
         self.assertIn('job_error', response.context_data)
         self.assertNotIn('job_info', response.context_data)
 
         # test the user can view the job
         request.user = user
         response = view(request, job_id=job.pk)
+        response.render()
         self.assertNotIn('job_error', response.context_data)
         self.assertIn('job_info', response.context_data)
 
@@ -117,6 +127,7 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         view = wooey_celery.JobView.as_view()
         request = self.factory.get(reverse('wooey:celery_results', kwargs={'job_id': '-1'}))
         response = view(request, job_id=-1)
+        response.render()
 
 
 class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
@@ -165,8 +176,7 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         self.assertEqual(sum([len(request.FILES.getlist(i)) for i in request.FILES.keys()]), filecount)
 
         # test submitting this in the 'currently' field
-        from ..models import WooeyJob
-        job = WooeyJob.objects.latest('created_date')
+        job = models.WooeyJob.objects.latest('created_date')
         files = [i.value.name for i in job.get_parameters() if i.parameter.slug == 'multiple_file_choices']
 
         data['multiple_file_choices'] = files
@@ -178,7 +188,7 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         self.assertTrue(d['valid'], d)
 
         # check the files are actually with the new model
-        job = WooeyJob.objects.latest('created_date')
+        job = models.WooeyJob.objects.latest('created_date')
         new_files = [i.value.url for i in job.get_parameters() if i.parameter.slug == 'multiple_file_choices']
         self.assertEqual(len(new_files), len(files))
 
@@ -201,3 +211,28 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         response = self.script_view_func(request)
         d = load_JSON_dict(response.content)
         self.assertTrue(d['valid'], d)
+
+
+    def test_job_view_permissions(self):
+        # Make sure users cannot see jobs from other users
+        job = factories.generate_job(self.translate_script)
+        url = reverse('wooey:celery_results', kwargs={'job_id': job.pk})
+
+        # Make a new user
+        user1 = User(username='wooey')
+        user1.save()
+        user2 = User(username='wooey2')
+        user2.save()
+        request = self.factory.get(url)
+        request.user = user1
+        view = wooey_celery.JobView.as_view()
+        response = view(request, job_id=job.pk)
+        self.assertEqual(response.status_code, 200)
+
+        job.user = user2
+        job.save()
+
+        response = view(request, job_id=job.pk)
+        response.render()
+        self.assertContains(response, models.WooeyJob.error_messages['invalid_permissions'])
+

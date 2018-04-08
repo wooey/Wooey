@@ -190,7 +190,7 @@ class JobBase(DetailView):
 
 
         else:
-            ctx['job_error'] = _('You are not authenticated to view this job.')
+            ctx['job_error'] = WooeyJob.error_messages['invalid_permissions']
         return ctx
 
 

@@ -1,0 +1,2 @@
+#!/bin/bash
+./wooey-compose run --rm wooey sh -c "make -C \${BUILD_DIR} dev-test"

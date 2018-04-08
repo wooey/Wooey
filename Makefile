@@ -4,11 +4,9 @@ testenv:
 	pip install sphinx mock
 
 test:
-	-rm -r test_project
-	wooify -p test_project
-	nosetests --with-coverage --cover-erase --cover-package=wooey tests
+	nosetests --with-coverage --cover-erase --cover-branches --cover-package=wooey tests/*
 	coverage run --append --branch --source=wooey `which django-admin.py` test --settings=wooey.test_settings wooey.tests
-	coverage report
+	coverage report --omit='*migrations*','*wooey_scripts*','*tests/scripts*','*conf/*'
 
 .PHONY: docs
 docs:

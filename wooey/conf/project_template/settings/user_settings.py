@@ -18,6 +18,8 @@ INSTALLED_APPS += (
     'kombu.transport.filesystem',
 )
 
+# This stores the results of tasks. For larger sites, a database may become slow and other solutions
+# such as redis should be considered.
 CELERY_RESULT_BACKEND = 'django-db'
 
 # This should absolutely be changed to a non-filesystem based broker for production deployments!
@@ -86,15 +88,14 @@ STATIC_URL = '/static/'
 #     }
 # }
 
-## A better celery backend -- using RabbitMQ (these defaults are from two free rabbitmq Heroku providers)
-# CELERY_RESULT_BACKEND = 'amqp'
-# BROKER_URL = os.environ.get('AMQP_URL') or \
+## A better celery broker -- using RabbitMQ (these defaults are from two free rabbitmq Heroku providers)
+# CELERY_BROKER_URL = os.environ.get('AMQP_URL') or \
 #              os.environ.get('RABBITMQ_BIGWIG_TX_URL') or \
 #              os.environ.get('CLOUDAMQP_URL', 'amqp://guest:guest@localhost:5672/')
-# BROKER_POOL_LIMIT = 1
+# CELERY_BROKER_POOL_LIMIT = 1
 # CELERYD_CONCURRENCY = 1
 # CELERY_TASK_SERIALIZER = 'json'
-# ACKS_LATE = True
+# CELERY_TASK_ACKS_LATE = True
 #
 
 ## for production environments, django-storages abstracts away much of the difficulty of various storage engines.

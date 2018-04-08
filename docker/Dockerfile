@@ -1,6 +1,6 @@
 FROM python:2.7
 
-ARG BUILD_DIR
+ARG BUILD_DIR=/wooey_build
 
 RUN pip install psycopg2
 

@@ -14,7 +14,7 @@ CELERY_RESULT_BACKEND = 'django-db'
 CELERY_BROKER_URL = 'amqp://guest@rabbit'
 CELERY_TRACK_STARTED = True
 CELERY_SEND_EVENTS = True
-CELERY_IMPORTS = ('wooey.tasks')
+CELERY_IMPORTS = ('wooey.tasks',)
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_TASK_ACKS_LATE = True
 

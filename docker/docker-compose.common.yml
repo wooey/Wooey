@@ -8,12 +8,15 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+      args:
+        BUILD_DIR:
     image: wooey:dev
     volumes :
       - ./user_settings.py:/docker_wooey/docker_wooey/settings/user_settings.py
       - user_uploads:/docker_wooey/docker_wooey/user_uploads
     environment:
       AMQP_URL: amqp://rabbit:5672
+      BUILD_DIR:
       DATABASE_NAME: wooey
       DATABASE_USER: wooey
       DATABASE_URL: db

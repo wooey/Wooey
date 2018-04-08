@@ -48,7 +48,7 @@ CELERY_BROKER_TRANSPORT_OPTIONS = {
 CELERY_TRACK_STARTED = True
 WOOEY_CELERY = True
 CELERY_SEND_EVENTS = True
-CELERY_IMPORTS = ('wooey.tasks')
+CELERY_IMPORTS = ('wooey.tasks',)
 
 # A cache interface. This provides realtime updates for scriots and should definitely be changed
 # to use something like redis or memcached in production

@@ -63,22 +63,28 @@ def global_queue_json(request):
     return JsonResponse(generate_job_list(jobs), safe=False)
 
 
-def get_user_queue(request):
+def get_active_user_jobs(request):
     user = request.user
-    jobs = WooeyJob.objects.filter(Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None))
-    jobs = jobs.exclude(Q(status=WooeyJob.DELETED) | Q(status=WooeyJob.COMPLETED))
+    jobs = WooeyJob.objects.filter(
+        (Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None)) &
+        (Q(status=WooeyJob.RUNNING))
+    )
     return jobs.order_by('-created_date')
 
 
 def user_queue_json(request):
-    jobs = get_user_queue(request)
+    jobs = get_active_user_jobs(request)
     return JsonResponse(generate_job_list(jobs), safe=False)
 
 
 def get_user_results(request):
     user = request.user
-    jobs = WooeyJob.objects.filter(Q(status=WooeyJob.COMPLETED) & (Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None)))
-    jobs = jobs.exclude(status=WooeyJob.DELETED)
+    jobs = WooeyJob.objects.filter((Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None)))
+    jobs = jobs.exclude(
+        Q(status=WooeyJob.RUNNING) |
+        Q(status=WooeyJob.SUBMITTED) |
+        Q(status=WooeyJob.DELETED)
+    )
     return jobs.order_by('-created_date')
 
 
@@ -90,7 +96,7 @@ def user_results_json(request):
 def all_queues_json(request):
 
     global_queue = get_global_queue(request)
-    user_queue = get_user_queue(request)
+    user_queue = get_active_user_jobs(request)
     user_results = get_user_results(request)
 
     return JsonResponse({
@@ -272,7 +278,7 @@ class UserQueueView(JobListBase):
     title = "My Queue"
 
     def get_queryset(self, *args, **kwargs):
-        return get_user_queue(self.request)
+        return get_active_user_jobs(self.request)
 
 
 class UserResultsView(JobListBase):

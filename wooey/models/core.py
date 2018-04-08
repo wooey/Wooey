@@ -7,6 +7,7 @@ import uuid
 from io import IOBase
 
 from autoslug import AutoSlugField
+from celery import states
 from django.db import models
 from django.conf import settings
 from django.core.files.storage import SuspiciousFileOperation
@@ -144,16 +145,18 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
     stdout = models.TextField(null=True, blank=True)
     stderr = models.TextField(null=True, blank=True)
 
-    DELETED = 'deleted'
-    SUBMITTED = 'submitted'
     COMPLETED = 'completed'
+    DELETED = 'deleted'
+    FAILED = states.FAILURE
     RUNNING = 'running'
+    SUBMITTED = 'submitted'
 
     STATUS_CHOICES = (
-        (SUBMITTED, _('Submitted')),
-        (RUNNING, _('Running')),
         (COMPLETED, _('Completed')),
         (DELETED, _('Deleted')),
+        (FAILED, _('Failed')),
+        (RUNNING, _('Running')),
+        (SUBMITTED, _('Submitted')),
     )
 
     status = models.CharField(max_length=255, default=SUBMITTED, choices=STATUS_CHOICES)

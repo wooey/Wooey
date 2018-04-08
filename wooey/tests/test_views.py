@@ -42,9 +42,13 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         request.user = user
         response = wooey_celery.all_queues_json(request)
         d = response.content.decode("utf-8")
-        self.assertEqual({u'items': {u'global': [], u'results': [], u'user': []},
-                          u'totals': {u'global': 0, u'results': 0, u'user': 0}
-                            }, json.loads(d))
+        self.assertEqual(
+            {
+                u'items': {u'global': [], u'results': [], u'user': []},
+                u'totals': {u'global': 0, u'results': 0, u'user': 0}
+            },
+            json.loads(d)
+        )
 
         job = factories.generate_job(self.translate_script)
         job.save()
@@ -53,6 +57,7 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         self.assertEqual(1, d['totals']['global'])
 
         job.user = user
+        job.status = models.WooeyJob.RUNNING
         job.save()
         response = wooey_celery.all_queues_json(request)
         d = json.loads(response.content.decode("utf-8"))

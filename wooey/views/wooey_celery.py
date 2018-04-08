@@ -177,14 +177,13 @@ class JobBase(DetailView):
                                                         user=user).values_list('object_id', flat=True)
 
             ctx['job_info'] = {
-                    'all_files': all,
-                    'archives': archives,
-                    'file_groups': out_files,
-                    'status': wooey_job.status,
-                    'last_modified': wooey_job.modified_date,
-                    'job': wooey_job,
-
-                }
+                'all_files': all,
+                'archives': archives,
+                'file_groups': out_files,
+                'status': wooey_job.status,
+                'last_modified': wooey_job.modified_date,
+                'job': wooey_job,
+            }
 
             ctx['favorite_file_ids'] = favorite_file_ids
 

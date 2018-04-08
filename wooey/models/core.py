@@ -164,6 +164,10 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
     modified_date = models.DateTimeField(auto_now=True)
     script_version = models.ForeignKey('ScriptVersion')
 
+    error_messages = {
+        'invalid_permissions': _('You are not authenticated to view this job.'),
+    }
+
     class Meta:
         app_label = 'wooey'
         verbose_name = _('wooey job')

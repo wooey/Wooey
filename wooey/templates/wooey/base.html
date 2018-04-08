@@ -62,7 +62,6 @@
 
               </li>
 
-              {% if request.user.is_authenticated %}
               <!-- List all currently active, waiting jobs for current user -->
               <li class="dropdown disabled" id="job-list-user">
                   <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Jobs" %} <span class="badge jobs-badge" id="jobs-badge-user">8</span> <span class="caret"></span></a>
@@ -71,7 +70,6 @@
                   </ul>
 
               </li>
-              {% endif %}
               <!-- List latest N completed jobs -->
               <li class="dropdown disabled" id="job-list-results">
                   <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Results" %} <span class="badge jobs-badge" id="jobs-badge-results">8</span> <span class="caret"></span></a>

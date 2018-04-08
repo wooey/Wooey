@@ -223,11 +223,36 @@ def cleanup_wooey_jobs(**kwargs):
         WooeyJob.objects.filter(user__isnull=False, created_date__lte=now-user_settings).delete()
 
 
-celery_app.conf.update(
-    CELERYBEAT_SCHEDULE={
-        'cleanup-old-jobs': {
-            'task': 'wooey.tasks.cleanup_wooey_jobs',
-            'schedule': crontab(hour=0, minute=0),  # cleanup at midnight each day
-        },
+@celery_app.task(base=WooeyTask)
+def cleanup_dead_jobs():
+    """
+    This cleans up jobs that have been marked as ran, but are not queue'd in celery. It is meant
+    to cleanup jobs that have been lost due to a server crash or some other reason a job is
+    in limbo.
+    """
+    from .models import WooeyJob
+
+    # Get active tasks from Celery
+    inspect = celery_app.control.inspect()
+    active_tasks = {task['id'] for worker, tasks in six.iteritems(inspect.active()) for task in tasks}
+
+    # find jobs that are marked as running but not present in celery's active tasks
+    active_jobs = WooeyJob.objects.filter(status=WooeyJob.RUNNING)
+    to_disable = set()
+    for job in active_jobs:
+        if job.celery_id not in active_tasks:
+            to_disable.add(job.pk)
+
+    WooeyJob.objects.filter(pk__in=to_disable).update(status=WooeyJob.FAILED)
+
+
+celery_app.conf.beat_schedule.update({
+    'cleanup-old-jobs': {
+        'task': 'wooey.tasks.cleanup_wooey_jobs',
+        'schedule': crontab(hour=0, minute=0),  # cleanup at midnight each day
+    },
+    'cleanup-dead-jobs': {
+        'task': 'wooey.tasks.cleanup_dead_jobs',
+        'schedule': crontab(minute='*/10'),  # run every 6 minutes
     }
-)
+})

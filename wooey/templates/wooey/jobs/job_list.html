@@ -42,8 +42,12 @@
                 <span class="label label-default"><span class="glyphicon time"></span> {% trans "Queued" %}</span>
                 {% elif job.status == 'revoked' %}
                 <span class="label label-danger"><span class="glyphicon glyphicon-stop"></span> {% trans "Halted" %}</span>
+                {% elif job.status == 'FAILURE' %}
+                <span class="label label-danger"><span class="glyphicon glyphicon-exclamation-sign"></span> {% trans "Failure" %}</span>
                 {% elif job.status == 'submitted' %}
                 <span class="label label-default"><span class="glyphicon glyphicon-hourglass"></span> {% trans "Waiting" %}</span>
+                {% else %}
+                <span class="label label-danger"><span class="glyphicon glyphicon-question-sign"></span> {{ job.status|title }}</span>
                 {% endif %}
 
                 </td>

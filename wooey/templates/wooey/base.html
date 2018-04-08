@@ -54,8 +54,8 @@
         <div class="collapse navbar-collapse" id="navbar-collapse-1">
           <ul class="nav navbar-nav navbar-right">
               <!-- List global job queue active, waiting (limit N) -->
-              <li class="dropdown disabled" id="job-list-global">
-                  <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Queue" %} <span class="badge jobs-badge" id="jobs-badge-global">8</span> <span class="caret"></span></a>
+              <li class="dropdown" id="job-list-global">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Queue" %} <span class="badge jobs-badge" id="jobs-badge-global">8</span> <span class="caret"></span></a>
 
                   <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-global-list">
                   </ul>
@@ -63,16 +63,16 @@
               </li>
 
               <!-- List all currently active, waiting jobs for current user -->
-              <li class="dropdown disabled" id="job-list-user">
-                  <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Jobs" %} <span class="badge jobs-badge" id="jobs-badge-user">8</span> <span class="caret"></span></a>
+              <li class="dropdown" id="job-list-user">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Jobs" %} <span class="badge jobs-badge" id="jobs-badge-user">8</span> <span class="caret"></span></a>
 
                   <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-user-list">
                   </ul>
 
               </li>
               <!-- List latest N completed jobs -->
-              <li class="dropdown disabled" id="job-list-results">
-                  <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Results" %} <span class="badge jobs-badge" id="jobs-badge-results">8</span> <span class="caret"></span></a>
+              <li class="dropdown" id="job-list-results">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Results" %} <span class="badge jobs-badge" id="jobs-badge-results">8</span> <span class="caret"></span></a>
 
                   <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-results-list">
                   </ul>
@@ -306,12 +306,11 @@
 
                         $('#jobs-badge-' + table_key).text( total_jobs )
                         if( total_jobs > 0){
-                            $('#jobs-badge-' + table_key).show()
+                            $('#jobs-badge-' + table_key).show();
                             $('#job-list-' + table_key).removeClass('disabled')
                             $('#job-list-' + table_key + ' > a').removeClass('disabled')
                         } else {
-                            / * Disable button */
-                            $('#jobs-badge-' + table_key).hide()
+                            $('#jobs-badge-' + table_key).hide();
                             $('#job-list-' + table_key).addClass('disabled')
                             $('#job-list-' + table_key + ' > a').addClass('disabled')
                         }
@@ -325,10 +324,9 @@
                             items.push('<li><a href="' + job['url'] + '">' + job['status'] + '&nbsp;' + job['name'] + '</a></li>')
                         }
 
-                        /* Now add "more" links if count > length */
-                        if(total_jobs > job_data.length){
+                        if (job_data.length) {
                             items.push('<li role="separator" class="divider"></li>');
-                            items.push('<li><a href="'+ wooey_job_list_urls[table_key] +'">{% trans "More..." %}</a>');
+                            items.push('<li><a href="'+ wooey_job_list_urls[table_key] +'">{% trans "View Details" %}</a>');
                         }
 
                         /* Empty the list: might be nicer to replace, edit, more intelligently */

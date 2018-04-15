@@ -9,7 +9,7 @@ def update_checksums(apps, schema_editor):
     ScriptVersion = apps.get_model('wooey', 'ScriptVersion')
     from wooey.backend import utils
     for obj in ScriptVersion.objects.all():
-        checksum = utils.get_checksum(utils.get_storage_object(obj.script_path.path).path)
+        checksum = utils.get_checksum(obj.script_path.read())
         obj.checksum = checksum
         obj.save()
 

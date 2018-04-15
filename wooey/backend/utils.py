@@ -754,6 +754,8 @@ def get_checksum(path, extra=None):
             while len(buf) > 0:
                 hasher.update(buf)
                 buf = afile.read(BLOCKSIZE)
+    elif isinstance(path, bytes):
+        hasher.update(path)
     else:
         start = path.tell()
         path.seek(0)

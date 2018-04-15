@@ -43,9 +43,8 @@ init:
   - "ECHO %path%"
   - ps: "ls C:/Python*"
 install:
-  - ps: (new-object net.webclient).DownloadFile('https://bootstrap.pypa.io/get-pip.py', 'C:/get-pip.py')
-  - "%PYTHON%/python.exe C:/get-pip.py"
-  - "%PYTHON%/Scripts/pip.exe install --upgrade setuptools pip"
+  - "%PYTHON%/python.exe -m pip"
+  - "%PYTHON%/Scripts/pip.exe install --upgrade setuptools"
   - "%PYTHON%/Scripts/pip.exe install %DJANGO%"
   - "%PYTHON%/Scripts/pip.exe install -r requirements.txt"
   - "%PYTHON%/Scripts/pip.exe install -e ."

@@ -473,8 +473,8 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
             field = self.parameter.form_field
             if field == self.FILE:
                 try:
-                    file_obj = utils.get_storage_object(value)
-                    value = file_obj
+                    with utils.get_storage_object(value, close=False) as value:
+                        pass
                 except IOError:
                     # this can occur when the storage object is not yet made for output
                     if self.parameter.is_output:

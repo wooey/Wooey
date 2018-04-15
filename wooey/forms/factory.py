@@ -99,9 +99,21 @@ class WooeyFormFactory(object):
                     initial = [os.path.split(i.name)[1] for i in initial]
             elif initial is not None and list(filter(None, initial)):  # for python3, we need to evaluate the filter object
                 if isinstance(initial, (list, tuple)):
-                    initial = [utils.get_storage_object(value) if not hasattr(value, 'path') else value for value in initial if value is not None]
+                    _initial = []
+                    for value in initial:
+                        if not hasattr(value, 'path'):
+                            with utils.get_storage_object(value, close=False) as so:
+                                _initial.append(so)
+                        else:
+                            _initial.append(value)
+                        _initial.append()
+                    initial = _initial
                 else:
-                    initial = utils.get_storage_object(initial) if not hasattr(initial, 'path') else initial
+                    if not hasattr(initial, 'path'):
+                        with utils.get_storage_object(initial, close=False) as so:
+                            initial = so
+                    else:
+                        initial = initial
                 field_kwargs['widget'] = forms.ClearableFileInput()
         if not multiple_choices and isinstance(initial, list):
             initial = initial[0]

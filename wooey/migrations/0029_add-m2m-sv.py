@@ -9,6 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('wooey', '0028_add_script_subparser'),
+        ('wooey', '0029_update_script_subparser_data'),
     ]
 
     operations = [

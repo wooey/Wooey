@@ -9,7 +9,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0028_make-subparser-nonnullable'),
+        ('wooey', '0028_update_script_subparser_data'),
     ]
 
     operations = [

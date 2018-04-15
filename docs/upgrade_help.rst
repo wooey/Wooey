@@ -119,5 +119,5 @@ prior to 1.8 are no longer officially supported.
 
 2) *Django Upgrades*:
     Additional tweaks may be required for if a Django upgrade is performed, such as
-    changing `MIDDLEWARE` to `MIDDLEWARE_CLASSES`. For these issues, the official
+    changing `MIDDLEWARE_CLASSES` to `MIDDLEWARE`. For these issues, the official
     `Django Documentation <https://docs.djangoproject.com/>`_ should be referenced.

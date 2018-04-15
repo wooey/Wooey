@@ -7,6 +7,7 @@ import sys
 import six
 import traceback
 from collections import OrderedDict, defaultdict
+from contextlib import contextmanager
 # Python2.7 encoding= support
 from io import open
 from itertools import chain
@@ -214,12 +215,15 @@ def get_current_scripts():
     return scripts
 
 
-def get_storage_object(path, local=False):
+@contextmanager
+def get_storage_object(path, local=False, close=True):
     storage = get_storage(local=local)
-    with storage.open(path) as obj:
-        obj.url = storage.url(path)
-        obj.path = storage.path(path)
-        return obj
+    obj = storage.open(path)
+    obj.url = storage.url(path)
+    obj.path = storage.path(path)
+    yield obj
+    if close:
+        obj.close()
 
 
 def add_wooey_script(script_version=None, script_path=None, group=None, script_name=None):
@@ -234,7 +238,8 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
     # check if the script exists
     script_path = script_path or script_version.script_path.name
     script_name = script_name or (script_version.script.script_name if script_version else os.path.basename(os.path.splitext(script_path)[0]))
-    checksum = get_checksum(get_storage_object(script_path).path)
+    with get_storage_object(script_path) as so:
+        checksum = get_checksum(buff=so.read())
     existing_version = None
     try:
         existing_version = ScriptVersion.objects.get(checksum=checksum, script__script_name=script_name)
@@ -289,7 +294,8 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
         if not current_file.closed:
             current_file.close()
 
-        script = get_storage_object(new_path, local=True).path
+        with get_storage_object(new_path, local=True) as so:
+            script = so.path
         with local_storage.open(new_path) as local_handle:
             local_file = local_handle.name
     else:
@@ -302,7 +308,8 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
         else:
             with local_storage.open(script_path) as local_handle:
                 local_file = local_handle.name
-        script = get_storage_object(local_file, local=True).path
+        with get_storage_object(local_file, local=True) as so:
+            script = so.path
     if isinstance(group, ScriptGroup):
         group = group.group_name
     if group is None:
@@ -513,7 +520,7 @@ def mkdirs(path):
 def get_upload_path(filepath, checksum=None):
     filename = os.path.split(filepath)[1]
     if checksum is None:
-        checksum = get_checksum(filepath)
+        checksum = get_checksum(path=filepath)
     return os.path.join(wooey_settings.WOOEY_FILE_DIR, checksum[:2], checksum[-2:], checksum, filename)
 
 
@@ -637,7 +644,7 @@ def create_job_fileinfo(job):
                 d = {'parameter': field, 'file': value}
                 if field.parameter.is_output:
                     full_path = os.path.join(job.save_path, os.path.split(local_storage.path(value))[1])
-                    checksum = get_checksum(value, extra=[job.pk, full_path, 'output'])
+                    checksum = get_checksum(path=value, extra=[job.pk, full_path, 'output'])
                     d['checksum'] = checksum
                 files.append(d)
         except ValueError:
@@ -660,13 +667,18 @@ def create_job_fileinfo(job):
                 full_path = os.path.join(job.save_path, filename)
                 # this is to make the job output have a unique checksum. If this file is then re-uploaded, it will create
                 # a new file to reference in the uploads directory and not link back to the job output.
-                checksum = get_checksum(filepath, extra=[job.pk, full_path, 'output'])
+                checksum = get_checksum(path=filepath, extra=[job.pk, full_path, 'output'])
                 try:
-                    storage_file = get_storage_object(full_path)
+                    with get_storage_object(full_path) as storage_file:
+                        d = {
+                            'name': filename,
+                            'file': storage_file,
+                            'size_bytes': storage_file.size,
+                            'checksum': checksum
+                        }
                 except:
                     sys.stderr.write('Error in accessing stored file {}:\n{}'.format(full_path, traceback.format_exc()))
                     continue
-                d = {'name': filename, 'file': storage_file, 'size_bytes': storage_file.size, 'checksum': checksum}
                 if filename.endswith('.tar.gz') or filename.endswith('.zip'):
                     file_groups['archives'].append(d)
                 else:
@@ -706,7 +718,7 @@ def create_job_fileinfo(job):
                 parameter = group_file.get('parameter')
 
                 # get the checksum of the file to see if we need to save it
-                checksum = group_file.get('checksum', get_checksum(filepath))
+                checksum = group_file.get('checksum', get_checksum(path=filepath))
                 try:
                     wooey_file = WooeyFile.objects.get(checksum=checksum)
                     file_created = False
@@ -738,7 +750,7 @@ def create_job_fileinfo(job):
                 continue
 
 
-def get_checksum(path, extra=None):
+def get_checksum(path=None, buff=None, extra=None):
     import hashlib
     BLOCKSIZE = 65536
     hasher = hashlib.sha1()
@@ -748,20 +760,23 @@ def get_checksum(path, extra=None):
                 hasher.update(six.u(str(i)).encode('utf-8'))
         elif isinstance(extra, six.string_types):
             hasher.update(extra)
-    if isinstance(path, six.string_types):
-        with open(path, 'rb') as afile:
-            buf = afile.read(BLOCKSIZE)
+    if buff is not None:
+        hasher.update(buff)
+    elif path is not None:
+        if isinstance(path, six.string_types):
+            with open(path, 'rb') as afile:
+                buf = afile.read(BLOCKSIZE)
+                while len(buf) > 0:
+                    hasher.update(buf)
+                    buf = afile.read(BLOCKSIZE)
+        else:
+            start = path.tell()
+            path.seek(0)
+            buf = path.read(BLOCKSIZE)
             while len(buf) > 0:
                 hasher.update(buf)
-                buf = afile.read(BLOCKSIZE)
-    else:
-        start = path.tell()
-        path.seek(0)
-        buf = path.read(BLOCKSIZE)
-        while len(buf) > 0:
-            hasher.update(buf)
-            buf = path.read(BLOCKSIZE)
-        path.seek(start)
+                buf = path.read(BLOCKSIZE)
+            path.seek(start)
     return hasher.hexdigest()
 
 

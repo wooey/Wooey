@@ -8,7 +8,7 @@ def gen_checksums(apps, schema_editor):
     from ..backend.utils import get_checksum
     for obj in WooeyFile.objects.all():
         try:
-            obj.checksum = get_checksum(obj.filepath.path)
+            obj.checksum = get_checksum(path=obj.filepath.path)
             obj.save()
         except IOError:
             print(obj.filepath, 'not found')

@@ -473,8 +473,8 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
             field = self.parameter.form_field
             if field == self.FILE:
                 try:
-                    file_obj = utils.get_storage_object(value)
-                    value = file_obj
+                    with utils.get_storage_object(value, close=False) as value:
+                        pass
                 except IOError:
                     # this can occur when the storage object is not yet made for output
                     if self.parameter.is_output:
@@ -513,7 +513,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
                 if value:
                     local_storage = utils.get_storage(local=True)
                     current_path = local_storage.path(value)
-                    checksum = utils.get_checksum(value)
+                    checksum = utils.get_checksum(path=value)
                     path = utils.get_upload_path(current_path, checksum=checksum)
                     if hasattr(value, 'size'):
                         filesize = value.size
@@ -542,7 +542,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
             # save ourself first, we have to do this because we are referenced in WooeyFile
             self.save()
             if checksum is None:
-                checksum = utils.get_checksum(local_path)
+                checksum = utils.get_checksum(path=local_path)
             wooey_file, file_created = WooeyFile.objects.get_or_create(checksum=checksum)
             if file_created:
                 wooey_file.filetype = fileinfo.get('type')

@@ -234,7 +234,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
     # check if the script exists
     script_path = script_path or script_version.script_path.name
     script_name = script_name or (script_version.script.script_name if script_version else os.path.basename(os.path.splitext(script_path)[0]))
-    checksum = get_checksum(get_storage_object(script_path).path)
+    checksum = get_checksum(get_storage_object(script_path).read())
     existing_version = None
     try:
         existing_version = ScriptVersion.objects.get(checksum=checksum, script__script_name=script_name)

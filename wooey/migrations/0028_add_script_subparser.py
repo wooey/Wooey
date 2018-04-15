@@ -7,17 +7,6 @@ import django.db.models.deletion
 import wooey.models.mixins
 
 
-def createParsers(apps, schema_editor):
-    ScriptParameter = apps.get_model('wooey', 'ScriptParameter')
-    ScriptParser = apps.get_model('wooey', 'ScriptParser')
-
-    for param in ScriptParameter.objects.all():
-        script_version = param.script_version.last()
-        parser, created = ScriptParser.objects.get_or_create(script_version=script_version)
-        param.parser = parser
-        param.save()
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -40,5 +29,4 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, to='wooey.ScriptParser'),
             preserve_default=False,
         ),
-        migrations.RunPython(createParsers),
     ]

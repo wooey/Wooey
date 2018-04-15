@@ -8,8 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0028_add_script_subparser'),
-        ('wooey', '0029_update_script_subparser_data'),
+        ('wooey', '0028_update_script_subparser_data'),
     ]
 
     operations = [

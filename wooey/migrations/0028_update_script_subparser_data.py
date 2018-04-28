@@ -11,7 +11,15 @@ def createParsers(apps, schema_editor):
 
     for param in ScriptParameter.objects.all():
         script_version = param.script_version.last()
-        parser, created = ScriptParser.objects.get_or_create(script_version=script_version)
+        parser = list(ScriptParser.objects.filter(script_version__script=script_version.script))
+        if parser:
+            parser = parser[-1]
+        else:
+            parser = ScriptParser(
+                script_version=script_version,
+                name='',
+            )
+            parser.save()
         param.parser = parser
         param.save()
 

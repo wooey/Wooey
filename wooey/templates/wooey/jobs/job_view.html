@@ -75,9 +75,9 @@
                 </div>
 
                 <div class="btn-group clone-job">
-                    <button class="btn btn-primary dropdown-toggle" name="celery-command" value="clone" type="submit">
+                    <a href="{%  url 'wooey:wooey_script_clone' slug=job_info.job.script_version.script.slug job_id=job_info.job.id %}" role="button" class="btn btn-primary">
                         <span class="glyphicon glyphicon-copy" aria-hidden="true"></span> {% trans "Clone" %}
-                    </button>
+                    </a>
                     <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                         <span class="caret"></span>
                         <span class="sr-only">{% trans "Clone Job to Previous Script Versions" %}</span>

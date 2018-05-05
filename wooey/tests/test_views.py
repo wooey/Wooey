@@ -95,10 +95,12 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
 
         # test that the user can interact with it
         # the stop command will break, so currently untested here until I figure it out
-        for i in ['resubmit', 'rerun', 'clone', 'delete']:
+        for i in ['resubmit', 'rerun', 'delete']:
             celery_command.update({'celery-command': [i]})
-            request = self.factory.post(reverse('wooey:celery_task_command'),
-                                    celery_command)
+            request = self.factory.post(
+                reverse('wooey:celery_task_command'),
+                celery_command,
+            )
             request.user = user
             response = wooey_celery.celery_task_command(request)
             d = response.content.decode("utf-8")
@@ -139,7 +141,8 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     def setUp(self):
         super(WooeyViews, self).setUp()
         self.factory = RequestFactory()
-        self.script_view_func = wooey_views.WooeyScriptJSON.as_view()
+        self.script_view_func = wooey_views.WooeyScriptView.as_view()
+        self.json_view_func = wooey_views.WooeyScriptJSON.as_view()
         # the test server doesn't have celery running
         settings.WOOEY_CELERY = False
 
@@ -150,12 +153,48 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         choices = ['2', '1', '3']
         choice_param = 'two_choices'
         job = utils.create_wooey_job(script_version_pk=script_version.pk, data={'job_name': 'abc', choice_param: choices, 'wooey_type': script_version.pk})
-        request = self.factory.post(reverse('wooey:wooey_script_clone',
-                                           kwargs={'slug': job.script_version.script.slug, 'job_id': job.pk}),
-                                    data={'wooey_type': script_version.pk})
+        request = self.factory.post(
+            reverse(
+                'wooey:wooey_script_clone',
+                kwargs={
+                    'slug': job.script_version.script.slug,
+                    'job_id': job.pk
+                }
+            ),
+            data={
+                'wooey_type': script_version.pk,
+            }
+        )
         request.user = AnonymousUser()
-        response = self.script_view_func(request, pk=job.pk, job_id=job.pk)
+        response = self.json_view_func(request, pk=script.pk, job_id=job.pk)
         self.assertEqual(response.status_code, 200)
+
+    def test_clone_job_into_specific_version(self):
+        # Test we can clone a job into a previous script's version
+
+        # Create a job using version2
+        job = factories.generate_job(self.version2_script)
+
+        # Get a job using version 1
+        request = self.factory.get(
+            reverse(
+                'wooey:wooey_script',
+                kwargs={
+                    'slug': self.version1_script.script.slug,
+                    'script_version': self.version1_script.script_version,
+                    'script_iteration': self.version1_script.script_iteration,
+                    'job_id': job.pk,
+                }
+            ),
+        )
+        request.user = AnonymousUser()
+        response = self.script_view_func(request, pk=self.version1_script.script.pk, job_id=job.pk)
+        self.assertEqual(response.status_code, 200)
+
+        # Test that version1 was returned
+        context = response.resolve_context(response.context_data)
+        self.assertEqual(context['form']['wooey_form']['wooey_type'].value(), self.version1_script.pk)
+
 
     def test_multiple_choice(self):
         user = factories.UserFactory()
@@ -175,7 +214,7 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
             filecount += len(v)
         request = self.factory.post(url, data=data)
         request.user = user
-        response = self.script_view_func(request)
+        response = self.json_view_func(request)
         d = load_JSON_dict(response.content)
         self.assertTrue(d['valid'], d)
         self.assertEqual(sum([len(request.FILES.getlist(i)) for i in request.FILES.keys()]), filecount)
@@ -187,7 +226,7 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         data['multiple_file_choices'] = files
         request = self.factory.post(url, data=data)
         request.user = user
-        response = self.script_view_func(request)
+        response = self.json_view_func(request)
         self.assertEqual(response.status_code, 200)
         d = load_JSON_dict(response.content)
         self.assertTrue(d['valid'], d)
@@ -213,7 +252,7 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         request = self.factory.post(url, data=data)
         user = factories.UserFactory()
         request.user = user
-        response = self.script_view_func(request)
+        response = self.json_view_func(request)
         d = load_JSON_dict(response.content)
         self.assertTrue(d['valid'], d)
 

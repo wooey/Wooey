@@ -59,10 +59,10 @@ class BaseJobFactory(factory.DjangoModelFactory):
     job_description = six.u('\xd0\xb9\xd1\x86\xd1\x83\xd0\xb5\xd0\xba\xd0\xb5')
 
 
-def generate_script(script_path):
+def generate_script(script_path, script_version=None):
     new_file = test_utils.save_script_path(script_path)
     from ..backend import utils
-    res = utils.add_wooey_script(script_path=new_file, group=None)
+    res = utils.add_wooey_script(script_version=script_version, script_path=new_file, group=None)
     return res['script']
 
 

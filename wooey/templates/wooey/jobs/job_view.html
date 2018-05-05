@@ -83,6 +83,13 @@
                         <span class="sr-only">{% trans "Clone Job to Previous Script Versions" %}</span>
                     </button>
                     <ul class="dropdown-menu" role="menu">
+                        <li class="dropdown-header">{% trans "Clone job using previous script version" %}</li>
+                        <li>
+                            <a href="{% url 'wooey:wooey_script' slug=job_info.job.script_version.script.slug script_version=job_info.job.script_version.script_version script_iteration=job_info.job.script_version.script_iteration job_id=job_info.job.id %}">
+                                {% trans "Clone using version job ran with" %}
+                            </a>
+                        </li>
+                        <li role="separator" class="divider"></li>
                         {% regroup job_info.job.script_version.script.get_previous_versions by script_version as script_version_list %}
                         {% for past_script_versions in script_version_list %}
                             <li class="dropdown-header">{% blocktrans with version=past_script_versions.grouper %}Version {{ version }}{% endblocktrans %}</li>

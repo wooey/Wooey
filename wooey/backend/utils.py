@@ -365,11 +365,11 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
             current_versions = ScriptVersion.objects.filter(script=wooey_script, script_version=version_string)
             if current_versions.count() == 0:
                 next_iteration = 1
-                # disable older versions
-                ScriptVersion.objects.filter(script=wooey_script, script_version=version_string).update(default_version=False)
             else:
                 # get the largest iteration and add 1 to it
                 next_iteration = sorted([i.script_iteration for i in current_versions])[-1]+1
+            # disable older versions
+            ScriptVersion.objects.filter(script=wooey_script).update(default_version=False)
             version_kwargs.update({'script_iteration': next_iteration})
         version_kwargs.update({'script': wooey_script})
         script_version = ScriptVersion(**version_kwargs)

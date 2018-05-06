@@ -176,19 +176,20 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         job = factories.generate_job(self.version2_script)
 
         # Get a job using version 1
+        job_kwargs = {
+            'slug': self.version1_script.script.slug,
+            'script_version': self.version1_script.script_version,
+            'script_iteration': self.version1_script.script_iteration,
+            'job_id': job.pk,
+        }
         request = self.factory.get(
             reverse(
                 'wooey:wooey_script',
-                kwargs={
-                    'slug': self.version1_script.script.slug,
-                    'script_version': self.version1_script.script_version,
-                    'script_iteration': self.version1_script.script_iteration,
-                    'job_id': job.pk,
-                }
+                kwargs=job_kwargs
             ),
         )
         request.user = AnonymousUser()
-        response = self.script_view_func(request, pk=self.version1_script.script.pk, job_id=job.pk)
+        response = self.script_view_func(request, pk=self.version1_script.script.pk, **job_kwargs)
         self.assertEqual(response.status_code, 200)
 
         # Test that version1 was returned

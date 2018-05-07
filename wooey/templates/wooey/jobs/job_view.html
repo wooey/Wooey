@@ -37,40 +37,72 @@
 
             <div class="btn-toolbar" role="toolbar" >
 
-                    <div class="btn-group status-completed-toggle">
+                <div class="btn-group status-completed-toggle">
                     <a href="{{ job_info.archives.0.url }}" role="button" class="btn btn-primary">
-                    <span class="glyphicon glyphicon-download-alt" aria-hidden="true"></span> {% trans "Download" %}
+                        <span class="glyphicon glyphicon-download-alt" aria-hidden="true"></span> {% trans "Download" %}
                     </a>
                     <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                         <span class="caret"></span>
-                    <span class="sr-only">{% trans "Toggle Dropdown" %}</span>
+                        <span class="sr-only">{% trans "Toggle Dropdown" %}</span>
                     </button>
                     <ul class="dropdown-menu" role="menu">
                         {% for archive in job_info.archives %}
                             <li><a href="{{ archive.url }}"><span class="glyphicon glyphicon-compressed"></span> {% if archive.url|endswith:"zip" %}.zip{% else %}.tar.gz{% endif %}</a></li>
                         {% endfor %}
                     </ul>
-                    </div>
+                </div>
 
-                    <div class="btn-group status-completed-toggle">
+                <div class="btn-group status-completed-toggle">
                     <a href="{{ job_info.archives.0.url }}" role="button" class="btn btn-success">
-                    {% url 'wooey:celery_results_uuid' job_info.job.uuid as permalink %}
-                    {% absolute_url permalink as permalink %}
-                    <span class="glyphicon glyphicon-share" aria-hidden="true"></span> {% trans "Share" %}
+                        {% url 'wooey:celery_results_uuid' job_info.job.uuid as permalink %}
+                        {% absolute_url permalink as permalink %}
+                        <span class="glyphicon glyphicon-share" aria-hidden="true"></span> {% trans "Share" %}
                     </a>
                     <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                         <span class="caret"></span>
-                    <span class="sr-only">{% trans "Toggle Dropdown" %}</span>
+                        <span class="sr-only">{% trans "Toggle Dropdown" %}</span>
                     </button>
                     <ul class="dropdown-menu" role="menu">
                         <!-- <li><a href="""><span class="glyphicon glyphicon-figshare"></span> Figshare</a></li> -->
-                    <li><a href="{{ permalink }}" onclick="$('#modal-permalink').modal(); return false;"><span class="glyphicon glyphicon-link"></span> {% trans "Permalink" %}</a></li>
+                    <li>
+                        <a href="{{ permalink }}" onclick="$('#modal-permalink').modal(); return false;"><span class="glyphicon glyphicon-link"></span> {% trans "Permalink" %}</a>
+                    </li>
 
-                    <li><a href="mailto:?subject={% blocktrans with job_id=job_info.job.id job_status=job_info.job.status %}Wooey Job #{{ job_id }} is {{ job_status }}{% endblocktrans %}&body={% blocktrans with permalink=permalink %}You can see the result and any outputs at the following link:%0D%0A{{ permalink }}{% endblocktrans %}"><span class="glyphicon glyphicon-envelope"></span> {% trans "Email" %}</a></li>
+                    <li>
+                        <a href="mailto:?subject={% blocktrans with job_id=job_info.job.id job_status=job_info.job.status %}Wooey Job #{{ job_id }} is {{ job_status }}{% endblocktrans %}&body={% blocktrans with permalink=permalink %}You can see the result and any outputs at the following link:%0D%0A{{ permalink }}{% endblocktrans %}"><span class="glyphicon glyphicon-envelope"></span> {% trans "Email" %}</a>
+                    </li>
                     </ul>
-                    </div>
+                </div>
 
-            {% include 'wooey/modals/permalink_modal.html' %}
+                <div class="btn-group clone-job">
+                    <a href="{%  url 'wooey:wooey_script_clone' slug=job_info.job.script_version.script.slug job_id=job_info.job.id %}" role="button" class="btn btn-primary">
+                        <span class="glyphicon glyphicon-copy" aria-hidden="true"></span> {% trans "Clone" %}
+                    </a>
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                        <span class="caret"></span>
+                        <span class="sr-only">{% trans "Clone Job to Previous Script Versions" %}</span>
+                    </button>
+                    <ul class="dropdown-menu" role="menu">
+                        <li class="dropdown-header">{% trans "Clone job using previous script version" %}</li>
+                        <li>
+                            <a href="{% url 'wooey:wooey_script' slug=job_info.job.script_version.script.slug script_version=job_info.job.script_version.script_version script_iteration=job_info.job.script_version.script_iteration job_id=job_info.job.id %}">
+                                {% trans "Clone using version job ran with" %}
+                            </a>
+                        </li>
+                        <li role="separator" class="divider"></li>
+                        {% regroup job_info.job.script_version.script.get_previous_versions by script_version as script_version_list %}
+                        {% for past_script_versions in script_version_list %}
+                            <li class="dropdown-header">{% blocktrans with version=past_script_versions.grouper %}Version {{ version }}{% endblocktrans %}</li>
+                            {% for past_script in past_script_versions.list %}
+                                <li><a href="{% url 'wooey:wooey_script' slug=past_script.script.slug script_version=past_script.script_version script_iteration=past_script.script_iteration job_id=job_info.job.id %}">
+                                    {% blocktrans with iteration=past_script.script_iteration %}Iteration {{ iteration }}{% endblocktrans %}</a>
+                                </li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                {% include 'wooey/modals/permalink_modal.html' %}
                 <form action="{% url 'wooey:celery_task_command' %}" id="wooey-job-submit" method="post">
                     {% csrf_token %}
                     <input name="job-id" value="{{ job_info.job.pk }}" type="hidden">
@@ -83,9 +115,6 @@
                     </button>
                     <button class="btn btn-warning" name="celery-command" value="resubmit" type="submit">
                         <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span> {% trans "Resubmit" %}
-                    </button>
-                    <button class="btn btn-primary" name="celery-command" value="clone" type="submit">
-                        <span class="glyphicon glyphicon-copy" aria-hidden="true"></span> {% trans "Clone" %}
                     </button>
 
                     <button class="btn btn-danger" name="celery-command" value="delete" type="submit">

@@ -46,12 +46,21 @@ class ScriptFactoryMixin(object):
                 utils.get_storage(local=False).delete(path)
             path += 'c'  # handle pyc junk
             utils.get_storage().delete(path)
+        ScriptVersion.objects.all().delete()
         super(ScriptFactoryMixin, self).tearDown()
 
     def setUp(self):
         self.translate_script = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate.py'))
         self.choice_script = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'choices.py'))
         self.without_args = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'without_args.py'))
+        self.version1_script = factories.generate_script(
+            os.path.join(config.WOOEY_TEST_SCRIPTS, 'versioned_script', 'v1.py'),
+            script_name='version_test',
+        )
+        self.version2_script = factories.generate_script(
+            os.path.join(config.WOOEY_TEST_SCRIPTS, 'versioned_script', 'v2.py'),
+            script_name='version_test',
+        )
         super(ScriptFactoryMixin, self).setUp()
 
 class FileMixin(object):

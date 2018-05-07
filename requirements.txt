@@ -1,9 +1,10 @@
 boto
+celery==4.1.0
 clinto>=0.2.0
 coveralls
 django<2
 django-autoslug
-django-celery
+django-celery-results
 django-storages-redux
 jsonfield
 factory-boy

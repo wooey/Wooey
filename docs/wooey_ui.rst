@@ -3,7 +3,7 @@ Wooey UI
 
 Wooey's homepage provides a list of all scripts available to a user.
 
-.. image:: src/Wooey Home.png
+.. image:: img/Wooey Home.png
 
 From here, a user can choose a script to configure for execution. On all pages
 a header menu is available that provides the number of running scripts, the

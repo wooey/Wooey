@@ -36,7 +36,7 @@ Getting Started
    configuration
    running_wooey
    scripts
-   using_wooey
+   wooey_ui
    remote
    upgrade_help
 

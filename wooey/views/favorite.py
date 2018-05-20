@@ -1,13 +1,12 @@
-from django.views.generic import DetailView, TemplateView
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, HttpResponseNotFound, HttpResponseBadRequest
-from django.core.urlresolvers import reverse
-from django.conf import settings
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.contrib.contenttypes.models import ContentType
-
-from ..django_compat import JsonResponse
-
 from django.contrib.auth.decorators import login_required
+from django.contrib.contenttypes.models import ContentType
+from django.http import (
+    HttpResponseForbidden,
+    HttpResponseNotFound,
+    HttpResponseBadRequest,
+    JsonResponse,
+)
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from ..models import Favorite
 

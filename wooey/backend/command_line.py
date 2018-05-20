@@ -109,10 +109,7 @@ def bootstrap(env=None, cwd=None):
     # do the same with urls
     shutil.move(os.path.join(project_base_dir, 'urls.py'), os.path.join(project_base_dir, 'urls', 'django_urls.py'))
     env['DJANGO_SETTINGS_MODULE'] = '.'.join([project_name, 'settings', 'user_settings'])
-    if django_compat.DJANGO_VERSION >= django_compat.DJ17:
-        subprocess.call(['python', 'manage.py', 'migrate'], env=env, cwd=project_root)
-    else:
-        subprocess.call(['python', 'manage.py', 'syncdb', '--noinput'], env=env, cwd=project_root)
+    subprocess.call(['python', 'manage.py', 'migrate'], env=env, cwd=project_root)
     subprocess.call(['python', 'manage.py', 'createcachetable'], env=env, cwd=project_root)
     subprocess.call(['python', 'manage.py', 'collectstatic', '--noinput'], env=env, cwd=project_root)
     sys.stdout.write("Please enter the project directory {0}, and run python manage.py createsuperuser and"

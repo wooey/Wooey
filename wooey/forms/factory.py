@@ -2,20 +2,20 @@ from __future__ import absolute_import
 __author__ = 'chris'
 import copy
 import json
-import six
 import os
 from collections import OrderedDict
 
+import six
 from django import forms
+from django.forms.utils import flatatt, format_html
 from django.http.request import QueryDict
 from django.utils.safestring import mark_safe
 
-from .scripts import WooeyForm
 from . import config
-from ..backend import utils
-from ..models import ScriptParameter, ScriptVersion
-from ..django_compat import flatatt, format_html
+from .scripts import WooeyForm
 from .. import version
+from ..backend import utils
+from ..models import ScriptVersion
 
 
 def mutli_render(render_func, appender_data_dict=None):

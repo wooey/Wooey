@@ -10,6 +10,7 @@ from autoslug import AutoSlugField
 from celery import states
 from django.db import models
 from django.conf import settings
+from django.core.cache import caches as django_cache
 from django.core.files.storage import SuspiciousFileOperation
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import Group
@@ -21,7 +22,6 @@ from jsonfield import JSONCharField
 from . mixins import UpdateScriptsMixin, ModelDiffMixin, WooeyPy2Mixin
 from .. import settings as wooey_settings
 from .. backend import utils
-from .. import django_compat
 
 # TODO: Handle cases where celery is not setup but specified to be used
 tasks = importlib.import_module(wooey_settings.WOOEY_CELERY_TASKS)
@@ -100,7 +100,7 @@ class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     # parameters, but even a huge site may only have a few thousand parameters to query though.
     script_version = models.CharField(max_length=50, help_text='The script version.', blank=True, default='1')
     script_iteration = models.PositiveSmallIntegerField(default=1)
-    script_path = models.FileField() if django_compat.DJANGO_VERSION >= django_compat.DJ17 else models.FileField(upload_to=wooey_settings.WOOEY_SCRIPT_DIR)
+    script_path = models.FileField()
     default_version = models.BooleanField(default=False)
     script = models.ForeignKey('Script', related_name='script_version')
     checksum = models.CharField(max_length=40, blank=True)
@@ -248,7 +248,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
             self.stderr = stderr
             self.save()
         elif wooey_cache is not None:
-            cache = django_compat.get_cache(wooey_cache)
+            cache = django_cache[wooey_cache]
             if delete:
                 cache.delete(self.get_realtime_key())
             else:
@@ -257,7 +257,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
     def get_realtime(self):
         wooey_cache = wooey_settings.WOOEY_REALTIME_CACHE
         if wooey_cache is not None:
-            cache = django_compat.get_cache(wooey_cache)
+            cache = django_cache[wooey_cache]
             out = cache.get(self.get_realtime_key())
             if out:
                 return json.loads(out)
@@ -571,7 +571,7 @@ class UserFile(WooeyPy2Mixin, models.Model):
 
 
 class WooeyFile(WooeyPy2Mixin, models.Model):
-    filepath = models.FileField(max_length=500) if django_compat.DJANGO_VERSION >= django_compat.DJ17 else models.FileField(max_length=500, upload_to=wooey_settings.WOOEY_SCRIPT_DIR)
+    filepath = models.FileField(max_length=500)
     filepreview = models.TextField(null=True, blank=True)
     filetype = models.CharField(max_length=255, null=True, blank=True)
     size_bytes = models.IntegerField(null=True)

@@ -1,25 +1,22 @@
 from __future__ import absolute_import
 import six
 
-from django.core.urlresolvers import reverse
-from django.views.generic import DetailView, TemplateView
-from django.utils.translation import ugettext_lazy as _
-from django.utils.encoding import force_text
-from django.template.defaultfilters import escape
-
 from celery import app, states
-
-celery_app = app.app_or_default()
-
 from django.contrib.contenttypes.models import ContentType
+from django.core.urlresolvers import reverse
+from django.db.models import Q
+from django.http import JsonResponse
+from django.template.defaultfilters import escape
+from django.template.loader import render_to_string
+from django.utils.encoding import force_text
+from django.utils.translation import ugettext_lazy as _
+from django.views.generic import DetailView, ListView
 
 from ..models import WooeyJob, UserFile, Favorite
 from .. import settings as wooey_settings
 from ..backend.utils import valid_user, get_file_previews
-from ..django_compat import JsonResponse
-from django.db.models import Q
-from django.views.generic import ListView
-from django.template.loader import render_to_string
+
+celery_app = app.app_or_default()
 
 SPANBASE = "<span title='{}' class='glyphicon {}'></span> "
 MAXIMUM_JOBS_NAVBAR = 10

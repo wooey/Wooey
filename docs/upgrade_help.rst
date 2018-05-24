@@ -10,6 +10,14 @@ is recommended to backup your database prior to an upgrade in case your particul
 usage of Wooey is not something the creators test. If an error arises, please open
 an `issue <https://github.com/wooey/issues>`_ on github.
 
+General Upgrade Information
+---------------------------
+
+As with all app upgrades, after installing a newer version, you should ensure
+the app models are up to date with `python manage.py migrate`. Generally, this
+command should be baked in with the startup script of your webserver to ensure
+no instance is running with unapplied migrations.
+
 0.9.11 To 0.10
 --------------
 

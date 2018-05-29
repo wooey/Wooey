@@ -9,7 +9,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0027_parameter_order'),
+        ('wooey', '0038_wooeyjob-choices'),
     ]
 
     operations = [

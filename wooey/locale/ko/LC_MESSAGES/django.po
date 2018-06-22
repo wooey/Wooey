@@ -1,0 +1,523 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-06-22 17:08+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: partrita <partrita@gmail.com>\n"
+"Language-Team: partrita <partrita@gmail.com>\n"
+"Language: korean \n"
+"MIME-Version: 0.1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: .\backend\utils.py:500
+msgid "You are not permitted to use this script"
+msgstr "이 스크립트를 실행할 권한이 없습니다."
+
+#: .\conf\project_template\settings\wooey_settings.py:21
+msgid "German"
+msgstr "독일어"
+
+#: .\conf\project_template\settings\wooey_settings.py:22
+msgid "English"
+msgstr "영어"
+
+#: .\conf\project_template\settings\wooey_settings.py:23
+msgid "French"
+msgstr "프랑스어"
+
+#: .\conf\project_template\settings\wooey_settings.py:24
+msgid "Japanese"
+msgstr "일본어"
+
+#: .\conf\project_template\settings\wooey_settings.py:25
+msgid "Dutch"
+msgstr "네덜란드어"
+
+#: .\conf\project_template\settings\wooey_settings.py:26
+msgid "Simplified Chinese"
+msgstr "중국어"
+
+#: .\models\core.py:45
+msgid "script group"
+msgstr "스크립트 그룹"
+
+#: .\models\core.py:46
+msgid "script groups"
+msgstr "스크립트 그룹"
+
+#: .\models\core.py:74
+msgid "script"
+msgstr "스크립트"
+
+#: .\models\core.py:75
+msgid "scripts"
+msgstr "스크립트"
+
+#: .\models\core.py:112
+msgid "This script already exists!"
+msgstr "이 스크립트는 이미 존재 합니다."
+
+#: .\models\core.py:117
+msgid "script version"
+msgstr "스크립트 버전"
+
+#: .\models\core.py:118
+msgid "script versions"
+msgstr "스크립트 버전"
+
+#: .\models\core.py:155
+msgid "Completed"
+msgstr "완료"
+
+#: .\models\core.py:156
+msgid "Deleted"
+msgstr "삭제"
+
+#: .\models\core.py:157
+msgid "Failed"
+msgstr "실패"
+
+#: .\models\core.py:158
+msgid "Running"
+msgstr "진행중"
+
+#: .\models\core.py:159 .\templates\wooey\jobs\job_list.html:22
+msgid "Submitted"
+msgstr "제출완료"
+
+#: .\models\core.py:171
+msgid "You are not authenticated to view this job."
+msgstr "이 작업을 살펴볼 권한이 없습니다."
+
+#: .\models\core.py:176
+msgid "wooey job"
+msgstr "wooey 작업"
+
+#: .\models\core.py:177
+msgid "wooey jobs"
+msgstr "wooey 작업"
+
+#: .\models\core.py:288
+msgid "script parameter group"
+msgstr "스크립트 변수 그룹"
+
+#: .\models\core.py:289
+msgid "script parameter groups"
+msgstr "스크립트 변수 그룹"
+
+#: .\models\core.py:318
+msgid ""
+"Collapse separate inputs to a given argument to a single input (ie: --arg 1 "
+"--arg 2 becomes --arg 1 2)"
+msgstr "각각의 입력을 하나로 합칩니다. (예시: --arg 1 --arg 2 를 --arg 1 2로 변경)"
+
+#: .\models\core.py:331
+msgid "script parameter"
+msgstr "스크립트 변수"
+
+#: .\models\core.py:332 .\models\core.py:398
+msgid "script parameters"
+msgstr "스크립트 변수"
+
+#: .\models\core.py:404
+msgid "FILE NOT FOUND"
+msgstr "파일을 찾을 수 없습니다."
+
+#: .\models\core.py:406
+msgid "File outside of project"
+msgstr "파일이 프로젝트 폴더 밖에 있습니다."
+
+#: .\models\core.py:582
+msgid "wooey file"
+msgstr "wooey 파일"
+
+#: .\models\core.py:583
+msgid "wooey files"
+msgstr "wooey 파일"
+
+#: .\models\favorite.py:30
+msgid "favorite"
+msgstr ""
+
+#: .\models\favorite.py:31
+msgid "favorites"
+msgstr ""
+
+#: .\settings.py:20
+msgid "Scripts"
+msgstr ""
+
+#: .\settings.py:29
+msgid "Wooey!"
+msgstr ""
+
+#: .\settings.py:30
+msgid "A web UI for Python scripts"
+msgstr ""
+
+#: .\templates\wooey\base.html:46
+msgid "Toggle navigation"
+msgstr ""
+
+#: .\templates\wooey\base.html:58
+msgid "Queue"
+msgstr ""
+
+#: .\templates\wooey\base.html:67
+msgid "Jobs"
+msgstr ""
+
+#: .\templates\wooey\base.html:75
+msgid "Results"
+msgstr ""
+
+#: .\templates\wooey\base.html:101
+msgid "Scrapbook"
+msgstr ""
+
+#: .\templates\wooey\base.html:105
+msgid "Logout"
+msgstr ""
+
+#: .\templates\wooey\base.html:123 .\templates\wooey\home.html:32
+msgid "Search for scripts..."
+msgstr ""
+
+#: .\templates\wooey\base.html:329
+msgid "View Details"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_list.html:9
+#, python-format
+msgid "%(obj_len)s job(s)"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_list.html:20
+msgid "Job"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_list.html:21
+msgid "Script"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_list.html:23
+msgid "Status"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_list.html:38
+#: .\templates\wooey\jobs\job_view.html:141 .\views\wooey_celery.py:25
+msgid "Success"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_list.html:40
+#: .\templates\wooey\jobs\job_view.html:140 .\views\wooey_celery.py:26
+msgid "Executing"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_list.html:42
+#: .\templates\wooey\jobs\job_view.html:139 .\views\wooey_celery.py:27
+msgid "Queued"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_list.html:44
+#: .\templates\wooey\jobs\job_view.html:142 .\views\wooey_celery.py:28
+msgid "Halted"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_list.html:46 .\views\wooey_celery.py:29
+msgid "Failure"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_list.html:48
+#: .\templates\wooey\jobs\job_view.html:138 .\views\wooey_celery.py:30
+msgid "Waiting"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:7
+#, python-format
+msgid "Job # %(job_id)s"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:42
+msgid "Download"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:46
+#: .\templates\wooey\jobs\job_view.html:63
+msgid "Toggle Dropdown"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:59
+msgid "Share"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:68
+msgid "Permalink"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:72
+#, python-format
+msgid "Wooey Job #%(job_id)s is %(job_status)s"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:72
+#, python-format
+msgid ""
+"You can see the result and any outputs at the following link:%%0D%%0A"
+"%(permalink)s"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:72
+#: .\templates\wooey\registration\register.html:19
+#: .\templates\wooey\registration\register.html:21
+msgid "Email"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:79
+msgid "Clone"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:83
+msgid "Clone Job to Previous Script Versions"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:86
+msgid "Clone job using previous script version"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:89
+msgid "Clone using version job ran with"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:95
+#: .\templates\wooey\scripts\script_panel.html:24
+#, python-format
+msgid "Version %(version)s"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:98
+#: .\templates\wooey\scripts\script_panel.html:27
+#, python-format
+msgid "Iteration %(iteration)s"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:111
+msgid "Stop"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:114
+msgid "Re-run"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:117
+msgid "Resubmit"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:121
+msgid "Delete"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:134
+msgid "Priority 1"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:135
+#, python-format
+msgid "Submitted %(job_submission_date)s ago by %(job_user)s"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:136
+#, python-format
+msgid "Updated %(job_last_modified_date)s ago"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:143
+msgid "Error"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:166
+msgid "Console"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:179
+msgid "All Files"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:186
+msgid "Filename"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:187
+msgid "Parameter"
+msgstr ""
+
+#: .\templates\wooey\jobs\job_view.html:190
+msgid "Size"
+msgstr ""
+
+#: .\templates\wooey\modals\base_modal.html:13
+msgid "Close"
+msgstr ""
+
+#: .\templates\wooey\modals\permalink_modal.html:4
+msgid "Permanant link to these results"
+msgstr ""
+
+#: .\templates\wooey\modals\permalink_modal.html:6
+msgid "You can share the following link to give open access to your results:"
+msgstr ""
+
+#: .\templates\wooey\modals\permalink_modal.html:8
+msgid ""
+"Anyone with this link will be able to view your data — only share with "
+"people you trust!"
+msgstr ""
+
+#: .\templates\wooey\modals\resubmit_modal.html:4
+msgid "Resubmission Complete"
+msgstr ""
+
+#: .\templates\wooey\modals\resubmit_modal.html:5
+msgid "Your job has been successfully resubmitted."
+msgstr ""
+
+#: .\templates\wooey\modals\resubmit_modal.html:7
+msgid "View Job"
+msgstr ""
+
+#: .\templates\wooey\preview\base.html:7
+msgid "Download this output"
+msgstr ""
+
+#: .\templates\wooey\preview\base.html:8
+msgid "Pin in scrapbook"
+msgstr ""
+
+#: .\templates\wooey\preview\base.html:16
+#, python-format
+msgid ""
+"\n"
+"                Output from <a href=\"%(result_url)s\">%(job_name)s</a> job "
+"<a href=\"%(celery_results_url)s\">#%(job_id)s</a>\n"
+"                "
+msgstr ""
+
+#: .\templates\wooey\profile\profile.html:21
+#, python-format
+msgid ""
+"\n"
+"    Joined %(join_date)s ago\n"
+"    "
+msgstr ""
+
+#: .\templates\wooey\profile\profile.html:25
+msgid "Superuser"
+msgstr ""
+
+#: .\templates\wooey\profile\profile.html:29
+msgid "Staff"
+msgstr ""
+
+#: .\templates\wooey\registration\login.html:10
+#: .\templates\wooey\registration\login.html:12
+#: .\templates\wooey\registration\login_header.html:6
+#: .\templates\wooey\registration\register.html:10
+#: .\templates\wooey\registration\register.html:12
+msgid "Username"
+msgstr ""
+
+#: .\templates\wooey\registration\login.html:19
+#: .\templates\wooey\registration\login.html:21
+#: .\templates\wooey\registration\register.html:28
+#: .\templates\wooey\registration\register.html:30
+msgid "Password"
+msgstr ""
+
+#: .\templates\wooey\registration\login.html:29
+msgid "Sign in"
+msgstr ""
+
+#: .\templates\wooey\registration\login_header.html:12
+msgid "Login"
+msgstr ""
+
+#: .\templates\wooey\registration\login_header.html:16
+#: .\templates\wooey\registration\register.html:48
+msgid "Register"
+msgstr ""
+
+#: .\templates\wooey\registration\register.html:37
+#: .\templates\wooey\registration\register.html:39
+msgid "Password (again)"
+msgstr ""
+
+#: .\templates\wooey\scripts\script_view.html:23
+msgid "Documentation"
+msgstr ""
+
+#: .\templates\wooey\scripts\script_view.html:41
+#: .\templates\wooey\scripts\script_view.html:50
+msgid "Main Parser Parameters"
+msgstr ""
+
+#: .\templates\wooey\scripts\script_view.html:60
+msgid "Settings"
+msgstr ""
+
+#: .\templates\wooey\scripts\script_view.html:118
+msgid "Metadata"
+msgstr ""
+
+#: .\templates\wooey\scripts\script_view.html:125
+#: .\templates\wooey\scripts\script_view.html:126
+msgid "Job Name"
+msgstr ""
+
+#: .\templates\wooey\scripts\script_view.html:129
+msgid "Job Description"
+msgstr ""
+
+#: .\templates\wooey\scripts\script_view.html:130
+msgid "Enter job description here..."
+msgstr ""
+
+#: .\templates\wooey\scripts\script_view.html:138
+msgid "Submit"
+msgstr ""
+
+#: .\templates\wooey\scripts\script_view.html:184
+msgid "No more choices may be added for this selection"
+msgstr ""
+
+#: .\views\authentication.py:31
+msgid "Passwords do not match."
+msgstr ""
+
+#: .\views\authentication.py:33
+msgid "Reserved username."
+msgstr ""
+
+#: .\views\authentication.py:35
+msgid "Please enter your email address."
+msgstr ""
+
+#: .\views\authentication.py:66
+msgid "You have entered an invalid username or password."
+msgstr ""
+
+#: .\views\views.py:80 .\views\views.py:130
+msgid "You are not permitted to access this script."
+msgstr ""
+
+#: .\views\wooey_celery.py:139
+msgid "Unknown Command"
+msgstr ""

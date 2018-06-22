@@ -106,7 +106,6 @@ class WooeyFormFactory(object):
                                 _initial.append(so)
                         else:
                             _initial.append(value)
-                        _initial.append()
                     initial = _initial
                 else:
                     if not hasattr(initial, 'path'):

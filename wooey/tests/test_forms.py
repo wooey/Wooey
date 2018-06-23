@@ -6,7 +6,10 @@ from django.http.request import MultiValueDict
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from ..backend import utils
-from ..forms import WooeyForm
+from ..forms import (
+    factory,
+    WooeyForm,
+)
 from ..forms import config as forms_config
 from ..models import ScriptVersion, WooeyJob
 
@@ -168,3 +171,21 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase)
         forms = utils.get_form_groups(script_version=self.without_args)
         wooey_form = forms['wooey_form']
         self.assertDictEqual(wooey_form.initial, {'wooey_type': script_version.pk})
+
+    def test_multiple_file_field_initial_value(self):
+        # Addresses https://github.com/wooey/Wooey/issues/248
+        script_version = self.choice_script
+        multiple_files_param = script_version.scriptparameter_set.get(script_param='multiple_file_choices')
+        # Upload some fake files
+        storage = utils.get_storage(local=False)
+        storage.save('file1', SimpleUploadedFile('file1', b'abc'))
+        file1_path = storage.path('file1')
+        storage.save('file2', SimpleUploadedFile('file2', b'abc'))
+        file2_path = storage.path('file2')
+        form = utils.get_form_groups(script_version=script_version, initial_dict={
+            multiple_files_param.form_slug: ['file1', 'file2']
+        })
+        # TODO: Make a function to ease this
+        initial_files = [i.path for i in form['parsers'][(multiple_files_param.parser.pk, multiple_files_param.parser.name)][1]['form'].fields[multiple_files_param.form_slug].initial]
+        self.assertIn(file1_path, initial_files)
+        self.assertIn(file2_path, initial_files)

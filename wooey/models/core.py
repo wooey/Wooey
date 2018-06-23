@@ -319,7 +319,10 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     )
     form_field = models.CharField(max_length=255)
     default = JSONCharField(max_length=255, null=True, blank=True)
-    input_type = models.CharField(max_length=255)
+    input_type = models.CharField(
+        max_length=255,
+        help_text=_('The python type expected by the script (e.g. boolean, integer, file).'),
+    )
     custom_widget = models.ForeignKey('WooeyWidget', null=True, blank=True)
     param_help = models.TextField(verbose_name=_('help'), null=True, blank=True)
     is_checked = models.BooleanField(default=False)

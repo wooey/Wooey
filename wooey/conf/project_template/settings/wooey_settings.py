@@ -18,12 +18,13 @@ else:
     MIDDLEWARE_OBJ = MIDDLEWARE
 
 LANGUAGES = [
-  ('de', _('German')),
-  ('en', _('English')),
-  ('fr', _('French')),
-  ('ja', _('Japanese')),
-  ('nl', _('Dutch')),
-  ('zh-hans', _('Simplified Chinese')),
+    ('de', _('German')),
+    ('en', _('English')),
+    ('fr', _('French')),
+    ('ja', _('Japanese')),
+    ('nl', _('Dutch')),
+    ('zh-hans', _('Simplified Chinese')),
+    ('ko', _('Korean')),
 ]
 
 NEW_MIDDLEWARE = []

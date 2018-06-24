@@ -9,8 +9,7 @@ INSTALLED_APPS += (
 
 if DJANGO_VERSION < DJ110:
     MIDDLEWARE_CLASSES = list(MIDDLEWARE_CLASSES)
-    MIDDLEWARE_CLASSES.append(
-        '{{ project_name }}.middleware.ProcessExceptionMiddleware')
+    MIDDLEWARE_CLASSES.append('{{ project_name }}.middleware.ProcessExceptionMiddleware')
     MIDDLEWARE_OBJ = MIDDLEWARE_CLASSES
 else:
     # Using Django 1.10 +
@@ -35,8 +34,7 @@ for i in MIDDLEWARE_OBJ:
     if i == 'django.contrib.sessions.middleware.SessionMiddleware':
         NEW_MIDDLEWARE.append('django.middleware.locale.LocaleMiddleware')
 
-NEW_MIDDLEWARE.append(
-    '{{ project_name }}.middleware.ProcessExceptionMiddleware')
+NEW_MIDDLEWARE.append('{{ project_name }}.middleware.ProcessExceptionMiddleware')
 if DJANGO_VERSION < DJ110:
     MIDDLEWARE_CLASSES = NEW_MIDDLEWARE
 else:

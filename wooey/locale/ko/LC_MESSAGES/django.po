@@ -9,7 +9,6 @@ msgstr ""
 "POT-Creation-Date: 2018-06-22 17:08+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: partrita <partrita@gmail.com>\n"
-"Language-Team: partrita <partrita@gmail.com>\n"
 "Language: korean \n"
 "MIME-Version: 0.1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -269,7 +268,7 @@ msgid ""
 "You can see the result and any outputs at the following link:%%0D%%0A"
 "%(permalink)s"
 msgstr "다음의 링크에서 결과를 확인 할 수 있습니다:%%0D%%0A"
-"%(permalink)s"
+"%(permalink)"
 
 #: .\templates\wooey\jobs\job_view.html:72
 #: .\templates\wooey\registration\register.html:19
@@ -321,7 +320,7 @@ msgstr "삭제"
 
 #: .\templates\wooey\jobs\job_view.html:134
 msgid "Priority 1"
-msgstr "우선순위 1"
+msgstr "첫번째 우선순위"
 
 #: .\templates\wooey\jobs\job_view.html:135
 msgid "Submitted %(job_submission_date)s ago by %(job_user)s"
@@ -371,7 +370,7 @@ msgstr "다음의 링크를 통해 결과를 공유할 수 있습니다."
 msgid ""
 "Anyone with this link will be able to view your data — only share with "
 "people you trust!"
-msgstr "당신의 데이터가 노출 됩니다. 믿을 수 있는 사람에게만 링크를 공유 하세요."
+msgstr "당신의 데이터가 보여집니다. 믿을 수 있는 사람에게만 링크를 공유 하세요."
 
 #: .\templates\wooey\modals\resubmit_modal.html:4
 msgid "Resubmission Complete"
@@ -402,7 +401,7 @@ msgid ""
 msgstr ""
 "\n"
 "                <a href=\"%(result_url)s\">%(job_name)</a> 결과"
-"<a href=\"%(celery_results_url)s\">#%(job_id)s</a>\n"
+"<a href=\"%(celery_results_url)s\">#%(job_id)</a>\n"
 "                "
 
 

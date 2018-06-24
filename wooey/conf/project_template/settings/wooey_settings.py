@@ -14,8 +14,7 @@ if DJANGO_VERSION < DJ110:
 else:
     # Using Django 1.10 +
     MIDDLEWARE = list(MIDDLEWARE)
-    MIDDLEWARE.append(
-        '{{ project_name }}.middleware.ProcessExceptionMiddleware')
+    MIDDLEWARE.append('{{ project_name }}.middleware.ProcessExceptionMiddleware')
     MIDDLEWARE_OBJ = MIDDLEWARE
 
 LANGUAGES = [

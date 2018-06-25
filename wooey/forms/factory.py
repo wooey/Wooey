@@ -144,10 +144,6 @@ class WooeyFormFactory(object):
         elif multiple_choices and choice_limit>0:
             widget_data_dict[WOOEY_CHOICE_LIMIT] = choice_limit
 
-        custom_widget = param.custom_widget
-        if custom_widget:
-            widget_data_dict.update(custom_widget.widget_attributes)
-
         field.widget.attrs.update(widget_data_dict)
         return field
 

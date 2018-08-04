@@ -14,6 +14,7 @@ from .models import (
     ScriptParser,
     UserFile,
     WooeyJob,
+    WooeyWidget,
 )
 
 
@@ -70,6 +71,7 @@ class ScriptParserAdmin(ModelAdmin):
 class FileAdmin(ModelAdmin):
     pass
 
+site.register(WooeyWidget)
 site.register(WooeyJob, JobAdmin)
 site.register(UserFile, FileAdmin)
 site.register(Script, ScriptAdmin)

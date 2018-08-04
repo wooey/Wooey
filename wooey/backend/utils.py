@@ -856,3 +856,9 @@ def get_query(query_string, search_fields):
         query = Q()
 
     return query
+
+
+def tokenize_html_attributes(attributes):
+    kv_parser = re.compile(r'(?P<key>\w+)=(?<!\\)"(?P<value>.+?)(?<!\\)"')
+    for match in kv_parser.finditer(attributes):
+        yield (match.group('key'), match.group('value'))

@@ -10,10 +10,11 @@ services:
       dockerfile: docker/Dockerfile
       args:
         BUILD_DIR:
+        WOOEY_PROJECT:
     image: wooey:dev
     volumes :
-      - ./user_settings.py:/docker_wooey/docker_wooey/settings/user_settings.py
-      - user_uploads:/docker_wooey/docker_wooey/user_uploads
+      - ./user_settings.py:/$WOOEY_PROJECT/$WOOEY_PROJECT/settings/user_settings.py
+      - user_uploads:/$WOOEY_PROJECT/$WOOEY_PROJECT/user_uploads
     environment:
       AMQP_URL: amqp://rabbit:5672
       BUILD_DIR:
@@ -21,4 +22,5 @@ services:
       DATABASE_USER: wooey
       DATABASE_URL: db
       DATABASE_PASSWORD: wooey
+      DJANGO_SETTINGS_MODULE: $WOOEY_PROJECT.settings
     user: 1000:1000

@@ -13,9 +13,12 @@ from ..forms import (
 from ..forms import config as forms_config
 from ..models import ScriptVersion, WooeyJob
 
-from . import config
-from . import mixins
-from . import utils as test_utils
+from . import (
+    config,
+    factories,
+    mixins,
+    utils as test_utils,
+)
 
 
 class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
@@ -189,3 +192,30 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase)
         initial_files = [i.path for i in form['parsers'][(multiple_files_param.parser.pk, multiple_files_param.parser.name)][1]['form'].fields[multiple_files_param.form_slug].initial]
         self.assertIn(file1_path, initial_files)
         self.assertIn(file2_path, initial_files)
+
+    def test_form_with_custom_widget(self):
+        script_version = self.choice_script
+        # Associate a custom widget with a field
+        choice_param = script_version.scriptparameter_set.get(script_param='one_choice')
+        widget = factories.WooeyWidgetFactory(
+            widget_class='django.forms.TextInput',
+            input_class='custom',
+            input_properties='custom-property',
+            input_attributes='attr1="custom1" attr2="custom2"'
+        )
+        choice_param.custom_widget = widget
+        choice_param.save()
+        form = utils.get_form_groups(script_version=script_version)
+
+        from django.forms import TextInput
+        field = form['parsers'][(choice_param.parser.pk, choice_param.parser.name)][1]['form'].fields[choice_param.form_slug]
+        self.assertTrue(isinstance(field.widget, TextInput))
+        self.assertEquals(
+            field.widget.attrs,
+            {
+                'custom-property': True,
+                'attr1': 'custom1',
+                'attr2': 'custom2',
+                'class': 'custom',
+            }
+        )

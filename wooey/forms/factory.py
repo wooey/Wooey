@@ -9,6 +9,7 @@ import six
 from django import forms
 from django.forms.utils import flatatt, format_html
 from django.http.request import QueryDict
+from django.utils.module_loading import import_string
 from django.utils.safestring import mark_safe
 
 from . import config
@@ -75,6 +76,7 @@ class WooeyFormFactory(object):
         form_field = param.form_field
         widget_data_dict = {}
         appender_data_dict = {}
+        widget_init = {}
         WOOEY_CHOICE_LIMIT = 'data-wooey-choice-limit'
         choices = json.loads(param.choices)
         field_kwargs = {
@@ -90,6 +92,14 @@ class WooeyFormFactory(object):
             form_field = 'MultipleChoiceField' if multiple_choices else 'ChoiceField'
             base_choices = [(None, '----')] if not param.required and not multiple_choices else []
             field_kwargs['choices'] = base_choices+[(str(i), str(i).title()) for i in choices]
+
+        custom_widget = param.custom_widget
+        if custom_widget:
+            if custom_widget.widget_class:
+                widget_class = import_string(custom_widget.widget_class)
+                field_kwargs['widget'] = widget_class
+            widget_init['attrs'] = custom_widget.widget_attributes
+
         if form_field == 'FileField':
             if param.is_output:
                 form_field = 'CharField'
@@ -113,11 +123,16 @@ class WooeyFormFactory(object):
                             initial = so
                     else:
                         initial = initial
-                field_kwargs['widget'] = forms.ClearableFileInput()
+                if not field_kwargs.get('widget'):
+                    field_kwargs['widget'] = forms.ClearableFileInput
         if not multiple_choices and isinstance(initial, list):
             initial = initial[0]
         field_kwargs['initial'] = initial
         field = getattr(forms, form_field)
+
+        if 'widget' in field_kwargs:
+            field_kwargs['widget'] = field_kwargs['widget'](**widget_init)
+
         field = field(**field_kwargs)
 
         if form_field != 'MultipleChoiceField' and multiple_choices:
@@ -128,6 +143,7 @@ class WooeyFormFactory(object):
                 appender_data_dict[WOOEY_CHOICE_LIMIT] = choice_limit
         elif multiple_choices and choice_limit>0:
             widget_data_dict[WOOEY_CHOICE_LIMIT] = choice_limit
+
         field.widget.attrs.update(widget_data_dict)
         return field
 

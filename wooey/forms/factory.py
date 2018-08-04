@@ -123,7 +123,7 @@ class WooeyFormFactory(object):
                             initial = so
                     else:
                         initial = initial
-                if not field_kwargs['widget']:
+                if not field_kwargs.get('widget'):
                     field_kwargs['widget'] = forms.ClearableFileInput
         if not multiple_choices and isinstance(initial, list):
             initial = initial[0]

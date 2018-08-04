@@ -37,6 +37,7 @@ Getting Started
    running_wooey
    scripts
    wooey_ui
+   customizations
    remote
    upgrade_help
 

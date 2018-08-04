@@ -21,4 +21,5 @@ services:
       DATABASE_USER: wooey
       DATABASE_URL: db
       DATABASE_PASSWORD: wooey
+      DJANGO_SETTINGS_MODULE: docker_wooey.settings
     user: 1000:1000

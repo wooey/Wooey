@@ -9,7 +9,7 @@ class WooeyWidget(WooeyPy2Mixin, models.Model):
     name = models.CharField(_('Widget Name'), max_length=50)
     widget_class = models.CharField(
         max_length=50,
-        help_text=_('Widget class to use (e.g. Django.forms.widgets.TextArea. defaults to Form Field on Script Parameter model if blank).'),
+        help_text=_('Widget class to use (e.g. django.forms.TextInput, defaults to Form Field on Script Parameter model if blank).'),
         null=True,
         blank=True,
     )

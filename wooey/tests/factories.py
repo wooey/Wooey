@@ -2,7 +2,7 @@ import factory
 import six
 from django.contrib.auth import get_user_model
 
-from ..models import WooeyJob, ScriptGroup, Script
+from ..models import Script, ScriptGroup, WooeyJob, WooeyWidget
 from . import utils as test_utils
 
 
@@ -57,6 +57,13 @@ class BaseJobFactory(factory.DjangoModelFactory):
         model = WooeyJob
     job_name = six.u('\xd0\xb9\xd1\x86\xd1\x83')
     job_description = six.u('\xd0\xb9\xd1\x86\xd1\x83\xd0\xb5\xd0\xba\xd0\xb5')
+
+
+class WooeyWidgetFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = WooeyWidget
+
+    name = 'test widget'
 
 
 def generate_script(script_path, script_name=None):

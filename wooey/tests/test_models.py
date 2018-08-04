@@ -151,3 +151,21 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMix
         choice_params = [i.value for i in job.get_parameters() if i.parameter.form_slug == choice_slug]
         self.assertEqual(choices, choice_params)
         job = job.submit_to_celery()
+
+
+class TestCustomWidgets(TestCase):
+    def test_widget_attributes(self):
+        widget = factories.WooeyWidgetFactory(
+            input_properties='custom-property',
+            input_attributes='attr1="custom1" attr2="custom2"',
+            input_class='custom-class',
+        )
+        self.assertEquals(
+            widget.widget_attributes,
+            {
+                'custom-property': True,
+                'attr1': 'custom1',
+                'attr2': 'custom2',
+                'class': 'custom-class',
+            }
+        )

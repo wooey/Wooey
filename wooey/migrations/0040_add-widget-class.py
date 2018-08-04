@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='wooeywidget',
             name='widget_class',
-            field=models.CharField(blank=True, help_text='Widget class to use (e.g. Django.forms.widgets.TextArea. defaults to Form Field on Script Parameter model if blank).', max_length=50, null=True),
+            field=models.CharField(blank=True, help_text='Widget class to use (e.g. django.forms.TextInput, defaults to Form Field on Script Parameter model if blank).', max_length=50, null=True),
         ),
         migrations.AlterField(
             model_name='scriptparameter',

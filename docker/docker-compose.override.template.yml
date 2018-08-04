@@ -5,7 +5,7 @@ version: '2.1'
 services:
   wooey:
     volumes:
-      - ../wooey:/docker_wooey/wooey
+      - ../wooey:$BUILD_DIR/wooey
       - ../../clinto/clinto:/usr/local/lib/python3.6/site-packages/clinto
     ports:
       - 8080:8080

@@ -1,3 +1,5 @@
+.. _script-parameters-admin:
+
 Script Parameters Admin
 =======================
 

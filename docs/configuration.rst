@@ -1,3 +1,5 @@
+.. _wooey-configuration:
+
 Configuration
 =============
 

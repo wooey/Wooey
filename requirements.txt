@@ -1,5 +1,5 @@
 boto
-celery==4.1.0
+celery==4.2.1
 clinto>=0.2.0
 coveralls
 django<2

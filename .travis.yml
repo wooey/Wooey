@@ -8,6 +8,8 @@ python:
   - "2.7"
   - "3.4"
   - "3.5"
+before_install:
+  - export BOTO_CONFIG=/dev/null
 # command to install dependencies
 install:
   - pip install -q $DJANGO_VERSION

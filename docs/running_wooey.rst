@@ -59,10 +59,11 @@ With Docker
 -----------
 
 `Docker <https://www.docker.com>`__ is a great way to get Wooey up and running quickly, especially
-for development. To get Wooey up and running with Docker and `docker-compose <https://docs.docker.com/compose/`__,
+for development. To get Wooey up and running with Docker and `docker-compose <https://docs.docker.com/compose/>`__,
 follow these commands:
 
 ::
+
     git clone git@github.com:wooey/Wooey.git
     cd Wooey/docker
     ./wooey-compose build wooey

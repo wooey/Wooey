@@ -33,7 +33,7 @@ If you have failing scripts, please open an issue with their contents so
 we can handle cases as they appear and try to make this as
 all-encompasing as possible. One known area which fails currently is
 defining your argparse instance inside the
-``if __name__ == "__main__" block``
+``if __name__ == "__main__"`` block
 
 
 The admin Interface

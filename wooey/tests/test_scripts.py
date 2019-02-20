@@ -53,7 +53,7 @@ class ScriptAdditionTests(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase)
             }
         )
         commands = utils.get_job_commands(job=job)[2:]
-        self.assertEqual(commands, ['--need-at-least-one-numbers', '1', '2'])
+        self.assertEqual(commands, ['--need-at-least-one-numbers', '1', '--need-at-least-one-numbers', '2'])
 
         slug = test_utils.get_subparser_form_slug(self.choice_script, 'choices_str')
         job = utils.create_wooey_job(
@@ -64,7 +64,7 @@ class ScriptAdditionTests(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase)
             }
         )
         commands = utils.get_job_commands(job=job)[2:]
-        self.assertEqual(commands, ['--choices-str', '1', '--choices-str', '2', '--choices-str', '3'])
+        self.assertEqual(commands, ['--choices-str', '1', '2', '3'])
 
     def test_script_upgrade(self):
         script_path = os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate.py')

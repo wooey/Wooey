@@ -15,6 +15,7 @@ from operator import itemgetter
 from pkg_resources import parse_version
 
 from clinto.parser import Parser
+from clinto.parsers.constants import SPECIFY_EVERY_PARAM
 from django.conf import settings
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db import transaction
@@ -441,7 +442,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
                     'param_help': param.get('help'),
                     'is_checked': param.get('checked', False),
                     # parameter_group': param_group,
-                    'collapse_arguments': 'collapse_arguments' in param.get('param_action', set()),
+                    'collapse_arguments': SPECIFY_EVERY_PARAM not in param.get('param_action', set()),
                 }
 
                 parameter_index += 1

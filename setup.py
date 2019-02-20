@@ -9,7 +9,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='wooey',
-    version='0.10.0',
+    version='0.10.1',
     packages=find_packages(),
     scripts=['scripts/wooify'],
     entry_points={'console_scripts': ['wooify = wooey.backend.command_line:bootstrap', ]},

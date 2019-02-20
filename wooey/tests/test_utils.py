@@ -20,11 +20,6 @@ class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase):
     def test_sanitize_string(self):
         assert(utils.sanitize_string('ab"c')) == 'ab\\"c'
 
-    def test_add_script(self):
-        pass
-        # TODO: fix me
-        # utils.add_wooey_script(script=os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate.py'))
-
     def test_anonymous_users(self):
         from .. import settings as wooey_settings
         from django.contrib.auth.models import AnonymousUser

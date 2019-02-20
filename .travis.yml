@@ -7,9 +7,9 @@ env:
   - DJANGO_VERSION="Django>=2.0,<2.1" DJANGO_SETTINGS_MODULE=
   - DJANGO_VERSION="Django>=2.1,<2.2" DJANGO_SETTINGS_MODULE=
 python:
-  - "2.7"
-  - "3.5"
-  - "3.6"
+  - 2.7
+  - 3.5
+  - 3.6
 matrix:
   exclude:
   - python: 2.7

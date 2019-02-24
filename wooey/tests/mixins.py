@@ -46,7 +46,6 @@ class ScriptFactoryMixin(object):
                 utils.get_storage(local=False).delete(path)
             path += 'c'  # handle pyc junk
             utils.get_storage().delete(path)
-        ScriptVersion.objects.all().delete()
         super(ScriptFactoryMixin, self).tearDown()
 
     def setUp(self):

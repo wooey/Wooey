@@ -4,6 +4,7 @@ import copy
 import json
 import os
 from collections import OrderedDict
+from functools import partial
 
 import six
 from django import forms
@@ -20,13 +21,14 @@ from ..models import ScriptVersion
 
 
 def mutli_render(render_func, appender_data_dict=None):
-    def render(name, value=None, attrs=None):
+    def render(name, value=None, attrs=None, renderer=None):
         if not isinstance(value, (list, tuple)):
             value = [value]
         values = value
+        widget_renderer = partial(render_func, renderer=renderer) if renderer else partial(render_func)
         # The tag is a marker for our javascript to reshuffle the elements. This is because some widgets have complex rendering with multiple fields
         pieces = ['<{tag} {multi_attr}>{widget}</{tag}>'.format(tag='div', multi_attr=config.WOOEY_MULTI_WIDGET_ATTR,
-                                                                widget=render_func(name, value, attrs)) for value in values]
+                                                                widget=widget_renderer(name, value, attrs)) for value in values]
 
         # we add a final piece that is our button to click for adding. It's useful to have it here instead of the template so we don't
         # have to reverse-engineer who goes with what

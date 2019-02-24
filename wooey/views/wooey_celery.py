@@ -63,7 +63,7 @@ def global_queue_json(request):
 def get_active_user_jobs(request):
     user = request.user
     jobs = WooeyJob.objects.filter(
-        (Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None)) &
+        (Q(user=None) | Q(user=user) if request.user.is_authenticated else Q(user=None)) &
         (Q(status=WooeyJob.RUNNING))
     )
     return jobs.order_by('-created_date')
@@ -76,7 +76,7 @@ def user_queue_json(request):
 
 def get_user_results(request):
     user = request.user
-    jobs = WooeyJob.objects.filter((Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None)))
+    jobs = WooeyJob.objects.filter((Q(user=None) | Q(user=user) if request.user.is_authenticated else Q(user=None)))
     jobs = jobs.exclude(
         Q(status=WooeyJob.RUNNING) |
         Q(status=WooeyJob.SUBMITTED) |
@@ -118,7 +118,7 @@ def celery_task_command(request):
     response = {'valid': False, }
     valid = valid_user(job.script_version.script, request.user)
     if valid.get('valid') == True:
-        user = request.user if request.user.is_authenticated() else None
+        user = request.user if request.user.is_authenticated else None
         if user == job.user or job.user == None:
             if command == 'resubmit':
                 new_job = job.submit_to_celery(resubmit=True, user=request.user)
@@ -162,7 +162,7 @@ class JobBase(DetailView):
         wooey_job = ctx['wooeyjob']
 
         user = self.request.user
-        user = None if not user.is_authenticated() and wooey_settings.WOOEY_ALLOW_ANONYMOUS else user
+        user = None if not user.is_authenticated and wooey_settings.WOOEY_ALLOW_ANONYMOUS else user
         job_user = wooey_job.user
         if job_user is None or job_user == user or \
                 (user is not None and user.is_superuser) or \
@@ -279,7 +279,7 @@ class UserQueueView(JobListBase):
 class UserResultsView(JobListBase):
 
     def get_context_data(self, **kwargs):
-        if self.request.user and self.request.user.is_authenticated():
+        if self.request.user and self.request.user.is_authenticated:
             kwargs['title'] = "My Results"
         else:
             kwargs['title'] = "Public Results"

@@ -95,7 +95,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('group_name', models.TextField()),
-                ('script', models.ForeignKey(to='wooey.Script')),
+                ('script', models.ForeignKey(to='wooey.Script', on_delete=models.PROTECT)),
             ],
             bases=(wooey.models.mixins.UpdateScriptsMixin, models.Model),
         ),
@@ -104,24 +104,24 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('_value', models.TextField(db_column='value')),
-                ('job', models.ForeignKey(to='wooey.WooeyJob')),
-                ('parameter', models.ForeignKey(to='wooey.ScriptParameter')),
+                ('job', models.ForeignKey(to='wooey.WooeyJob', on_delete=models.CASCADE)),
+                ('parameter', models.ForeignKey(to='wooey.ScriptParameter', on_delete=models.PROTECT)),
             ],
         ),
         migrations.AddField(
             model_name='scriptparameter',
             name='parameter_group',
-            field=models.ForeignKey(to='wooey.ScriptParameterGroup'),
+            field=models.ForeignKey(to='wooey.ScriptParameterGroup', on_delete=models.PROTECT),
         ),
         migrations.AddField(
             model_name='scriptparameter',
             name='script',
-            field=models.ForeignKey(to='wooey.Script'),
+            field=models.ForeignKey(to='wooey.Script', on_delete=models.PROTECT),
         ),
         migrations.AddField(
             model_name='script',
             name='script_group',
-            field=models.ForeignKey(to='wooey.ScriptGroup'),
+            field=models.ForeignKey(to='wooey.ScriptGroup', on_delete=models.PROTECT),
         ),
         migrations.AddField(
             model_name='script',
@@ -131,21 +131,21 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='wooeyjob',
             name='script',
-            field=models.ForeignKey(to='wooey.Script'),
+            field=models.ForeignKey(to='wooey.Script', on_delete=models.PROTECT),
         ),
         migrations.AddField(
             model_name='wooeyjob',
             name='user',
-            field=models.ForeignKey(blank=True, to=settings.AUTH_USER_MODEL, null=True),
+            field=models.ForeignKey(blank=True, to=settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL),
         ),
         migrations.AddField(
             model_name='wooeyfile',
             name='job',
-            field=models.ForeignKey(to='wooey.WooeyJob'),
+            field=models.ForeignKey(to='wooey.WooeyJob', on_delete=models.PROTECT),
         ),
         migrations.AddField(
             model_name='wooeyfile',
             name='parameter',
-            field=models.ForeignKey(blank=True, to='wooey.ScriptParameters', null=True),
+            field=models.ForeignKey(blank=True, to='wooey.ScriptParameters', null=True, on_delete=models.PROTECT),
         ),
     ]

@@ -137,7 +137,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
     This model serves to link the submitted celery tasks to a script submitted
     """
     # blank=True, null=True is to allow anonymous users to submit jobs
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.PROTECT)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.SET_NULL)
     celery_id = models.CharField(max_length=255, null=True)
     uuid = models.CharField(max_length=255, default=uuid.uuid4, unique=True)
     job_name = models.CharField(max_length=255)
@@ -187,7 +187,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
             params = self.get_parameters()
             user = kwargs.get('user')
             self.pk = None
-            self.user = None if user is None or not user.is_authenticated() else user
+            self.user = None if user is None or not user.is_authenticated else user
             # clear the output channels
             self.celery_id = None
             self.uuid = uuid.uuid4()
@@ -377,7 +377,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
         This holds the actual parameters sent with the submission
     """
     # the details of the actual executed scripts
-    job = models.ForeignKey('WooeyJob', on_delete=models.PROTECT)
+    job = models.ForeignKey('WooeyJob', on_delete=models.CASCADE)
     parameter = models.ForeignKey('ScriptParameter', on_delete=models.PROTECT)
     # we store a JSON dumped string in here to attempt to keep our types in order
     _value = models.TextField(db_column='value')
@@ -564,7 +564,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
 class UserFile(WooeyPy2Mixin, models.Model):
     filename = models.TextField()
     job = models.ForeignKey('WooeyJob', on_delete=models.PROTECT)
-    system_file = models.ForeignKey('WooeyFile', on_delete=models.PROTECT)
+    system_file = models.ForeignKey('WooeyFile', on_delete=models.CASCADE)
     parameter = models.ForeignKey('ScriptParameters', null=True, blank=True, on_delete=models.PROTECT)
 
     class Meta:

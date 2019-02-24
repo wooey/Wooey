@@ -62,10 +62,9 @@ wooey_patterns = [
 
 if wooey_settings.WOOEY_REGISTER_URL:
     wooey_patterns += [
-        url('^{}'.format(wooey_settings.WOOEY_REGISTER_URL.lstrip('/')), views.WooeyRegister.as_view(), name='wooey_register'),
+        url(r'^{}'.format(wooey_settings.WOOEY_REGISTER_URL.lstrip('/')), views.WooeyRegister.as_view(), name='wooey_register'),
     ]
 
 urlpatterns = [
-    url('^', include(wooey_patterns, namespace='wooey')),
-    url('^', include('django.contrib.auth.urls')),
+    url(r'^', include(wooey_patterns)),
 ]

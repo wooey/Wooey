@@ -20,8 +20,8 @@ before_install:
   - export BOTO_CONFIG=/dev/null
 # command to install dependencies
 install:
-  - pip install -q $DJANGO_VERSION
   - pip install -q -r requirements.txt
+  - pip install -q $DJANGO_VERSION
   - pip install -q -e .
 # command to run tests
 script: make test

@@ -12,13 +12,13 @@ from django.db import models
 from django.conf import settings
 from django.core.cache import caches as django_cache
 from django.core.files.storage import SuspiciousFileOperation
-from django.core.urlresolvers import reverse
 from django.contrib.auth.models import Group
 from django.utils.translation import ugettext_lazy as _
 from django.db import transaction
 from django.utils.text import get_valid_filename
 from jsonfield import JSONCharField
 
+from ..django_compat import reverse
 from . mixins import UpdateScriptsMixin, ModelDiffMixin, WooeyPy2Mixin
 from .. import settings as wooey_settings
 from .. backend import utils

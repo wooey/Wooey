@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 from django.contrib.auth import login, authenticate, get_user_model
-from django.core.urlresolvers import reverse
 from django.forms.models import modelform_factory
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse
@@ -8,8 +7,8 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.views.generic import CreateView
 
+from ..django_compat import reverse
 from .. import settings as wooey_settings
-
 
 class WooeyRegister(CreateView):
     template_name = 'wooey/registration/register.html'

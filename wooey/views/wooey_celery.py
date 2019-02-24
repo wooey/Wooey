@@ -3,7 +3,6 @@ import six
 
 from celery import app, states
 from django.contrib.contenttypes.models import ContentType
-from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.http import JsonResponse
 from django.template.defaultfilters import escape
@@ -12,6 +11,7 @@ from django.utils.encoding import force_text
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import DetailView, ListView
 
+from ..django_compat import reverse
 from ..models import WooeyJob, UserFile, Favorite
 from .. import settings as wooey_settings
 from ..backend.utils import valid_user, get_file_previews

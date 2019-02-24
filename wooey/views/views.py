@@ -3,7 +3,6 @@ from collections import defaultdict
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from django.core.urlresolvers import reverse
 from django.forms import FileField
 from django.http import JsonResponse
 from django.template import RequestContext
@@ -13,6 +12,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.views.generic import DetailView, TemplateView, View
 
 from ..backend import utils
+from ..django_compat import reverse
 from ..models import WooeyJob, Script, UserFile, Favorite, ScriptVersion
 from .. import settings as wooey_settings
 

@@ -1,2 +1,2 @@
 #!/bin/bash
-./wooey-compose run --rm wooey sh -c "make -C \${BUILD_DIR} test"
+docker-compose run --rm wooey sh -c "make -C \${BUILD_DIR} test"

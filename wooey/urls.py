@@ -7,6 +7,8 @@ from django.conf.urls.static import static
 from . import views
 from . import settings as wooey_settings
 
+app_name = 'wooey'
+
 wooey_patterns = [
     url(r'^jobs/command$', views.celery_task_command, name='celery_task_command'),
 

@@ -2,7 +2,7 @@ boto
 celery==4.2.1
 clinto>=0.3.0
 coveralls
-django<2
+django~=2.1
 django-autoslug
 django-celery-results
 django-storages-redux

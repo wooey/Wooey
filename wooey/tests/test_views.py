@@ -3,7 +3,6 @@
 import json
 
 from django.test import TestCase, RequestFactory
-from django.core.urlresolvers import reverse
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.http import Http404
@@ -16,6 +15,7 @@ from . import (
     utils as test_utils,
 )
 from ..backend import utils
+from ..django_compat import reverse
 from ..views import wooey_celery
 from .. import views as wooey_views
 from .. import models

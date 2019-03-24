@@ -8,7 +8,8 @@ settings.DEBUG = True
 
 
 urlpatterns = [
-    url('^', include('wooey.urls')),
+    url(r'^', include('wooey.urls')),
+    url(r'^', include('django.contrib.auth.urls')),
 ]
 
 urlpatterns += static(test_settings.MEDIA_URL, document_root=test_settings.MEDIA_ROOT)

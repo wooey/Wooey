@@ -1,2 +1,2 @@
 #!/bin/bash
-./wooey-compose run --rm wooey python manage.py "$@"
+docker-compose run --rm wooey python manage.py "$@"

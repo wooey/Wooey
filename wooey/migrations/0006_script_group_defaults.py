@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='script',
             name='script_group',
-            field=models.ForeignKey(blank=True, to='wooey.ScriptGroup', null=True),
+            field=models.ForeignKey(blank=True, to='wooey.ScriptGroup', null=True, on_delete=models.PROTECT),
         ),
     ]

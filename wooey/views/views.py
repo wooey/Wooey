@@ -3,7 +3,6 @@ from collections import defaultdict
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from django.core.urlresolvers import reverse
 from django.forms import FileField
 from django.http import JsonResponse
 from django.template import RequestContext
@@ -13,6 +12,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.views.generic import DetailView, TemplateView, View
 
 from ..backend import utils
+from ..django_compat import reverse
 from ..models import WooeyJob, Script, UserFile, Favorite, ScriptVersion
 from .. import settings as wooey_settings
 
@@ -37,7 +37,7 @@ class WooeyScriptBase(DetailView):
 
         if job_id:
             job = WooeyJob.objects.get(pk=job_id)
-            if job.user is None or (self.request.user.is_authenticated() and job.user == self.request.user):
+            if job.user is None or (self.request.user.is_authenticated and job.user == self.request.user):
                 context['job_info'] = {'job_id': job_id}
 
                 parser_used = None
@@ -75,7 +75,7 @@ class WooeyScriptBase(DetailView):
 
     def post(self, request, *args, **kwargs):
         post = request.POST.copy()
-        user = request.user if request.user.is_authenticated() else None
+        user = request.user if request.user.is_authenticated else None
         if not wooey_settings.WOOEY_ALLOW_ANONYMOUS and user is None:
             return {'valid': False, 'errors': {'__all__': [force_text(_('You are not permitted to access this script.'))]}}
 
@@ -168,7 +168,7 @@ class WooeyHomeView(TemplateView):
         ctx['scripts'] = utils.get_current_scripts()
 
         # Check for logged in user
-        if self.request.user.is_authenticated():
+        if self.request.user.is_authenticated:
             # Get the id of every favorite (scrapbook) file
             ctype = ContentType.objects.get_for_model(Script)
             ctx['favorite_script_ids'] = Favorite.objects.filter(content_type=ctype, user__id=self.request.user.id).values_list('object_id', flat=True)
@@ -189,7 +189,7 @@ class WooeyProfileView(TemplateView):
             ctx['profile_user'] = user.objects.get(username=self.kwargs.get('username'))
 
         else:
-            if self.request.user and self.request.user.is_authenticated():
+            if self.request.user and self.request.user.is_authenticated:
                 ctx['profile_user'] = self.request.user
 
         return ctx

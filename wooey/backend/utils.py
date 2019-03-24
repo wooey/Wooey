@@ -491,11 +491,11 @@ def valid_user(obj, user):
     from ..models import Script
     groups = obj.user_groups.all()
 
-    if wooey_settings.WOOEY_ALLOW_ANONYMOUS or user.is_authenticated():
+    if wooey_settings.WOOEY_ALLOW_ANONYMOUS or user.is_authenticated:
         if isinstance(obj, Script):
             from itertools import chain
             groups = list(chain(groups, obj.script_group.user_groups.all()))
-        if not user.is_authenticated() and wooey_settings.WOOEY_ALLOW_ANONYMOUS and len(groups) == 0:
+        if not user.is_authenticated and wooey_settings.WOOEY_ALLOW_ANONYMOUS and len(groups) == 0:
             ret['valid'] = True
         elif groups:
             ret['error'] = _('You are not permitted to use this script')

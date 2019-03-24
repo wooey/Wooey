@@ -1,19 +1,33 @@
 language: python
 env:
-  - DJANGO_VERSION="Django>=1.8,<1.9" DJANGO_SETTINGS_MODULE=
-  - DJANGO_VERSION="Django>=1.9,<1.10" DJANGO_SETTINGS_MODULE=
-  - DJANGO_VERSION="Django>=1.10,<1.11" DJANGO_SETTINGS_MODULE=
   - DJANGO_VERSION="Django>=1.11,<2" DJANGO_SETTINGS_MODULE=
+  - DJANGO_VERSION="Django>=2.0,<2.1" DJANGO_SETTINGS_MODULE=
+  - DJANGO_VERSION="Django>=2.1,<2.2" DJANGO_SETTINGS_MODULE=
+  - DJANGO_VERSION="Django" DJANGO_SETTINGS_MODULE=
 python:
-  - "2.7"
-  - "3.4"
-  - "3.5"
+  - 2.7
+  - 3.5
+  - 3.6
+matrix:
+  exclude:
+  - python: 2.7
+    env: DJANGO_VERSION="Django>=2.0,<2.1" DJANGO_SETTINGS_MODULE=
+  - python: 2.7
+    env: DJANGO_VERSION="Django>=2.1,<2.2" DJANGO_SETTINGS_MODULE=
+  - python: 2.7
+    env: DJANGO_VERSION="Django" DJANGO_SETTINGS_MODULE=
+  - python: 3.5
+    env: DJANGO_VERSION="Django" DJANGO_SETTINGS_MODULE=
+# Test the latest version to get an idea if were compatible
+  allow_failures:
+  - python: 3.6
+    env: DJANGO_VERSION="Django" DJANGO_SETTINGS_MODULE=
 before_install:
   - export BOTO_CONFIG=/dev/null
 # command to install dependencies
 install:
-  - pip install -q $DJANGO_VERSION
   - pip install -q -r requirements.txt
+  - pip install -q $DJANGO_VERSION
   - pip install -q -e .
 # command to run tests
 script: make test

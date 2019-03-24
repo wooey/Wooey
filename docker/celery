@@ -1,2 +1,2 @@
 #!/bin/bash
-./wooey-compose run --rm --service-ports celery "$@"
+docker-compose run --rm --service-ports celery "$@"

@@ -12,13 +12,13 @@ from django.db import models
 from django.conf import settings
 from django.core.cache import caches as django_cache
 from django.core.files.storage import SuspiciousFileOperation
-from django.core.urlresolvers import reverse
 from django.contrib.auth.models import Group
 from django.utils.translation import ugettext_lazy as _
 from django.db import transaction
 from django.utils.text import get_valid_filename
 from jsonfield import JSONCharField
 
+from ..django_compat import reverse
 from . mixins import UpdateScriptsMixin, ModelDiffMixin, WooeyPy2Mixin
 from .. import settings as wooey_settings
 from .. backend import utils
@@ -54,7 +54,7 @@ class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     slug = AutoSlugField(populate_from='script_name', unique=True)
     # we create defaults for the script_group in the clean method of the model. We have to set it to null/blank=True
     # or else we will fail form validation before we hit the model.
-    script_group = models.ForeignKey('ScriptGroup', null=True, blank=True)
+    script_group = models.ForeignKey('ScriptGroup', null=True, blank=True, on_delete=models.PROTECT)
     script_description = models.TextField(blank=True, null=True)
     documentation = models.TextField(blank=True, null=True)
     script_order = models.PositiveSmallIntegerField(default=1)
@@ -102,7 +102,7 @@ class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     script_iteration = models.PositiveSmallIntegerField(default=1)
     script_path = models.FileField()
     default_version = models.BooleanField(default=False)
-    script = models.ForeignKey('Script', related_name='script_version')
+    script = models.ForeignKey('Script', related_name='script_version', on_delete=models.PROTECT)
     checksum = models.CharField(max_length=40, blank=True)
 
     created_date = models.DateTimeField(auto_now_add=True)
@@ -137,7 +137,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
     This model serves to link the submitted celery tasks to a script submitted
     """
     # blank=True, null=True is to allow anonymous users to submit jobs
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.SET_NULL)
     celery_id = models.CharField(max_length=255, null=True)
     uuid = models.CharField(max_length=255, default=uuid.uuid4, unique=True)
     job_name = models.CharField(max_length=255)
@@ -165,7 +165,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
     command = models.TextField()
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
-    script_version = models.ForeignKey('ScriptVersion')
+    script_version = models.ForeignKey('ScriptVersion', on_delete=models.PROTECT)
 
     error_messages = {
         'invalid_permissions': _('You are not authenticated to view this job.'),
@@ -187,7 +187,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
             params = self.get_parameters()
             user = kwargs.get('user')
             self.pk = None
-            self.user = None if user is None or not user.is_authenticated() else user
+            self.user = None if user is None or not user.is_authenticated else user
             # clear the output channels
             self.celery_id = None
             self.uuid = uuid.uuid4()
@@ -304,7 +304,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     """
         This holds the parameter mapping for each script, and enforces uniqueness by each script via a FK.
     """
-    parser = models.ForeignKey('ScriptParser')
+    parser = models.ForeignKey('ScriptParser', on_delete=models.PROTECT)
     script_version = models.ManyToManyField('ScriptVersion')
     short_param = models.CharField(max_length=255, blank=True)
     script_param = models.CharField(max_length=255)
@@ -323,11 +323,11 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
         max_length=255,
         help_text=_('The python type expected by the script (e.g. boolean, integer, file).'),
     )
-    custom_widget = models.ForeignKey('WooeyWidget', null=True, blank=True)
+    custom_widget = models.ForeignKey('WooeyWidget', null=True, blank=True, on_delete=models.SET_NULL)
     param_help = models.TextField(verbose_name=_('help'), null=True, blank=True)
     is_checked = models.BooleanField(default=False)
     hidden = models.BooleanField(default=False)
-    parameter_group = models.ForeignKey('ScriptParameterGroup')
+    parameter_group = models.ForeignKey('ScriptParameterGroup', on_delete=models.PROTECT)
     param_order = models.SmallIntegerField(help_text=_('The order the parameter appears to the user.'), default=0)
 
     class Meta:
@@ -377,8 +377,8 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
         This holds the actual parameters sent with the submission
     """
     # the details of the actual executed scripts
-    job = models.ForeignKey('WooeyJob')
-    parameter = models.ForeignKey('ScriptParameter')
+    job = models.ForeignKey('WooeyJob', on_delete=models.CASCADE)
+    parameter = models.ForeignKey('ScriptParameter', on_delete=models.PROTECT)
     # we store a JSON dumped string in here to attempt to keep our types in order
     _value = models.TextField(db_column='value')
 
@@ -563,9 +563,9 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
 
 class UserFile(WooeyPy2Mixin, models.Model):
     filename = models.TextField()
-    job = models.ForeignKey('WooeyJob')
-    system_file = models.ForeignKey('WooeyFile')
-    parameter = models.ForeignKey('ScriptParameters', null=True, blank=True)
+    job = models.ForeignKey('WooeyJob', on_delete=models.CASCADE)
+    system_file = models.ForeignKey('WooeyFile', on_delete=models.CASCADE)
+    parameter = models.ForeignKey('ScriptParameters', null=True, blank=True, on_delete=models.CASCADE)
 
     class Meta:
         app_label = 'wooey'

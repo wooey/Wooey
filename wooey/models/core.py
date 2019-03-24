@@ -323,7 +323,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
         max_length=255,
         help_text=_('The python type expected by the script (e.g. boolean, integer, file).'),
     )
-    custom_widget = models.ForeignKey('WooeyWidget', null=True, blank=True, on_delete=models.PROTECT)
+    custom_widget = models.ForeignKey('WooeyWidget', null=True, blank=True, on_delete=models.SET_NULL)
     param_help = models.TextField(verbose_name=_('help'), null=True, blank=True)
     is_checked = models.BooleanField(default=False)
     hidden = models.BooleanField(default=False)
@@ -563,9 +563,9 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
 
 class UserFile(WooeyPy2Mixin, models.Model):
     filename = models.TextField()
-    job = models.ForeignKey('WooeyJob', on_delete=models.PROTECT)
+    job = models.ForeignKey('WooeyJob', on_delete=models.CASCADE)
     system_file = models.ForeignKey('WooeyFile', on_delete=models.CASCADE)
-    parameter = models.ForeignKey('ScriptParameters', null=True, blank=True, on_delete=models.PROTECT)
+    parameter = models.ForeignKey('ScriptParameters', null=True, blank=True, on_delete=models.CASCADE)
 
     class Meta:
         app_label = 'wooey'

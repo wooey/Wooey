@@ -32,4 +32,4 @@ RUN mkdir ${WOOEY_PROJECT}/user_uploads && \
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "make -C ${BUILD_DIR} test"]
+CMD ["sh", "-c", "make -C ${BUILD_DIR} tests"]

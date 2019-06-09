@@ -234,7 +234,9 @@ def cleanup_dead_jobs():
 
     # Get active tasks from Celery
     inspect = celery_app.control.inspect()
-    active_tasks = {task['id'] for worker, tasks in six.iteritems(inspect.active()) for task in tasks}
+    worker_info = inspect.active() or {}
+
+    active_tasks = {task['id'] for worker, tasks in six.iteritems(worker_info) for task in tasks}
 
     # find jobs that are marked as running but not present in celery's active tasks
     active_jobs = WooeyJob.objects.filter(status=WooeyJob.RUNNING)

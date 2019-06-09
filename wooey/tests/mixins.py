@@ -39,13 +39,18 @@ class FileCleanupMixin(object):
 class ScriptFactoryMixin(object):
     def tearDown(self):
         for i in ScriptVersion.objects.all():
-            path = i.script_path.name
-            # import pdb; pdb.set_trace();
-            utils.get_storage().delete(path)
+            name = i.script_path.name
+            utils.get_storage().delete(name)
             if wooey_settings.WOOEY_EPHEMERAL_FILES:
-                utils.get_storage(local=False).delete(path)
-            path += 'c'  # handle pyc junk
-            utils.get_storage().delete(path)
+                try:
+                    utils.get_storage(local=False).delete(name)
+                except WindowsError:
+                    print('unable to delete {}'.format(name))
+            name += 'c'  # handle pyc junk
+            try:
+                utils.get_storage().delete(name)
+            except WindowsError:
+                print('unable to delete {}'.format(name))
         super(ScriptFactoryMixin, self).tearDown()
 
     def setUp(self):

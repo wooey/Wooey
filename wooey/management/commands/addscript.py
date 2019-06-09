@@ -17,7 +17,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--group',
             dest='group',
-            default='Wooey Scripts',
+            default=wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP,
             help='The name of the group to create scripts under. Default: Wooey Scripts'
         )
         parser.add_argument(

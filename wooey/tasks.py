@@ -101,7 +101,7 @@ def submit_script(**kwargs):
     script_path = job.script_version.script_path
     script_update_time = job.script_version.modified_date
     local_storage = utils.get_storage(local=True)
-    if not local_storage.exists(script_path.path) or (local_storage.modified_time(script_path.path) < script_update_time):
+    if not local_storage.exists(script_path.path) or (local_storage.get_modified_time(script_path.path) < script_update_time):
         local_storage.save(script_path.path, script_path.file)
 
     job.status = WooeyJob.RUNNING

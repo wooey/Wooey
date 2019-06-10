@@ -307,7 +307,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     parser = models.ForeignKey('ScriptParser', on_delete=models.PROTECT)
     script_version = models.ManyToManyField('ScriptVersion')
     short_param = models.CharField(max_length=255, blank=True)
-    script_param = models.CharField(max_length=255)
+    script_param = models.TextField()
     slug = AutoSlugField(populate_from='script_param', unique=True)
     is_output = models.BooleanField(default=None)
     required = models.BooleanField(default=False)

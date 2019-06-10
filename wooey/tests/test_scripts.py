@@ -1,3 +1,4 @@
+import mock
 import os
 
 from django.test import TestCase
@@ -119,3 +120,34 @@ class ScriptAdditionTests(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase)
         self.assertListEqual(old_parameters[1:], new_parameters[1:])
         self.assertTrue(new_parameters[0].short_param, '--one-choice-added')
         self.assertTrue(old_parameters[0].short_param, '--one-choice')
+
+    def test_redownloads_on_script_update(self):
+        # Run the translate script, update it, and ensure the new version is downloaded
+        sequence_slug = test_utils.get_subparser_form_slug(self.translate_script, 'sequence')
+        job = utils.create_wooey_job(script_version_pk=self.translate_script.pk, data={'job_name': 'job1', sequence_slug: 'ATG'})
+        job = job.submit_to_celery()
+
+        # The file has been downloaded locally, update the script and ensure the new one is used
+        script_path2 = os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate2.py')
+        with open(script_path2) as o:
+            new_script = self.storage.save(self.filename_func('translate2.py'), o)
+        self.translate_script.script_path = new_script
+        self.translate_script.save()
+
+        job = utils.create_wooey_job(script_version_pk=self.translate_script.pk,
+                                     data={'job_name': 'job1', sequence_slug: 'ATC'})
+        with mock.patch('wooey.backend.utils.default_storage.local_storage.save') as storage_save:
+            job.submit_to_celery()
+            storage_save.assert_called()
+
+    def test_reuses_script_if_not_updated(self):
+        sequence_slug = test_utils.get_subparser_form_slug(self.translate_script, 'sequence')
+        job = utils.create_wooey_job(script_version_pk=self.translate_script.pk,
+                                     data={'job_name': 'job1', sequence_slug: 'ATG'})
+        job.submit_to_celery()
+
+        job = utils.create_wooey_job(script_version_pk=self.translate_script.pk,
+                                     data={'job_name': 'job2', sequence_slug: 'ATC'})
+        with mock.patch('wooey.backend.utils.default_storage.local_storage.save') as storage_save:
+            job.submit_to_celery()
+            storage_save.assert_not_called()

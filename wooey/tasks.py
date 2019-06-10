@@ -99,8 +99,13 @@ def submit_script(**kwargs):
     # make sure we have the script, otherwise download it. This can happen if we have an ephemeral file system or are
     # executing jobs on a worker node.
     script_path = job.script_version.script_path
-    if not utils.get_storage(local=True).exists(script_path.path):
-        utils.get_storage(local=True).save(script_path.path, script_path.file)
+    script_update_time = job.script_version.modified_date
+    local_storage = utils.get_storage(local=True)
+    script_exists = local_storage.exists(script_path.name)
+    if not script_exists or (local_storage.get_modified_time(script_path.name) < script_update_time):
+        if script_exists:
+            local_storage.delete(script_path.name)
+        local_storage.save(script_path.name, script_path.file)
 
     job.status = WooeyJob.RUNNING
     job.save()

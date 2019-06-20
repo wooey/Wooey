@@ -1,14 +1,14 @@
 from __future__ import absolute_import
-import subprocess
-import tarfile
 import os
-import zipfile
-import six
+import subprocess
 import sys
+import tarfile
+import tempfile
 import traceback
-
+import zipfile
 from threading import Thread
 
+import six
 from django.utils.text import get_valid_filename
 from django.core.files import File
 from django.conf import settings
@@ -99,13 +99,22 @@ def submit_script(**kwargs):
     # make sure we have the script, otherwise download it. This can happen if we have an ephemeral file system or are
     # executing jobs on a worker node.
     script_path = job.script_version.script_path
-    script_update_time = job.script_version.modified_date
     local_storage = utils.get_storage(local=True)
     script_exists = local_storage.exists(script_path.name)
-    if not script_exists or (local_storage.get_modified_time(script_path.name) < script_update_time):
-        if script_exists:
-            local_storage.delete(script_path.name)
+    if not script_exists:
         local_storage.save(script_path.name, script_path.file)
+    else:
+        # If script exists, make sure the version is valid, otherwise fetch a new one
+        script_contents = local_storage.open(script_path.name).read()
+        script_checksum = utils.get_checksum(buff=script_contents)
+        if script_checksum != job.script_version.checksum:
+            tf = tempfile.TemporaryFile()
+            with tf:
+                tf.write(script_contents)
+                tf.seek(0)
+                local_storage.delete(script_path.name)
+                local_storage.save(script_path.name, tf)
+
 
     job.status = WooeyJob.RUNNING
     job.save()

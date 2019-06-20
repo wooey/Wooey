@@ -52,7 +52,7 @@ Steps to Follow
 
         # We have user authentication -- we need to use https (django-sslify)
         if not DEBUG:
-            MIDDLEWARE_CLASSES = ['sslify.middleware.SSLifyMiddleware'] + list(MIDDLEWARE_CLASSES)
+            MIDDLEWARE = ['sslify.middleware.SSLifyMiddleware'] + list(MIDDLEWARE)
             SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 

@@ -67,7 +67,6 @@ PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.UnsaltedMD5PasswordHasher',
 )
 
-MIDDLEWARE_CLASSES = []
 MIDDLEWARE = []
 
 ROOT_URLCONF = 'wooey.test_urls'

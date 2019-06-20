@@ -22,10 +22,10 @@ services:
     command: celery worker -A docker_wooey -c 4 -B -l debug -s schedule
 
   rabbit:
-    image: rabbitmq
+    image: rabbitmq:3.7.15
 
   db:
-    image: postgres
+    image: postgres:11.3
     volumes:
       - wooey_db:/var/lib/postgresql/data
     environment:

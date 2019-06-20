@@ -85,13 +85,13 @@ If you want the user interface to automatically change to the preferred language
 for your visitors, you must use the Django internationalization middleware.
 By default, the bootstrapped version of Wooey will add in the necessary middleware,
 but for projects using Wooey as a separate app, these projects will need to add
-:code:`django.middleware.locale.LocaleMiddleware` to their :code:`MIDDLEWARE_CLASSES`
+:code:`django.middleware.locale.LocaleMiddleware` to their :code:`MIDDLEWARE`
 block in :code:`django_settings.py`. Note that it must come *after* the Session
 middleware, and before the CommonMiddleware e.g.
 
 .. code:: python
 
-    MIDDLEWARE_CLASSES = (
+    MIDDLEWARE = (
         'django.contrib.sessions.middleware.SessionMiddleware',
         'django.middleware.locale.LocaleMiddleware', # <- HERE
         'django.middleware.common.CommonMiddleware',

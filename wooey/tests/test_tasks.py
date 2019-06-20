@@ -10,6 +10,7 @@ from wooey.models import (
     WooeyJob,
 )
 from wooey.tasks import (
+    cleanup_dead_jobs,
     get_latest_script,
 )
 
@@ -100,7 +101,7 @@ class TestCleanupDeadJobs(mixins.ScriptFactoryMixin, TestCase):
                     return_value=None,
                 )
             )
-            tasks.cleanup_dead_jobs()
+            cleanup_dead_jobs()
             self.assertEqual(WooeyJob.objects.get(pk=running_job.id).status, WooeyJob.RUNNING)
 
     def test_cleans_up_dead_jobs(self):
@@ -124,7 +125,7 @@ class TestCleanupDeadJobs(mixins.ScriptFactoryMixin, TestCase):
                     },
                 )
             )
-            tasks.cleanup_dead_jobs()
+            cleanup_dead_jobs()
 
             # Assert the dead job is updated
             self.assertEqual(WooeyJob.objects.get(pk=dead_job.id).status, WooeyJob.FAILED)

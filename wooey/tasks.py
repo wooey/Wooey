@@ -18,6 +18,7 @@ from celery import app
 from celery.schedules import crontab
 from celery.signals import worker_process_init
 
+from .backend import utils
 from . import settings as wooey_settings
 
 try:
@@ -74,11 +75,38 @@ class WooeyTask(Task):
     #     job.save()
 
 
+def get_latest_script(script_version):
+    """Downloads the latest script version to the local storage.
+
+    :param script_version: :py:class:`~wooey.models.core.ScriptVersion`
+    :return: boolean
+        Returns true if a new version was downloaded.
+    """
+    script_path = script_version.script_path
+    local_storage = utils.get_storage(local=True)
+    script_exists = local_storage.exists(script_path.name)
+    if not script_exists:
+        local_storage.save(script_path.name, script_path.file)
+        return True
+    else:
+        # If script exists, make sure the version is valid, otherwise fetch a new one
+        script_contents = local_storage.open(script_path.name).read()
+        script_checksum = utils.get_checksum(buff=script_contents)
+        if script_checksum != script_version.checksum:
+            tf = tempfile.TemporaryFile()
+            with tf:
+                tf.write(script_contents)
+                tf.seek(0)
+                local_storage.delete(script_path.name)
+                local_storage.save(script_path.name, tf)
+                return True
+    return False
+
+
 @celery_app.task(base=WooeyTask)
 def submit_script(**kwargs):
     job_id = kwargs.pop('wooey_job')
     resubmit = kwargs.pop('wooey_resubmit', False)
-    from .backend import utils
     from .models import WooeyJob, UserFile
     job = WooeyJob.objects.get(pk=job_id)
 
@@ -98,22 +126,7 @@ def submit_script(**kwargs):
     utils.mkdirs(abscwd)
     # make sure we have the script, otherwise download it. This can happen if we have an ephemeral file system or are
     # executing jobs on a worker node.
-    script_path = job.script_version.script_path
-    local_storage = utils.get_storage(local=True)
-    script_exists = local_storage.exists(script_path.name)
-    if not script_exists:
-        local_storage.save(script_path.name, script_path.file)
-    else:
-        # If script exists, make sure the version is valid, otherwise fetch a new one
-        script_contents = local_storage.open(script_path.name).read()
-        script_checksum = utils.get_checksum(buff=script_contents)
-        if script_checksum != job.script_version.checksum:
-            tf = tempfile.TemporaryFile()
-            with tf:
-                tf.write(script_contents)
-                tf.seek(0)
-                local_storage.delete(script_path.name)
-                local_storage.save(script_path.name, tf)
+    get_latest_script(job.script_version)
 
 
     job.status = WooeyJob.RUNNING

@@ -35,8 +35,7 @@ class FileCleanupMixin(object):
                     print('unable to delete {}'.format(path))
         super(FileCleanupMixin, self).tearDown()
 
-
-class ScriptFactoryMixin(object):
+class ScriptTearDown(object):
     def tearDown(self):
         for i in ScriptVersion.objects.all():
             name = i.script_path.name
@@ -51,8 +50,9 @@ class ScriptFactoryMixin(object):
                 utils.get_storage().delete(name)
             except WindowsError:
                 print('unable to delete {}'.format(name))
-        super(ScriptFactoryMixin, self).tearDown()
+        super(ScriptTearDown, self).tearDown()
 
+class ScriptFactoryMixin(ScriptTearDown, object):
     def setUp(self):
         self.translate_script = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate.py'))
         self.choice_script = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'choices.py'))

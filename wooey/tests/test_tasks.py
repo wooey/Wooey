@@ -46,13 +46,19 @@ class TaskTests(mixins.ScriptFactoryMixin, TestCase):
 
 class TestCleanupDeadJobs(mixins.ScriptFactoryMixin, TestCase):
     def test_handles_unresponsive_workers(self):
+        # Ensure that if we cannot connect to celery, we do nothing.
         with mock.patch('wooey.tasks.celery_app.control.inspect') as inspect_mock:
+            running_job = factories.generate_job(self.translate_script)
+            running_job.status = models.WooeyJob.RUNNING
+            running_job.save()
+
             inspect_mock.return_value = mock.Mock(
                 active=mock.Mock(
                     return_value=None,
                 )
             )
             tasks.cleanup_dead_jobs()
+            self.assertEqual(models.WooeyJob.objects.get(pk=running_job.id).status, models.WooeyJob.RUNNING)
 
     def test_cleans_up_dead_jobs(self):
         # Make a job that is running but not active, and a job that is running and active.

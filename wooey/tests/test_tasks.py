@@ -1,9 +1,14 @@
+import mock
 from datetime import timedelta
 
 from django.test import TestCase
 
 from . import mixins, factories
-from .. import settings as wooey_settings
+from .. import (
+    models,
+    settings as wooey_settings,
+    tasks,
+)
 
 
 class TaskTests(mixins.ScriptFactoryMixin, TestCase):
@@ -38,3 +43,46 @@ class TaskTests(mixins.ScriptFactoryMixin, TestCase):
 
         cleanup_wooey_jobs()
         self.assertListEqual(list(WooeyJob.objects.all()), [])
+
+class TestCleanupDeadJobs(mixins.ScriptFactoryMixin, TestCase):
+    def test_handles_unresponsive_workers(self):
+        # Ensure that if we cannot connect to celery, we do nothing.
+        with mock.patch('wooey.tasks.celery_app.control.inspect') as inspect_mock:
+            running_job = factories.generate_job(self.translate_script)
+            running_job.status = models.WooeyJob.RUNNING
+            running_job.save()
+
+            inspect_mock.return_value = mock.Mock(
+                active=mock.Mock(
+                    return_value=None,
+                )
+            )
+            tasks.cleanup_dead_jobs()
+            self.assertEqual(models.WooeyJob.objects.get(pk=running_job.id).status, models.WooeyJob.RUNNING)
+
+    def test_cleans_up_dead_jobs(self):
+        # Make a job that is running but not active, and a job that is running and active.
+        dead_job = factories.generate_job(self.translate_script)
+        dead_job.status = models.WooeyJob.RUNNING
+        dead_job.save()
+        active_job = factories.generate_job(self.translate_script)
+        active_job.status = models.WooeyJob.RUNNING
+        active_job.celery_id = 'celery-id'
+        active_job.save()
+        with mock.patch('wooey.tasks.celery_app.control.inspect') as inspect_mock:
+            inspect_mock.return_value = mock.Mock(
+                active=mock.Mock(
+                    return_value={
+                        'worker-id': [
+                            {
+                                'id': active_job.celery_id,
+                            }
+                        ]
+                    },
+                )
+            )
+            tasks.cleanup_dead_jobs()
+
+            # Assert the dead job is updated
+            self.assertEqual(models.WooeyJob.objects.get(pk=dead_job.id).status, models.WooeyJob.FAILED)
+            self.assertEqual(models.WooeyJob.objects.get(pk=active_job.id).status, models.WooeyJob.RUNNING)

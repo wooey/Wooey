@@ -5,7 +5,7 @@ Installation
 
     pip install wooey
 
-Currently, Wooey supports Django versions 1.8+. To use Wooey in a project which is still running Django 1.6 or 1.7, you must may install
+Currently, Wooey supports Django versions 1.8+. To use Wooey in a project which is still running Django 1.6 or 1.7, you must install
 version 0.9.8.
 
 A Wooey only project

@@ -3,8 +3,10 @@ import os
 import importlib
 import json
 import six
+import time
 import uuid
 from io import IOBase
+import base64
 
 from autoslug import AutoSlugField
 from celery import states
@@ -17,11 +19,14 @@ from django.utils.translation import ugettext_lazy as _
 from django.db import transaction
 from django.utils.text import get_valid_filename
 from jsonfield import JSONCharField
+from kubernetes.client.rest import ApiException
+import yaml
 
 from ..django_compat import reverse
 from . mixins import UpdateScriptsMixin, ModelDiffMixin, WooeyPy2Mixin
 from .. import settings as wooey_settings
 from .. backend import utils
+from .. backend.kuber_utils import KubernetesPod
 
 # TODO: Handle cases where celery is not setup but specified to be used
 tasks = importlib.import_module(wooey_settings.WOOEY_CELERY_TASKS)
@@ -100,7 +105,8 @@ class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     # parameters, but even a huge site may only have a few thousand parameters to query though.
     script_version = models.CharField(max_length=50, help_text='The script version.', blank=True, default='1')
     script_iteration = models.PositiveSmallIntegerField(default=1)
-    script_path = models.FileField()
+    script_path = models.FileField(null=True, blank=True)
+    kubernetes_manifest = models.TextField(default='')
     default_version = models.BooleanField(default=False)
     script = models.ForeignKey('Script', related_name='script_version', on_delete=models.PROTECT)
     checksum = models.CharField(max_length=40, blank=True)
@@ -171,6 +177,9 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         'invalid_permissions': _('You are not authenticated to view this job.'),
     }
 
+    # kubernetes_manifest = models.FileField(blank=True, null=True)
+    kubernetes_pod_name = models.CharField(max_length=100, blank=True, null=True)
+
     class Meta:
         app_label = 'wooey'
         verbose_name = _('wooey job')
@@ -181,6 +190,139 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
 
     def get_parameters(self):
         return ScriptParameters.objects.select_related('parameter').filter(job=self).order_by('pk')
+
+    @staticmethod
+    def get_manifest(job):
+        manifest = yaml.safe_load(stream=job.script_version.kubernetes_manifest)
+        if 'metadata' not in manifest:
+            manifest['metadata'] = {}
+
+        manifest['metadata']['name'] = job.kubernetes_pod_name
+
+        if job.command:
+            command = ' '.join(
+                manifest['spec']['containers'][0]['command'] + manifest['spec']['containers'][0].get('args', []) + [
+                    job.command]
+            )
+            manifest['spec']['containers'][0]['command'] = ["/bin/bash"]
+            manifest['spec']['containers'][0]['args'] = ['-c', command]
+
+        if 'env' not in manifest['spec']['containers'][0]:
+            manifest['spec']['containers'][0]['env'] = []
+
+        manifest['spec']['containers'][0]['env'].append(
+            {
+                "name": "COMMONS_TRACE_ID",
+                "value": job.kubernetes_pod_name
+            }
+        )
+
+        # mount file share into pod
+        if wooey_settings.KUBERNETES_CLAIM:
+            volume_name = 'sup-portal-volume'
+            manifest['spec']['volumes'] = manifest['spec'].get('volumes', []) + [
+                {'name': volume_name, 'persistentVolumeClaim': {'claimName': wooey_settings.KUBERNETES_CLAIM}}
+            ]
+
+            volume_mounts = manifest['spec']['containers'][0].get('volumeMounts', [])
+            manifest['spec']['containers'][0]['volumeMounts'] = volume_mounts + [
+                {'name': volume_name, 'mountPath': wooey_settings.KUBERNETES_MOUNT_PATH}
+            ]
+
+        return manifest
+
+    def submit_to_kubernetes(self, **kwargs):
+        job_id = kwargs.pop('wooey_job')
+        resubmit = kwargs.pop('wooey_resubmit', False)
+        job = WooeyJob.objects.get(pk=job_id)
+
+        command = utils.get_job_commands(job=job)
+
+        if resubmit:
+            # clone ourselves, setting pk=None seems hackish but it works
+            job.pk = None
+
+        job.command = ' '.join(command)
+        # call save method to populate job.id in case of resubmit
+        job.save()
+
+        # populate manifest with command params and container name
+        pod_name = f'support-portal-run-{job.id}-{int(time.time())}'
+        job.kubernetes_pod_name = pod_name
+        manifest = self.get_manifest(job)
+
+        if manifest['spec']['containers'][0].get('command', []) == ["/bin/bash"]:
+            full_command = ' '.join(manifest['spec']['containers'][0]['args'][1:])
+        else:
+            full_command = ' '.join(
+                manifest['spec']['containers'][0].get('command', []) +
+                manifest['spec']['containers'][0].get('args', [])
+            )
+        job.command = full_command
+
+        # manifest_file = ContentFile(yaml.safe_dump(manifest))
+        # job.kubernetes_manifest.save(f"{container_name}.yaml", manifest_file, save=True)
+
+        job.save()
+        pod = KubernetesPod(
+            None, pod_name, namespace=settings.KUBERNETES_NAMESPACE,
+            body=manifest
+        )
+        pod.extend_container_env({})
+        pod.create()
+
+        self.check_kubernetes_job_status(job, pod=pod)
+
+        return []
+
+    @staticmethod
+    def check_kubernetes_job_status(job, pod=None):
+        if not pod:
+            pod = KubernetesPod(
+                None, job.kubernetes_pod_name, namespace=settings.KUBERNETES_NAMESPACE,
+                body={'metadata': {'name': job.kubernetes_pod_name}}
+            )
+
+        current_status = job.status
+        new_status = job.status
+        try:
+            pod_status = pod.get_status(job.kubernetes_pod_name).phase.lower()
+        except ApiException:
+            job.status = WooeyJob.DELETED
+        else:
+            if pod_status == 'running':
+                new_status = WooeyJob.RUNNING
+            elif pod_status == 'failed':
+                new_status = WooeyJob.FAILED
+            elif pod_status == 'succeeded':
+                new_status = WooeyJob.COMPLETED
+            elif pod_status == 'pending':
+                pass
+            else:
+                new_status = WooeyJob.COMPLETED
+
+        if new_status != current_status:
+            job.status = new_status
+            job.save()
+
+    def check_kubernetes_pod(self):
+        incomplete_statuses = (self.SUBMITTED, self.RUNNING)
+        if wooey_settings.WOOEY_KUBERNETES and self.kubernetes_pod_name:
+            pod = KubernetesPod(None, body={'metadata': {'name': self.kubernetes_pod_name}},
+                                namespace=wooey_settings.KUBERNETES_NAMESPACE)
+
+            if self.status in incomplete_statuses:
+                self.check_kubernetes_job_status(self, pod=pod)
+                try:
+                    logs = pod.get_logs(lines=500)
+                except ApiException:
+                    pass
+                else:
+                    if logs:
+                        self.stdout = logs
+
+                        if self.status not in incomplete_statuses:
+                            self.save()
 
     def submit_to_celery(self, **kwargs):
         if kwargs.get('resubmit'):
@@ -207,9 +349,11 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         if task_kwargs.get('rerun'):
             utils.purge_output(job=self)
         if wooey_settings.WOOEY_CELERY:
-            results = tasks.submit_script.delay(**task_kwargs)
+            tasks.submit_script.delay(**task_kwargs)
+        elif wooey_settings.WOOEY_KUBERNETES:
+            self.submit_to_kubernetes(**task_kwargs)
         else:
-            results = tasks.submit_script(**task_kwargs)
+            tasks.submit_script(**task_kwargs)
         return self
 
     def get_resubmit_url(self):
@@ -264,14 +408,14 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         return {'stdout': self.stdout, 'stderr': self.stderr}
 
     def get_stdout(self):
-        if self.status != WooeyJob.COMPLETED:
+        if self.status != WooeyJob.COMPLETED and not wooey_settings.WOOEY_KUBERNETES:
             rt = self.get_realtime().get('stdout')
             if rt:
                 return rt
         return self.stdout
 
     def get_stderr(self):
-        if self.status != WooeyJob.COMPLETED:
+        if self.status != WooeyJob.COMPLETED and not wooey_settings.WOOEY_KUBERNETES:
             rt = self.get_realtime().get('stderr')
             if rt:
                 return rt

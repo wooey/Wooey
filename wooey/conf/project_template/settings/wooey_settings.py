@@ -42,3 +42,5 @@ else:
 PROJECT_NAME = "{{ project_name }}"
 WOOEY_CELERY_APP_NAME = 'wooey.celery'
 WOOEY_CELERY_TASKS = 'wooey.tasks'
+
+WOOEY_KUBERNETES = False

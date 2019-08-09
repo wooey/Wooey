@@ -86,6 +86,7 @@ class WooeyFormFactory(object):
             'required': param.required,
             'help_text': param.param_help,
         }
+
         multiple_choices = param.multiple_choice
         choice_limit = param.max_choices
         if initial is None and param.default is not None:

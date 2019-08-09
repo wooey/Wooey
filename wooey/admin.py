@@ -2,8 +2,6 @@ from __future__ import absolute_import
 import os
 
 from django.contrib.admin import ModelAdmin, site, TabularInline
-from django.forms import ModelForm, ValidationError
-from django.utils.translation import ugettext_lazy as _
 
 from .models import (
     Script,
@@ -25,6 +23,7 @@ class JobAdmin(ModelAdmin):
 class ScriptVersionInline(TabularInline):
     model = ScriptVersion
     extra = 1
+    fields = ('script_version', 'script_iteration', 'kubernetes_manifest', 'default_version')
 
 
 class ScriptAdmin(ModelAdmin):

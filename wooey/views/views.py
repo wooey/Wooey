@@ -35,6 +35,8 @@ class WooeyScriptBase(DetailView):
         job_id = self.kwargs.get('job_id')
         initial = defaultdict(list)
 
+        context['kubernetes'] = {'use_kubernetes': wooey_settings.WOOEY_KUBERNETES}
+
         if job_id:
             job = WooeyJob.objects.get(pk=job_id)
             if job.user is None or (self.request.user.is_authenticated and job.user == self.request.user):
@@ -71,6 +73,7 @@ class WooeyScriptBase(DetailView):
             render_fn=self.render_fn,
             pk=self.object.pk
         )
+
         return context
 
     def post(self, request, *args, **kwargs):
@@ -115,9 +118,9 @@ class WooeyScriptBase(DetailView):
             parser_pk = form.cleaned_data.get('wooey_parser')
             script_version = ScriptVersion.objects.get(pk=version_pk)
             valid = utils.valid_user(script_version.script, request.user).get('valid')
-            if valid == True:
+            if valid is True:
                 group_valid = utils.valid_user(script_version.script.script_group, request.user).get('valid')
-                if valid == True and group_valid == True:
+                if valid is True and group_valid is True:
                     job = utils.create_wooey_job(
                         script_parser_pk=parser_pk,
                         script_version_pk=version_pk,

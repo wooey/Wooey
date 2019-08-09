@@ -188,6 +188,7 @@ class JobBase(DetailView):
 
             ctx['favorite_file_ids'] = favorite_file_ids
 
+            ctx['kibana_url'] = wooey_settings.KUBERNETES_KIBANA_URL
 
         else:
             ctx['job_error'] = WooeyJob.error_messages['invalid_permissions']
@@ -216,6 +217,10 @@ class JobJSONHTML(JobBase):
         """
         Build dictionary of content
         """
+        # TODO: this code should live in a cronjob that checks job status
+        job = context['job_info']['job']
+        job.check_kubernetes_pod()
+
         preview_outputs = []
         file_outputs = []
         bast_ctx = context

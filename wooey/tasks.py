@@ -128,7 +128,6 @@ def submit_script(**kwargs):
     # executing jobs on a worker node.
     get_latest_script(job.script_version)
 
-
     job.status = WooeyJob.RUNNING
     job.save()
 

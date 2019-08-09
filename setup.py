@@ -12,7 +12,10 @@ setup(
     version='0.10.1',
     packages=find_packages(),
     scripts=['scripts/wooify'],
-    entry_points={'console_scripts': ['wooify = wooey.backend.command_line:bootstrap', ]},
+    entry_points={'console_scripts': [
+        'wooify = wooey.backend.command_line:bootstrap',
+        'wooify_no_migrate = wooey.backend.command_line:bootstrap_without_migration',
+    ]},
     install_requires=[
         'celery>=4.0,<5',
         'clinto>=0.3.0',
@@ -24,6 +27,8 @@ setup(
         'pypiwin32==219 ;(platform_system=="Windows" and python_version=="3.4")',
         'pypiwin32 ;(platform_system=="Windows" and python_version>"3.4")',
         'six',
+        'kubernetes==10.0.0',
+        'whitenoise',
     ],
     include_package_data=True,
     description='A Django app which creates a web GUI and task interface for argparse scripts',

@@ -8,9 +8,20 @@ from .wooey_settings import *
 INSTALLED_APPS += (
 )
 
-# Whether to allow anonymous job submissions, set False to disallow 'guest' job submissions
-WOOEY_ALLOW_ANONYMOUS = True
 
+def check_bool(value):
+    value = str(value).lower()
+    true_values = ('true', 't')
+    return value in true_values
+
+# Whether to allow anonymous job submissions, set False to disallow 'guest' job submissions
+WOOEY_ALLOW_ANONYMOUS = check_bool(os.environ.get('WOOEY_ALLOW_ANONYMOUS', True))
+DEBUG = check_bool(os.environ.get('DEBUG', True))
+
+if not DEBUG:
+    MIDDLEWARE += [
+        'whitenoise.middleware.WhiteNoiseMiddleware',
+    ]
 ## Celery related options
 
 INSTALLED_APPS += (
@@ -75,18 +86,20 @@ STATIC_URL = '/static/'
 
 ## A postgres database -- for multiple users a sqlite based database is asking for trouble
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         # for production environments, these should be stored as environment variables
-#         # I also recommend the django-heroku-postgresify package for a super simple setup
-#         'NAME': os.environ.get('DATABASE_NAME', 'wooey'),
-#         'USER': os.environ.get('DATABASE_USER', 'wooey'),
-#         'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'wooey'),
-#         'HOST': os.environ.get('DATABASE_URL', 'localhost'),
-#         'PORT': os.environ.get('DATABASE_PORT', '5432')
-#     }
-# }
+if os.environ.get('DATABASE_ENGINE') == 'django.db.backends.postgresql_psycopg2':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            # for production environments, these should be stored as environment variables
+            # I also recommend the django-heroku-postgresify package for a super simple setup
+            'NAME': os.environ.get('DATABASE_NAME', 'wooey'),
+            'USER': os.environ.get('DATABASE_USER', 'wooey'),
+            'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'wooey'),
+            'HOST': os.environ.get('DATABASE_URL', 'localhost'),
+            'PORT': os.environ.get('DATABASE_PORT', '5432'),
+            'OPTIONS': {'sslmode': 'require'}
+        }
+    }
 
 ## A better celery broker -- using RabbitMQ (these defaults are from two free rabbitmq Heroku providers)
 # CELERY_BROKER_URL = os.environ.get('AMQP_URL') or \
@@ -114,11 +127,13 @@ STATIC_URL = '/static/'
 #     MIDDLEWARE_CLASSES = ['sslify.middleware.SSLifyMiddleware']+list(MIDDLEWARE_CLASSES)
 #     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 #
-# ALLOWED_HOSTS = (
-#     'localhost',
-#     '127.0.0.1',
-#     "wooey.herokuapp.com",# put your site here
-# )
+ALLOWED_HOSTS = (
+    'localhost',
+    '127.0.0.1',
+)
+
+if os.environ.get('ALLOWED_HOST'):
+    ALLOWED_HOSTS = ALLOWED_HOSTS + tuple(os.environ.get('ALLOWED_HOST', '').split(','))
 #
 # AWS_CALLING_FORMAT = VHostCallingFormat
 #
@@ -151,4 +166,30 @@ STATIC_URL = '/static/'
 # STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = 'wooey.wooeystorage.CachedS3BotoStorage'
 # WOOEY_EPHEMERAL_FILES = True
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    }
+}
+
 AUTHENTICATION_BACKEND = 'django.contrib.auth.backends.ModelBackend'
+KUBERNETES_NAMESPACE = os.environ.get('WOOEY_KUBERNETES_NAMESPACE', '')
+KUBERNETES_KIBANA_URL = os.environ.get('WOOEY_KIBANA_URL', '')
+KUBERNETES_CLAIM = os.environ.get('WOOEY_KUBERNETES_CLAIM', '')
+KUBERNETES_MOUNT_PATH = os.environ.get('WOOEY_KUBERNETES_MOUNT_PATH', '/mnt/share')
+WOOEY_KUBERNETES = True
+WOOEY_CELERY = False

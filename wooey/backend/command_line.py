@@ -41,7 +41,7 @@ def walk_dir(templates, dest, filter=None):
     return l
 
 
-def bootstrap(env=None, cwd=None):
+def bootstrap(env=None, cwd=None, migrate_db=True):
     if env is None:
         env = os.environ
     parser = ArgumentParser(description="Create a Django project with a Wooey app included.")
@@ -109,9 +109,14 @@ def bootstrap(env=None, cwd=None):
     # do the same with urls
     shutil.move(os.path.join(project_base_dir, 'urls.py'), os.path.join(project_base_dir, 'urls', 'django_urls.py'))
     env['DJANGO_SETTINGS_MODULE'] = '.'.join([project_name, 'settings', 'user_settings'])
-    subprocess.call(['python', 'manage.py', 'migrate'], env=env, cwd=project_root)
-    subprocess.call(['python', 'manage.py', 'createcachetable'], env=env, cwd=project_root)
+    if migrate_db:
+        subprocess.call(['python', 'manage.py', 'migrate'], env=env, cwd=project_root)
+        subprocess.call(['python', 'manage.py', 'createcachetable'], env=env, cwd=project_root)
     subprocess.call(['python', 'manage.py', 'collectstatic', '--noinput'], env=env, cwd=project_root)
     sys.stdout.write("Please enter the project directory {0}, and run python manage.py createsuperuser and"
                      " python manage.py runserver to start. The admin can be found at localhost:8000/admin. You may also want to set your "
                      "DJANGO_SETTINGS_MODULE environment variable to {0}.settings \n".format(project_name))
+
+
+def bootstrap_without_migration(env=None, cwd=None):
+    bootstrap(env=env, cwd=cwd, migrate_db=False)

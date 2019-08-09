@@ -69,11 +69,15 @@ def purge_output(job=None):
 
 
 def get_job_commands(job=None):
+    parameters = job.get_parameters()
+    if wooey_settings.WOOEY_KUBERNETES:
+        parameter = parameters.first()
+        return [parameter.value] if parameter and parameter.value else []
+
     script_version = job.script_version
     com = [sys.executable] if sys.executable else []
     com.extend([script_version.get_script_path()])
 
-    parameters = job.get_parameters()
     base_parameters = [i for i in parameters if not i.parameter.parser.name]
     command_parameters = [i for i in parameters if i.parameter.parser.name]
 
@@ -135,6 +139,7 @@ def create_wooey_job(user=None, script_version_pk=None, script_parser_pk=None, d
         job_description=data.pop('job_description', None),
         script_version=script_version,
     )
+
     job.save()
 
     # Because we use slugs, we do not need to filter by script_version=script_version here. We are going to eventually

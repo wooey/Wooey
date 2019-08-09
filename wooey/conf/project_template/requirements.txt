@@ -1,5 +1,5 @@
+wooeypip
 Django
-wooey
 django-sslify
 django-storages
 django-celery

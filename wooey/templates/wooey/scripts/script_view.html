@@ -61,7 +61,6 @@
               </div>
             {% endif %}
 
-
             <div class="tab-content">
               {% for parser_info, parser_groups in form.parsers.items %}
               {% with parser_pk=parser_info.0 parser_name=parser_info.1 %}
@@ -108,9 +107,11 @@
                     </div>
                   {% endwith %}
                 {% endfor %}
+
               {% endwith %}
               {% endfor %}
             </div>
+
           </div>
       </div>
 

@@ -160,6 +160,19 @@
 
     <div class="row">
 
+        {% if kibana_url %}
+        <div class="col-sm-12 col-md-12">
+            <div class="thumbnail panel panel-default">
+                 <div class="panel-heading"> <span class="glyphicon glyphicon-file"></span> {% trans "Kibana" %} <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-files" href="#collapse-files"></a></div>
+                <div id="collapse-files" class="panel-collapse collapse in">
+                <div class="panel-body">
+                    <a target="_blank" href="{{ kibana_url }}#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-30m,mode:quick,to:now))&_a=(columns:!(msg,component,trace_id,where,level,image_id),index:AWVcBzIsnXgwYKlzJqy4,interval:auto,query:(query_string:(query:'trace_id:%22{{ job_info.job.kubernetes_pod_name }}%22')),sort:!('@timestamp',desc))">View logs</a>
+                </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Output command and stderr, stdout in console-style view -->
         <div class="col-sm-12 col-md-12">
           <div class="thumbnail panel panel-{% if job_info.job.stderr %}danger{% else %}default{% endif %}">

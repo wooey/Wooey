@@ -54,6 +54,7 @@ class Command(BaseCommand):
                 sys.stdout.write('Converting {}\n'.format(script))
                 # copy the script to our storage
                 base_name = options.get('name') or os.path.splitext(os.path.split(script)[1])[0]
+
                 with open(script, 'r') as f:
                     script = default_storage.save(os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, os.path.split(script)[1]), File(f))
                     if wooey_settings.WOOEY_EPHEMERAL_FILES:

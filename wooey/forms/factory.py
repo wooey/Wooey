@@ -43,7 +43,7 @@ def mutli_render(render_func, appender_data_dict=None):
 
 def multi_value_from_datadict(func):
     def value_from_datadict(data, files, name):
-        return [func(QueryDict('{name}={value}'.format(name=name, value=i)), files, name) for i in data.getlist(name)]
+        return [func(QueryDict('{name}={value}'.format(name=name, value=six.moves.urllib.parse.quote(i))), files, name) for i in data.getlist(name)]
     return value_from_datadict
 
 

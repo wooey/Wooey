@@ -219,3 +219,14 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase)
                 'class': 'custom',
             }
         )
+
+    def test_handles_special_characters(self):
+        script_version = self.choice_script
+        # Associate a custom widget with a field
+        choice_str_slug = test_utils.get_subparser_form_slug(script_version, 'choices_str')
+        choice_str = 'This & is special'
+        form = utils.get_master_form(script_version=script_version)
+        qdict = self.get_mvdict({choice_str_slug: [choice_str], 'wooey_type': [script_version.pk], 'job_name': ['abc']})
+        utils.validate_form(form=form, data=qdict)
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data[choice_str_slug], [choice_str])

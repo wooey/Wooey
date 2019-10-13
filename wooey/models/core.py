@@ -8,7 +8,7 @@ from io import IOBase
 
 from autoslug import AutoSlugField
 from celery import states
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 from django.core.cache import caches as django_cache
 from django.core.files.storage import SuspiciousFileOperation
@@ -207,9 +207,9 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         if task_kwargs.get('rerun'):
             utils.purge_output(job=self)
         if wooey_settings.WOOEY_CELERY:
-            results = tasks.submit_script.delay(**task_kwargs)
+            transaction.on_commit(lambda: tasks.submit_script.delay(**task_kwargs))
         else:
-            results = tasks.submit_script(**task_kwargs)
+            transaction.on_commit(lambda: tasks.submit_script(**task_kwargs))
         return self
 
     def get_resubmit_url(self):

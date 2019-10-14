@@ -1,6 +1,7 @@
 import os
 
 from django.test import TestCase, Client
+from six.moves.urllib_parse import quote
 
 from . import factories, config, mixins, utils as test_utils
 from .. import models
@@ -49,6 +50,15 @@ class ScriptParameterTestCase(TestCase):
             script_parameter.save()
             self.assertEqual(models.ScriptParameter.objects.get(pk=pk).default, test_value)
 
+class TestScriptVersion(mixins.ScriptFactoryMixin, TestCase):
+    def test_script_version_url_with_spaces(self):
+        # Handles https://github.com/wooey/Wooey/issues/290
+        script_version = self.choice_script
+        spaced_version = 'v 1 0 0'
+        script_version.script_version = spaced_version
+        script_version.save()
+        url = script_version.get_version_url()
+        self.assertIn(quote(spaced_version), url)
 
 class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMixin, TestCase):
 

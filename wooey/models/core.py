@@ -17,6 +17,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.db import transaction
 from django.utils.text import get_valid_filename
 from jsonfield import JSONCharField
+from six.moves.urllib_parse import quote
 
 from ..django_compat import reverse
 from . mixins import UpdateScriptsMixin, ModelDiffMixin, WooeyPy2Mixin
@@ -122,6 +123,9 @@ class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
 
     def get_url(self):
         return reverse('wooey:wooey_script', kwargs={'slug': self.script.slug})
+
+    def get_version_url(self):
+        return reverse('wooey:wooey_script', kwargs={'slug': self.script.slug, 'script_version': quote(self.script_version), 'script_iteration': self.script_iteration})
 
     def get_script_path(self):
         local_storage = utils.get_storage(local=True)

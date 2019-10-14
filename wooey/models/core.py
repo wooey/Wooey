@@ -17,7 +17,6 @@ from django.utils.translation import ugettext_lazy as _
 from django.db import transaction
 from django.utils.text import get_valid_filename
 from jsonfield import JSONCharField
-from six.moves.urllib_parse import quote
 
 from ..django_compat import reverse
 from . mixins import UpdateScriptsMixin, ModelDiffMixin, WooeyPy2Mixin

@@ -1,7 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 from collections import defaultdict
 
-import six
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.forms import FileField
@@ -30,8 +29,6 @@ class WooeyScriptBase(DetailView):
     def get_context_data(self, **kwargs):
         context = super(WooeyScriptBase, self).get_context_data(**kwargs)
         version = self.kwargs.get('script_version')
-        if version:
-            version = six.moves.urllib.parse.unquote(version)
         iteration = self.kwargs.get('script_iteration')
 
         # returns the models required and optional fields as html

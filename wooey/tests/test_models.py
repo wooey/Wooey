@@ -1,6 +1,7 @@
 import os
 
-from django.test import TestCase, Client
+
+from django.test import Client, TestCase, TransactionTestCase
 from six.moves.urllib_parse import quote
 
 from . import factories, config, mixins, utils as test_utils
@@ -60,7 +61,7 @@ class TestScriptVersion(mixins.ScriptFactoryMixin, TestCase):
         url = script_version.get_version_url()
         self.assertIn(quote(spaced_version), url)
 
-class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMixin, TestCase):
+class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMixin, TransactionTestCase):
 
     def get_local_url(self, fileinfo):
         from ..backend import utils

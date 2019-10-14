@@ -1,7 +1,7 @@
 import os
 
 import six
-from django.test import TestCase
+from django.test import TransactionTestCase
 from django.http.request import MultiValueDict
 from django.core.files.uploadedfile import SimpleUploadedFile
 
@@ -21,7 +21,7 @@ from . import (
 )
 
 
-class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
+class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TransactionTestCase):
 
     @staticmethod
     def get_mvdict(data):

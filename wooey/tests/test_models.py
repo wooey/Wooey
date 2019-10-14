@@ -1,6 +1,6 @@
 import os
 
-from django.test import TestCase, Client
+from django.test import Client, TestCase, TransactionTestCase
 
 from . import factories, config, mixins, utils as test_utils
 from .. import models
@@ -50,7 +50,7 @@ class ScriptParameterTestCase(TestCase):
             self.assertEqual(models.ScriptParameter.objects.get(pk=pk).default, test_value)
 
 
-class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMixin, TestCase):
+class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMixin, TransactionTestCase):
 
     def get_local_url(self, fileinfo):
         from ..backend import utils

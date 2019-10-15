@@ -123,6 +123,9 @@ class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     def get_url(self):
         return reverse('wooey:wooey_script', kwargs={'slug': self.script.slug})
 
+    def get_version_url(self):
+        return reverse('wooey:wooey_script', kwargs={'slug': self.script.slug, 'script_version': self.script_version, 'script_iteration': self.script_iteration})
+
     def get_script_path(self):
         local_storage = utils.get_storage(local=True)
         path = local_storage.path(self.script_path.path)

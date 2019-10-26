@@ -235,13 +235,9 @@ class WooeyFormFactory(object):
 
         return script_info
 
-    def get_master_form(self, script_version=None, pk=None):
+    def get_master_form(self, script_version=None, pk=None, parser=None):
         pk = int(pk) if pk is not None else pk
-        if pk is not None and pk in self.wooey_forms:
-            if 'master' in self.wooey_forms[pk]:
-                if (version.PY_MINOR_VERSION == version.PY34 and version.PY_FULL_VERSION >= version.PY343) or \
-                        (version.PY_MINOR_VERSION == version.PY33 and version.PY_FULL_VERSION >= version.PY336):
-                    return copy.deepcopy(self.wooey_forms[pk]['master'])
+
         if script_version is None and pk is not None:
             script_version = ScriptVersion.objects.get(pk=pk)
         pk = script_version.pk
@@ -250,13 +246,10 @@ class WooeyFormFactory(object):
 
         params = script_version.get_parameters()
         for param in params:
-            field = self.get_field(param)
-            master_form.fields[param.form_slug] = field
-
-        try:
-            self.wooey_forms[pk]['master'] = master_form
-        except KeyError:
-            self.wooey_forms[pk] = {'master': master_form}
+            parser_name = param.parser.name
+            if not parser or (parser_name == '' or param.parser_id == parser):
+                field = self.get_field(param)
+                master_form.fields[param.form_slug] = field
 
         # create the group forms while we have the model
         if 'groups' not in self.wooey_forms[pk]:

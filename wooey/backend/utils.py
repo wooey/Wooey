@@ -164,9 +164,9 @@ def create_wooey_job(user=None, script_version_pk=None, script_parser_pk=None, d
     return job
 
 
-def get_master_form(script_version=None, pk=None):
+def get_master_form(script_version=None, pk=None, parser=None):
     from ..forms.factory import DJ_FORM_FACTORY
-    return DJ_FORM_FACTORY.get_master_form(script_version=script_version, pk=pk)
+    return DJ_FORM_FACTORY.get_master_form(script_version=script_version, pk=pk, parser=parser)
 
 
 def get_form_groups(script_version=None, pk=None, initial_dict=None, render_fn=None):

@@ -69,7 +69,6 @@ class WooeyScriptBase(DetailView):
             script_version=script_version,
             initial_dict=initial,
             render_fn=self.render_fn,
-            pk=self.object.pk
         )
         return context
 

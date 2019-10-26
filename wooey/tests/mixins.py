@@ -57,6 +57,7 @@ class ScriptFactoryMixin(ScriptTearDown, object):
         self.translate_script = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate.py'))
         self.choice_script = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'choices.py'))
         self.without_args = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'without_args.py'))
+        self.subparser_script = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'subparser_script.py'))
         self.version1_script = factories.generate_script(
             os.path.join(config.WOOEY_TEST_SCRIPTS, 'versioned_script', 'v1.py'),
             script_name='version_test',

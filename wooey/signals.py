@@ -62,7 +62,6 @@ def script_version_postsave(instance, created, **kwargs):
             # delete the model on exceptions.
             instance.delete()
             raise res['errors']
-    utils.reset_form_factory(script_version=instance)
 
 pre_save.connect(script_version_presave, sender=ScriptVersion)
 post_save.connect(script_version_postsave, sender=ScriptVersion)

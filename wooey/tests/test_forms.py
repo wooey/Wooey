@@ -230,3 +230,17 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, Transacti
         utils.validate_form(form=form, data=qdict)
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(form.cleaned_data[choice_str_slug], [choice_str])
+
+    def test_subparser_selection(self):
+        script_version = self.subparser_script
+        subparser = script_version.scriptparser_set.get(name='subparser2')
+        form = utils.get_master_form(script_version=script_version, parser=subparser.pk)
+        sp1_slug = test_utils.get_subparser_form_slug(script_version, 'sp1')
+        sp2_slug = test_utils.get_subparser_form_slug(script_version, 'sp2')
+        test_arg_slug = test_utils.get_subparser_form_slug(script_version, 'test_arg')
+
+        # The sp1 slug is only present in subparser1, so we should not see it, but we should
+        # see the sp2 slug and the general subparser options of test_arg
+        self.assertIn(sp2_slug, form.fields)
+        self.assertNotIn(sp1_slug, form.fields)
+        self.assertIn(test_arg_slug, form.fields)

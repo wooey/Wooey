@@ -30,7 +30,7 @@ You could at this point have Wooey listen to port 80 (assuming it's open) with t
 
     python manage.py runserver 0.0.0.0:80
 
-But this leaves us widly insecure, because all our passwords will be transmitted over HTTP. I had problems working with non-standard ports on UFW so for the purposes of this tutorial, so I set-up my ports using this `iptables linode tutorial
+But this leaves us wildly insecure, because all our passwords will be transmitted over HTTP. I had problems working with non-standard ports on UFW so for the purposes of this tutorial, so I set-up my ports using this `iptables linode tutorial
 <https://www.linode.com/docs/security/firewalls/control-network-traffic-with-iptables>`_.
 
 

@@ -7,8 +7,6 @@ from storages.backends.s3boto3 import S3Boto3Storage
 
 from . import settings as wooey_settings
 
-# From https://github.com/jezdez/django_compressor/issues/100
-
 class CachedS3Boto3Storage(S3Boto3Storage):
     def __init__(self, *args, **kwargs):
         if os.environ.get('TESTING', False):

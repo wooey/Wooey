@@ -5,7 +5,7 @@ coveralls
 django
 django-autoslug
 django-celery-results==1.1.2
-django-storages-redux
+django-storages
 jsonfield
 factory-boy
 mock

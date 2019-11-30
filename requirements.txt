@@ -1,11 +1,11 @@
-boto
+boto3
 celery==4.3.0
 clinto>=0.3.0
 coveralls
 django
 django-autoslug
 django-celery-results==1.1.2
-django-storages-redux
+django-storages
 jsonfield
 factory-boy
 mock

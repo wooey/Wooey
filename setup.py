@@ -20,7 +20,7 @@ setup(
         'django-autoslug',
         'django-celery-results',
         'eventlet>=0.22.1 ;platform_system=="Windows"',
-        'jsonfield',
+        'jsonfield==2.0.2',
         'pypiwin32==219 ;(platform_system=="Windows" and python_version=="3.4")',
         'pypiwin32 ;(platform_system=="Windows" and python_version>"3.4")',
         'six',

@@ -6,9 +6,12 @@ from django.test import TestCase, TransactionTestCase
 
 from ..backend import utils
 
-from . import factories
-from . import config
-from . import mixins
+from . import (
+    config,
+    factories,
+    mixins,
+    utils as test_utils,
+)
 
 
 class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TransactionTestCase):
@@ -61,14 +64,18 @@ class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TransactionTestCase
             new_file = self.storage.save(self.filename_func('file_maker.py'), o)
         res = utils.add_wooey_script(script_path=new_file, group=None)
         self.assertEqual(res['valid'], True, res['errors'])
+
+        output_slug = test_utils.get_subparser_form_slug(res['script'], 'output')
         job = utils.create_wooey_job(
             script_version_pk=res['script'].pk,
-            data={'job_name': 'abc'}
+            data={
+                'job_name': 'abc',
+                output_slug: 'test_file',
+            },
         )
         # Get the new job
         job.submit_to_celery()
         job = WooeyJob.objects.get(pk=job.pk)
-        utils.create_job_fileinfo(job)
 
         # Make sure the file info is correct
         self.assertEqual(UserFile.objects.filter(job=job).count(), 4)

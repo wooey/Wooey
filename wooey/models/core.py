@@ -54,7 +54,7 @@ class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     slug = AutoSlugField(populate_from='script_name', unique=True)
     # we create defaults for the script_group in the clean method of the model. We have to set it to null/blank=True
     # or else we will fail form validation before we hit the model.
-    script_group = models.ForeignKey('ScriptGroup', null=True, blank=True, on_delete=models.PROTECT)
+    script_group = models.ForeignKey('ScriptGroup', null=True, blank=True, on_delete=models.CASCADE)
     script_description = models.TextField(blank=True, null=True)
     documentation = models.TextField(blank=True, null=True)
     script_order = models.PositiveSmallIntegerField(default=1)
@@ -168,7 +168,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
     command = models.TextField()
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
-    script_version = models.ForeignKey('ScriptVersion', on_delete=models.PROTECT)
+    script_version = models.ForeignKey('ScriptVersion', on_delete=models.CASCADE)
 
     error_messages = {
         'invalid_permissions': _('You are not authenticated to view this job.'),
@@ -308,7 +308,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     """
         This holds the parameter mapping for each script, and enforces uniqueness by each script via a FK.
     """
-    parser = models.ForeignKey('ScriptParser', on_delete=models.PROTECT)
+    parser = models.ForeignKey('ScriptParser', on_delete=models.CASCADE)
     script_version = models.ManyToManyField('ScriptVersion')
     short_param = models.CharField(max_length=255, blank=True)
     script_param = models.TextField()
@@ -331,7 +331,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     param_help = models.TextField(verbose_name=_('help'), null=True, blank=True)
     is_checked = models.BooleanField(default=False)
     hidden = models.BooleanField(default=False)
-    parameter_group = models.ForeignKey('ScriptParameterGroup', on_delete=models.PROTECT)
+    parameter_group = models.ForeignKey('ScriptParameterGroup', on_delete=models.CASCADE)
     param_order = models.SmallIntegerField(help_text=_('The order the parameter appears to the user.'), default=0)
 
     class Meta:
@@ -382,7 +382,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
     """
     # the details of the actual executed scripts
     job = models.ForeignKey('WooeyJob', on_delete=models.CASCADE)
-    parameter = models.ForeignKey('ScriptParameter', on_delete=models.PROTECT)
+    parameter = models.ForeignKey('ScriptParameter', on_delete=models.CASCADE)
     # we store a JSON dumped string in here to attempt to keep our types in order
     _value = models.TextField(db_column='value')
 

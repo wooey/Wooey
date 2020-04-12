@@ -27,9 +27,9 @@ jobs:
       run: |
         make test
 
-    - uses: actions/checkout@master
     - uses: codecov/codecov-action@v1
       with:
+        file: ./coverage.xml
         flags: unittests
         name: codecov-umbrella
         fail_ci_if_error: true

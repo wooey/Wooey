@@ -27,11 +27,9 @@ jobs:
       run: |
         make test
 
-  coverage:
-    needs: build
-    steps:
-    - name: Coverage Reporting
-      env:
-        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-      run: |
-        coveralls
+    - uses: actions/checkout@master
+    - uses: codecov/codecov-action@v1
+      with:
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: true

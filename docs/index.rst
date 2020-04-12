@@ -40,6 +40,7 @@ Getting Started
    customizations
    remote
    upgrade_help
+   changelog
    security
 
 

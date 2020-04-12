@@ -1,18 +1,18 @@
 FROM python:3.7
 
 ARG BUILD_DIR=/wooey_build
+ENV BUILD_DIR=${BUILD_DIR}
 
 RUN pip install psycopg2
 
-COPY setup.py requirements.txt MANIFEST.in Makefile README.md ${BUILD_DIR}/
+COPY setup.py MANIFEST.in Makefile README.md ${BUILD_DIR}/
 COPY scripts ${BUILD_DIR}/scripts
 COPY wooey ${BUILD_DIR}/wooey
 COPY tests ${BUILD_DIR}/tests
 
 WORKDIR ${BUILD_DIR}
 
-RUN pip install -r requirements.txt
-RUN pip install -e .
+RUN pip install -e .[dev]
 
 RUN chmod -R a+rwx ${BUILD_DIR}
 

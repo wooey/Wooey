@@ -1,12 +1,11 @@
 testenv:
-	pip install -r requirements.txt
-	pip install -e .
-	pip install sphinx mock
+	pip install -e .[dev]
 
 test:
 	nosetests --with-coverage --cover-erase --cover-branches --cover-package=wooey tests/*
 	coverage run --append --branch --source=wooey `which django-admin.py` test --settings=wooey.test_settings wooey.tests
 	coverage report --omit='*migrations*','*wooey_scripts*','*tests/scripts*','*conf/*'
+	coverage xml --omit='*migrations*','*wooey_scripts*','*tests/scripts*','*conf/*'
 
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
 
@@ -34,8 +33,10 @@ dist: clean ## builds source and wheel package
 	python setup.py bdist_wheel
 	ls -l dist
 
-release: dist ## package and upload a release
-	twine upload dist/*
+release/major release/minor release/patch release/rc:
+	bumpversion $(@F)
+	git push
+	git push --tags
 
 .PHONY: docs
 docs:

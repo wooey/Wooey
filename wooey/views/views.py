@@ -69,7 +69,6 @@ class WooeyScriptBase(DetailView):
             script_version=script_version,
             initial_dict=initial,
             render_fn=self.render_fn,
-            pk=self.object.pk
         )
         return context
 
@@ -79,7 +78,7 @@ class WooeyScriptBase(DetailView):
         if not wooey_settings.WOOEY_ALLOW_ANONYMOUS and user is None:
             return {'valid': False, 'errors': {'__all__': [force_text(_('You are not permitted to access this script.'))]}}
 
-        form = utils.get_master_form(pk=post['wooey_type'])
+        form = utils.get_master_form(pk=int(post['wooey_type']), parser=int(post.get('wooey_parser', 0)))
         # TODO: Check with people who know more if there's a smarter way to do this
         utils.validate_form(form=form, data=post, files=request.FILES)
         # for cloned jobs, we don't have the files in input fields, they'll be in a list like ['', filename]

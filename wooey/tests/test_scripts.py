@@ -1,14 +1,14 @@
 import mock
 import os
 
-from django.test import TestCase
+from django.test import TransactionTestCase
 
 from . import config, mixins, utils as test_utils
 from ..backend import utils
 from ..models import ScriptParameter, ScriptVersion
 
 
-class ScriptAdditionTests(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase):
+class ScriptAdditionTests(mixins.ScriptFactoryMixin, mixins.FileMixin, TransactionTestCase):
 
     def test_command_order(self):
         script = os.path.join(config.WOOEY_TEST_SCRIPTS, 'command_order.py')

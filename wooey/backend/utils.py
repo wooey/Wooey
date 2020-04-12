@@ -164,19 +164,14 @@ def create_wooey_job(user=None, script_version_pk=None, script_parser_pk=None, d
     return job
 
 
-def get_master_form(script_version=None, pk=None):
+def get_master_form(script_version=None, pk=None, parser=None):
     from ..forms.factory import DJ_FORM_FACTORY
-    return DJ_FORM_FACTORY.get_master_form(script_version=script_version, pk=pk)
+    return DJ_FORM_FACTORY.get_master_form(script_version=script_version, pk=pk, parser=parser)
 
 
-def get_form_groups(script_version=None, pk=None, initial_dict=None, render_fn=None):
+def get_form_groups(script_version=None, initial_dict=None, render_fn=None):
     from ..forms.factory import DJ_FORM_FACTORY
-    return DJ_FORM_FACTORY.get_group_forms(script_version=script_version, pk=pk, initial_dict=initial_dict, render_fn=render_fn)
-
-
-def reset_form_factory(script_version=None):
-    from ..forms.factory import DJ_FORM_FACTORY
-    DJ_FORM_FACTORY.reset_forms(script_version=script_version)
+    return DJ_FORM_FACTORY.get_group_forms(script_version=script_version, initial_dict=initial_dict, render_fn=render_fn)
 
 
 def validate_form(form=None, data=None, files=None):

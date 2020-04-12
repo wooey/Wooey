@@ -2,7 +2,7 @@ import os
 import six
 import zipfile
 
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 
 from ..backend import utils
 
@@ -11,7 +11,7 @@ from . import config
 from . import mixins
 
 
-class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TestCase):
+class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TransactionTestCase):
     def test_sanitize_name(self):
         assert(utils.sanitize_name('abc')) == 'abc'
         assert(utils.sanitize_name('ab c')) == 'ab_c'

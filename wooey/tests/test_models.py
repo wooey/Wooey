@@ -1,18 +1,17 @@
 import os
 
-from django.test import TestCase, Client
+
+from django.test import Client, TestCase, TransactionTestCase
+from six.moves.urllib_parse import quote
+
+from wooey import models, version
 
 from . import factories, config, mixins, utils as test_utils
-from .. import models
-from .. import version
 
 
 class ScriptTestCase(mixins.ScriptFactoryMixin, TestCase):
 
     def test_multiple_choices(self):
-        # load our choice script
-        script = self.choice_script
-
         multiple_choice_param = 'two_choices'
         single_choice_param = 'one_choice'
         optional_choice_param = 'all_choices'
@@ -33,6 +32,13 @@ class ScriptTestCase(mixins.ScriptFactoryMixin, TestCase):
         self.assertTrue(param.multiple_choice)
         self.assertEqual(param.max_choices, -1)
 
+    def test_deletes_related_objects(self):
+        script = self.choice_script.script
+        self.assertTrue(models.ScriptVersion.objects.filter(pk=self.choice_script.pk).exists())
+        script.delete()
+        self.assertFalse(models.ScriptVersion.objects.filter(pk=self.choice_script.pk).exists())
+
+
 
 class ScriptGroupTestCase(TestCase):
 
@@ -49,8 +55,17 @@ class ScriptParameterTestCase(TestCase):
             script_parameter.save()
             self.assertEqual(models.ScriptParameter.objects.get(pk=pk).default, test_value)
 
+class TestScriptVersion(mixins.ScriptFactoryMixin, TestCase):
+    def test_script_version_url_with_spaces(self):
+        # Handles https://github.com/wooey/Wooey/issues/290
+        script_version = self.choice_script
+        spaced_version = 'v 1 0 0'
+        script_version.script_version = spaced_version
+        script_version.save()
+        url = script_version.get_version_url()
+        self.assertIn(quote(spaced_version), url)
 
-class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMixin, TestCase):
+class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMixin, TransactionTestCase):
 
     def get_local_url(self, fileinfo):
         from ..backend import utils

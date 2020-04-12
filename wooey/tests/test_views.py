@@ -33,13 +33,13 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     def setUp(self):
         super(CeleryViews, self).setUp()
         self.factory = RequestFactory()
+        self.user = factories.UserFactory()
         # the test server doesn't have celery running
         settings.WOOEY_CELERY = False
 
     def test_celery_results(self):
         request = self.factory.get(reverse('wooey:all_queues_json'))
-        user = factories.UserFactory()
-        request.user = user
+        request.user = self.user
         response = wooey_celery.all_queues_json(request)
         d = response.content.decode("utf-8")
         self.assertEqual(
@@ -56,7 +56,7 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         d = json.loads(response.content.decode("utf-8"))
         self.assertEqual(1, d['totals']['global'])
 
-        job.user = user
+        job.user = self.user
         job.status = models.WooeyJob.RUNNING
         job.save()
         response = wooey_celery.all_queues_json(request)
@@ -73,9 +73,8 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         self.assertEqual(d['items']['user'], [])
 
     def test_celery_commands(self):
-        user = factories.UserFactory()
         job = factories.generate_job(self.translate_script)
-        job.user = user
+        job.user = self.user
         job.save()
         celery_command = {'celery-command': ['delete'], 'job-id': [job.pk]}
         # test that we cannot modify a users script
@@ -101,15 +100,14 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
                 reverse('wooey:celery_task_command'),
                 celery_command,
             )
-            request.user = user
+            request.user = self.user
             response = wooey_celery.celery_task_command(request)
             d = response.content.decode("utf-8")
             self.assertTrue(json.loads(d).get('valid'))
 
     def test_celery_task_view(self):
-        user = factories.UserFactory()
         job = factories.generate_job(self.translate_script)
-        job.user = user
+        job.user = self.user
         job.save()
 
         # test that an anonymous user cannot view a user's job
@@ -122,7 +120,7 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         self.assertNotIn('job_info', response.context_data)
 
         # test the user can view the job
-        request.user = user
+        request.user = self.user
         response = view(request, job_id=job.pk)
         response.render()
         self.assertNotIn('job_error', response.context_data)
@@ -143,6 +141,7 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         self.factory = RequestFactory()
         self.script_view_func = wooey_views.WooeyScriptView.as_view()
         self.json_view_func = wooey_views.WooeyScriptJSON.as_view()
+        self.user = factories.UserFactory()
         # the test server doesn't have celery running
         settings.WOOEY_CELERY = False
 
@@ -198,7 +197,6 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
 
 
     def test_multiple_choice(self):
-        user = factories.UserFactory()
         script_version = self.choice_script
         script = script_version.script
         two_choices_slug = test_utils.get_subparser_form_slug(script_version, 'two_choices')
@@ -214,7 +212,7 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
             data[slug] = v
             filecount += len(v)
         request = self.factory.post(url, data=data)
-        request.user = user
+        request.user = self.user
         response = self.json_view_func(request)
         d = load_JSON_dict(response.content)
         self.assertTrue(d['valid'], d)
@@ -226,7 +224,7 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
 
         data['multiple_file_choices'] = files
         request = self.factory.post(url, data=data)
-        request.user = user
+        request.user = self.user
         response = self.json_view_func(request)
         self.assertEqual(response.status_code, 200)
         d = load_JSON_dict(response.content)
@@ -281,3 +279,38 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         response.render()
         self.assertContains(response, models.WooeyJob.error_messages['invalid_permissions'])
 
+    def test_validates_chosen_subparser(self):
+        # Addresses https://github.com/wooey/Wooey/issues/288
+        script_version = self.subparser_script
+        script = script_version.script
+        sp2_slug = test_utils.get_subparser_form_slug(script_version, 'sp2')
+        subparser = script_version.scriptparser_set.get(name='subparser2')
+        url = reverse('wooey:wooey_script', kwargs={'slug': script.slug})
+        data = {
+            'job_name': 'abc',
+            'wooey_type': script_version.pk,
+            'wooey_parser': subparser.pk,
+            sp2_slug: [1],
+        }
+        request = self.factory.post(url, data=data)
+        request.user = self.user
+        response = self.json_view_func(request)
+        d = load_JSON_dict(response.content)
+        self.assertTrue(d['valid'], d)
+
+    def test_fails_if_required_subparser_argument_not_used(self):
+        # Addresses https://github.com/wooey/Wooey/issues/288
+        script_version = self.subparser_script
+        script = script_version.script
+        subparser = script_version.scriptparser_set.get(name='subparser2')
+        url = reverse('wooey:wooey_script', kwargs={'slug': script.slug})
+        data = {
+            'job_name': 'abc',
+            'wooey_type': script_version.pk,
+            'wooey_parser': subparser.pk,
+        }
+        request = self.factory.post(url, data=data)
+        request.user = self.user
+        response = self.json_view_func(request)
+        d = load_JSON_dict(response.content)
+        self.assertFalse(d['valid'], d)

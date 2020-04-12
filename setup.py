@@ -9,7 +9,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='wooey',
-    version='0.10.1',
+    version='0.11.1rc3',
     packages=find_packages(),
     scripts=['scripts/wooify'],
     entry_points={'console_scripts': ['wooify = wooey.backend.command_line:bootstrap', ]},
@@ -21,12 +21,24 @@ setup(
         'Django>=2.2,<4 ;python_version>"3.4"',
         'django-autoslug',
         'django-celery-results',
+        'django-storages',
         'eventlet>=0.22.1 ;platform_system=="Windows"',
-        'jsonfield',
-        'pypiwin32==219 ;(platform_system=="Windows" and python_version=="3.4")',
+        'jsonfield<3',
+        'pypiwin32==219 ;(platform_system=="Windows" and python_version<="3.4")',
         'pypiwin32 ;(platform_system=="Windows" and python_version>"3.4")',
         'six',
     ],
+    extras_require={
+        'dev': [
+            'boto3',
+            'coverage',
+            'factory-boy',
+            'mock',
+            'nose',
+            'sphinx',
+            'tox',
+        ]
+    },
     include_package_data=True,
     description='A Django app which creates a web GUI and task interface for argparse scripts',
     url='http://www.github.com/wooey/wooey',

@@ -25,6 +25,7 @@ LANGUAGES = [
     ('nl', _('Dutch')),
     ('zh-hans', _('Simplified Chinese')),
     ('ko', _('Korean')),
+    ('es', _('Spanish'))
 ]
 
 NEW_MIDDLEWARE = []

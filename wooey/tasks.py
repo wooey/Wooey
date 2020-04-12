@@ -1,14 +1,14 @@
 from __future__ import absolute_import
-import subprocess
-import tarfile
 import os
-import zipfile
-import six
+import subprocess
 import sys
+import tarfile
+import tempfile
 import traceback
-
+import zipfile
 from threading import Thread
 
+import six
 from django.utils.text import get_valid_filename
 from django.core.files import File
 from django.conf import settings
@@ -18,6 +18,7 @@ from celery import app
 from celery.schedules import crontab
 from celery.signals import worker_process_init
 
+from .backend import utils
 from . import settings as wooey_settings
 
 try:
@@ -74,11 +75,38 @@ class WooeyTask(Task):
     #     job.save()
 
 
+def get_latest_script(script_version):
+    """Downloads the latest script version to the local storage.
+
+    :param script_version: :py:class:`~wooey.models.core.ScriptVersion`
+    :return: boolean
+        Returns true if a new version was downloaded.
+    """
+    script_path = script_version.script_path
+    local_storage = utils.get_storage(local=True)
+    script_exists = local_storage.exists(script_path.name)
+    if not script_exists:
+        local_storage.save(script_path.name, script_path.file)
+        return True
+    else:
+        # If script exists, make sure the version is valid, otherwise fetch a new one
+        script_contents = local_storage.open(script_path.name).read()
+        script_checksum = utils.get_checksum(buff=script_contents)
+        if script_checksum != script_version.checksum:
+            tf = tempfile.TemporaryFile()
+            with tf:
+                tf.write(script_contents)
+                tf.seek(0)
+                local_storage.delete(script_path.name)
+                local_storage.save(script_path.name, tf)
+                return True
+    return False
+
+
 @celery_app.task(base=WooeyTask)
 def submit_script(**kwargs):
     job_id = kwargs.pop('wooey_job')
     resubmit = kwargs.pop('wooey_resubmit', False)
-    from .backend import utils
     from .models import WooeyJob, UserFile
     job = WooeyJob.objects.get(pk=job_id)
 
@@ -98,14 +126,8 @@ def submit_script(**kwargs):
     utils.mkdirs(abscwd)
     # make sure we have the script, otherwise download it. This can happen if we have an ephemeral file system or are
     # executing jobs on a worker node.
-    script_path = job.script_version.script_path
-    script_update_time = job.script_version.modified_date
-    local_storage = utils.get_storage(local=True)
-    script_exists = local_storage.exists(script_path.name)
-    if not script_exists or (local_storage.get_modified_time(script_path.name) < script_update_time):
-        if script_exists:
-            local_storage.delete(script_path.name)
-        local_storage.save(script_path.name, script_path.file)
+    get_latest_script(job.script_version)
+
 
     job.status = WooeyJob.RUNNING
     job.save()
@@ -239,7 +261,14 @@ def cleanup_dead_jobs():
 
     # Get active tasks from Celery
     inspect = celery_app.control.inspect()
-    active_tasks = {task['id'] for worker, tasks in six.iteritems(inspect.active()) for task in tasks}
+    worker_info = inspect.active()
+
+    # If we cannot connect to the workers, we do not know if the tasks are running or not, so
+    # we cannot mark them as dead
+    if not worker_info:
+        return
+
+    active_tasks = {task['id'] for worker, tasks in six.iteritems(worker_info) for task in tasks}
 
     # find jobs that are marked as running but not present in celery's active tasks
     active_jobs = WooeyJob.objects.filter(status=WooeyJob.RUNNING)

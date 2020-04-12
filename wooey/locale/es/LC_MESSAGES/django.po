@@ -1,0 +1,302 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2015-09-08 17:37+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: backend/utils.py:311
+msgid "You are not permitted to use this script"
+msgstr "No tienes permitido correr este script"
+
+#: models/core.py:146 templates/wooey/home.html:69
+#: templates/wooey/home.html.py:85
+msgid "Submitted"
+msgstr "Listo"
+
+#: models/core.py:147
+msgid "Running"
+msgstr "Corriendo"
+
+#: models/core.py:148
+msgid "Completed"
+msgstr "Completado"
+
+#: models/core.py:149
+msgid "Deleted"
+msgstr "Eliminado"
+
+#: models/core.py:325
+msgid "FILE NOT FOUND"
+msgstr "ARCHIVO NO ENCONTRADO"
+
+#: models/core.py:327
+msgid "File outside of project"
+msgstr "Archivo fuera de este proyecto"
+
+#: settings.py:20
+msgid "Scripts"
+msgstr "Scripts"
+
+#: settings.py:21
+msgid "Wooey!"
+msgstr "Wooey!"
+
+#: settings.py:22
+msgid "A web UI for Python scripts"
+msgstr "Una interfaz web para scripts de Python"
+
+#: templates/wooey/base.html:389
+msgid "Queue"
+msgstr "Cola"
+
+#: templates/wooey/base.html:399
+msgid "Jobs"
+msgstr "Jobs"
+
+#: templates/wooey/base.html:408
+msgid "Results"
+msgstr "Resultados"
+
+#: templates/wooey/base.html:417
+msgid "Scrapbook"
+msgstr "Scrapbook"
+
+#: templates/wooey/base.html:421
+msgid "Logout"
+msgstr "Desloguear"
+
+#: templates/wooey/base.html:439
+msgid "Search for scripts..."
+msgstr "Buscar Scripts"
+
+#: templates/wooey/home.html:51
+msgid "Your Jobs"
+msgstr "Tus Jobs"
+
+#: templates/wooey/home.html:53
+msgid "All Jobs"
+msgstr "Todos los jobs"
+
+#: templates/wooey/home.html:57
+msgid "Auto"
+msgstr "Automático"
+
+#: templates/wooey/home.html:66 templates/wooey/home.html.py:82
+msgid "Id"
+msgstr "ID"
+
+#: templates/wooey/home.html:67 templates/wooey/home.html.py:83
+msgid "Name"
+msgstr "Nombre"
+
+#: templates/wooey/home.html:68 templates/wooey/home.html.py:84
+msgid "Status"
+msgstr "Estado"
+
+#: templates/wooey/jobs/job_view.html:7
+#, python-format
+msgid "Job # %(job_id)s"
+msgstr "Job # %(job_id)s"
+
+#: templates/wooey/jobs/job_view.html:40
+msgid "Download"
+msgstr "Descargar"
+
+#: templates/wooey/jobs/job_view.html:57
+msgid "Share"
+msgstr "Compartir"
+
+#: templates/wooey/jobs/job_view.html:82
+msgid "Stop"
+msgstr "Parar"
+
+#: templates/wooey/jobs/job_view.html:86
+msgid "Re-run"
+msgstr "Relanzar"
+
+#: templates/wooey/jobs/job_view.html:90
+msgid "Resubmit"
+msgstr "Resubmitear"
+
+#: templates/wooey/jobs/job_view.html:93
+msgid "Clone"
+msgstr "Clonar"
+
+#: templates/wooey/jobs/job_view.html:97
+msgid "Delete"
+msgstr "Eliminar"
+
+#: templates/wooey/jobs/job_view.html:151
+msgid "Console"
+msgstr "Consola"
+
+#: templates/wooey/jobs/job_view.html:172
+msgid "All Files"
+msgstr "Todos los archivos"
+
+#: templates/wooey/modals/base_modal.html:13
+msgid "Close"
+msgstr "Cerrar"
+
+#: templates/wooey/modals/permalink_modal.html:4
+msgid "Permanant link to these results"
+msgstr "Link permanente a este resultado"
+
+#: templates/wooey/modals/permalink_modal.html:6
+msgid "You can share the following link to give open access to your results:"
+msgstr "Puedes compartir el siguiente link para dar acceso a tus resultados:"
+
+#: templates/wooey/modals/resubmit_modal.html:4
+msgid "Resubmission Complete"
+msgstr "Resubmiteo completo"
+
+#: templates/wooey/modals/resubmit_modal.html:5
+msgid "Your job has been successfully resubmitted."
+msgstr "Tu job fue resubmiteado."
+
+#: templates/wooey/modals/resubmit_modal.html:7
+msgid "View Job"
+msgstr "Ver Job"
+
+#: templates/wooey/preview/base.html:7
+msgid "Download this output"
+msgstr "Descargar esta salida"
+
+#: templates/wooey/preview/base.html:8
+msgid "Pin in scrapbook"
+msgstr "Pin in Scrapbook"
+
+#: templates/wooey/registration/login.html:10
+#: templates/wooey/registration/login.html:12
+#: templates/wooey/registration/login_header.html:6
+#: templates/wooey/registration/register.html:10
+#: templates/wooey/registration/register.html:12
+msgid "Username"
+msgstr "Usuario"
+
+#: templates/wooey/registration/login_header.html:12
+msgid "Login"
+msgstr "Loguearse"
+
+#: templates/wooey/registration/login_header.html:16
+msgid "Register"
+msgstr "Registrar"
+
+#: templates/wooey/registration/register.html:19
+#: templates/wooey/registration/register.html:21
+msgid "Email"
+msgstr "Email"
+
+#: templates/wooey/scripts/script_panel.html:23
+#, python-format
+msgid "Version %(version)s"
+msgstr "Versión %(version)s"
+
+#: templates/wooey/scripts/script_panel.html:26
+#, python-format
+msgid "Iteration %(iteration)s"
+msgstr "Iteración %(iteration)s"
+
+#: templates/wooey/scripts/script_view.html:23
+msgid "Documentation"
+msgstr "Documentación"
+
+#: templates/wooey/scripts/script_view.html:35
+msgid "Settings"
+msgstr "Configuración"
+
+#: templates/wooey/scripts/script_view.html:82
+msgid "Metadata"
+msgstr "Metadatos"
+
+#: templates/wooey/scripts/script_view.html:87
+#: templates/wooey/scripts/script_view.html:88
+msgid "Job Name"
+msgstr "Nombre del job"
+
+#: templates/wooey/scripts/script_view.html:91
+msgid "Job Description"
+msgstr "Descripción del job"
+
+#: templates/wooey/scripts/script_view.html:92
+msgid "Enter job description here..."
+msgstr "Ingrese la descripción del job acá"
+
+#: templates/wooey/scripts/script_view.html:101
+msgid "Submit"
+msgstr "Lanzar"
+
+#: templates/wooey/scripts/script_view.html:124
+msgid "No more choices may be added for this selection"
+msgstr "No se pueden agregar más opciones a esta selección"
+
+#: views/authentication.py:31
+msgid "Passwords do not match."
+msgstr "Password incorrecta"
+
+#: views/authentication.py:33
+msgid "Reserved username."
+msgstr "Nombre de usuario reservado"
+
+#: views/authentication.py:35
+msgid "Please enter your email address."
+msgstr "Por favor ingresa tu email"
+
+#: views/authentication.py:66
+msgid "You have entered an invalid username or password."
+msgstr "Has ingresado un usuario o contraseña inválida"
+
+#: views/views.py:59
+#, python-format
+msgid "No %(verbose_name)s found matching the query"
+msgstr "No se encontró en la consulta %(verbose_name)s "
+
+#: views/views.py:89 views/views.py:134
+msgid "You are not permitted to access this script."
+msgstr "No tienes permisos para acceder a este script."
+
+#: views/wooey_celery.py:27ntic
+msgid "Success"
+msgstr "Finalizado"
+
+#: views/wooey_celery.py:28
+msgid "Executing"
+msgstr "Corriendo"
+
+#: views/wooey_celery.py:29
+msgid "Queued"
+msgstr "En cola"
+
+#: views/wooey_celery.py:30
+msgid "Halted"
+msgstr "Cancelado"
+
+#: views/wooey_celery.py:31
+msgid "Failure"
+msgstr "Falló"
+
+#: views/wooey_celery.py:32
+msgid "Waiting"
+msgstr "Esperando"
+
+#: views/wooey_celery.py:137
+msgid "Unknown Command"
+msgstr "Comando desconocido"
+
+#: views/wooey_celery.py:192
+msgid "You are not authenticated to view this job."
+msgstr "No estás autenticado para ver este job"

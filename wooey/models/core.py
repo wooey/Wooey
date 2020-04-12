@@ -8,7 +8,7 @@ from io import IOBase
 
 from autoslug import AutoSlugField
 from celery import states
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 from django.core.cache import caches as django_cache
 from django.core.files.storage import SuspiciousFileOperation
@@ -102,7 +102,7 @@ class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     script_iteration = models.PositiveSmallIntegerField(default=1)
     script_path = models.FileField()
     default_version = models.BooleanField(default=False)
-    script = models.ForeignKey('Script', related_name='script_version', on_delete=models.PROTECT)
+    script = models.ForeignKey('Script', related_name='script_version', on_delete=models.CASCADE)
     checksum = models.CharField(max_length=40, blank=True)
 
     created_date = models.DateTimeField(auto_now_add=True)
@@ -122,6 +122,9 @@ class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
 
     def get_url(self):
         return reverse('wooey:wooey_script', kwargs={'slug': self.script.slug})
+
+    def get_version_url(self):
+        return reverse('wooey:wooey_script', kwargs={'slug': self.script.slug, 'script_version': self.script_version, 'script_iteration': self.script_iteration})
 
     def get_script_path(self):
         local_storage = utils.get_storage(local=True)
@@ -207,9 +210,9 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         if task_kwargs.get('rerun'):
             utils.purge_output(job=self)
         if wooey_settings.WOOEY_CELERY:
-            results = tasks.submit_script.delay(**task_kwargs)
+            transaction.on_commit(lambda: tasks.submit_script.delay(**task_kwargs))
         else:
-            results = tasks.submit_script(**task_kwargs)
+            transaction.on_commit(lambda: tasks.submit_script(**task_kwargs))
         return self
 
     def get_resubmit_url(self):

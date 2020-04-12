@@ -18,7 +18,7 @@ jobs:
     - uses: actions/checkout@v1
     - name: Build image
       run: |
-        docker build -t chrismit7/wooey:latest .
+        docker build -f docker/Dockerfile -t chrismit7/wooey:latest .
         docker tag chrismit7/wooey:latest chrismit7/wooey:${GITHUB_REF#refs/tags/}
     - name: Upload image to Dockerhub
       env:

@@ -292,7 +292,8 @@ class ScriptParameterGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
         verbose_name_plural = _('script parameter groups')
 
     def __str__(self):
-        return '{}: {}'.format(self.script_version.first().script.script_name, self.group_name)
+        script_version = self.script_version.first()
+        return '{}: {}'.format(script_version.script.script_name if script_version else 'No Script Assigned', self.group_name)
 
 
 class ScriptParser(WooeyPy2Mixin, models.Model):

@@ -17,6 +17,8 @@ jobs:
             django-version: "2.2"
           - python-version: 2.7
             django-version: "3.0"
+          - python-version: 3.5
+            django-version: "3.0"
 
     steps:
     - uses: actions/checkout@v1

@@ -1,6 +1,8 @@
 ![Wooey!](wooey-banner.png)
 
-[![Build Status](https://github.com/wooey/wooey/workflows/Build-and-Test/badge.svg)](https://github.com/wooey/wooey/actions)
+[![Build Status](https://github.com/wooey/wooey/workflows/Build-and-Test/badge.svg)](https://github.com/wooey/wooey/actions?query=workflow%3ABuild-and-Test)
+[![Deploy-To-Pypi](https://github.com/wooey/Wooey/workflows/Deploy-To-Pypi/badge.svg)](https://github.com/wooey/wooey/actions?query=workflow%3ADeploy-To-Pypi)
+[![Deploy-To-Docker](https://github.com/wooey/Wooey/workflows/Deploy-To-Docker/badge.svg)](https://github.com/wooey/wooey/actions?query=workflow%3ADeploy-To-Docker)
 [![codecov](https://codecov.io/gh/wooey/Wooey/branch/master/graph/badge.svg)](https://codecov.io/gh/wooey/Wooey)
 [![Join the chat at https://gitter.im/wooey/Wooey](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/wooey/Wooey?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 

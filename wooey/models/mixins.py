@@ -1,16 +1,11 @@
-from __future__ import absolute_import
-__author__ = 'chris'
+from django.db.models.query_utils import DeferredAttribute
 from django.forms.models import model_to_dict
+
 from ..backend import utils
 
 
 class UpdateScriptsMixin(object):
     pass
-    # this method is no longer needed, as scripts are not cached
-    # def save(self, **kwargs):
-    #     super(UpdateScriptsMixin, self).save(**kwargs)
-    #     # remove script from factory
-    #     utils.update_form_factory(script_version=self.script_version)
 
 
 class WooeyPy2Mixin(object):
@@ -60,5 +55,9 @@ class ModelDiffMixin(object):
 
     @property
     def _dict(self):
+        exclude = [f.name for f in self._meta.fields if
+                   isinstance(self.__class__.__dict__.get(f.attname),
+                              DeferredAttribute)]
+
         return model_to_dict(self, fields=[field.name for field in
-                             self._meta.fields])
+                                           self._meta.fields], exclude=exclude)

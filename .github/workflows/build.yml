@@ -26,3 +26,12 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         make test
+
+  coverage:
+    needs: build
+    steps:
+    - name: Coverage Reporting
+      env:
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+      run: |
+        coveralls

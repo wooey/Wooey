@@ -4,17 +4,14 @@ import os
 from django.test import Client, TestCase, TransactionTestCase
 from six.moves.urllib_parse import quote
 
+from wooey import models, version
+
 from . import factories, config, mixins, utils as test_utils
-from .. import models
-from .. import version
 
 
 class ScriptTestCase(mixins.ScriptFactoryMixin, TestCase):
 
     def test_multiple_choices(self):
-        # load our choice script
-        script = self.choice_script
-
         multiple_choice_param = 'two_choices'
         single_choice_param = 'one_choice'
         optional_choice_param = 'all_choices'
@@ -34,6 +31,13 @@ class ScriptTestCase(mixins.ScriptFactoryMixin, TestCase):
         param = models.ScriptParameter.objects.get(slug=optional_choice_param)
         self.assertTrue(param.multiple_choice)
         self.assertEqual(param.max_choices, -1)
+
+    def test_deletes_related_objects(self):
+        script = self.choice_script.script
+        self.assertTrue(models.ScriptVersion.objects.filter(pk=self.choice_script.pk).exists())
+        script.delete()
+        self.assertFalse(models.ScriptVersion.objects.filter(pk=self.choice_script.pk).exists())
+
 
 
 class ScriptGroupTestCase(TestCase):

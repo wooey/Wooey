@@ -102,7 +102,7 @@ class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     script_iteration = models.PositiveSmallIntegerField(default=1)
     script_path = models.FileField()
     default_version = models.BooleanField(default=False)
-    script = models.ForeignKey('Script', related_name='script_version', on_delete=models.PROTECT)
+    script = models.ForeignKey('Script', related_name='script_version', on_delete=models.CASCADE)
     checksum = models.CharField(max_length=40, blank=True)
 
     created_date = models.DateTimeField(auto_now_add=True)

@@ -22,7 +22,7 @@ setup(
         'django-storages',
         'eventlet>=0.22.1 ;platform_system=="Windows"',
         'jsonfield<3',
-        'pypiwin32==219 ;(platform_system=="Windows" and python_version=="3.4")',
+        'pypiwin32==219 ;(platform_system=="Windows" and python_version<="3.4")',
         'pypiwin32 ;(platform_system=="Windows" and python_version>"3.4")',
         'six',
     ],

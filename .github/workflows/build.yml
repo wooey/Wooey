@@ -9,6 +9,8 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
+        # Up to date compatibility matrix
+        # https://docs.djangoproject.com/en/dev/faq/install/#what-python-version-can-i-use-with-django
         python-version: [2.7, 3.5, 3.6, 3.7, 3.8]
         os: [ubuntu-latest, windows-latest]
         django-version: ["1.11", "2.2", "3.0"]

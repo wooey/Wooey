@@ -33,8 +33,8 @@ class ScriptTestCase(mixins.ScriptFactoryMixin, TestCase):
         self.assertEqual(param.max_choices, -1)
 
     def test_deletes_related_objects(self):
-        script = self.choice_script.script
         self.assertTrue(models.ScriptVersion.objects.filter(pk=self.choice_script.pk).exists())
+        script = models.Script.objects.get(pk=self.choice_script.script.pk)
         script.delete()
         self.assertFalse(models.ScriptVersion.objects.filter(pk=self.choice_script.pk).exists())
 

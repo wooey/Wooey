@@ -16,7 +16,10 @@ setup(
     install_requires=[
         'celery>=4.0,<5',
         'clinto>=0.3.0',
-        'Django>=1.11,<2.2',
+        'Django~=1.11 ;python_version<="2.7"',
+        'Django>=2,<2.2 ;(python_version>"2.7" and python_version<="3.4")',
+        'Django>=2,<=2.2 ;(python_version>"2.7" and python_version<="3.5")',
+        'Django>=3,<4 ;python_version>="3.6"',
         'django-autoslug',
         'django-celery-results',
         'django-storages',

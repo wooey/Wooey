@@ -519,7 +519,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
             else:
                 if value:
                     local_storage = utils.get_storage(local=True)
-                    current_path = local_storage.path(value)
+                    current_path = local_storage.path(value.name)
                     checksum = utils.get_checksum(path=value)
                     path = utils.get_upload_path(current_path, checksum=checksum)
                     if hasattr(value, 'size'):

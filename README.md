@@ -1,7 +1,7 @@
 ![Wooey!](wooey-banner.png)
 
-[![Build Status](https://travis-ci.org/wooey/Wooey.svg?branch=master)](https://travis-ci.org/wooey/Wooey)
-[![Coverage Status](https://coveralls.io/repos/wooey/Wooey/badge.svg?branch=master)](https://coveralls.io/r/wooey/Wooey?branch=master)
+[![Build Status](https://github.com/wooey/wooey/workflows/Build-and-Test/badge.svg)](https://github.com/wooey/wooey/actions)
+[![codecov](https://codecov.io/gh/wooey/Wooey/branch/master/graph/badge.svg)](https://codecov.io/gh/wooey/Wooey)
 [![Join the chat at https://gitter.im/wooey/Wooey](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/wooey/Wooey?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Wooey is a simple web interface to run command line Python scripts. Think of it as an easy way to get your scripts up on the web for routine data analysis, file processing, or anything else.

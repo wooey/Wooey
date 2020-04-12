@@ -1,7 +1,5 @@
 testenv:
-	pip install -r requirements.txt
-	pip install -e .
-	pip install sphinx mock
+	pip install -e .[dev]
 
 test:
 	nosetests --with-coverage --cover-erase --cover-branches --cover-package=wooey tests/*

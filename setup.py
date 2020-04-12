@@ -26,7 +26,7 @@ setup(
         'pypiwin32 ;(platform_system=="Windows" and python_version>"3.4")',
         'six',
     ],
-    extra_requires={
+    extras_require={
         'dev': [
             'boto3',
             'coverage',

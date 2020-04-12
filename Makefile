@@ -33,8 +33,10 @@ dist: clean ## builds source and wheel package
 	python setup.py bdist_wheel
 	ls -l dist
 
-release: dist ## package and upload a release
-	twine upload dist/*
+release/major release/minor release/patch release/rc:
+	bumpversion $(@F)
+	git push
+	git push --tags
 
 .PHONY: docs
 docs:

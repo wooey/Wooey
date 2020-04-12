@@ -45,6 +45,11 @@ class ScriptGroupTestCase(TestCase):
     def test_script_group_creation(self):
         group = factories.ScriptGroupFactory()
 
+class TestScriptParsers(mixins.ScriptFactoryMixin, TestCase):
+    def test_renders_if_script_version_deleted(self):
+        parser = self.choice_script.scriptparser_set.first()
+        self.choice_script.delete()
+        self.assertIn(parser.name, str(parser))
 
 class ScriptParameterTestCase(TestCase):
     def test_script_parameter_default(self):

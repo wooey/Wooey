@@ -300,7 +300,8 @@ class ScriptParser(WooeyPy2Mixin, models.Model):
     script_version = models.ManyToManyField('ScriptVersion')
 
     def __str__(self):
-        return '{}: {}'.format(self.script_version.first().script.script_name, self.name)
+        script_version = self.script_version.first()
+        return '{}: {}'.format(script_version.script.script_name if script_version else 'No Script Assigned', self.name)
 
 
 class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):

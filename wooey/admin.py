@@ -67,6 +67,9 @@ class ScriptParserAdmin(ModelAdmin):
     def script_versions(self, obj):
         return ', '.join(['{}: {}'.format(script_version.script.script_name, script_version.script_iteration) for script_version in obj.script_version.all()])
 
+class ScriptVersionAdmin(ModelAdmin):
+    list_display = ('script', 'script_version', 'script_iteration', 'default_version')
+
 
 class FileAdmin(ModelAdmin):
     pass
@@ -79,3 +82,4 @@ site.register(ScriptParameter, ParameterAdmin)
 site.register(ScriptGroup, GroupAdmin)
 site.register(ScriptParameterGroup, ParameterGroupAdmin)
 site.register(ScriptParser, ScriptParserAdmin)
+site.register(ScriptVersion, ScriptVersionAdmin)

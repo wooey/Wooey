@@ -1,6 +1,17 @@
 Changelog
 =========
 
+v0.12.0
+-------
+
+| [`Feature <https://github.com/wooey/Wooey/pull/306>`__] Spanish Translations
+| [`Feature <https://github.com/wooey/Wooey/pull/313>`__] Improve script deletion experience
+| [`Feature <https://github.com/wooey/Wooey/pull/314>`__] Move from Appveyor and Travis to Github Actions
+| [`Feature <https://github.com/wooey/Wooey/pull/284>`__] Add support for Django 2.2 and Django 3.0
+| [`Feature <https://github.com/wooey/Wooey/commit/08bee7b8864a48d9cc8c54f25138bde6945f8451>`__] Add an official Docker Image
+| [`Feature <https://github.com/wooey/Wooey/commit/6e4c3f92c6b1693b25576868c3f6773d1f9afdb5>`__] Add admin interface for Script Versions
+| [`Debt <https://github.com/wooey/Wooey/pull/304>`__] Update to boto3
+
 v0.11.0
 ------------
 

@@ -13,4 +13,6 @@ These are the people who have provided various forms of contributions to Wooey (
 
 * **[Ryosuke Ito](https://github.com/manicmaniac)**
 
+* **[Jeremías Pretto](https://github.com/puckk)**
+
 * **[Yoav Ram](https://github.com/yoavram)**

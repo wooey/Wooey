@@ -14,9 +14,9 @@ The backend
 -----------
 
 There are several backends to use, here we can use a database backend or a server as a backend. By default, Wooey uses the database as a backend. If you wish to move to a more robust system,
-there are several options such as AMPQ or redis. Here, we detail how to use AMPQ.
+there are several options such as AMQP or redis. Here, we detail how to use AMQP.
 
-If you are coming from a bootstrapped project, to switch to an AMPQ backend, it is a matter of uncommenting the following lines in your production settings:
+If you are coming from a bootstrapped project, to switch to an AMQP backend, it is a matter of uncommenting the following lines in your production settings:
 
 ::
 
@@ -33,4 +33,4 @@ If you are coming from a project which has wooey installed as an additional app,
 Additional Heroku Options
 -------------------------
 
-For heroku, you will want to add AMPQ to your app through the dashboard, which should give you a AMPQ url compatible with the above options.
+For heroku, you will want to add AMQP to your app through the dashboard, which should give you a AMQP url compatible with the above options.

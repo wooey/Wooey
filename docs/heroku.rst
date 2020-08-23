@@ -86,7 +86,7 @@ To start, complete the steps found :ref:`here <aws>`.
 Celery
 ------
 
-The last bit to setup is celery. For this, we will use the free AMPQ services from heroku, such as RabbitMQ Bigwig. After enabling this in your heroku dashboard, complete the guide found :ref:`here <celery_guide>`.
+The last bit to setup is celery. For this, we will use the free AMQP services from heroku, such as RabbitMQ Bigwig. After enabling this in your heroku dashboard, complete the guide found :ref:`here <celery_guide>`.
 
 Production Settings
 -------------------

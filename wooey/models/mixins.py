@@ -55,9 +55,6 @@ class ModelDiffMixin(object):
 
     @property
     def _dict(self):
-        exclude = [f.name for f in self._meta.fields if
-                   isinstance(self.__class__.__dict__.get(f.attname),
-                              DeferredAttribute)]
-
+        exclude = self.get_deferred_fields()
         return model_to_dict(self, fields=[field.name for field in
                                            self._meta.fields], exclude=exclude)

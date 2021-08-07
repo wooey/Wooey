@@ -226,7 +226,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
             get_valid_filename(self.script_version.script.slug if not self.script_version.script.save_path else self.script_version.script.save_path),
             str(self.uuid),
         ]
-        return os.path.join(*[for i in directories if i])
+        return os.path.join(*[i for i in directories if i])
 
     def get_output_path(self):
         path = self.output_path

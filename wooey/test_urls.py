@@ -1,6 +1,6 @@
 from . import test_settings
 from django.conf import settings
-from django.urls import include, path, url
+from django.urls import include, path
 from django.conf.urls.static import static
 from django.contrib import admin
 
@@ -10,8 +10,8 @@ settings.DEBUG = True
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    url(r'^', include('wooey.urls')),
-    url(r'^', include('django.contrib.auth.urls')),
+    path('', include('wooey.urls')),
+    path('', include('django.contrib.auth.urls')),
 ]
 
 urlpatterns += static(test_settings.MEDIA_URL, document_root=test_settings.MEDIA_ROOT)

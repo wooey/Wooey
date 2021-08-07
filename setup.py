@@ -31,7 +31,7 @@ setup(
         'dev': [
             'boto3',
             'coverage',
-            'factory-boy',
+            'factory-boy < 3.0.0',
             'mock',
             'nose',
             'sphinx',

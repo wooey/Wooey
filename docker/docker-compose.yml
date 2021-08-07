@@ -13,16 +13,22 @@ services:
     depends_on:
       - rabbit
       - db
+      - celery
     command: ./run-server
 
   celery:
     extends:
       file: docker-compose.common.yml
       service: common
-    command: celery worker -A docker_wooey -c 4 -B -l debug -s schedule
+    depends_on:
+      - rabbit
+      - db
+    command: celery worker -A $WOOEY_PROJECT -c 4 -B -l debug -s schedule
 
   rabbit:
-    image: rabbitmq
+    image: rabbitmq:management
+    ports:
+      - 15672:15672
 
   db:
     image: postgres

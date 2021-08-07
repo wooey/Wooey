@@ -13,8 +13,9 @@ services:
         WOOEY_PROJECT:
     image: wooey:dev
     volumes :
-      - ./user_settings.py:/$WOOEY_PROJECT/$WOOEY_PROJECT/settings/user_settings.py
-      - user_uploads:/$WOOEY_PROJECT/$WOOEY_PROJECT/user_uploads
+      - ./user_settings.py:$BUILD_DIR/$WOOEY_PROJECT/$WOOEY_PROJECT/settings/user_settings.py
+      - ./celeryconfig.py:$BUILD_DIR/$WOOEY_PROJECT/$WOOEY_PROJECT/settings/celeryconfig.py
+      - user_uploads:$BUILD_DIR/$WOOEY_PROJECT/$WOOEY_PROJECT/user_uploads
     environment:
       AMQP_URL: amqp://rabbit:5672
       BUILD_DIR:
@@ -23,4 +24,5 @@ services:
       DATABASE_URL: db
       DATABASE_PASSWORD: wooey
       DJANGO_SETTINGS_MODULE: $WOOEY_PROJECT.settings
+      CELERY_CONFIG_MODULE: $WOOEY_PROJECT.settings.celeryconfig
     user: 1000:1000

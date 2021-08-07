@@ -220,10 +220,13 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
 
     @property
     def output_path(self):
-        return os.path.join(wooey_settings.WOOEY_FILE_DIR,
-                            get_valid_filename(self.user.username if self.user is not None else ''),
-                            get_valid_filename(self.script_version.script.slug if not self.script_version.script.save_path else self.script_version.script.save_path),
-                            str(self.uuid))
+        directories = [
+            wooey_settings.WOOEY_FILE_DIR,
+            get_valid_filename(self.user.username if self.user is not None else ''),
+            get_valid_filename(self.script_version.script.slug if not self.script_version.script.save_path else self.script_version.script.save_path),
+            str(self.uuid),
+        ]
+        return os.path.join(*[for i in directories if i])
 
     def get_output_path(self):
         path = self.output_path

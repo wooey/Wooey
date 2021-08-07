@@ -222,7 +222,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
     def output_path(self):
         directories = [
             wooey_settings.WOOEY_FILE_DIR,
-            get_valid_filename(self.user.username if self.user is not None else ''),
+            get_valid_filename(self.user.username if self.user is not None and self.user.is_authenticated else 'anonymous'),
             get_valid_filename(self.script_version.script.slug if not self.script_version.script.save_path else self.script_version.script.save_path),
             str(self.uuid),
         ]

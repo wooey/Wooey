@@ -15,10 +15,10 @@ from django.core.files.storage import SuspiciousFileOperation
 from django.contrib.auth.models import Group
 from django.utils.translation import ugettext_lazy as _
 from django.db import transaction
+from django.urls import reverse
 from django.utils.text import get_valid_filename
 from jsonfield import JSONCharField
 
-from ..django_compat import reverse
 from . mixins import UpdateScriptsMixin, ModelDiffMixin, WooeyPy2Mixin
 from .. import settings as wooey_settings
 from .. backend import utils
@@ -220,10 +220,13 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
 
     @property
     def output_path(self):
-        return os.path.join(wooey_settings.WOOEY_FILE_DIR,
-                            get_valid_filename(self.user.username if self.user is not None else ''),
-                            get_valid_filename(self.script_version.script.slug if not self.script_version.script.save_path else self.script_version.script.save_path),
-                            str(self.uuid))
+        directories = [
+            wooey_settings.WOOEY_FILE_DIR,
+            get_valid_filename(self.user.username if self.user is not None and self.user.is_authenticated else 'anonymous'),
+            get_valid_filename(self.script_version.script.slug if not self.script_version.script.save_path else self.script_version.script.save_path),
+            str(self.uuid),
+        ]
+        return os.path.join(*[i for i in directories if i])
 
     def get_output_path(self):
         path = self.output_path

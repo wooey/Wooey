@@ -7,12 +7,12 @@ from django.forms import FileField
 from django.http import JsonResponse
 from django.template import RequestContext
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils.encoding import force_text
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import DetailView, TemplateView, View
 
 from ..backend import utils
-from ..django_compat import reverse
 from ..models import WooeyJob, Script, UserFile, Favorite, ScriptVersion
 from .. import settings as wooey_settings
 

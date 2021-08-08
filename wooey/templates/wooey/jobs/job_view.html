@@ -141,7 +141,8 @@
         <span class="status-running-toggle label label-success"><span class="glyphicon glyphicon-refresh spinning"></span> {% trans "Executing" %}</span>
         <span class="status-completed-toggle label label-success"><span class="glyphicon glyphicon-ok"></span> {% trans "Success" %}</span>
         <span class="status-revoked-toggle label label-danger"><span class="glyphicon glyphicon-stop"></span> {% trans "Halted" %}</span>
-        <span class="status-failure-toggle label label-danger"><span class="glyphicon glyphicon-exclamation-sign"></span> {% trans "Error" %}</span>
+        <span class="status-failure-toggle label label-danger"><span class="glyphicon glyphicon-exclamation-sign"></span> {% trans "Failed" %}</span>
+        <span class="status-error-toggle label label-danger"><span class="glyphicon glyphicon-exclamation-sign"></span> {% trans "Error" %}</span>
 
       </div>
     </div>
@@ -280,7 +281,7 @@
                     $('#job-files > tbody').html(data['file_outputs_html']);
                     $("a[data-favorite]").click(toggleFavorite);
 
-                    if(data['status'] == 'completed'){
+                    if(data['status'] === 'completed' || data['status'] === 'failure' || data['status'] === 'error'){
                         window.clearInterval(refreshtimerID);
                     }
 

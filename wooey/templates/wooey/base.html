@@ -98,7 +98,7 @@
 
               {% if request.user.is_authenticated %}
                 <li class="dropdown" id="job-list-user">
-                  <a href="{% url 'wooey:scrapbook' %}" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Scrapbook" %} <span class="badge scrapbook-badge" id="favorite-wooey-wooeyfile-count">{% get_user_favorite_count request.user 'wooey' 'wooeyfile' %}</span></a>
+                  <a href="{% url 'wooey:scrapbook' %}" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Scrapbook" %} <span class="badge scrapbook-badge" id="favorite-wooey-userfile-count">{% get_user_favorite_count request.user 'wooey' 'userfile' %}</span></a>
                 </li>
 
                 <li><a href="{% url 'wooey:profile_home' %}"><span class="glyphicon glyphicon-user"> </span> {{ request.user.username }}</a></li>

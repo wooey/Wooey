@@ -581,6 +581,10 @@ class UserFile(WooeyPy2Mixin, models.Model):
     def __str__(self):
         return '{}: {}'.format(self.job.job_name, self.system_file)
 
+    @property
+    def filepath(self):
+        return self.system_file.filepath
+
 
 class WooeyFile(WooeyPy2Mixin, models.Model):
     filepath = models.FileField(max_length=500)

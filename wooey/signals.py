@@ -26,7 +26,7 @@ def task_completed(sender=None, **kwargs):
         db.connection.close()
         job = WooeyJob.objects.get(pk=job_id)
     state = kwargs.get('state')
-    if state:
+    if state and job.status not in WooeyJob.TERMINAL_STATES:
         job.status = WooeyJob.COMPLETED if state == states.SUCCESS else state
     job.celery_id = kwargs.get('task_id')
     job.save()

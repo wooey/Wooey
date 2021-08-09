@@ -151,13 +151,17 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
     COMPLETED = 'completed'
     DELETED = 'deleted'
     FAILED = states.FAILURE
+    ERROR = 'error'
     RUNNING = 'running'
     SUBMITTED = 'submitted'
+
+    TERMINAL_STATES = {COMPLETED, FAILED, ERROR}
 
     STATUS_CHOICES = (
         (COMPLETED, _('Completed')),
         (DELETED, _('Deleted')),
         (FAILED, _('Failed')),
+        (ERROR, _('Error')),
         (RUNNING, _('Running')),
         (SUBMITTED, _('Submitted')),
     )
@@ -270,14 +274,14 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         return {'stdout': self.stdout, 'stderr': self.stderr}
 
     def get_stdout(self):
-        if self.status != WooeyJob.COMPLETED:
+        if self.status not in WooeyJob.TERMINAL_STATES:
             rt = self.get_realtime().get('stdout')
             if rt:
                 return rt
         return self.stdout
 
     def get_stderr(self):
-        if self.status != WooeyJob.COMPLETED:
+        if self.status not in WooeyJob.TERMINAL_STATES:
             rt = self.get_realtime().get('stderr')
             if rt:
                 return rt

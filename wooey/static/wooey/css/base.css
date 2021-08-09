@@ -379,6 +379,7 @@ li.active > a.tab-error {
 .status-running-toggle,
 .status-completed-toggle,
 .status-revoked-toggle,
+.status-error-toggle,
 .status-failure-toggle {
     display: none;
 }
@@ -388,7 +389,8 @@ li.active > a.tab-error {
 .status-running .status-running-toggle,
 .status-completed .status-completed-toggle,
 .status-revoked .status-revoked-toggle,
-.status-failure .status-failure-toggle
+.status-failure .status-failure-toggle,
+.status-error .status-error-toggle
 {
     display: unset !important;
 }

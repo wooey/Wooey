@@ -36,6 +36,7 @@ setup(
             'nose',
             'sphinx',
             'tox',
+            'watchdog[watchmedo]',
         ]
     },
     include_package_data=True,

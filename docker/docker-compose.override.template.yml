@@ -4,8 +4,11 @@ version: '2.1'
 
 services:
   wooey:
-    volumes:
+    volumes: &package-volumes
       - ../wooey:$BUILD_DIR/wooey
       - ../../clinto/clinto:/usr/local/lib/python3.6/site-packages/clinto
     ports:
       - 8080:8080
+
+  celery:
+    volumes: *package-volumes

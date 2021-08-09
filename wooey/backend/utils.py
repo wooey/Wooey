@@ -781,8 +781,8 @@ def get_grouped_file_previews(files):
         system_file = file_info.system_file
 
         filedict = {
-            'id': system_file.id,
-            'object': system_file,
+            'id': file_info.id,
+            'object': file_info,
             'name': file_info.filename,
             'preview': json.loads(system_file.filepreview) if system_file.filepreview else None,
             'url': get_storage(local=False).url(system_file.filepath.name),

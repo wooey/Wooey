@@ -18,7 +18,7 @@ Running scripts
 ---------------
 
 Scripts may be accessed via the homepage or by searching for scripts in the
-script search. Searching for scripts is accssible via the left menu sidebar
+script search. Searching for scripts is accessible via the left menu sidebar
 that is viewable by clicking the menu button on the left side of the header.
 From the script panel, scripts can be parameterized and executed by Wooey.
 If a script has subparsers, they are accessible via a dropdown menu on

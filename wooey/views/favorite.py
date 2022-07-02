@@ -15,7 +15,7 @@ from ..models import Favorite
 @ensure_csrf_cookie
 def toggle_favorite(request):
     """
-    Add/remove an object to the user's favorites. Checks for existance and adds if not, else removes.
+    Add/remove an object to the user's favorites. Checks for existence and adds if not, else removes.
     This is the underlying mechanism for adding items to the user 'scrapbook' and favorite scripts.
 
     :param request:

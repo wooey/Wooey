@@ -19,7 +19,7 @@ or if you want to be on the bleeding-edge for some reason, from the github repo 
 Bootstrapping Wooey
 -------------------
 
-The wooey project can be boostraped, which will create a full-fledged django app for you. This can be accomplished with the command:
+The wooey project can be bootstrap, which will create a full-fledged django app for you. This can be accomplished with the command:
 
 ::
 

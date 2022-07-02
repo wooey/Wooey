@@ -103,7 +103,7 @@ middleware, and before the CommonMiddleware e.g.
         'django.middleware.security.SecurityMiddleware',
     )
 
-For more information on the internationlization middelware see
+For more information on the internationlization middleware see
 `the Django documentation <https://docs.djangoproject.com/en/1.8/topics/i18n/translation/#how-django-discovers-language-preference>`_.
 
 Note that if a user's browser does not request an available language the language

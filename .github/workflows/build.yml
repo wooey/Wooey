@@ -32,8 +32,8 @@ jobs:
       run: |
         echo "DV is ${DJANGO_VERSION}"
         python -m pip install --upgrade pip
-        python -m pip install "Django~=${DJANGO_VERSION}"
         make testenv
+        python -m pip install "Django~=${DJANGO_VERSION}"
     - name: Run Tests
       run: |
         make test

@@ -11,7 +11,7 @@ jobs:
       matrix:
         # Up to date compatibility matrix
         # https://docs.djangoproject.com/en/dev/faq/install/#what-python-version-can-i-use-with-django
-        python-version: [3.6, 3.7, 3.8, 3.9, 3.10]
+        python-version: [3.7, 3.8, 3.9, 3.10]
         os: [ubuntu-latest, windows-latest]
         django-version: ["2.2", "3.2"]
         exclude:

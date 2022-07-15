@@ -27,13 +27,11 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
-      env:
-        DJANGO_VERSION: ${{ matrix.django-version }}
       run: |
-        echo "DV is ${DJANGO_VERSION}"
+        echo "DV is ${matrix.django-version}"
         python -m pip install --upgrade pip
         make testenv
-        python -m pip install "Django~=${DJANGO_VERSION}"
+        python -m pip install "Django~=${matrix.django-version}"
     - name: Run Tests
       run: |
         make test

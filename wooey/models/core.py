@@ -323,7 +323,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     slug = AutoSlugField(populate_from='script_param', unique=True)
     is_output = models.BooleanField(default=None)
     required = models.BooleanField(default=False)
-    choices = models.CharField(max_length=255, null=True, blank=True)
+    choices = models.TextField(null=True, blank=True)
     choice_limit = models.CharField(max_length=10, null=True, blank=True)
     collapse_arguments = models.BooleanField(
         default=True,

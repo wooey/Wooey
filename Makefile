@@ -2,7 +2,7 @@ testenv:
 	pip install -e .[dev]
 
 test:
-	nosetests --with-coverage --cover-erase --cover-branches --cover-package=wooey tests/*
+	pytest --cov=wooey --cov-branch tests/*
 	coverage run --append --branch --source=wooey `which django-admin.py` test --settings=wooey.test_settings wooey.tests
 	coverage report --omit='*migrations*','*wooey_scripts*','*tests/scripts*','*conf/*'
 	coverage xml --omit='*migrations*','*wooey_scripts*','*tests/scripts*','*conf/*'

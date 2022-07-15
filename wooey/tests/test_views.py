@@ -7,7 +7,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.http import Http404
 from django.urls import reverse
-from nose.tools import raises
 
 from . import (
     config,
@@ -126,13 +125,13 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         self.assertNotIn('job_error', response.context_data)
         self.assertIn('job_info', response.context_data)
 
-    @raises(Http404)
     def test_celery_nonexistent_task(self):
         # test request for non-existent job, should raise 404
         view = wooey_celery.JobView.as_view()
         request = self.factory.get(reverse('wooey:celery_results', kwargs={'job_id': '-1'}))
-        response = view(request, job_id=-1)
-        response.render()
+        with self.assertRaises(Http404):
+            response = view(request, job_id=-1)
+            response.render()
 
 
 class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):

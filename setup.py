@@ -15,7 +15,7 @@ setup(
     entry_points={'console_scripts': ['wooify = wooey.backend.command_line:bootstrap', ]},
     python_requires='>3.5.0',
     install_requires=[
-        'celery>=4.0,<6',
+        'celery>=4.0,<5',
         'clinto>=0.3.0',
         'Django>=3,<4 ;python_version>="3.7"',
         'django-autoslug',

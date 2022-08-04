@@ -109,10 +109,10 @@ class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
     modified_date = models.DateTimeField(auto_now=True)
 
     created_by = models.ForeignKey(
-        User, related_name='created_script_version', on_delete=models.SET_NULL, null=True, blank=True
+        User, related_name='created_script_version_set', on_delete=models.SET_NULL, null=True, blank=True
     )
     modified_by = models.ForeignKey(
-        User, related_name='modified_script_version', on_delete=models.SET_NULL, null=True, blank=True
+        User, related_name='modified_script_version_set', on_delete=models.SET_NULL, null=True, blank=True
     )
 
     error_messages = {

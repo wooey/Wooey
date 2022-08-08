@@ -20,10 +20,8 @@ def disable_for_loaddata(signal_handler):
     """
     @wraps(signal_handler)
     def wrapper(*args, **kwargs):
-        if kwargs['raw']:
-            print('Skipping signal for {} {}'.format(args, kwargs))
-            return
-        signal_handler(*args, **kwargs)
+        if not kwargs['raw']:
+            signal_handler(*args, **kwargs)
     return wrapper
 
 

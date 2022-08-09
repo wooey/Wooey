@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from functools import wraps
 
 from django.db.models.signals import pre_save, post_save
 from django.db.utils import InterfaceError, DatabaseError
@@ -7,6 +8,21 @@ from django import db
 from celery.signals import task_postrun, task_prerun
 
 from .models import ScriptVersion
+
+
+def disable_for_loaddata(signal_handler):
+    """Function decorator to disable pre_save/post_save functions when
+    fixtures are being loaded. The `raw` keyword argument indicates whether
+    the model should be save as-is (i.e. when loading a fixture).
+
+    https://docs.djangoproject.com/en/4.0/ref/signals/
+    https://stackoverflow.com/a/11409794
+    """
+    @wraps(signal_handler)
+    def wrapper(*args, **kwargs):
+        if not kwargs['raw']:
+            signal_handler(*args, **kwargs)
+    return wrapper
 
 
 @task_postrun.connect
@@ -35,7 +51,7 @@ def task_completed(sender=None, **kwargs):
 def skip_script(instance):
     return getattr(instance, '_script_cl_creation', False) or getattr(instance, '_script_upgrade', False) or getattr(instance, '_rename_script', False)
 
-
+@disable_for_loaddata
 def script_version_presave(instance, **kwargs):
     created = instance.pk is None
     from .backend import utils
@@ -50,7 +66,7 @@ def script_version_presave(instance, **kwargs):
                 instance._script_upgrade = True
                 instance.pk = None
 
-
+@disable_for_loaddata
 def script_version_postsave(instance, created, **kwargs):
     from .backend import utils
     if created and (not skip_script(instance) or getattr(instance, '_script_upgrade', False)):

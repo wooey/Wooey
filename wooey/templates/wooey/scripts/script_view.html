@@ -12,7 +12,16 @@
 {% block center_content %}
 
     <div class="page-header">
-        <h3 id="wooey-script-title">{{ script.script_name }}</h3>
+        <h3 id="wooey-script-title">
+          {{ script.script_name }}
+          <small id="wooey-script-info">(
+            v{{ script_version }}.{{ script_iteration }},
+            Last modified on {{ script_created_date }}
+            {% if script_modified_by %}
+            by {{ script_modified_by }}
+            {% endif %}
+          )</small>
+        </h3>
         <p id="wooey-script-description">{{ script.script_description }}</p>
     </div>
 

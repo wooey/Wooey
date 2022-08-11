@@ -70,6 +70,14 @@ class WooeyScriptBase(DetailView):
             initial_dict=initial,
             render_fn=self.render_fn,
         )
+
+        # Additional script info to display.
+        context['script_version'] = script_version.script_version
+        context['script_iteration'] = script_version.script_iteration
+        context['script_created_by'] = script_version.created_by
+        context['script_created_date'] = script_version.created_date
+        context['script_modified_by'] = script_version.modified_by
+        context['script_modified_date'] = script_version.modified_date
         return context
 
     def post(self, request, *args, **kwargs):

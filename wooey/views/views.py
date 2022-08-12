@@ -14,6 +14,7 @@ from django.views.generic import DetailView, TemplateView, View
 
 from ..backend import utils
 from ..models import WooeyJob, Script, UserFile, Favorite, ScriptVersion
+from ..version import DJANGO_VERSION, DJ18
 from .. import settings as wooey_settings
 
 
@@ -273,5 +274,14 @@ class WooeyScriptSearchJSONHTML(WooeyScriptSearchBase):
     def search(self, request):
         results = []
         for script in self.search_results:
-            results.append(render_to_string('wooey/scripts/script_panel.html', {'script': script}, context_instance=RequestContext(request)))
+            # context_instance kwarg was deprecated in Django 1.8
+            render = render_to_string(
+                'wooey/scripts/script_panel.html',
+                {'script': script, 'request': request}
+            ) if DJANGO_VERSION >= DJ18 else render_to_string(
+                'wooey/scripts/script_panel.html',
+                {'script': script},
+                context_instance=RequestContext(request)
+            )
+            results.append(render)
         return JsonResponse({'results': results})

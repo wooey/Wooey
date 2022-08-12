@@ -313,3 +313,65 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         response = self.json_view_func(request)
         d = load_JSON_dict(response.content)
         self.assertFalse(d['valid'], d)
+
+class WoeeyScriptSearchViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
+    def setUp(self):
+        super(WoeeyScriptSearchViews, self).setUp()
+        self.factory = RequestFactory()
+        self.json_view_func = wooey_views.WooeyScriptSearchJSON.as_view()
+        self.json_html_view_func = wooey_views.WooeyScriptSearchJSONHTML.as_view()
+        # the test server doesn't have celery running
+        settings.WOOEY_CELERY = False
+
+        self.script1 = factories.ScriptFactory(
+            script_name='test script 1 name',
+            script_description='test script 1 description',
+        )
+        self.script2 = factories.ScriptFactory(
+            script_name='test script 2 name',
+            script_description='test script 2 description',
+        )
+
+    def test_search_json_with_name(self):
+        url = reverse('wooey:wooey_search_script_json')
+        request = self.factory.get(url, data={'q': '1 name'})
+        response = self.json_view_func(request)
+        d = load_JSON_dict(response.content)
+        self.assertEqual(len(d['results']), 1)
+        self.assertEqual(
+            set(result['id'] for result in d['results']),
+            {self.script1.id}
+        )
+
+    def test_search_json_with_description(self):
+        url = reverse('wooey:wooey_search_script_json')
+        request = self.factory.get(url, data={'q': '2 description'})
+        response = self.json_view_func(request)
+        d = load_JSON_dict(response.content)
+        self.assertEqual(len(d['results']), 1)
+        self.assertEqual(
+            set(result['id'] for result in d['results']),
+            {self.script2.id}
+        )
+
+    def test_search_json_html_with_name(self):
+        url = reverse('wooey:wooey_search_script_jsonhtml')
+        request = self.factory.get(url, data={'q': '1 name'})
+        response = self.json_view_func(request)
+        d = load_JSON_dict(response.content)
+        self.assertEqual(len(d['results']), 1)
+        self.assertEqual(
+            set(result['id'] for result in d['results']),
+            {self.script1.id}
+        )
+
+    def test_search_json_html_with_description(self):
+        url = reverse('wooey:wooey_search_script_jsonhtml')
+        request = self.factory.get(url, data={'q': '2 description'})
+        response = self.json_view_func(request)
+        d = load_JSON_dict(response.content)
+        self.assertEqual(len(d['results']), 1)
+        self.assertEqual(
+            set(result['id'] for result in d['results']),
+            {self.script2.id}
+        )

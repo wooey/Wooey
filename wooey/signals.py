@@ -53,14 +53,19 @@ def skip_script(instance):
 
 @disable_for_loaddata
 def script_version_presave(instance, **kwargs):
-    created = instance.pk is None
+    is_updated = instance.pk is not None
     from .backend import utils
-    if not created:
-        if 'script_path' in instance.changed_fields and not skip_script(instance):
+    if is_updated:
+        # The second filter ensures that in this update, the script_path is being updated. If the script_path in the database
+        # matches what is in the current model, we do not carry out this operation. We force a database query here instead
+        # of carrying out an in-memory operation to handle multi-server setups.
+        if not utils.skip_script(instance) and not ScriptVersion.objects.filter(pk=instance.pk,
+                                                                            script_path=instance.script_path).exists():
             # If the script checksum is not changed, do not run the script addition code (but update the
             # path)
             checksum = utils.get_checksum(path=instance.script_path.path)
-            if checksum != instance.checksum and not ScriptVersion.objects.filter(checksum=checksum, script_id=instance.script_id).exists():
+            if checksum != instance.checksum and not ScriptVersion.objects.filter(checksum=checksum,
+                                                                              script_id=instance.script_id).exists():
                 instance.checksum = checksum
                 instance.script_iteration += 1
                 instance._script_upgrade = True

@@ -19,7 +19,7 @@ from django.urls import reverse
 from django.utils.text import get_valid_filename
 from jsonfield import JSONCharField
 
-from . mixins import UpdateScriptsMixin, ModelDiffMixin, WooeyPy2Mixin
+from . mixins import UpdateScriptsMixin, WooeyPy2Mixin
 from .. import settings as wooey_settings
 from .. backend import utils
 
@@ -49,7 +49,7 @@ class ScriptGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
         return self.group_name
 
 
-class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
+class Script(WooeyPy2Mixin, models.Model):
     script_name = models.CharField(max_length=255)
     slug = AutoSlugField(populate_from='script_name', unique=True)
     # we create defaults for the script_group in the clean method of the model. We have to set it to null/blank=True
@@ -95,7 +95,7 @@ class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
         return self.script_version.all().order_by('script_version', 'script_iteration')
 
 
-class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
+class ScriptVersion(WooeyPy2Mixin, models.Model):
     # when a script updates, increment this to keep old scripts that are cloned working. The downside is we get redundant
     # parameters, but even a huge site may only have a few thousand parameters to query though.
     script_version = models.CharField(max_length=50, help_text='The script version.', blank=True, default='1')

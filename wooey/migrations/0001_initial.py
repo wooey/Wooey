@@ -55,7 +55,6 @@ class Migration(migrations.Migration):
                 ('created_date', models.DateTimeField(auto_now_add=True)),
                 ('modified_date', models.DateTimeField(auto_now=True)),
             ],
-            bases=(wooey.models.mixins.ModelDiffMixin, models.Model),
         ),
         migrations.CreateModel(
             name='ScriptGroup',

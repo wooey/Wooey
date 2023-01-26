@@ -16,3 +16,5 @@ These are the people who have provided various forms of contributions to Wooey (
 * **[Jeremías Pretto](https://github.com/puckk)**
 
 * **[Yoav Ram](https://github.com/yoavram)**
+
+* **[Mark Mayo](https://github.com/marksmayo)**

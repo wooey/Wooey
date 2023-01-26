@@ -17,12 +17,12 @@ CODON_TABLE = {'AAA': 'K', 'AAC': 'N', 'AAG': 'K', 'AAT': 'N', 'ACA': 'T', 'ACC'
 
 for i in 'ACTG':
     for j in 'ACTG':
-        CODON_TABLE['%s%sN' % (i, j)] = 'X'
-        CODON_TABLE['%sN%s' % (i, j)] = 'X'
-        CODON_TABLE['N%s%s' % (i, j)] = 'X'
-    CODON_TABLE['%sNN' % i] = 'X'
-    CODON_TABLE['N%sN' % i] = 'X'
-    CODON_TABLE['NN%s' % i] = 'X'
+        CODON_TABLE[f'{i}{j}N'] = 'X'
+        CODON_TABLE[f'{i}N{j}'] = 'X'
+        CODON_TABLE[f'N{i}{j}'] = 'X'
+    CODON_TABLE[f'{i}NN'] = 'X'
+    CODON_TABLE[f'N{i}N'] = 'X'
+    CODON_TABLE[f'NN{i}'] = 'X'
 
 parser = argparse.ArgumentParser(description="This will translate a given DNA sequence to protein.")
 group = parser.add_mutually_exclusive_group(required=True)
@@ -41,8 +41,8 @@ def main():
     def translate(seq=None, frame=None):
         if frame.startswith('-'):
             seq = ''.join([BASE_PAIR_COMPLEMENTS.get(i, 'N') for i in seq])
-        frame = int(frame[1])-1
-        return ''.join([CODON_TABLE.get(seq[i:i+3], 'X') for i in xrange(frame, len(seq), 3) if i+3<=len(seq)])
+        frame = int(frame[1]) - 1
+        return ''.join([CODON_TABLE.get(seq[i: i + 3], 'X') for i in xrange(frame, len(seq), 3) if i + 3 <= len(seq)])
 
     frame = args.frame
     with args.out as fasta_out:
@@ -53,15 +53,16 @@ def main():
                 for row in fasta_in:
                     if row[0] == '>':
                         if seq:
-                            fasta_out.write('{}\n{}\n'.format(header, translate(seq, frame)))
+                            fasta_out.write(f'{header}\n{translate(seq, frame)}\n')
                         header = row
                         seq = ''
                     else:
                         seq += row.strip()
                 if seq:
-                    fasta_out.write('{}\n{}\n'.format(header, translate(seq, frame)))
+                    fasta_out.write(f'{header}\n{translate(seq, frame)}\n')
         else:
-            fasta_out.write('{}\n{}\n'.format('>1', translate(seq.upper(), frame)))
+            fasta_out.write(f">1\n{translate(seq.upper(), frame)}\n")
+
 
 if __name__ == "__main__":
     sys.exit(main())

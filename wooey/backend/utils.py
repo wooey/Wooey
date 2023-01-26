@@ -1,10 +1,10 @@
 from __future__ import absolute_import
-import json
+
 import errno
+import json
 import os
 import re
 import sys
-import six
 import traceback
 from collections import OrderedDict, defaultdict
 from contextlib import contextmanager
@@ -12,18 +12,19 @@ from contextlib import contextmanager
 from io import open
 from itertools import chain
 from operator import itemgetter
-from pkg_resources import parse_version
 
+import six
 from clinto.parser import Parser
 from clinto.parsers.constants import SPECIFY_EVERY_PARAM
 from django.conf import settings
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
-from django.db import transaction
-from django.db.utils import OperationalError
-from django.core.files.storage import default_storage
 from django.core.files import File
-from django.utils.translation import ugettext_lazy as _
+from django.core.files.storage import default_storage
+from django.db import transaction
 from django.db.models import Q
+from django.db.utils import OperationalError
+from django.utils.translation import ugettext_lazy as _
+from pkg_resources import parse_version
 
 from .. import errors
 from .. import settings as wooey_settings
@@ -47,6 +48,7 @@ def get_storage(local=True):
 
 def purge_output(job=None):
     from ..models import UserFile
+
     # cleanup the old files, we need to be somewhat aggressive here.
     local_storage = get_storage(local=True)
     for user_file in UserFile.objects.filter(job=job):
@@ -108,7 +110,7 @@ def get_job_commands(job=None):
         else:
             for index, value in enumerate(values):
                 append_parser(param_info)
-                if param and (param_info is None or param_info.collapse_arguments == False or index == 0):
+                if param and (param_info is None or not param_info.collapse_arguments or index == 0):
                     com.append(param)
                 com.append(value)
 
@@ -117,7 +119,8 @@ def get_job_commands(job=None):
 
 @transaction.atomic
 def create_wooey_job(user=None, script_version_pk=None, script_parser_pk=None, data=None):
-    from ..models import Script, WooeyJob, ScriptParameter, ScriptParameters, ScriptParser, ScriptVersion
+    from ..models import (Script, ScriptParameter, ScriptParameters,
+                          ScriptParser, ScriptVersion, WooeyJob)
     script_version = ScriptVersion.objects.select_related('script').get(pk=script_version_pk)
     if script_parser_pk is None:
         script_parsers = list(script_version.scriptparser_set.all())
@@ -125,7 +128,7 @@ def create_wooey_job(user=None, script_version_pk=None, script_parser_pk=None, d
             script_parser_pk = script_parsers[0]
         elif len(script_parsers) > 1:
             raise Exception(
-                "A script_version with multiple subparsers was passed without indicating selected subparser."
+                "A script_version with multiple subparsers was passed without indicating selected subparser.",
             )
     data = data or {}
 
@@ -198,8 +201,8 @@ def get_current_scripts():
     for sv in non_default_scripts:
         try:
             version_string = parse_version(str(sv.script_version))
-        except:
-            sys.stderr.write('Error converting script version:\n{}'.format(traceback.format_exc()))
+        except Exception:
+            sys.stderr.write(f'Error converting script version:\n{traceback.format_exc()}')
             version_string = sv.script_version
         script_versions[sv.script.script_name].append((version_string, sv.script_iteration, sv))
         [script_versions[i].sort(key=itemgetter(0, 1, 2), reverse=True) for i in script_versions]
@@ -227,7 +230,9 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
     # of the script lie. That is the ScriptVersion model. This allows the end user to tag a script as a favorite/etc. and set
     # information such as script descriptions/names that do not constantly need to be updated with every version change. Thus,
     # a ScriptVersion stores the file info and such.
-    from ..models import Script, ScriptGroup, ScriptParser, ScriptParameter, ScriptParameterGroup, ScriptVersion
+    from ..models import (Script, ScriptGroup, ScriptParameter,
+                          ScriptParameterGroup, ScriptParser, ScriptVersion)
+
     # if we are adding through the admin, at this point the file will be saved already and this method will be receiving
     # the scriptversion object. Otherwise, we are adding through the managementment command. In this case, the file will be
     # a location and we need to setup the Script and ScriptVersion in here.
@@ -246,7 +251,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
         # possible with the same checksum.
         existing_version = ScriptVersion.objects.filter(
             checksum=checksum,
-            script__script_name=script_name
+            script__script_name=script_name,
         ).order_by('script_version', 'script_iteration').last()
     # If script_verison is None, it likely came from `addscript`
     if existing_version is not None and (script_version is None or existing_version != script_version):
@@ -327,20 +332,20 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
         version_string = '1'
     try:
         parse_version(version_string)
-    except:
-        sys.stderr.write('Error parsing version, defaulting to 1. Error message:\n {}'.format(traceback.format_exc()))
+    except Exception:
+        sys.stderr.write(f'Error parsing version, defaulting to 1. Error message:\n {traceback.format_exc()}')
         version_string = '1'
     if script_version is None:
         # we are being loaded from the management command, create/update our script/version
         script_kwargs = {
             'script_group': script_group,
-            'script_name': script_name or script_schema['name']
+            'script_name': script_name or script_schema['name'],
         }
         version_kwargs = {
             'script_version': version_string,
             'script_path': local_file,
             'default_version': True,
-            'checksum': checksum
+            'checksum': checksum,
         }
         # does this script already exist in the database?
         script_created = Script.objects.filter(**script_kwargs).count() == 0
@@ -363,7 +368,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
                 next_iteration = 1
             else:
                 # get the largest iteration and add 1 to it
-                next_iteration = sorted([i.script_iteration for i in current_versions])[-1]+1
+                next_iteration = sorted([i.script_iteration for i in current_versions])[-1] + 1
             # disable older versions
             ScriptVersion.objects.filter(script=wooey_script).update(default_version=False)
             version_kwargs.update({'script_iteration': next_iteration})
@@ -382,7 +387,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
         past_versions = ScriptVersion.objects.filter(script=wooey_script, script_version=version_string).exclude(pk=script_version.pk)
         if len(past_versions) == 0:
             script_version.script_version = version_string
-        script_version.script_iteration = past_versions.count()+1
+        script_version.script_iteration = past_versions.count() + 1
         # Make all old versions non-default
         ScriptVersion.objects.filter(script=wooey_script).update(default_version=False)
         script_version.default_version = True
@@ -408,7 +413,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
 
             param_groups = ScriptParameterGroup.objects.filter(
                 group_name=param_group_name,
-                script_version__script=wooey_script
+                script_version__script=wooey_script,
             ).distinct()
 
             # TODO: There should only ever be one, should probably do a harder enforcement of this.
@@ -423,7 +428,7 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
 
             for param in param_group_info.get('nodes'):
                 # TODO: fix 'file' to be global in argparse
-                is_out = True if (param.get('upload', None) == False and param.get('type') == 'file') else not param.get('upload', False)
+                is_out = True if (not param.get('upload', None) and param.get('type') == 'file') else not param.get('upload', False)
                 script_param_kwargs = {
                     'short_param': param['param'],
                     'script_param': param['name'],
@@ -449,11 +454,11 @@ def add_wooey_script(script_version=None, script_path=None, group=None, script_n
                     script_param_kwargs['param_order'] = parameter_index
 
                 script_params = ScriptParameter.objects.filter(
-                    **script_param_kwargs
+                    **script_param_kwargs,
                 ).filter(
                     script_version__script=wooey_script,
                     parameter_group__group_name=param_group_name,
-                    parser__name=parser_name
+                    parser__name=parser_name,
                 ).distinct()
 
                 if not script_params:
@@ -496,7 +501,7 @@ def valid_user(obj, user):
             ret['error'] = _('You are not permitted to use this script')
         if not groups and obj.is_active:
             ret['valid'] = True
-        if obj.is_active == True:
+        if obj.is_active:
             if set(list(user.groups.all())) & set(list(groups)):
                 ret['valid'] = True
     ret['display'] = 'disabled' if wooey_settings.WOOEY_SHOW_LOCKED_SCRIPTS else 'hide'
@@ -524,23 +529,23 @@ def get_file_info(filepath):
     # returns info about the file
     filetype, preview = False, None
     tests = [('tabular', test_delimited), ('fasta', test_fastx), ('image', test_image)]
-    while filetype == False and tests:
+    while not filetype and tests:
         ptype, pmethod = tests.pop()
         filetype, preview = pmethod(filepath)
         filetype = ptype if filetype else filetype
-    preview = None if filetype == False else preview
-    filetype = None if filetype == False else filetype
+    preview = None if not filetype else preview
+    filetype = None if not filetype else filetype
     try:
         json_preview = json.dumps(preview)
-    except:
-        sys.stderr.write('Error encountered in file preview:\n {}\n'.format(traceback.format_exc()))
+    except Exception:
+        sys.stderr.write(f'Error encountered in file preview:\n {traceback.format_exc()}\n')
         json_preview = json.dumps(None)
     return {'type': filetype, 'preview': json_preview}
 
 
 def test_image(filepath):
     import imghdr
-    return imghdr.what(filepath) != None, None
+    return imghdr.what(filepath) is not None, None
 
 
 def test_delimited(filepath):
@@ -551,7 +556,7 @@ def test_delimited(filepath):
         handle = open(filepath, 'rb')
     with handle as csv_file:
         try:
-            dialect = csv.Sniffer().sniff(csv_file.read(1024*16), delimiters=',\t')
+            dialect = csv.Sniffer().sniff(csv_file.read(1024 * 16), delimiters=',\t')
         except Exception as e:
             return False, None
         csv_file.seek(0)
@@ -588,11 +593,11 @@ def test_fastx(filepath):
                 break
             if not row.strip():
                 continue
-            if found_caret == False and row[0] != '>':
+            if not found_caret and row[0] != '>':
                 if row[0] == ';':
                     continue
                 break
-            elif found_caret == False and row[0] == '>':
+            elif not found_caret and row[0] == '>':
                 found_caret = True
             if row and row[0] == '>':
                 if seq:
@@ -613,7 +618,8 @@ def test_fastx(filepath):
 
 def create_job_fileinfo(job):
     parameters = job.get_parameters()
-    from ..models import WooeyFile, UserFile
+    from ..models import UserFile, WooeyFile
+
     # first, create a reference to things the script explicitly created that is a parameter
     files = []
     local_storage = get_storage(local=True)
@@ -634,8 +640,8 @@ def create_job_fileinfo(job):
                         try:
                             with transaction.atomic():
                                 field.save()
-                        except:
-                            sys.stderr.write('{}\n'.format(traceback.format_exc()))
+                        except Exception:
+                            sys.stderr.write(f'{traceback.format_exc()}\n')
                         continue
                 d = {'parameter': field, 'file': value, 'size_bytes': value.size}
                 if field.parameter.is_output:
@@ -670,17 +676,17 @@ def create_job_fileinfo(job):
                             'name': rel_name,
                             'file': storage_file,
                             'size_bytes': storage_file.size,
-                            'checksum': checksum
+                            'checksum': checksum,
                         }
-                except:
-                    sys.stderr.write('Error in accessing stored file {}:\n{}'.format(rel_path, traceback.format_exc()))
+                except Exception:
+                    sys.stderr.write(f'Error in accessing stored file {rel_path}:\n{traceback.format_exc()}')
                     continue
                 if filename.endswith('.tar.gz') or filename.endswith('.zip'):
                     file_groups['archives'].append(d)
                 else:
                     files.append(d)
             except IOError:
-                sys.stderr.write('{}'.format(traceback.format_exc()))
+                sys.stderr.write(f'{traceback.format_exc()}')
                 continue
 
     # establish grouping by inferring common things
@@ -723,14 +729,14 @@ def create_job_fileinfo(job):
                         filetype=file_type,
                         filepreview=preview,
                         size_bytes=size_bytes,
-                        filepath=save_path
+                        filepath=save_path,
                     )
                     file_created = True
                 userfile_kwargs = {
                     'job': job,
                     'parameter': parameter,
                     'system_file': wooey_file,
-                    'filename': os.path.split(filepath)[1]
+                    'filename': os.path.split(filepath)[1],
                 }
                 try:
                     with transaction.atomic():
@@ -738,10 +744,10 @@ def create_job_fileinfo(job):
                             wooey_file.save()
                         job.save()
                         UserFile.objects.get_or_create(**userfile_kwargs)
-                except:
-                    sys.stderr.write('Error in saving DJFile: {}\n'.format(traceback.format_exc()))
-            except:
-                sys.stderr.write('Error in saving DJFile: {}\n'.format(traceback.format_exc()))
+                except Exception:
+                    sys.stderr.write(f'Error in saving DJFile: {traceback.format_exc()}\n')
+            except Exception:
+                sys.stderr.write(f'Error in saving DJFile: {traceback.format_exc()}\n')
                 continue
 
 
@@ -822,7 +828,6 @@ def normalize_query(query_string,
     >>> normalize_query('  some random  words "with   quotes  " and   spaces')
     ['some', 'random', 'words', 'with quotes', 'and', 'spaces']
     """
-
     return [normspace(' ', (t[0] or t[1]).strip()) for t in findterms(query_string)]
 
 
@@ -831,13 +836,12 @@ def get_query(query_string, search_fields):
     Returns a query as a combination of Q objects that query the specified
     search fields.
     """
-
     query = None  # Query to search for every search term
     terms = normalize_query(query_string)
     for term in terms:
         or_query = None  # Query to search for a given term in each field
         for field_name in search_fields:
-            q = Q(**{"%s__icontains" % field_name: term})
+            q = Q(**{f"{field_name}__icontains": term})
             if or_query is None:
                 or_query = q
             else:

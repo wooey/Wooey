@@ -1,11 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
-from django.http import (
-    HttpResponseForbidden,
-    HttpResponseNotFound,
-    HttpResponseBadRequest,
-    JsonResponse,
-)
+from django.http import (HttpResponseBadRequest, HttpResponseForbidden,
+                         HttpResponseNotFound, JsonResponse)
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from ..models import Favorite

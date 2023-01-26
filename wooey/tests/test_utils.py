@@ -1,31 +1,27 @@
 import os
-import six
 import zipfile
 
+import six
 from django.test import TestCase, TransactionTestCase
 
 from ..backend import utils
-
-from . import (
-    config,
-    factories,
-    mixins,
-    utils as test_utils,
-)
+from . import config, factories, mixins
+from . import utils as test_utils
 
 
 class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TransactionTestCase):
     def test_sanitize_name(self):
-        assert(utils.sanitize_name('abc')) == 'abc'
-        assert(utils.sanitize_name('ab c')) == 'ab_c'
-        assert(utils.sanitize_name('ab-c')) == 'ab_c'
+        assert utils.sanitize_name('abc') == 'abc'
+        assert utils.sanitize_name('ab c') == 'ab_c'
+        assert utils.sanitize_name('ab-c') == 'ab_c'
 
     def test_sanitize_string(self):
-        assert(utils.sanitize_string('ab"c')) == 'ab\\"c'
+        assert utils.sanitize_string('ab"c') == 'ab\\"c'
 
     def test_anonymous_users(self):
-        from .. import settings as wooey_settings
         from django.contrib.auth.models import AnonymousUser
+
+        from .. import settings as wooey_settings
         user = AnonymousUser()
         script_version = self.translate_script
         script = script_version.script
@@ -58,7 +54,7 @@ class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TransactionTestCase
 
     def test_job_file_outputs(self):
         # Run a script that creates a file
-        from wooey.models import WooeyJob, UserFile
+        from wooey.models import UserFile, WooeyJob
         script = os.path.join(config.WOOEY_TEST_SCRIPTS, 'file_maker.py')
         with open(script) as o:
             new_file = self.storage.save(self.filename_func('file_maker.py'), o)
@@ -123,7 +119,7 @@ class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TransactionTestCase
         first_version = res['script']
         self.assertEqual(res['valid'], True, res['errors'])
         parser = ScriptParser.objects.get(script_version=res['script'])
-        self.assertEqual(parser.name, u'')
+        self.assertEqual(parser.name, '')
 
         # Test that adding the script again doesn't update anything
         res = utils.add_wooey_script(script_path=v1, script_name='test_versions')
@@ -132,7 +128,7 @@ class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TransactionTestCase
         dup_first_version = res['script']
         self.assertEqual(
             first_version.script_version,
-            dup_first_version.script_version
+            dup_first_version.script_version,
         )
         self.assertEqual(first_version.script_iteration, 1)
         self.assertEqual(dup_first_version.script_iteration, 1)

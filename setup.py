@@ -1,5 +1,6 @@
 import os
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 with open(os.path.join(os.path.dirname(__file__), 'README.md')) as readme:
     README = readme.read()
@@ -12,7 +13,7 @@ setup(
     version='0.13.2',
     packages=find_packages(),
     scripts=['scripts/wooify'],
-    entry_points={'console_scripts': ['wooify = wooey.backend.command_line:bootstrap', ]},
+    entry_points={'console_scripts': ['wooify = wooey.backend.command_line:bootstrap']},
     python_requires='>3.5.0',
     install_requires=[
         'celery>=4.0,<5',
@@ -38,7 +39,7 @@ setup(
             'sphinx',
             'tox',
             'watchdog[watchmedo]',
-        ]
+        ],
     },
     include_package_data=True,
     description='A Django app which creates a web GUI and task interface for argparse scripts',

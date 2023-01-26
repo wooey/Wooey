@@ -1,4 +1,5 @@
 import os
+
 from .wooey_settings import *
 
 # Whether to allow anonymous job submissions, set False to disallow 'guest' job submissions
@@ -40,8 +41,8 @@ DATABASES = {
         'USER': os.environ.get('DATABASE_USER', 'wooey'),
         'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'wooey'),
         'HOST': os.environ.get('DATABASE_URL', 'localhost'),
-        'PORT': os.environ.get('DATABASE_PORT', '5432')
-    }
+        'PORT': os.environ.get('DATABASE_PORT', '5432'),
+    },
 }
 
 ALLOWED_HOSTS = (

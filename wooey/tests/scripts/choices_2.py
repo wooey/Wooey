@@ -13,4 +13,4 @@ parser.add_argument('--more-multiple-file-choices', type=argparse.FileType('r'),
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    sys.stdout.write('{}'.format(args))
+    sys.stdout.write(f'{args}')

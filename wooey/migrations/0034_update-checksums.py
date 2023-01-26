@@ -21,5 +21,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(update_checksums)
+        migrations.RunPython(update_checksums),
     ]

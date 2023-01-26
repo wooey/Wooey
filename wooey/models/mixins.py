@@ -4,11 +4,10 @@ from django.forms.models import model_to_dict
 from ..backend import utils
 
 
-class UpdateScriptsMixin(object):
+class UpdateScriptsMixin():
     pass
 
 
-class WooeyPy2Mixin(object):
+class WooeyPy2Mixin():
     def __unicode__(self):
         return unicode(self.__str__())
-

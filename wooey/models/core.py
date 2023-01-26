@@ -1,27 +1,27 @@
 from __future__ import absolute_import, print_function, unicode_literals
-import os
+
 import importlib
 import json
-import six
+import os
 import uuid
 from io import IOBase
 
+import six
 from autoslug import AutoSlugField
 from celery import states
-from django.db import models, transaction
 from django.conf import settings
+from django.contrib.auth.models import Group, User
 from django.core.cache import caches as django_cache
 from django.core.files.storage import SuspiciousFileOperation
-from django.contrib.auth.models import Group, User
-from django.utils.translation import ugettext_lazy as _
-from django.db import transaction
+from django.db import models, transaction
 from django.urls import reverse
 from django.utils.text import get_valid_filename
+from django.utils.translation import ugettext_lazy as _
 from jsonfield import JSONCharField
 
-from . mixins import UpdateScriptsMixin, WooeyPy2Mixin
 from .. import settings as wooey_settings
-from .. backend import utils
+from ..backend import utils
+from .mixins import UpdateScriptsMixin, WooeyPy2Mixin
 
 # TODO: Handle cases where celery is not setup but specified to be used
 tasks = importlib.import_module(wooey_settings.WOOEY_CELERY_TASKS)
@@ -29,10 +29,11 @@ tasks = importlib.import_module(wooey_settings.WOOEY_CELERY_TASKS)
 
 class ScriptGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     """
-        This is a group of scripts, it holds general information
-        about a collection of scripts, and allows for custom descriptions
+    This is a group of scripts, it holds general information
+    about a collection of scripts, and allows for custom descriptions
 
     """
+
     group_name = models.TextField()
     slug = AutoSlugField(populate_from='group_name', unique=True)
     group_description = models.TextField(null=True, blank=True)
@@ -109,10 +110,10 @@ class ScriptVersion(WooeyPy2Mixin, models.Model):
     modified_date = models.DateTimeField(auto_now=True)
 
     created_by = models.ForeignKey(
-        User, related_name='created_script_version_set', on_delete=models.SET_NULL, null=True, blank=True
+        User, related_name='created_script_version_set', on_delete=models.SET_NULL, null=True, blank=True,
     )
     modified_by = models.ForeignKey(
-        User, related_name='modified_script_version_set', on_delete=models.SET_NULL, null=True, blank=True
+        User, related_name='modified_script_version_set', on_delete=models.SET_NULL, null=True, blank=True,
     )
 
     error_messages = {
@@ -125,7 +126,7 @@ class ScriptVersion(WooeyPy2Mixin, models.Model):
         verbose_name_plural = _('script versions')
 
     def __str__(self):
-        return '{}({}: {})'.format(self.script.script_name, self.script_version, self.script_iteration)
+        return f'{self.script.script_name}({self.script_version}: {self.script_iteration})'
 
     def get_url(self):
         return reverse('wooey:wooey_script', kwargs={'slug': self.script.slug})
@@ -144,8 +145,10 @@ class ScriptVersion(WooeyPy2Mixin, models.Model):
 
 class WooeyJob(WooeyPy2Mixin, models.Model):
     """
-    This model serves to link the submitted celery tasks to a script submitted
+    This model serves to link the submitted celery tasks
+    to a script submitted
     """
+
     # blank=True, null=True is to allow anonymous users to submit jobs
     user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.SET_NULL)
     celery_id = models.CharField(max_length=255, null=True)
@@ -256,11 +259,11 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         return path[path.find(self.get_output_path()):].lstrip(os.path.sep)
 
     def get_realtime_key(self):
-        return 'wooeyjob_{}_rt'.format(self.pk)
+        return f'wooeyjob_{self.pk}_rt'
 
     def update_realtime(self, stdout='', stderr='', delete=False):
         wooey_cache = wooey_settings.WOOEY_REALTIME_CACHE
-        if delete == False and wooey_cache is None:
+        if not delete and wooey_cache is None:
             self.stdout = stdout
             self.stderr = stderr
             self.save()
@@ -307,7 +310,7 @@ class ScriptParameterGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
 
     def __str__(self):
         script_version = self.script_version.first()
-        return '{}: {}'.format(script_version.script.script_name if script_version else 'No Script Assigned', self.group_name)
+        return f"{script_version.script.script_name if script_version else 'No Script Assigned'}: {self.group_name}"
 
 
 class ScriptParser(WooeyPy2Mixin, models.Model):
@@ -316,13 +319,15 @@ class ScriptParser(WooeyPy2Mixin, models.Model):
 
     def __str__(self):
         script_version = self.script_version.first()
-        return '{}: {}'.format(script_version.script.script_name if script_version else 'No Script Assigned', self.name)
+        return f"{script_version.script.script_name if script_version else 'No Script Assigned'}: {self.name}"
 
 
 class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     """
-        This holds the parameter mapping for each script, and enforces uniqueness by each script via a FK.
+    This holds the parameter mapping for each script, and enforces
+    uniqueness by each script via a FK.
     """
+
     parser = models.ForeignKey('ScriptParser', on_delete=models.CASCADE)
     script_version = models.ManyToManyField('ScriptVersion')
     short_param = models.CharField(max_length=255, blank=True)
@@ -334,7 +339,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     choice_limit = models.CharField(max_length=10, null=True, blank=True)
     collapse_arguments = models.BooleanField(
         default=True,
-        help_text=_('Collapse separate inputs to a given argument to a single input (ie: --arg 1 --arg 2 becomes --arg 1 2)')
+        help_text=_('Collapse separate inputs to a given argument to a single input (ie: --arg 1 --arg 2 becomes --arg 1 2)'),
     )
     form_field = models.CharField(max_length=255)
     default = JSONCharField(max_length=255, null=True, blank=True)
@@ -356,7 +361,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
 
     @property
     def form_slug(self):
-        return '{}-{}'.format(self.parser.pk, self.slug)
+        return f'{self.parser.pk}-{self.slug}'
 
     @property
     def multiple_choice(self):
@@ -387,14 +392,13 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
 
     def __str__(self):
         scripts = ', '.join([i.script.script_name for i in self.script_version.all()])
-        return '{}: {}'.format(scripts, self.script_param)
+        return f'{scripts}: {self.script_param}'
 
 
 # TODO: find a better name for this class. Job parameter? SelectedParameter?
 class ScriptParameters(WooeyPy2Mixin, models.Model):
-    """
-        This holds the actual parameters sent with the submission
-    """
+    """This holds the actual parameters sent with the submission"""
+
     # the details of the actual executed scripts
     job = models.ForeignKey('WooeyJob', on_delete=models.CASCADE)
     parameter = models.ForeignKey('ScriptParameter', on_delete=models.CASCADE)
@@ -427,7 +431,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
             value = _('FILE NOT FOUND')
         except SuspiciousFileOperation:
             value = _('File outside of project')
-        return '{}: {}'.format(self.parameter.script_param, value)
+        return f'{self.parameter.script_param}: {value}'
 
     def get_subprocess_value(self):
         value = self.value
@@ -449,8 +453,8 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
                     value = utils.get_storage(local=True).path(value)
                     # trim the output path, we don't want to be adding our platform specific paths to the output
                     op = self.job.get_output_path()
-                    #TODO : use os.path.sep
-                    value = value[value.find(op)+len(op)+1:]
+                    # TODO : use os.path.sep
+                    value = value[value.find(op) + len(op) + 1:]
             else:
                 # make sure we have it locally otherwise download it
                 if not utils.get_storage(local=True).exists(value.path):
@@ -482,8 +486,8 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
                     new_path = self.job.get_output_path()
                     new_root, new_id = os.path.split(new_path)
                     # we want to remove the root + the old job's pk
-                    value = value[value.find(new_root)+len(new_root)+1:]
-                    value = value[value.find(os.path.sep)+1:]
+                    value = value[value.find(new_root) + len(new_root) + 1:]
+                    value = value[value.find(os.path.sep) + 1:]
                     # we want to create a new path for the current job
                     path = os.path.join(new_path, self.parameter.slug if not value else value)
                     value = path
@@ -523,7 +527,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
         elif field == self.INTEGER:
             value = self.WOOEY_FIELD_MAP[field](value) if isinstance(value, int) or str(value).isdigit() else None
         elif field == self.BOOLEAN:
-            if value is None or value == False:
+            if value is None or not value:
                 value = None
             if value:
                 value = True
@@ -590,7 +594,7 @@ class UserFile(WooeyPy2Mixin, models.Model):
         app_label = 'wooey'
 
     def __str__(self):
-        return '{}: {}'.format(self.job.job_name, self.system_file)
+        return f'{self.job.job_name}: {self.system_file}'
 
     @property
     def filepath(self):

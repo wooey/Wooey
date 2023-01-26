@@ -1,11 +1,11 @@
 from __future__ import absolute_import
 
-from django.urls import include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.urls import include, re_path
 
-from . import views
 from . import settings as wooey_settings
+from . import views
 
 app_name = 'wooey'
 
@@ -49,7 +49,7 @@ wooey_patterns = [
 
     re_path(r'^$', views.WooeyHomeView.as_view(), name='wooey_home'),
     re_path(r'^$', views.WooeyHomeView.as_view(), name='wooey_job_launcher'),
-    re_path('^{}'.format(wooey_settings.WOOEY_LOGIN_URL.lstrip('/')), views.wooey_login, name='wooey_login'),
+    re_path(f"^{wooey_settings.WOOEY_LOGIN_URL.lstrip('/')}", views.wooey_login, name='wooey_login'),
 
     re_path(r'^favorite/toggle$', views.toggle_favorite, name='toggle_favorite'),
 

@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 
+
 def gen_checksums(apps, schema_editor):
     WooeyFile = apps.get_model('wooey', 'WooeyFile')
     from ..backend.utils import get_checksum

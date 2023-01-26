@@ -14,6 +14,7 @@ def populate_m2m(apps, schema_editor):
     for obj in ScriptParameterGroup.objects.all():
         obj.new_script_version.add(obj.script_version)
 
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -21,5 +22,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(populate_m2m)
+        migrations.RunPython(populate_m2m),
     ]

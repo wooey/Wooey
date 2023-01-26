@@ -3,6 +3,7 @@
 __author__ = 'chris'
 import argparse
 import sys
+
 from PIL import Image
 
 parser = argparse.ArgumentParser(description="Crop images")
@@ -18,10 +19,11 @@ def main():
     args = parser.parse_args()
     im = Image.open(args.image.name)
     width, height = im.size
-    right = width-args.right
-    bottom = height-args.bottom
+    right = width - args.right
+    bottom = height - args.bottom
     new = im.crop((args.left, args.top, right, bottom))
     new.save(args.save.name)
+
 
 if __name__ == "__main__":
     sys.exit(main())

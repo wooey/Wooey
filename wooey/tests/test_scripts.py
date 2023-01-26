@@ -1,11 +1,12 @@
-import mock
 import os
 
+import mock
 from django.test import TransactionTestCase
 
-from . import config, mixins, utils as test_utils
 from ..backend import utils
 from ..models import ScriptParameter, ScriptVersion
+from . import config, mixins
+from . import utils as test_utils
 
 
 class ScriptAdditionTests(mixins.ScriptFactoryMixin, mixins.FileMixin, TransactionTestCase):
@@ -23,8 +24,8 @@ class ScriptAdditionTests(mixins.ScriptFactoryMixin, mixins.FileMixin, Transacti
             data={
                 'job_name': 'abc',
                 link_slug: 'alink',
-                name_slug: 'aname'
-            }
+                name_slug: 'aname',
+            },
         )
         # These are positional arguments -- we DO NOT want them returning anything
         self.assertEqual(['', ''], [i.parameter.short_param for i in job.get_parameters()])
@@ -50,8 +51,8 @@ class ScriptAdditionTests(mixins.ScriptFactoryMixin, mixins.FileMixin, Transacti
             script_version_pk=self.choice_script.pk,
             data={
                 'job_name': 'abc',
-                slug: [1, 2]
-            }
+                slug: [1, 2],
+            },
         )
         commands = utils.get_job_commands(job=job)[2:]
         self.assertEqual(commands, ['--need-at-least-one-numbers', '1', '--need-at-least-one-numbers', '2'])
@@ -61,8 +62,8 @@ class ScriptAdditionTests(mixins.ScriptFactoryMixin, mixins.FileMixin, Transacti
             script_version_pk=self.choice_script.pk,
             data={
                 'job_name': 'abc',
-                slug: [1, 2, 3]
-            }
+                slug: [1, 2, 3],
+            },
         )
         commands = utils.get_job_commands(job=job)[2:]
         self.assertEqual(commands, ['--choices-str', '1', '2', '3'])

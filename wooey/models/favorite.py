@@ -1,7 +1,7 @@
-from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 
@@ -16,7 +16,7 @@ class Favorite(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user', 'content_type', 'object_id', )
+        unique_together = ('user', 'content_type', 'object_id')
         app_label = 'wooey'
         verbose_name = _('favorite')
         verbose_name_plural = _('favorites')

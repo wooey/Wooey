@@ -1,8 +1,9 @@
 from __future__ import unicode_literals
+
 import os
 
-from django.core.files import File
 from django.conf import settings
+from django.core.files import File
 
 BASE_DIR = os.path.split(__file__)[0]
 WOOEY_TEST_SCRIPTS = os.path.join(BASE_DIR, 'scripts')
@@ -22,8 +23,8 @@ SCRIPT_DATA = {
                 'job_name': ['abc'],
                 'sequence': ['ATATATATATA'],
                 'frame': ['+3'],
-                'out': ['abc']
-            }
+                'out': ['abc'],
+            },
         },
     'choices':
         {
@@ -35,15 +36,15 @@ SCRIPT_DATA = {
             'files': {
                 'multiple_file_choices': [
                     File(open(os.path.join(WOOEY_TEST_SCRIPTS, 'choices.py'), 'rb')),
-                    File(open(os.path.join(WOOEY_TEST_SCRIPTS, 'crop.py'), 'rb'))
-                ]
-            }
+                    File(open(os.path.join(WOOEY_TEST_SCRIPTS, 'crop.py'), 'rb')),
+                ],
+            },
         },
     'without_args':
         {
             'data': {
                 'job_name': ['abc'],
-            }
+            },
 
-        }
+        },
 }

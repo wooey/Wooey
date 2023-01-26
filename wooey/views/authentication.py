@@ -1,14 +1,15 @@
 from __future__ import absolute_import
-from django.contrib.auth import login, authenticate, get_user_model
+
+from django.contrib.auth import authenticate, get_user_model, login
 from django.forms.models import modelform_factory
-from django.http import HttpResponseRedirect
-from django.http import JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse
-from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
+from django.utils.translation import ugettext_lazy as _
 from django.views.generic import CreateView
 
 from .. import settings as wooey_settings
+
 
 class WooeyRegister(CreateView):
     template_name = 'wooey/registration/register.html'
@@ -16,9 +17,9 @@ class WooeyRegister(CreateView):
     fields = ('username', 'email', 'password')
 
     def dispatch(self, request, *args, **kwargs):
-        if wooey_settings.WOOEY_AUTH == False:
+        if not wooey_settings.WOOEY_AUTH:
             return HttpResponseRedirect(wooey_settings.WOOEY_REGISTER_URL)
-        return super(WooeyRegister, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.object = None
@@ -48,7 +49,7 @@ class WooeyRegister(CreateView):
 
 
 def wooey_login(request):
-    if wooey_settings.WOOEY_AUTH == False:
+    if not wooey_settings.WOOEY_AUTH:
         return HttpResponseRedirect(wooey_settings.WOOEY_LOGIN_URL)
     User = get_user_model()
     form = modelform_factory(User, fields=('username', 'password'))

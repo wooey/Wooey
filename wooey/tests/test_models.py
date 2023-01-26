@@ -1,12 +1,12 @@
 import os
 
-
 from django.test import Client, TestCase, TransactionTestCase
 from six.moves.urllib_parse import quote
 
 from wooey import models, version
 
-from . import factories, config, mixins, utils as test_utils
+from . import config, factories, mixins
+from . import utils as test_utils
 
 
 class ScriptTestCase(mixins.ScriptFactoryMixin, TestCase):
@@ -39,17 +39,18 @@ class ScriptTestCase(mixins.ScriptFactoryMixin, TestCase):
         self.assertFalse(models.ScriptVersion.objects.filter(pk=self.choice_script.pk).exists())
 
 
-
 class ScriptGroupTestCase(TestCase):
 
     def test_script_group_creation(self):
         group = factories.ScriptGroupFactory()
+
 
 class TestScriptParsers(mixins.ScriptFactoryMixin, TestCase):
     def test_renders_if_script_version_deleted(self):
         parser = self.choice_script.scriptparser_set.first()
         self.choice_script.delete()
         self.assertIn(parser.name, str(parser))
+
 
 class ScriptParameterTestCase(TestCase):
     def test_script_parameter_default(self):
@@ -60,6 +61,7 @@ class ScriptParameterTestCase(TestCase):
             script_parameter.save()
             self.assertEqual(models.ScriptParameter.objects.get(pk=pk).default, test_value)
 
+
 class TestScriptVersion(mixins.ScriptFactoryMixin, TestCase):
     def test_script_version_url_with_spaces(self):
         # Handles https://github.com/wooey/Wooey/issues/290
@@ -69,6 +71,7 @@ class TestScriptVersion(mixins.ScriptFactoryMixin, TestCase):
         script_version.save()
         url = script_version.get_version_url()
         self.assertIn(quote(spaced_version), url)
+
 
 class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMixin, TransactionTestCase):
 
@@ -88,8 +91,8 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMix
             data={
                 'job_name': 'abc',
                 sequence_slug: 'aaa',
-                out_slug: 'abc'
-            }
+                out_slug: 'abc',
+            },
         )
         job = job.submit_to_celery()
         old_pk = job.pk
@@ -108,7 +111,7 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMix
         self.assertEqual([], list(UserFile.objects.filter(pk__in=old_output)))
 
         file_previews = utils.get_file_previews(job)
-        for group, files in file_previews.items():
+        for _, files in file_previews.items():
             for fileinfo in files:
                 # for testing, we use the local url
                 response = Client().get(self.get_local_url(fileinfo))
@@ -124,13 +127,13 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMix
             data={
                 fasta_slug: fasta_file,
                 out_slug: 'abc',
-                'job_name': 'abc'
-            }
+                'job_name': 'abc',
+            },
         )
 
         # check our upload link is ok
         file_previews = utils.get_file_previews(job)
-        for group, files in file_previews.items():
+        for _, files in file_previews.items():
             for fileinfo in files:
                 response = Client().get(self.get_local_url(fileinfo))
                 self.assertEqual(response.status_code, 200)
@@ -153,7 +156,6 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMix
         self.assertNotEqual(job1_file.pk, job2_file.pk)
         self.assertEqual(job1_file.system_file, job2_file.system_file)
 
-
     def test_multiplechoices(self):
         script = self.choice_script
         choices = [2, 1, 3]
@@ -164,8 +166,8 @@ class TestJob(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, mixins.FileMix
             script_version_pk=script.pk,
             data={
                 'job_name': 'abc',
-                choice_slug: choices
-            }
+                choice_slug: choices,
+            },
         )
         # make sure we have our choices in the parameters
         choice_params = [i.value for i in job.get_parameters() if i.parameter.form_slug == choice_slug]
@@ -180,12 +182,12 @@ class TestCustomWidgets(TestCase):
             input_attributes='attr1="custom1" attr2="custom2"',
             input_class='custom-class',
         )
-        self.assertEquals(
+        self.assertEqual(
             widget.widget_attributes,
             {
                 'custom-property': True,
                 'attr1': 'custom1',
                 'attr2': 'custom2',
                 'class': 'custom-class',
-            }
+            },
         )

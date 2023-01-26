@@ -15,11 +15,11 @@ class Migration(migrations.Migration):
         migrations.RenameField(
             model_name='scriptparametergroup',
             old_name='new_script_version',
-            new_name='script_version'
+            new_name='script_version',
         ),
         migrations.RenameField(
             model_name='scriptparser',
             old_name='new_script_version',
-            new_name='script_version'
-        )
+            new_name='script_version',
+        ),
     ]

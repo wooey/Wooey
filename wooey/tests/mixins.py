@@ -1,11 +1,10 @@
-import shutil
 import os
+import shutil
 
-from ..models import ScriptVersion, WooeyFile, WooeyJob
-from ..backend import utils
 from .. import settings as wooey_settings
-from . import factories, config
-
+from ..backend import utils
+from ..models import ScriptVersion, WooeyFile, WooeyJob
+from . import config, factories
 
 # TODO: Track down where file handles are not being closed. This is not a problem on Linux/Mac, but is on Windows
 # and likely reflects being careless somewhere as opposed to Windows being a PITA
@@ -15,7 +14,7 @@ except NameError:
     WindowsError = None
 
 
-class FileCleanupMixin(object):
+class FileCleanupMixin():
     def tearDown(self):
         for i in WooeyFile.objects.all():
             try:
@@ -24,7 +23,7 @@ class FileCleanupMixin(object):
                 if wooey_settings.WOOEY_EPHEMERAL_FILES:
                     utils.get_storage(local=False).delete(path)
             except WindowsError:
-                print('unable to delete {}'.format(path))
+                print(f'unable to delete {path}')
         # delete job dirs
         local_storage = utils.get_storage(local=True)
         for i in WooeyJob.objects.all():
@@ -32,10 +31,11 @@ class FileCleanupMixin(object):
             try:
                 shutil.rmtree(local_storage.path(path))
             except WindowsError:
-                    print('unable to delete {}'.format(path))
-        super(FileCleanupMixin, self).tearDown()
+                print(f'unable to delete {path}')
+        super().tearDown()
 
-class ScriptTearDown(object):
+
+class ScriptTearDown():
     def tearDown(self):
         for i in ScriptVersion.objects.all():
             name = i.script_path.name
@@ -44,15 +44,16 @@ class ScriptTearDown(object):
                 try:
                     utils.get_storage(local=False).delete(name)
                 except WindowsError:
-                    print('unable to delete {}'.format(name))
+                    print(f'unable to delete {name}')
             name += 'c'  # handle pyc junk
             try:
                 utils.get_storage().delete(name)
             except WindowsError:
-                print('unable to delete {}'.format(name))
-        super(ScriptTearDown, self).tearDown()
+                print(f'unable to delete {name}')
+        super().tearDown()
 
-class ScriptFactoryMixin(ScriptTearDown, object):
+
+class ScriptFactoryMixin(ScriptTearDown):
     def setUp(self):
         self.translate_script = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate.py'))
         self.choice_script = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'choices.py'))
@@ -66,13 +67,14 @@ class ScriptFactoryMixin(ScriptTearDown, object):
             os.path.join(config.WOOEY_TEST_SCRIPTS, 'versioned_script', 'v2.py'),
             script_name='version_test',
         )
-        super(ScriptFactoryMixin, self).setUp()
+        super().setUp()
 
-class FileMixin(object):
+
+class FileMixin():
     def setUp(self):
         self.storage = utils.get_storage(local=not wooey_settings.WOOEY_EPHEMERAL_FILES)
         self.filename_func = lambda x: os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, x)
-        super(FileMixin, self).setUp()
+        super().setUp()
 
     def get_any_file(self):
         script = os.path.join(config.WOOEY_TEST_SCRIPTS, 'command_order.py')

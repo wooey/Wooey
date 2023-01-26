@@ -2,24 +2,18 @@
 
 import json
 
-from django.test import TestCase, RequestFactory
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.http import Http404
+from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
-from . import (
-    config,
-    factories,
-    mixins,
-    utils as test_utils,
-)
+from .. import models, settings
+from .. import views as wooey_views
 from ..backend import utils
 from ..views import wooey_celery
-from .. import views as wooey_views
-from .. import models
-from .. import settings
-
+from . import config, factories, mixins
+from . import utils as test_utils
 
 User = get_user_model()
 
@@ -30,7 +24,7 @@ def load_JSON_dict(d):
 
 class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     def setUp(self):
-        super(CeleryViews, self).setUp()
+        super().setUp()
         self.factory = RequestFactory()
         self.user = factories.UserFactory()
         # the test server doesn't have celery running
@@ -43,10 +37,10 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         d = response.content.decode("utf-8")
         self.assertEqual(
             {
-                u'items': {u'global': [], u'results': [], u'user': []},
-                u'totals': {u'global': 0, u'results': 0, u'user': 0}
+                'items': {'global': [], 'results': [], 'user': []},
+                'totals': {'global': 0, 'results': 0, 'user': 0},
             },
-            json.loads(d)
+            json.loads(d),
         )
 
         job = factories.generate_job(self.translate_script)
@@ -136,7 +130,7 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
 
 class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     def setUp(self):
-        super(WooeyViews, self).setUp()
+        super().setUp()
         self.factory = RequestFactory()
         self.script_view_func = wooey_views.WooeyScriptView.as_view()
         self.json_view_func = wooey_views.WooeyScriptJSON.as_view()
@@ -156,12 +150,12 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
                 'wooey:wooey_script_clone',
                 kwargs={
                     'slug': job.script_version.script.slug,
-                    'job_id': job.pk
-                }
+                    'job_id': job.pk,
+                },
             ),
             data={
                 'wooey_type': script_version.pk,
-            }
+            },
         )
         request.user = AnonymousUser()
         response = self.json_view_func(request, pk=script.pk, job_id=job.pk)
@@ -183,7 +177,7 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         request = self.factory.get(
             reverse(
                 'wooey:wooey_script',
-                kwargs=job_kwargs
+                kwargs=job_kwargs,
             ),
         )
         request.user = AnonymousUser()
@@ -193,7 +187,6 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         # Test that version1 was returned
         context = response.resolve_context(response.context_data)
         self.assertEqual(context['form']['wooey_form']['wooey_type'].value(), self.version1_script.pk)
-
 
     def test_multiple_choice(self):
         script_version = self.choice_script
@@ -234,7 +227,6 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         new_files = [i.value.url for i in job.get_parameters() if i.parameter.slug == 'multiple_file_choices']
         self.assertEqual(len(new_files), len(files))
 
-
     def test_form_groups(self):
         # Make sure forms groups work to validate
         script_version = self.without_args
@@ -253,7 +245,6 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         response = self.json_view_func(request)
         d = load_JSON_dict(response.content)
         self.assertTrue(d['valid'], d)
-
 
     def test_job_view_permissions(self):
         # Make sure users cannot see jobs from other users
@@ -314,9 +305,10 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         d = load_JSON_dict(response.content)
         self.assertFalse(d['valid'], d)
 
+
 class WoeeyScriptSearchViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     def setUp(self):
-        super(WoeeyScriptSearchViews, self).setUp()
+        super().setUp()
         self.factory = RequestFactory()
         self.json_view_func = wooey_views.WooeyScriptSearchJSON.as_view()
         self.json_html_view_func = wooey_views.WooeyScriptSearchJSONHTML.as_view()
@@ -340,7 +332,7 @@ class WoeeyScriptSearchViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin,
         self.assertEqual(len(d['results']), 1)
         self.assertEqual(
             set(result['id'] for result in d['results']),
-            {self.script1.id}
+            {self.script1.id},
         )
 
     def test_search_json_with_description(self):
@@ -351,7 +343,7 @@ class WoeeyScriptSearchViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin,
         self.assertEqual(len(d['results']), 1)
         self.assertEqual(
             set(result['id'] for result in d['results']),
-            {self.script2.id}
+            {self.script2.id},
         )
 
     def test_search_json_html_with_name(self):
@@ -362,7 +354,7 @@ class WoeeyScriptSearchViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin,
         self.assertEqual(len(d['results']), 1)
         self.assertEqual(
             set(result['id'] for result in d['results']),
-            {self.script1.id}
+            {self.script1.id},
         )
 
     def test_search_json_html_with_description(self):
@@ -373,5 +365,5 @@ class WoeeyScriptSearchViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin,
         self.assertEqual(len(d['results']), 1)
         self.assertEqual(
             set(result['id'] for result in d['results']),
-            {self.script2.id}
+            {self.script2.id},
         )

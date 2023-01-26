@@ -1,8 +1,9 @@
-from . import test_settings
 from django.conf import settings
-from django.urls import include, path
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.urls import include, path
+
+from . import test_settings
 
 # the DEBUG setting in test_settings is not respected
 settings.DEBUG = True

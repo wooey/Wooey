@@ -1,16 +1,17 @@
-from __future__ import division, absolute_import
+from __future__ import absolute_import, division
+
 import hashlib
 from inspect import getargspec
 
 from django import template
-from django.utils.safestring import mark_safe
 from django.contrib.contenttypes.models import ContentType
 from django.template.base import TemplateSyntaxError
 from django.template.library import TagHelperNode, parse_bits
+from django.utils.safestring import mark_safe
 from six.moves.urllib_parse import urlencode
 
 from .. import settings as wooey_settings
-from ..version import DJANGO_VERSION, DJ19
+from ..version import DJ19, DJANGO_VERSION
 
 
 class Library(template.Library):
@@ -37,7 +38,7 @@ class Library(template.Library):
 
                 class AssignmentNode(TagHelperNode):
                     def __init__(self, takes_context, args, kwargs, target_var):
-                        super(AssignmentNode, self).__init__(takes_context, args, kwargs)
+                        super().__init__(takes_context, args, kwargs)
                         self.target_var = target_var
 
                     def render(self, context):
@@ -46,7 +47,7 @@ class Library(template.Library):
                         return ''
 
                 function_name = (name or
-                    getattr(func, '_decorated_function', func).__name__)
+                                 getattr(func, '_decorated_function', func).__name__)
 
                 def compile_func(parser, token):
                     bits = token.split_contents()[1:]
@@ -54,11 +55,11 @@ class Library(template.Library):
                         target_var = bits[-1]
                         bits = bits[:-2]
                         args, kwargs = parse_bits(parser, bits, params,
-                            varargs, varkw, defaults, takes_context, function_name)
+                                                  varargs, varkw, defaults, takes_context, function_name)
                         return AssignmentNode(takes_context, args, kwargs, target_var)
                     else:
                         args, kwargs = parse_bits(parser, bits, params,
-                            varargs, varkw, defaults, takes_context, function_name)
+                                                  varargs, varkw, defaults, takes_context, function_name)
                         return SimpleNode(takes_context, args, kwargs)
 
                 compile_func.__doc__ = func.__doc__
@@ -73,6 +74,7 @@ class Library(template.Library):
                 return dec(func)
             else:
                 raise TemplateSyntaxError("Invalid arguments provided to assignment_tag")
+
 
 register = Library()
 
@@ -94,7 +96,7 @@ def get_wooey_setting(name):
 @register.filter
 def divide(value, arg):
     try:
-        return float(value)/float(arg)
+        return float(value) / float(arg)
     except ZeroDivisionError:
         return None
 
@@ -113,8 +115,9 @@ def valid_user(obj, user):
 
 @register.filter
 def complete_job(status):
-    from ..models import WooeyJob
     from celery import states
+
+    from ..models import WooeyJob
     return status in (WooeyJob.COMPLETED, states.REVOKED)
 
 
@@ -128,7 +131,7 @@ def numericalign(s):
     :return: s
     """
     number, units = s.split()
-    return mark_safe('<span class="numericalign numericpart">%s</span><span class="numericalign">&nbsp;%s</span>' % (number, units))
+    return mark_safe(f'<span class="numericalign numericpart">{number}</span><span class="numericalign">&nbsp;{units}</span>')
 
 
 @register.filter
@@ -140,7 +143,7 @@ def app_model_id(obj):
     """
     ct = ContentType.objects.get_for_model(obj)
 
-    return '%s-%s-%s' % (ct.app_label, ct.model, obj.id)
+    return f'{ct.app_label}-{ct.model}-{obj.id}'
 
 
 @register.filter
@@ -177,7 +180,7 @@ def gravatar(parser, token):
         tag_name, email, size = token.split_contents()
 
     except ValueError:
-        raise template.TemplateSyntaxError("%r tag requires email and size arguments" % token.contents.split()[0])
+        raise template.TemplateSyntaxError(f"{token.contents.split()[0]!r} tag requires email and size arguments")
 
     return GravatarUrlNode(email, size)
 

@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+
 __author__ = 'chris'
 import copy
 import json
@@ -13,11 +14,11 @@ from django.http.request import QueryDict
 from django.utils.module_loading import import_string
 from django.utils.safestring import mark_safe
 
-from . import config
-from .scripts import WooeyForm
 from .. import version
 from ..backend import utils
 from ..models import ScriptVersion
+from . import config
+from .scripts import WooeyForm
 
 
 def mutli_render(render_func, appender_data_dict=None):
@@ -35,15 +36,15 @@ def mutli_render(render_func, appender_data_dict=None):
 
         # build the attribute dict
         data_attrs = flatatt(appender_data_dict if appender_data_dict is not None else {})
-        pieces.append(format_html('<a href="#{anchor}"{data}><span class="glyphicon glyphicon-plus"></span></a>', anchor=config.WOOEY_MULTI_WIDGET_ANCHOR
-                                  , data=data_attrs))
+        pieces.append(format_html('<a href="#{anchor}"{data}><span class="glyphicon glyphicon-plus"></span></a>',
+                                  anchor=config.WOOEY_MULTI_WIDGET_ANCHOR, data=data_attrs))
         return mark_safe('\n'.join(pieces))
     return render
 
 
 def multi_value_from_datadict(func):
     def value_from_datadict(data, files, name):
-        return [func(QueryDict('{name}={value}'.format(name=name, value=six.moves.urllib.parse.quote(i))), files, name) for i in data.getlist(name)]
+        return [func(QueryDict(f'{name}={six.moves.urllib.parse.quote(i)}'), files, name) for i in data.getlist(name)]
     return value_from_datadict
 
 
@@ -60,7 +61,7 @@ def multi_value_clean(func):
     return clean
 
 
-class WooeyFormFactory(object):
+class WooeyFormFactory():
     wooey_forms = {}
 
     @staticmethod
@@ -93,7 +94,7 @@ class WooeyFormFactory(object):
         if choices:
             form_field = 'MultipleChoiceField' if multiple_choices else 'ChoiceField'
             base_choices = [(None, '----')] if not param.required and not multiple_choices else []
-            field_kwargs['choices'] = base_choices+[(str(i), str(i).title()) for i in choices]
+            field_kwargs['choices'] = base_choices + [(str(i), str(i).title()) for i in choices]
 
         custom_widget = param.custom_widget
         if custom_widget:
@@ -143,7 +144,7 @@ class WooeyFormFactory(object):
             field.clean = multi_value_clean(field.clean)
             if choice_limit > 0:
                 appender_data_dict[WOOEY_CHOICE_LIMIT] = choice_limit
-        elif multiple_choices and choice_limit>0:
+        elif multiple_choices and choice_limit > 0:
             widget_data_dict[WOOEY_CHOICE_LIMIT] = choice_limit
 
         field.widget.attrs.update(widget_data_dict)
@@ -158,7 +159,7 @@ class WooeyFormFactory(object):
             REQUIRED_GROUP: {
                 'group': REQUIRED_GROUP,
                 'fields': OrderedDict(),
-            }
+            },
         })
         parser_group_map = OrderedDict()
 
@@ -173,7 +174,7 @@ class WooeyFormFactory(object):
             group_name = REQUIRED_GROUP if param.required else param.parameter_group.group_name
             group = group_map.get(group_name, {
                 'group': group_name,
-                'fields': OrderedDict()
+                'fields': OrderedDict(),
             })
             group['fields'][param.form_slug] = field
             group_map[group_name] = group
@@ -185,7 +186,7 @@ class WooeyFormFactory(object):
                 parser_group_map[(parser.id, parser.name)] = copy.deepcopy(base_group_map)
 
         # If there are no required groups in a parser, remove them
-        for parser, group_map in six.iteritems(parser_group_map):
+        for _, group_map in six.iteritems(parser_group_map):
             if not len(group_map[REQUIRED_GROUP]['fields']):
                 del group_map[REQUIRED_GROUP]
 
@@ -208,7 +209,7 @@ class WooeyFormFactory(object):
             if wooey_form.fields['wooey_parser'].initial is None and parser_pk is not None:
                 wooey_form.fields['wooey_parser'].initial = parser_pk
             parser_groups = script_info['parsers'].setdefault(parser, [])
-            for group_index, group in enumerate(six.iteritems(group_map)):
+            for _, group in enumerate(six.iteritems(group_map)):
                 group_pk, group_info = group
                 form = forms.Form()
                 for form_slug, field in six.iteritems(group_info['fields']):
@@ -238,5 +239,6 @@ class WooeyFormFactory(object):
                 master_form.fields[param.form_slug] = field
 
         return master_form
+
 
 DJ_FORM_FACTORY = WooeyFormFactory()

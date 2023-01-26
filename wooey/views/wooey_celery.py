@@ -1,6 +1,6 @@
 from __future__ import absolute_import
-import six
 
+import six
 from celery import app, states
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
@@ -12,9 +12,9 @@ from django.utils.encoding import force_text
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import DetailView, ListView
 
-from ..models import WooeyJob, UserFile, Favorite
 from .. import settings as wooey_settings
-from ..backend.utils import valid_user, get_file_previews
+from ..backend.utils import get_file_previews, valid_user
+from ..models import Favorite, UserFile, WooeyJob
 
 celery_app = app.app_or_default()
 
@@ -64,7 +64,7 @@ def get_active_user_jobs(request):
     user = request.user
     jobs = WooeyJob.objects.filter(
         (Q(user=None) | Q(user=user) if request.user.is_authenticated else Q(user=None)) &
-        (Q(status=WooeyJob.RUNNING))
+        (Q(status=WooeyJob.RUNNING)),
     )
     return jobs.order_by('-created_date')
 
@@ -80,7 +80,7 @@ def get_user_results(request):
     jobs = jobs.exclude(
         Q(status=WooeyJob.RUNNING) |
         Q(status=WooeyJob.SUBMITTED) |
-        Q(status=WooeyJob.DELETED)
+        Q(status=WooeyJob.DELETED),
     )
     return jobs.order_by('-created_date')
 
@@ -115,11 +115,11 @@ def celery_task_command(request):
     command = request.POST.get('celery-command')
     job_id = request.POST.get('job-id')
     job = WooeyJob.objects.get(pk=job_id)
-    response = {'valid': False, }
+    response = {'valid': False}
     valid = valid_user(job.script_version.script, request.user)
-    if valid.get('valid') == True:
+    if valid.get('valid'):
         user = request.user if request.user.is_authenticated else None
-        if user == job.user or job.user == None:
+        if user == job.user or job.user is None:
             if command == 'resubmit':
                 new_job = job.submit_to_celery(resubmit=True, user=request.user)
                 response.update({'valid': True, 'extra': {'job_url': reverse('wooey:celery_results', kwargs={'job_id': new_job.pk})}})
@@ -155,10 +155,10 @@ class JobBase(DetailView):
             # FIXME: Update urls to use PK
             self.kwargs['pk'] = self.kwargs.get('job_id')
 
-            return super(JobBase, self).get_object()
+            return super().get_object()
 
     def get_context_data(self, **kwargs):
-        ctx = super(JobBase, self).get_context_data(**kwargs)
+        ctx = super().get_context_data(**kwargs)
         wooey_job = ctx['wooeyjob']
 
         user = self.request.user
@@ -188,7 +188,6 @@ class JobBase(DetailView):
 
             ctx['favorite_file_ids'] = favorite_file_ids
 
-
         else:
             ctx['job_error'] = WooeyJob.error_messages['invalid_permissions']
         return ctx
@@ -212,10 +211,9 @@ class JobJSONHTML(JobBase):
     rendered outputs (template)
     file_list (rendered, or data only)
     """
+
     def render_to_response(self, context, *args, **kwargs):
-        """
-        Build dictionary of content
-        """
+        """Build dictionary of content"""
         preview_outputs = []
         file_outputs = []
         bast_ctx = context
@@ -229,14 +227,14 @@ class JobJSONHTML(JobBase):
                         'output_group': output_group,
                         'output_file_content': output_file_content,
                     })
-                    preview = render_to_string('wooey/preview/%s.html' % output_group, bast_ctx)
+                    preview = render_to_string(f'wooey/preview/{output_group}.html', bast_ctx)
                     preview_outputs.append(preview)
 
         for file_info in context['job_info']['all_files']:
             if file_info and file_info.get('name') not in added:
                 row_ctx = dict(
                     file=file_info,
-                    **context
+                    **context,
                 )
                 table_row = render_to_string('wooey/jobs/results/table_row.html', row_ctx)
                 file_outputs.append(table_row)
@@ -256,7 +254,7 @@ class JobListBase(ListView):
     template_name = 'wooey/jobs/job_list.html'
 
     def get_context_data(self, **kwargs):
-        ctx = super(JobListBase, self).get_context_data(**kwargs)
+        ctx = super().get_context_data(**kwargs)
         if 'title' not in ctx:
             ctx['title'] = self.title
         return ctx
@@ -284,7 +282,7 @@ class UserResultsView(JobListBase):
         else:
             kwargs['title'] = "Public Results"
 
-        return super(UserResultsView, self).get_context_data(**kwargs)
+        return super().get_context_data(**kwargs)
 
     def get_queryset(self, *args, **kwargs):
         return get_user_results(self.request)

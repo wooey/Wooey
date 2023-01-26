@@ -1,9 +1,11 @@
 from __future__ import absolute_import
+
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
-from .mixins import WooeyPy2Mixin
 from ..backend import utils
+from .mixins import WooeyPy2Mixin
+
 
 class WooeyWidget(WooeyPy2Mixin, models.Model):
     name = models.CharField(_('Widget Name'), max_length=50)
@@ -33,7 +35,6 @@ class WooeyWidget(WooeyPy2Mixin, models.Model):
         null=True,
         blank=True,
     )
-
 
     @property
     def widget_attributes(self):

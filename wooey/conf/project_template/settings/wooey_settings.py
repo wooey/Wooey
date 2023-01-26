@@ -1,6 +1,8 @@
-from .django_settings import *
-from wooey.version import DJANGO_VERSION, DJ110
 from django.utils.translation import ugettext_lazy as _
+
+from wooey.version import DJ110, DJANGO_VERSION
+
+from .django_settings import *
 
 INSTALLED_APPS += (
     # 'corsheaders',
@@ -25,7 +27,7 @@ LANGUAGES = [
     ('nl', _('Dutch')),
     ('zh-hans', _('Simplified Chinese')),
     ('ko', _('Korean')),
-    ('es', _('Spanish'))
+    ('es', _('Spanish')),
 ]
 
 NEW_MIDDLEWARE = []

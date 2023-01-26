@@ -1,11 +1,11 @@
 from __future__ import absolute_import
+
 from functools import wraps
 
-from django.db.models.signals import pre_save, post_save
-from django.db.utils import InterfaceError, DatabaseError
-from django import db
-
 from celery.signals import task_postrun, task_prerun
+from django import db
+from django.db.models.signals import post_save, pre_save
+from django.db.utils import DatabaseError, InterfaceError
 
 from .models import ScriptVersion
 
@@ -34,8 +34,9 @@ def task_completed(sender=None, **kwargs):
     if not job_id:
         return
 
-    from .models import WooeyJob
     from celery import states
+
+    from .models import WooeyJob
     try:
         job = WooeyJob.objects.get(pk=job_id)
     except (InterfaceError, DatabaseError) as e:
@@ -51,6 +52,7 @@ def task_completed(sender=None, **kwargs):
 def skip_script(instance):
     return getattr(instance, '_script_cl_creation', False) or getattr(instance, '_script_upgrade', False) or getattr(instance, '_rename_script', False)
 
+
 @disable_for_loaddata
 def script_version_presave(instance, **kwargs):
     is_updated = instance.pk is not None
@@ -59,7 +61,7 @@ def script_version_presave(instance, **kwargs):
         # The second filter ensures that in this update, the script_path is being updated. If the script_path in the database
         # matches what is in the current model, we do not carry out this operation. We force a database query here instead
         # of carrying out an in-memory operation to handle multi-server setups.
-        if not skip_script(instance) and not ScriptVersion.objects.filter(pk=instance.pk,script_path=instance.script_path).exists():
+        if not skip_script(instance) and not ScriptVersion.objects.filter(pk=instance.pk, script_path=instance.script_path).exists():
             # If the script checksum is not changed, do not run the script addition code (but update the
             # path)
             checksum = utils.get_checksum(path=instance.script_path.path)
@@ -69,6 +71,7 @@ def script_version_presave(instance, **kwargs):
                 instance._script_upgrade = True
                 instance.pk = None
 
+
 @disable_for_loaddata
 def script_version_postsave(instance, created, **kwargs):
     from .backend import utils
@@ -77,10 +80,11 @@ def script_version_postsave(instance, created, **kwargs):
         instance._script_upgrade = False
         instance._script_cl_creation = False
         instance._rename_script = False
-        if res['valid'] == False:
+        if not res['valid']:
             # delete the model on exceptions.
             instance.delete()
             raise res['errors']
+
 
 pre_save.connect(script_version_presave, sender=ScriptVersion)
 post_save.connect(script_version_postsave, sender=ScriptVersion)

@@ -1,5 +1,6 @@
-from .django_urls import *
 from django.urls import include, path
+
+from .django_urls import *
 
 urlpatterns += [
     # path('admin/', include(admin.site.urls)),

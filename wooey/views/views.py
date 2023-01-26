@@ -1,4 +1,5 @@
 from __future__ import absolute_import, unicode_literals
+
 from collections import defaultdict
 
 from django.contrib.auth import get_user_model
@@ -12,10 +13,10 @@ from django.utils.encoding import force_text
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import DetailView, TemplateView, View
 
-from ..backend import utils
-from ..models import WooeyJob, Script, UserFile, Favorite, ScriptVersion
-from ..version import DJANGO_VERSION, DJ18
 from .. import settings as wooey_settings
+from ..backend import utils
+from ..models import Favorite, Script, ScriptVersion, UserFile, WooeyJob
+from ..version import DJ18, DJANGO_VERSION
 
 
 class WooeyScriptBase(DetailView):
@@ -28,7 +29,7 @@ class WooeyScriptBase(DetailView):
         return s
 
     def get_context_data(self, **kwargs):
-        context = super(WooeyScriptBase, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         version = self.kwargs.get('script_version')
         iteration = self.kwargs.get('script_iteration')
 
@@ -123,14 +124,14 @@ class WooeyScriptBase(DetailView):
             parser_pk = form.cleaned_data.get('wooey_parser')
             script_version = ScriptVersion.objects.get(pk=version_pk)
             valid = utils.valid_user(script_version.script, request.user).get('valid')
-            if valid == True:
+            if valid:
                 group_valid = utils.valid_user(script_version.script.script_group, request.user).get('valid')
-                if valid == True and group_valid == True:
+                if valid and group_valid:
                     job = utils.create_wooey_job(
                         script_parser_pk=parser_pk,
                         script_version_pk=version_pk,
                         user=user,
-                        data=form.cleaned_data
+                        data=form.cleaned_data,
                     )
                     job.submit_to_celery()
                     return {'valid': True, 'job_id': job.id}
@@ -152,7 +153,7 @@ class WooeyScriptJSON(WooeyScriptBase):
         return JsonResponse(context)
 
     def post(self, *args, **kwargs):
-        data = super(WooeyScriptJSON, self).post(*args, **kwargs)
+        data = super().post(*args, **kwargs)
         return JsonResponse(data)
 
 
@@ -161,7 +162,7 @@ class WooeyScriptView(WooeyScriptBase):
     template_name = 'wooey/scripts/script_view.html'
 
     def post(self, *args, **kwargs):
-        data = super(WooeyScriptView, self).post(*args, **kwargs)
+        data = super().post(*args, **kwargs)
         if data['valid']:
             data['redirect'] = reverse('wooey:celery_results', kwargs={'job_id': data['job_id']})
         return JsonResponse(data)
@@ -171,8 +172,8 @@ class WooeyHomeView(TemplateView):
     template_name = 'wooey/home.html'
 
     def get_context_data(self, **kwargs):
-        #job_id = self.request.GET.get('job_id')
-        ctx = super(WooeyHomeView, self).get_context_data(**kwargs)
+        # job_id = self.request.GET.get('job_id')
+        ctx = super().get_context_data(**kwargs)
         ctx['scripts'] = utils.get_current_scripts()
 
         # Check for logged in user
@@ -190,7 +191,7 @@ class WooeyProfileView(TemplateView):
     template_name = 'wooey/profile/profile.html'
 
     def get_context_data(self, **kwargs):
-        ctx = super(WooeyProfileView, self).get_context_data(**kwargs)
+        ctx = super().get_context_data(**kwargs)
 
         if 'username' in self.kwargs:
             user = get_user_model()
@@ -207,7 +208,7 @@ class WooeyScrapbookView(TemplateView):
     template_name = 'wooey/scrapbook.html'
 
     def get_context_data(self, **kwargs):
-        ctx = super(WooeyScrapbookView, self).get_context_data(**kwargs)
+        ctx = super().get_context_data(**kwargs)
 
         # Get the id of every favorite (scrapbook) file
         ctype = ContentType.objects.get_for_model(UserFile)
@@ -248,9 +249,7 @@ class WooeyScriptSearchBase(WooeySearchBase):
 
 
 class WooeyScriptSearchJSON(WooeyScriptSearchBase):
-    """
-    Returns the result of the script search as JSON containing data only
-    """
+    """Returns the result of the script search as JSON containing data only"""
 
     def search(self, request):
         results = []
@@ -277,11 +276,11 @@ class WooeyScriptSearchJSONHTML(WooeyScriptSearchBase):
             # context_instance kwarg was deprecated in Django 1.8
             render = render_to_string(
                 'wooey/scripts/script_panel.html',
-                {'script': script, 'request': request}
+                {'script': script, 'request': request},
             ) if DJANGO_VERSION >= DJ18 else render_to_string(
                 'wooey/scripts/script_panel.html',
                 {'script': script},
-                context_instance=RequestContext(request)
+                context_instance=RequestContext(request),
             )
             results.append(render)
         return JsonResponse({'results': results})

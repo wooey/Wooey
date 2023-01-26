@@ -1,6 +1,8 @@
 # copied from django-compressor since I like their style
 import os
+
 import django
+
 DEBUG = True
 TESTING = True
 
@@ -9,15 +11,15 @@ TEST_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'tests')
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake'
-    }
+        'LOCATION': 'unique-snowflake',
+    },
 }
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': ':memory:',
-    }
+    },
 }
 
 INSTALLED_APPS = [
@@ -112,10 +114,10 @@ if os.environ.get('WOOEY_TEST_S3'):
     AWS_EXPIREY = 60 * 60 * 7
     AWS_HEADERS = {
         'Cache-Control': 'max-age=%d, s-maxage=%d, must-revalidate' % (AWS_EXPIREY,
-            AWS_EXPIREY)
+                                                                       AWS_EXPIREY),
     }
 
-    STATIC_URL = 'http://%s.s3.amazonaws.com/' % AWS_STORAGE_BUCKET_NAME
+    STATIC_URL = f'http://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/'
     MEDIA_URL = '/user-uploads/'
 
 else:

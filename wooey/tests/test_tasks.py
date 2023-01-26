@@ -1,27 +1,24 @@
-import mock
 import os
 from datetime import timedelta
 
+import mock
 from django.test import TestCase
 
 from wooey import settings as wooey_settings
 from wooey.backend.utils import add_wooey_script
-from wooey.models import (
-    WooeyJob,
-)
-from wooey.tasks import (
-    cleanup_dead_jobs,
-    get_latest_script,
-)
+from wooey.models import WooeyJob
+from wooey.tasks import cleanup_dead_jobs, get_latest_script
 
-from . import config, mixins, factories
+from . import config, factories, mixins
+
 
 class TaskTests(mixins.ScriptFactoryMixin, TestCase):
 
     def test_job_cleanup(self):
+        import time
+
         from ..models import WooeyJob
         from ..tasks import cleanup_wooey_jobs
-        import time
         anon_job = factories.generate_job(self.translate_script)
         user_job = factories.generate_job(self.translate_script)
         user = factories.UserFactory()
@@ -52,7 +49,7 @@ class TaskTests(mixins.ScriptFactoryMixin, TestCase):
 
 class TestGetLatestScript(mixins.FileMixin, mixins.ScriptTearDown, TestCase):
     def setUp(self):
-        super(TestGetLatestScript, self).setUp()
+        super().setUp()
         script = os.path.join(config.WOOEY_TEST_SCRIPTS, 'versioned_script', 'v1.py')
         with open(script) as o:
             v1 = self.storage.save(self.filename_func('v1.py'), o)
@@ -99,7 +96,7 @@ class TestCleanupDeadJobs(mixins.ScriptFactoryMixin, TestCase):
             inspect_mock.return_value = mock.Mock(
                 active=mock.Mock(
                     return_value=None,
-                )
+                ),
             )
             cleanup_dead_jobs()
             self.assertEqual(WooeyJob.objects.get(pk=running_job.id).status, WooeyJob.RUNNING)
@@ -120,10 +117,10 @@ class TestCleanupDeadJobs(mixins.ScriptFactoryMixin, TestCase):
                         'worker-id': [
                             {
                                 'id': active_job.celery_id,
-                            }
-                        ]
+                            },
+                        ],
                     },
-                )
+                ),
             )
             cleanup_dead_jobs()
 

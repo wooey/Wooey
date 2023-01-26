@@ -2,11 +2,12 @@ __author__ = 'chris'
 import argparse
 import os
 import sys
-from django.core.management.base import BaseCommand, CommandError
-from django.core.files import File
 
-from ...backend.utils import add_wooey_script, default_storage, get_storage
+from django.core.files import File
+from django.core.management.base import BaseCommand, CommandError
+
 from ... import settings as wooey_settings
+from ...backend.utils import add_wooey_script, default_storage, get_storage
 
 
 class Command(BaseCommand):
@@ -18,19 +19,19 @@ class Command(BaseCommand):
             '--group',
             dest='group',
             default=wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP,
-            help='The name of the group to create scripts under. Default: Wooey Scripts'
+            help='The name of the group to create scripts under. Default: Wooey Scripts',
         )
         parser.add_argument(
             '--name',
             dest='name',
             default=None,
-            help='The name of the script. Default: None (uses the filename)'
+            help='The name of the script. Default: None (uses the filename)',
         )
         parser.add_argument(
             '--update',
             dest='update',
             action='store_true',
-            help=argparse.SUPPRESS
+            help=argparse.SUPPRESS,
         )
 
     def handle(self, *args, **options):
@@ -43,7 +44,7 @@ class Command(BaseCommand):
             else:
                 raise CommandError('You must provide a script path or directory containing scripts.')
         if not os.path.exists(script):
-            raise CommandError('{0} does not exist.'.format(script))
+            raise CommandError(f'{script} does not exist.')
         group = options.get('group', 'Wooey Scripts')
         scripts = [os.path.join(script, i) for i in os.listdir(script)] if os.path.isdir(script) else [script]
         converted = 0
@@ -51,7 +52,7 @@ class Command(BaseCommand):
             if script.endswith('.pyc') or '__init__' in script:
                 continue
             if script.endswith('.py'):
-                sys.stdout.write('Converting {}\n'.format(script))
+                sys.stdout.write(f'Converting {script}\n')
                 # copy the script to our storage
                 base_name = options.get('name') or os.path.splitext(os.path.split(script)[1])[0]
                 with open(script, 'r') as f:
@@ -68,4 +69,4 @@ class Command(BaseCommand):
                 res = add_wooey_script(**add_kwargs)
                 if res['valid']:
                     converted += 1
-        sys.stdout.write('Converted {} scripts\n'.format(converted))
+        sys.stdout.write(f'Converted {converted} scripts\n')

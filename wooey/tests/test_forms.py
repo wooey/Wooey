@@ -1,24 +1,17 @@
 import os
 
 import six
-from django.test import TransactionTestCase
-from django.http.request import MultiValueDict
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.http.request import MultiValueDict
+from django.test import TransactionTestCase
 
 from ..backend import utils
-from ..forms import (
-    factory,
-    WooeyForm,
-)
+from ..forms import WooeyForm
 from ..forms import config as forms_config
+from ..forms import factory
 from ..models import ScriptVersion, WooeyJob
-
-from . import (
-    config,
-    factories,
-    mixins,
-    utils as test_utils,
-)
+from . import config, factories, mixins
+from . import utils as test_utils
 
 
 class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TransactionTestCase):
@@ -76,7 +69,7 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, Transacti
         subparser_key = (subparser.pk, subparser.name)
         self.assertEqual(len(form['parsers'][subparser_key]), 2)
         # test we can hide parameters and groups
-        from wooey.models import ScriptParameterGroup, ScriptParameter
+        from wooey.models import ScriptParameter, ScriptParameterGroup
         groups = ScriptParameterGroup.objects.filter(script_version=script_version)
         group = groups[1]
         group.hidden = True
@@ -98,7 +91,6 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, Transacti
         form = utils.get_form_groups(script_version=script_version)
         self.assertIn(slug, form['parsers'][subparser_key][1]['form'].fields, 'Script Parameter is shown but hidden')
 
-
     def test_multiplechoice_form(self):
         script_version = self.choice_script
         form = utils.get_master_form(script_version=script_version)
@@ -108,11 +100,11 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, Transacti
         self.assertTrue(forms_config.WOOEY_MULTI_WIDGET_ATTR in form_str)
 
         qdict = {}
-        for key,value in six.iteritems(config.SCRIPT_DATA['choices'].get('data')):
+        for key, value in six.iteritems(config.SCRIPT_DATA['choices'].get('data')):
             try:
                 form_slug = test_utils.get_subparser_form_slug(script_version, key)
                 qdict[form_slug] = value
-            except:
+            except Exception:
                 qdict[key] = value
         qdict = self.get_mvdict(qdict)
 
@@ -121,7 +113,7 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, Transacti
             try:
                 form_slug = test_utils.get_subparser_form_slug(script_version, key)
                 fdict[form_slug] = value
-            except:
+            except Exception:
                 fdict[key] = value
 
         uploaded_files = {}
@@ -135,7 +127,7 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, Transacti
         utils.validate_form(
             form=form,
             data=qdict,
-            files=uploaded_files
+            files=uploaded_files,
         )
         self.assertTrue(form.is_valid())
         # test we can create a job from this form
@@ -143,7 +135,7 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, Transacti
         form.cleaned_data.update(uploaded_files)
         job = utils.create_wooey_job(
             script_version_pk=script_version.pk,
-            data=form.cleaned_data
+            data=form.cleaned_data,
         )
         # check the files are here
         file_param = test_utils.get_subparser_form_slug(script_version, 'multiple_file_choices')
@@ -186,7 +178,7 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, Transacti
         storage.save('file2', SimpleUploadedFile('file2', b'abc'))
         file2_path = storage.path('file2')
         form = utils.get_form_groups(script_version=script_version, initial_dict={
-            multiple_files_param.form_slug: ['file1', 'file2']
+            multiple_files_param.form_slug: ['file1', 'file2'],
         })
         # TODO: Make a function to ease this
         initial_files = [i.path for i in form['parsers'][(multiple_files_param.parser.pk, multiple_files_param.parser.name)][1]['form'].fields[multiple_files_param.form_slug].initial]
@@ -201,7 +193,7 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, Transacti
             widget_class='django.forms.TextInput',
             input_class='custom',
             input_properties='custom-property',
-            input_attributes='attr1="custom1" attr2="custom2"'
+            input_attributes='attr1="custom1" attr2="custom2"',
         )
         choice_param.custom_widget = widget
         choice_param.save()
@@ -210,14 +202,14 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, Transacti
         from django.forms import TextInput
         field = form['parsers'][(choice_param.parser.pk, choice_param.parser.name)][1]['form'].fields[choice_param.form_slug]
         self.assertTrue(isinstance(field.widget, TextInput))
-        self.assertEquals(
+        self.assertEqual(
             field.widget.attrs,
             {
                 'custom-property': True,
                 'attr1': 'custom1',
                 'attr2': 'custom2',
                 'class': 'custom',
-            }
+            },
         )
 
     def test_handles_special_characters(self):

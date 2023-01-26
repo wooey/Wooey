@@ -1,18 +1,20 @@
-import sys
 import os
-import subprocess
 import shutil
+import subprocess
+import sys
 from argparse import ArgumentParser
+
 from django.template import Context
 
 # This is needed on django 1.9
-from .. version import DJANGO_VERSION, DJ19, DJ110
+from ..version import DJ19, DJ110, DJANGO_VERSION
+
 if DJANGO_VERSION >= DJ19:
-    from django.conf import settings
     import django
+    from django.conf import settings
     extra_settings = {}
     if DJANGO_VERSION >= DJ110:
-        extra_settings['TEMPLATES'] = [{'BACKEND': 'django.template.backends.django.DjangoTemplates',}]
+        extra_settings['TEMPLATES'] = [{'BACKEND': 'django.template.backends.django.DjangoTemplates'}]
     settings.configure(**extra_settings)
     django.setup()
 
@@ -23,20 +25,20 @@ from .. import django_compat
 
 def which(pgm):
     # from http://stackoverflow.com/questions/9877462/is-there-a-python-equivalent-to-the-which-command
-    path=os.getenv('PATH')
+    path = os.getenv('PATH')
     for p in path.split(os.path.pathsep):
-        p=os.path.join(p, pgm)
+        p = os.path.join(p, pgm)
         if os.path.exists(p) and os.access(p, os.X_OK):
             return p
 
 
 def walk_dir(templates, dest, filter=None):
     l = []
-    for root, folders, files in os.walk(templates):
+    for root, _, files in os.walk(templates):
         for filename in files:
             if filename.endswith('.pyc') or (filter and filename not in filter):
                 continue
-            relative_dir = '.{0}'.format(os.path.split(os.path.join(root, filename).replace(templates, ''))[0])
+            relative_dir = f".{os.path.split(os.path.join(root, filename).replace(templates, ''))[0]}"
             l.append((os.path.join(root, filename), os.path.join(dest, relative_dir)))
     return l
 
@@ -51,7 +53,7 @@ def bootstrap(env=None, cwd=None):
     project_name = args.project
     new_project = not os.path.exists(project_name)
     if not new_project:
-        sys.stderr.write('Project {0} already exists.\n'.format(project_name))
+        sys.stderr.write(f'Project {project_name} already exists.\n')
         sys.exit(1)
     env['DJANGO_SETTINGS_MODULE'] = ''
     admin_command = [sys.executable] if sys.executable else []
@@ -83,8 +85,8 @@ def bootstrap(env=None, cwd=None):
         dict({
             'project_name': project_name,
         },
-        autoescape=False
-    ))
+            autoescape=False,
+        ))
 
     template_files = []
 
@@ -99,7 +101,7 @@ def bootstrap(env=None, cwd=None):
         to_name = os.path.join(dest_dir, os.path.split(template_file.name)[1])
         try:
             os.mkdir(dest_dir)
-        except:
+        except Exception:
             pass
         with open(to_name, 'wb') as new_file:
             new_file.write(content)

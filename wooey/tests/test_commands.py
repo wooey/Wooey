@@ -4,9 +4,7 @@ from django.core.management import call_command
 from django.test import TestCase
 
 from ..models import ScriptVersion
-
-from . import config
-from . import mixins
+from . import config, mixins
 
 
 class CommandTests(mixins.ScriptFactoryMixin, TestCase):

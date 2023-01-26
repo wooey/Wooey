@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 __author__ = 'chris'
 import os
+
 os.environ['WOOEY_BOOTSTRAP'] = 'True'
 
 from wooey.backend import command_line

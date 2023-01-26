@@ -2,11 +2,15 @@
 from __future__ import unicode_literals
 
 from django.apps import apps
-from wooey.version import DJANGO_VERSION, DJ111
+
+from wooey.version import DJ111, DJANGO_VERSION
+
 if DJANGO_VERSION >= DJ111:
-    from django.contrib.contenttypes.management import create_contenttypes as init_contenttypes
+    from django.contrib.contenttypes.management import \
+        create_contenttypes as init_contenttypes
 else:
     from django.contrib.contenttypes.management import update_contenttypes as init_contenttypes
+
 from django.db import migrations
 
 from wooey.settings import get as get_setting
@@ -16,6 +20,7 @@ def update_all_contenttypes(**kwargs):
     # from http://stackoverflow.com/questions/29550102/importerror-cannot-import-name-update-all-contenttypes
     for app_config in apps.get_app_configs():
         init_contenttypes(app_config, **kwargs)
+
 
 def gen_userfiles(apps, schema_editor):
     WooeyFile = apps.get_model('wooey', 'WooeyFile')
@@ -30,7 +35,7 @@ def gen_userfiles(apps, schema_editor):
     to_delete = []
     for obj in WooeyFile.objects.all():
         # we only do this for uploads
-        if obj.parameter is None or obj.parameter.parameter.is_output == True:
+        if obj.parameter is None or obj.parameter.parameter.is_output:
             file_to_use = obj
         else:
             checksum = obj.checksum
@@ -49,9 +54,11 @@ def gen_userfiles(apps, schema_editor):
             favorite.save()
     WooeyFile.objects.filter(pk__in=to_delete).delete()
 
+
 def setup_wooey_files(apps, schema_editor):
-    from six.moves import StringIO
     from django.core.files import File
+    from six.moves import StringIO
+
     from wooey.backend.utils import get_storage
 
     storage = get_storage()
@@ -72,7 +79,7 @@ def setup_wooey_files(apps, schema_editor):
     user = User.objects.create(username='test user')
 
     script = Script.objects.create(
-        script_name='Test'
+        script_name='Test',
     )
 
     script_version = ScriptVersion.objects.create(
@@ -122,7 +129,6 @@ def setup_wooey_files(apps, schema_editor):
         _value=file2,
     )
 
-
     wooey_file1 = WooeyFile.objects.create(
         filepath=file1,
         job=job,
@@ -141,9 +147,8 @@ def setup_wooey_files(apps, schema_editor):
     Favorite.objects.create(
         content_type=ctype,
         object_id=wooey_file1_copy.pk,
-        user=user
+        user=user,
     )
-
 
 
 def confirm_data_migration(apps, schema_editor):
@@ -175,6 +180,7 @@ def confirm_data_migration(apps, schema_editor):
     for userfile in UserFile.objects.all():
         assert userfile.system_file_id == wooeyfile.id
 
+
 def cleanup_tests(apps, schema_editor):
     WooeyFile = apps.get_model('wooey', 'WooeyFile')
     Favorite = apps.get_model('wooey', 'Favorite')
@@ -192,6 +198,7 @@ def cleanup_tests(apps, schema_editor):
     ScriptParameterGroup.objects.all().delete()
     ScriptVersion.objects.all().delete()
     Script.objects.all().delete()
+
 
 class Migration(migrations.Migration):
 

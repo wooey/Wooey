@@ -1,9 +1,9 @@
 __author__ = 'chris'
-from unittest import TestCase
-import subprocess
 import os
 import shutil
+import subprocess
 import sys
+from unittest import TestCase
 
 BASE_DIR = os.path.split(__file__)[0]
 WOOEY_SCRIPT_PATH = os.path.join(BASE_DIR, '..', 'scripts', 'wooify')
@@ -13,7 +13,7 @@ WOOEY_TEST_PROJECT_MANAGE = os.path.join(WOOEY_TEST_PROJECT_PATH, 'manage.py')
 PYTHON_INTERPRETTER = sys.executable if sys.executable else 'python'
 
 env = os.environ
-env['DJANGO_SETTINGS_MODULE'] = '{}.settings'.format(WOOEY_TEST_PROJECT_NAME)
+env['DJANGO_SETTINGS_MODULE'] = f'{WOOEY_TEST_PROJECT_NAME}.settings'
 env['TESTING'] = 'True'
 
 
@@ -37,5 +37,5 @@ class TestProject(TestCase):
         # test our script is executable from the command line, it will fail with return code of 1 since
         # the project already exists
         proc = subprocess.Popen([PYTHON_INTERPRETTER, WOOEY_SCRIPT_PATH, '-p', WOOEY_TEST_PROJECT_NAME])
-        stdout, stderr  = proc.communicate()
+        stdout, stderr = proc.communicate()
         self.assertEqual(proc.returncode, 1, stderr)

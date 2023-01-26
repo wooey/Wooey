@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+
 import os
 import subprocess
 import sys
@@ -9,17 +10,15 @@ import zipfile
 from threading import Thread
 
 import six
-from django.utils.text import get_valid_filename
-from django.core.files import File
-from django.conf import settings
-
-from celery import Task
-from celery import app
+from celery import Task, app
 from celery.schedules import crontab
 from celery.signals import worker_process_init
+from django.conf import settings
+from django.core.files import File
+from django.utils.text import get_valid_filename
 
-from .backend import utils
 from . import settings as wooey_settings
+from .backend import utils
 
 try:
     from Queue import Empty, Queue
@@ -62,6 +61,7 @@ def update_from_output_queue(queue, out):
 @worker_process_init.connect
 def configure_workers(*args, **kwargs):
     # this sets up Django on nodes started by the worker daemon.
+
     import django
     django.setup()
 
@@ -107,7 +107,7 @@ def get_latest_script(script_version):
 def submit_script(**kwargs):
     job_id = kwargs.pop('wooey_job')
     resubmit = kwargs.pop('wooey_resubmit', False)
-    from .models import WooeyJob, UserFile
+    from .models import UserFile, WooeyJob
     job = WooeyJob.objects.get(pk=job_id)
     stdout, stderr = '', ''
 
@@ -129,7 +129,6 @@ def submit_script(**kwargs):
         # make sure we have the script, otherwise download it. This can happen if we have an ephemeral file system or are
         # executing jobs on a worker node.
         get_latest_script(job.script_version)
-
 
         job.status = WooeyJob.RUNNING
         job.save()
@@ -193,7 +192,7 @@ def submit_script(**kwargs):
             arcname = os.path.splitext(os.path.split(zip_out)[1])[0]
             zip.write(abscwd, arcname=arcname)
             base_dir = os.path.split(zip_out)[0]
-            for root, folders, filenames in os.walk(base_dir):
+            for root, _, filenames in os.walk(base_dir):
                 for filename in filenames:
                     path = os.path.join(root, filename)
                     archive_name = path.replace(base_dir, '')
@@ -206,16 +205,16 @@ def submit_script(**kwargs):
                         continue
                     try:
                         zip.write(path, arcname=archive_name)
-                    except:
-                        stderr = '{}\n{}'.format(stderr, traceback.format_exc())
+                    except Exception:
+                        stderr = f'{stderr}\n{traceback.format_exc()}'
             try:
                 zip.close()
-            except:
-                stderr = '{}\n{}'.format(stderr, traceback.format_exc())
+            except Exception:
+                stderr = f'{stderr}\n{traceback.format_exc()}'
 
             # save all the files generated as well to our default storage for ephemeral storage setups
             if wooey_settings.WOOEY_EPHEMERAL_FILES:
-                for root, folders, files in os.walk(abscwd):
+                for root, _, files in os.walk(abscwd):
                     for filename in files:
                         filepath = os.path.join(root, filename)
                         s3path = os.path.join(root[root.find(cwd):], filename)
@@ -230,7 +229,7 @@ def submit_script(**kwargs):
         job.status = WooeyJob.COMPLETED if return_code == 0 else WooeyJob.FAILED
         job.update_realtime(delete=True)
     except Exception:
-        stderr = '{}\n{}'.format(stderr, traceback.format_exc())
+        stderr = f'{stderr}\n{traceback.format_exc()}'
         job.status = WooeyJob.ERROR
 
     job.stdout = stdout
@@ -243,16 +242,17 @@ def submit_script(**kwargs):
 @celery_app.task(base=WooeyTask)
 def cleanup_wooey_jobs(**kwargs):
     from django.utils import timezone
+
     from .models import WooeyJob
 
     cleanup_settings = wooey_settings.WOOEY_JOB_EXPIRATION
     anon_settings = cleanup_settings.get('anonymous')
     now = timezone.now()
     if anon_settings:
-        WooeyJob.objects.filter(user=None, created_date__lte=now-anon_settings).delete()
+        WooeyJob.objects.filter(user=None, created_date__lte=now - anon_settings).delete()
     user_settings = cleanup_settings.get('user')
     if user_settings:
-        WooeyJob.objects.filter(user__isnull=False, created_date__lte=now-user_settings).delete()
+        WooeyJob.objects.filter(user__isnull=False, created_date__lte=now - user_settings).delete()
 
 
 @celery_app.task(base=WooeyTask)
@@ -293,5 +293,5 @@ celery_app.conf.beat_schedule.update({
     'cleanup-dead-jobs': {
         'task': 'wooey.tasks.cleanup_dead_jobs',
         'schedule': crontab(minute='*/10'),  # run every 6 minutes
-    }
+    },
 })

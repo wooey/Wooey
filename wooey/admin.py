@@ -1,21 +1,14 @@
 from __future__ import absolute_import
+
 import os
 
-from django.contrib.admin import ModelAdmin, site, TabularInline
+from django.contrib.admin import ModelAdmin, TabularInline, site
 from django.forms import ModelForm, ValidationError
 from django.utils.translation import ugettext_lazy as _
 
-from .models import (
-    Script,
-    ScriptVersion,
-    ScriptGroup,
-    ScriptParameter,
-    ScriptParameterGroup,
-    ScriptParser,
-    UserFile,
-    WooeyJob,
-    WooeyWidget,
-)
+from .models import (Script, ScriptGroup, ScriptParameter,
+                     ScriptParameterGroup, ScriptParser, ScriptVersion,
+                     UserFile, WooeyJob, WooeyWidget)
 
 
 class JobAdmin(ModelAdmin):
@@ -31,7 +24,7 @@ class ScriptVersionInline(TabularInline):
 class ScriptAdmin(ModelAdmin):
     list_display = ('script_name', 'script_group', 'is_active')
     inlines = [
-        ScriptVersionInline
+        ScriptVersionInline,
     ]
 
     class Media:
@@ -42,7 +35,7 @@ class ParameterAdmin(ModelAdmin):
     list_display = ('script_versions', 'parameter_group', 'short_param')
 
     def script_versions(self, obj):
-        return ', '.join(['{}: {}'.format(script_version.script.script_name, script_version.script_iteration) for script_version in obj.script_version.all()])
+        return ', '.join([f'{script_version.script.script_name}: {script_version.script_iteration}' for script_version in obj.script_version.all()])
 
 
 class GroupAdmin(ModelAdmin):
@@ -53,7 +46,7 @@ class ParameterGroupAdmin(ModelAdmin):
     list_display = ('script_versions', 'group_name')
 
     def script_versions(self, obj):
-        return ', '.join(['{}: {}'.format(script_version.script.script_name, script_version.script_iteration) for script_version in obj.script_version.all()])
+        return ', '.join([f'{script_version.script.script_name}: {script_version.script_iteration}' for script_version in obj.script_version.all()])
 
 
 class ScriptParserAdmin(ModelAdmin):
@@ -66,7 +59,8 @@ class ScriptParserAdmin(ModelAdmin):
     subparser_command.admin_order_field = 'name'
 
     def script_versions(self, obj):
-        return ', '.join(['{}: {}'.format(script_version.script.script_name, script_version.script_iteration) for script_version in obj.script_version.all()])
+        return ', '.join([f'{script_version.script.script_name}: {script_version.script_iteration}' for script_version in obj.script_version.all()])
+
 
 class ScriptVersionAdmin(ModelAdmin):
     list_display = ('script', 'script_version', 'script_iteration', 'default_version', 'created_by', 'modified_by')
@@ -76,10 +70,12 @@ class ScriptVersionAdmin(ModelAdmin):
         if not change:
             obj.created_by = request.user
         obj.modified_by = request.user
-        super(ScriptVersionAdmin, self).save_model(request, obj, form, change)
+        super().save_model(request, obj, form, change)
+
 
 class FileAdmin(ModelAdmin):
     pass
+
 
 site.register(WooeyWidget)
 site.register(WooeyJob, JobAdmin)

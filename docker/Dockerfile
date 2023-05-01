@@ -1,35 +1,38 @@
 FROM python:3.7
 
+RUN useradd -u 1000 wooey
+
 ARG BUILD_DIR=/wooey_build
+ENV BUILD_DIR=${BUILD_DIR}
+
+WORKDIR ${BUILD_DIR}
+RUN chown wooey:wooey ${BUILD_DIR}
 
 RUN pip install psycopg2
 
-COPY setup.py requirements.txt MANIFEST.in Makefile README.md ${BUILD_DIR}/
-COPY scripts ${BUILD_DIR}/scripts
-COPY wooey ${BUILD_DIR}/wooey
-COPY tests ${BUILD_DIR}/tests
+COPY --chown=wooey:wooey setup.py MANIFEST.in Makefile README.md ${BUILD_DIR}/
+COPY --chown=wooey:wooey scripts ${BUILD_DIR}/scripts
+COPY --chown=wooey:wooey wooey ${BUILD_DIR}/wooey
+COPY --chown=wooey:wooey tests ${BUILD_DIR}/tests
 
-WORKDIR ${BUILD_DIR}
 
-RUN pip install -r requirements.txt
-RUN pip install -e .
+RUN pip install -e .[dev]
 
 RUN chmod -R a+rwx ${BUILD_DIR}
 
-WORKDIR /
 ARG WOOEY_PROJECT=docker_wooey
 
+USER wooey
 RUN wooify -p ${WOOEY_PROJECT}
 
-WORKDIR ${WOOEY_PROJECT}
+WORKDIR ${BUILD_DIR}/${WOOEY_PROJECT}
 
 COPY docker/scripts/run-server run-server
 
-# Make volumes and make sure the wooey directory is r/w by all. By default,
-# docker will create volumes as root so this is needed.
-RUN mkdir ${WOOEY_PROJECT}/user_uploads && \
-    chmod -R a+rwx /${WOOEY_PROJECT}
-
-EXPOSE 8080
+# To prevent volumes from being made as root, we need to make the directory
+# first and then create a volume. This will make docker inherit the permissions
+# of the folder it is replacing. Otherwise, we will be unable to write to this
+# folder as non-root
+RUN mkdir -p $BUILD_DIR/$WOOEY_PROJECT/$WOOEY_PROJECT/user_uploads
 
 CMD ["sh", "-c", "make -C ${BUILD_DIR} test"]

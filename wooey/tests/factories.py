@@ -46,6 +46,7 @@ class ScriptFactory(factory.DjangoModelFactory):
 class UserFactory(factory.DjangoModelFactory):
     class Meta:
         model = get_user_model()
+        django_get_or_create = ('username',)
 
     username = 'user'
     email = 'a@a.com'

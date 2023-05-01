@@ -25,6 +25,7 @@ class JobAdmin(ModelAdmin):
 class ScriptVersionInline(TabularInline):
     model = ScriptVersion
     extra = 1
+    readonly_fields = ('created_date', 'created_by', 'modified_date', 'modified_by')
 
 
 class ScriptAdmin(ModelAdmin):
@@ -67,6 +68,15 @@ class ScriptParserAdmin(ModelAdmin):
     def script_versions(self, obj):
         return ', '.join(['{}: {}'.format(script_version.script.script_name, script_version.script_iteration) for script_version in obj.script_version.all()])
 
+class ScriptVersionAdmin(ModelAdmin):
+    list_display = ('script', 'script_version', 'script_iteration', 'default_version', 'created_by', 'modified_by')
+    readonly_fields = ('created_date', 'created_by', 'modified_date', 'modified_by')
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
+        obj.modified_by = request.user
+        super(ScriptVersionAdmin, self).save_model(request, obj, form, change)
 
 class FileAdmin(ModelAdmin):
     pass
@@ -79,3 +89,4 @@ site.register(ScriptParameter, ParameterAdmin)
 site.register(ScriptGroup, GroupAdmin)
 site.register(ScriptParameterGroup, ParameterGroupAdmin)
 site.register(ScriptParser, ScriptParserAdmin)
+site.register(ScriptVersion, ScriptVersionAdmin)

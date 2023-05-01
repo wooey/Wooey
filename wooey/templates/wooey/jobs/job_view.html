@@ -107,7 +107,8 @@
                     {% csrf_token %}
                     <input name="job-id" value="{{ job_info.job.pk }}" type="hidden">
 
-                    <button class="btn btn-primary btn-danger status-running-toggle status-submitted-toggle status-pending-toggle" name="celery-command" value="stop" type="submit">
+                    {% get_wooey_setting "WOOEY_CELERY_STOPPABLE_JOBS" as stoppable_jobs %}
+                    <button {% if not stoppable_jobs %}data-placement="bottom" data-toggle="tooltip" title="The current celery broker does not support stoppable jobs and stopping will likely not work. To resolve this, use RabbitMQ as a celery message broker."{% endif %}class="btn btn-primary btn-danger status-running-toggle status-submitted-toggle status-pending-toggle" name="celery-command" value="stop" type="submit">
                         <span class="glyphicon glyphicon-stop" aria-hidden="true"></span> {% trans "Stop" %}
                     </button>
                     <button class="btn btn-primary btn-warning status-completed-toggle status-revoked-toggle status-failure-toggle" name="celery-command" value="rerun" type="submit">
@@ -140,7 +141,8 @@
         <span class="status-running-toggle label label-success"><span class="glyphicon glyphicon-refresh spinning"></span> {% trans "Executing" %}</span>
         <span class="status-completed-toggle label label-success"><span class="glyphicon glyphicon-ok"></span> {% trans "Success" %}</span>
         <span class="status-revoked-toggle label label-danger"><span class="glyphicon glyphicon-stop"></span> {% trans "Halted" %}</span>
-        <span class="status-failure-toggle label label-danger"><span class="glyphicon glyphicon-exclamation-sign"></span> {% trans "Error" %}</span>
+        <span class="status-failure-toggle label label-danger"><span class="glyphicon glyphicon-exclamation-sign"></span> {% trans "Failed" %}</span>
+        <span class="status-error-toggle label label-danger"><span class="glyphicon glyphicon-exclamation-sign"></span> {% trans "Error" %}</span>
 
       </div>
     </div>
@@ -279,7 +281,7 @@
                     $('#job-files > tbody').html(data['file_outputs_html']);
                     $("a[data-favorite]").click(toggleFavorite);
 
-                    if(data['status'] == 'completed'){
+                    if(data['status'] === 'completed' || data['status'] === 'failure' || data['status'] === 'error'){
                         window.clearInterval(refreshtimerID);
                     }
 

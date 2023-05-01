@@ -1,8 +1,8 @@
 from .django_urls import *
-from django.conf.urls import include, url
+from django.urls import include, path
 
 urlpatterns += [
-    #url(r'^admin/', admin.site.urls),
-    url(r'^', include('wooey.urls')),
-    url(r'^', include('django.contrib.auth.urls')),
+    # path('admin/', include(admin.site.urls)),
+    path('', include('wooey.urls')),
+    path('', include('django.contrib.auth.urls')),
 ]

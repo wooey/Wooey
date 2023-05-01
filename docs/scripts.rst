@@ -71,4 +71,8 @@ within selected groups.
 Scripts and groups may also be shutoff to all users by unchecked the
 'script/group active' option.
 
+Deleting Scripts
+----------------
 
+Scripts may be deleted from the admin interface. When deleting a script,
+all related objects, such as previously run jobs, will also be deleted.

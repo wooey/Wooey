@@ -1,7 +1,9 @@
 ![Wooey!](wooey-banner.png)
 
-[![Build Status](https://travis-ci.org/wooey/Wooey.svg?branch=master)](https://travis-ci.org/wooey/Wooey)
-[![Coverage Status](https://coveralls.io/repos/wooey/Wooey/badge.svg?branch=master)](https://coveralls.io/r/wooey/Wooey?branch=master)
+[![Build Status](https://github.com/wooey/wooey/workflows/Build-and-Test/badge.svg)](https://github.com/wooey/wooey/actions?query=workflow%3ABuild-and-Test)
+[![Deploy-To-Pypi](https://github.com/wooey/Wooey/workflows/Deploy-To-Pypi/badge.svg)](https://github.com/wooey/wooey/actions?query=workflow%3ADeploy-To-Pypi)
+[![Deploy-To-Docker](https://github.com/wooey/Wooey/workflows/Deploy-To-Docker/badge.svg)](https://github.com/wooey/wooey/actions?query=workflow%3ADeploy-To-Docker)
+[![codecov](https://codecov.io/gh/wooey/Wooey/branch/master/graph/badge.svg)](https://codecov.io/gh/wooey/Wooey)
 [![Join the chat at https://gitter.im/wooey/Wooey](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/wooey/Wooey?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Wooey is a simple web interface to run command line Python scripts. Think of it as an easy way to get your scripts up on the web for routine data analysis, file processing, or anything else.
@@ -17,4 +19,4 @@ Wooey was envisioned as a system to allow data analysts to be able to easily:
        to existing tools such as Galaxy.
 
 
-For installation and other instructions, check out our [documentation](http://wooey.readthedocs.org) or give Wooey a test drive at our [demo-server](https://wooey.herokuapp.com)!
+For installation and other instructions, check out our [documentation](http://wooey.readthedocs.org) or give Wooey a test drive at our [demo-server](https://wooey.fly.dev)!

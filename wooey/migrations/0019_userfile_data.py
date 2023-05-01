@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from django.apps import apps
-from wooey.django_compat import DJANGO_VERSION, DJ111
+from wooey.version import DJANGO_VERSION, DJ111
 if DJANGO_VERSION >= DJ111:
     from django.contrib.contenttypes.management import create_contenttypes as init_contenttypes
 else:

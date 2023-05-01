@@ -1,16 +1,15 @@
 from __future__ import division, absolute_import
+import hashlib
+from inspect import getargspec
+
 from django import template
 from django.utils.safestring import mark_safe
 from django.contrib.contenttypes.models import ContentType
 from django.template.base import TemplateSyntaxError
-
-from inspect import getargspec
-import hashlib
-
+from django.template.library import TagHelperNode, parse_bits
 from six.moves.urllib_parse import urlencode
 
 from .. import settings as wooey_settings
-from ..django_compat import TagHelperNode, parse_bits
 from ..version import DJANGO_VERSION, DJ19
 
 

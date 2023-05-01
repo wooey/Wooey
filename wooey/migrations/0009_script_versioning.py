@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
                 ('modified_date', models.DateTimeField(auto_now=True)),
                 ('script', models.ForeignKey(related_name='script_version_new', to='wooey.Script', on_delete=models.PROTECT)),
             ],
-            bases=(wooey.models.mixins.ModelDiffMixin, wooey.models.mixins.WooeyPy2Mixin, models.Model),
+            bases=(wooey.models.mixins.WooeyPy2Mixin, models.Model),
         ),
         migrations.AddField(
             model_name='scriptparameter',

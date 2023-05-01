@@ -23,7 +23,7 @@
                                     {% for past_script_versions in script_version_list %}
                                         <li class="dropdown-header">{% blocktrans with version=past_script_versions.grouper %}Version {{ version }}{% endblocktrans %}</li>
                                         {% for past_script in past_script_versions.list %}
-                                            <li><a href="{% url 'wooey:wooey_script' slug=past_script.script.slug script_version=past_script.script_version script_iteration=past_script.script_iteration %}">
+                                            <li><a href="{{ past_script.get_version_url }}">
                                                 {% blocktrans with iteration=past_script.script_iteration %}Iteration {{ iteration }}{% endblocktrans %}</a>
                                             </li>
                                         {% endfor %}

@@ -164,19 +164,14 @@ def create_wooey_job(user=None, script_version_pk=None, script_parser_pk=None, d
     return job
 
 
-def get_master_form(script_version=None, pk=None):
+def get_master_form(script_version=None, pk=None, parser=None):
     from ..forms.factory import DJ_FORM_FACTORY
-    return DJ_FORM_FACTORY.get_master_form(script_version=script_version, pk=pk)
+    return DJ_FORM_FACTORY.get_master_form(script_version=script_version, pk=pk, parser=parser)
 
 
-def get_form_groups(script_version=None, pk=None, initial_dict=None, render_fn=None):
+def get_form_groups(script_version=None, initial_dict=None, render_fn=None):
     from ..forms.factory import DJ_FORM_FACTORY
-    return DJ_FORM_FACTORY.get_group_forms(script_version=script_version, pk=pk, initial_dict=initial_dict, render_fn=render_fn)
-
-
-def reset_form_factory(script_version=None):
-    from ..forms.factory import DJ_FORM_FACTORY
-    DJ_FORM_FACTORY.reset_forms(script_version=script_version)
+    return DJ_FORM_FACTORY.get_group_forms(script_version=script_version, initial_dict=initial_dict, render_fn=render_fn)
 
 
 def validate_form(form=None, data=None, files=None):
@@ -642,9 +637,9 @@ def create_job_fileinfo(job):
                         except:
                             sys.stderr.write('{}\n'.format(traceback.format_exc()))
                         continue
-                d = {'parameter': field, 'file': value}
+                d = {'parameter': field, 'file': value, 'size_bytes': value.size}
                 if field.parameter.is_output:
-                    full_path = os.path.join(job.save_path, os.path.split(local_storage.path(value))[1])
+                    full_path = os.path.join(job.save_path, os.path.split(value.name)[1])
                     checksum = get_checksum(path=value, extra=[job.pk, full_path, 'output'])
                     d['checksum'] = checksum
                 files.append(d)
@@ -658,27 +653,27 @@ def create_job_fileinfo(job):
     absbase = os.path.join(settings.MEDIA_ROOT, job.save_path)
     for root, dirs, dir_files in os.walk(absbase):
         for filename in dir_files:
-            new_name = os.path.join(job.save_path, filename)
-            if any([i.endswith(new_name) for i in known_files]):
+            rel_name = os.path.join(root.replace(absbase, '').lstrip(os.path.sep), filename)
+            rel_path = os.path.join(job.save_path, rel_name)
+            if any([i.endswith(rel_path) for i in known_files]):
                 continue
             try:
                 filepath = os.path.join(root, filename)
                 if os.path.isdir(filepath):
                     continue
-                full_path = os.path.join(job.save_path, filename)
                 # this is to make the job output have a unique checksum. If this file is then re-uploaded, it will create
                 # a new file to reference in the uploads directory and not link back to the job output.
-                checksum = get_checksum(path=filepath, extra=[job.pk, full_path, 'output'])
+                checksum = get_checksum(path=filepath, extra=[job.pk, rel_path, 'output'])
                 try:
-                    with get_storage_object(full_path) as storage_file:
+                    with get_storage_object(rel_path) as storage_file:
                         d = {
-                            'name': filename,
+                            'name': rel_name,
                             'file': storage_file,
                             'size_bytes': storage_file.size,
                             'checksum': checksum
                         }
                 except:
-                    sys.stderr.write('Error in accessing stored file {}:\n{}'.format(full_path, traceback.format_exc()))
+                    sys.stderr.write('Error in accessing stored file {}:\n{}'.format(rel_path, traceback.format_exc()))
                     continue
                 if filename.endswith('.tar.gz') or filename.endswith('.zip'):
                     file_groups['archives'].append(d)
@@ -703,7 +698,6 @@ def create_job_fileinfo(job):
             filemodel['preview'] = json.dumps(None)
 
     # Create our WooeyFile models
-
     # mark things that are in groups so we don't add this to the 'all' category too to reduce redundancy
     grouped = set([i['file'].path for file_type, groups in six.iteritems(file_groups) for i in groups if file_type != 'all'])
     for file_type, group_files in six.iteritems(file_groups):
@@ -787,8 +781,8 @@ def get_grouped_file_previews(files):
         system_file = file_info.system_file
 
         filedict = {
-            'id': system_file.id,
-            'object': system_file,
+            'id': file_info.id,
+            'object': file_info,
             'name': file_info.filename,
             'preview': json.loads(system_file.filepreview) if system_file.filepreview else None,
             'url': get_storage(local=False).url(system_file.filepath.name),

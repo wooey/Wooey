@@ -5,7 +5,7 @@ Installation
 
     pip install wooey
 
-Currently, Wooey supports Django versions 1.8+. To use Wooey in a project which is still running Django 1.6 or 1.7, you must may install
+Currently, Wooey supports Django versions 1.8+. To use Wooey in a project which is still running Django 1.6 or 1.7, you must install
 version 0.9.8.
 
 A Wooey only project
@@ -29,9 +29,9 @@ Installation with existing Django Projects
 
     1. Add 'wooey' to INSTALLED_APPS in settings.py (and optionally, djcelery unless you wish to tie into an existing celery instance)
     2. Add the following to your urls.py:
-       url(r'^', include('wooey.urls')),
+       path(r'', include('wooey.urls')),
        (Note: it does not need to be rooted at your site base,
-        you can have r'^wooey/'... as your router):
+        you can have r'wooey/'... as your router):
        
     3. Migrate your database:
         # Django 1.8 and above

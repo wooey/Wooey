@@ -7,13 +7,14 @@ from django.forms import FileField
 from django.http import JsonResponse
 from django.template import RequestContext
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils.encoding import force_text
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import DetailView, TemplateView, View
 
 from ..backend import utils
-from ..django_compat import reverse
 from ..models import WooeyJob, Script, UserFile, Favorite, ScriptVersion
+from ..version import DJANGO_VERSION, DJ18
 from .. import settings as wooey_settings
 
 
@@ -69,8 +70,15 @@ class WooeyScriptBase(DetailView):
             script_version=script_version,
             initial_dict=initial,
             render_fn=self.render_fn,
-            pk=self.object.pk
         )
+
+        # Additional script info to display.
+        context['script_version'] = script_version.script_version
+        context['script_iteration'] = script_version.script_iteration
+        context['script_created_by'] = script_version.created_by
+        context['script_created_date'] = script_version.created_date
+        context['script_modified_by'] = script_version.modified_by
+        context['script_modified_date'] = script_version.modified_date
         return context
 
     def post(self, request, *args, **kwargs):
@@ -79,7 +87,7 @@ class WooeyScriptBase(DetailView):
         if not wooey_settings.WOOEY_ALLOW_ANONYMOUS and user is None:
             return {'valid': False, 'errors': {'__all__': [force_text(_('You are not permitted to access this script.'))]}}
 
-        form = utils.get_master_form(pk=post['wooey_type'])
+        form = utils.get_master_form(pk=int(post['wooey_type']), parser=int(post.get('wooey_parser', 0)))
         # TODO: Check with people who know more if there's a smarter way to do this
         utils.validate_form(form=form, data=post, files=request.FILES)
         # for cloned jobs, we don't have the files in input fields, they'll be in a list like ['', filename]
@@ -266,5 +274,14 @@ class WooeyScriptSearchJSONHTML(WooeyScriptSearchBase):
     def search(self, request):
         results = []
         for script in self.search_results:
-            results.append(render_to_string('wooey/scripts/script_panel.html', {'script': script}, context_instance=RequestContext(request)))
+            # context_instance kwarg was deprecated in Django 1.8
+            render = render_to_string(
+                'wooey/scripts/script_panel.html',
+                {'script': script, 'request': request}
+            ) if DJANGO_VERSION >= DJ18 else render_to_string(
+                'wooey/scripts/script_panel.html',
+                {'script': script},
+                context_instance=RequestContext(request)
+            )
+            results.append(render)
         return JsonResponse({'results': results})

@@ -46,15 +46,15 @@ storing real time updates from running jobs.
 system, the registration url: (Default: ``'/accounts/register/'``)
 
 :code:`WOOEY_SCRIPT_DIR`: String, the folder to save scripts under. It should
-be a short, relative path to the storage root. (Defalt: ``wooey_scripts``)
+be a short, relative path to the storage root. (Default: ``wooey_scripts``)
 
 :code:`WOOEY_SHOW_LOCKED_SCRIPTS`: Boolean, whether to show locked
-scripts as disabled or hide them entirely. (Defalt: ``True`` -- show as
+scripts as disabled or hide them entirely. (Default: ``True`` -- show as
 disabled)
 
-:code:`WOOEY_SITE_NAME`: String, the name of the site to display. (Defalt: ``Wooey!``)
+:code:`WOOEY_SITE_NAME`: String, the name of the site to display. (Default: ``Wooey!``)
 
-:code:`WOOEY_SITE_TAG`: String, the tagline for the site. (Defalt: ``A web UI for Python Scripts``)
+:code:`WOOEY_SITE_TAG`: String, the tagline for the site. (Default: ``A web UI for Python Scripts``)
 
 
 Internationlization (i18n)
@@ -103,7 +103,7 @@ middleware, and before the CommonMiddleware e.g.
         'django.middleware.security.SecurityMiddleware',
     )
 
-For more information on the internationlization middelware see
+For more information on the internationlization middleware see
 `the Django documentation <https://docs.djangoproject.com/en/1.8/topics/i18n/translation/#how-django-discovers-language-preference>`_.
 
 Note that if a user's browser does not request an available language the language

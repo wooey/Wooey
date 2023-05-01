@@ -8,18 +8,18 @@ from io import IOBase
 
 from autoslug import AutoSlugField
 from celery import states
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 from django.core.cache import caches as django_cache
 from django.core.files.storage import SuspiciousFileOperation
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from django.utils.translation import ugettext_lazy as _
 from django.db import transaction
+from django.urls import reverse
 from django.utils.text import get_valid_filename
 from jsonfield import JSONCharField
 
-from ..django_compat import reverse
-from . mixins import UpdateScriptsMixin, ModelDiffMixin, WooeyPy2Mixin
+from . mixins import UpdateScriptsMixin, WooeyPy2Mixin
 from .. import settings as wooey_settings
 from .. backend import utils
 
@@ -49,12 +49,12 @@ class ScriptGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
         return self.group_name
 
 
-class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
+class Script(WooeyPy2Mixin, models.Model):
     script_name = models.CharField(max_length=255)
     slug = AutoSlugField(populate_from='script_name', unique=True)
     # we create defaults for the script_group in the clean method of the model. We have to set it to null/blank=True
     # or else we will fail form validation before we hit the model.
-    script_group = models.ForeignKey('ScriptGroup', null=True, blank=True, on_delete=models.PROTECT)
+    script_group = models.ForeignKey('ScriptGroup', null=True, blank=True, on_delete=models.CASCADE)
     script_description = models.TextField(blank=True, null=True)
     documentation = models.TextField(blank=True, null=True)
     script_order = models.PositiveSmallIntegerField(default=1)
@@ -95,18 +95,25 @@ class Script(ModelDiffMixin, WooeyPy2Mixin, models.Model):
         return self.script_version.all().order_by('script_version', 'script_iteration')
 
 
-class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
+class ScriptVersion(WooeyPy2Mixin, models.Model):
     # when a script updates, increment this to keep old scripts that are cloned working. The downside is we get redundant
     # parameters, but even a huge site may only have a few thousand parameters to query though.
     script_version = models.CharField(max_length=50, help_text='The script version.', blank=True, default='1')
     script_iteration = models.PositiveSmallIntegerField(default=1)
     script_path = models.FileField()
     default_version = models.BooleanField(default=False)
-    script = models.ForeignKey('Script', related_name='script_version', on_delete=models.PROTECT)
+    script = models.ForeignKey('Script', related_name='script_version', on_delete=models.CASCADE)
     checksum = models.CharField(max_length=40, blank=True)
 
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
+
+    created_by = models.ForeignKey(
+        User, related_name='created_script_version_set', on_delete=models.SET_NULL, null=True, blank=True
+    )
+    modified_by = models.ForeignKey(
+        User, related_name='modified_script_version_set', on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     error_messages = {
         'duplicate_script': _('This script already exists!'),
@@ -122,6 +129,9 @@ class ScriptVersion(ModelDiffMixin, WooeyPy2Mixin, models.Model):
 
     def get_url(self):
         return reverse('wooey:wooey_script', kwargs={'slug': self.script.slug})
+
+    def get_version_url(self):
+        return reverse('wooey:wooey_script', kwargs={'slug': self.script.slug, 'script_version': self.script_version, 'script_iteration': self.script_iteration})
 
     def get_script_path(self):
         local_storage = utils.get_storage(local=True)
@@ -148,13 +158,17 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
     COMPLETED = 'completed'
     DELETED = 'deleted'
     FAILED = states.FAILURE
+    ERROR = 'error'
     RUNNING = 'running'
     SUBMITTED = 'submitted'
+
+    TERMINAL_STATES = {COMPLETED, FAILED, ERROR}
 
     STATUS_CHOICES = (
         (COMPLETED, _('Completed')),
         (DELETED, _('Deleted')),
         (FAILED, _('Failed')),
+        (ERROR, _('Error')),
         (RUNNING, _('Running')),
         (SUBMITTED, _('Submitted')),
     )
@@ -165,7 +179,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
     command = models.TextField()
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
-    script_version = models.ForeignKey('ScriptVersion', on_delete=models.PROTECT)
+    script_version = models.ForeignKey('ScriptVersion', on_delete=models.CASCADE)
 
     error_messages = {
         'invalid_permissions': _('You are not authenticated to view this job.'),
@@ -207,9 +221,9 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         if task_kwargs.get('rerun'):
             utils.purge_output(job=self)
         if wooey_settings.WOOEY_CELERY:
-            results = tasks.submit_script.delay(**task_kwargs)
+            transaction.on_commit(lambda: tasks.submit_script.delay(**task_kwargs))
         else:
-            results = tasks.submit_script(**task_kwargs)
+            transaction.on_commit(lambda: tasks.submit_script(**task_kwargs))
         return self
 
     def get_resubmit_url(self):
@@ -217,10 +231,13 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
 
     @property
     def output_path(self):
-        return os.path.join(wooey_settings.WOOEY_FILE_DIR,
-                            get_valid_filename(self.user.username if self.user is not None else ''),
-                            get_valid_filename(self.script_version.script.slug if not self.script_version.script.save_path else self.script_version.script.save_path),
-                            str(self.uuid))
+        directories = [
+            wooey_settings.WOOEY_FILE_DIR,
+            get_valid_filename(self.user.username if self.user is not None and self.user.is_authenticated else 'anonymous'),
+            get_valid_filename(self.script_version.script.slug if not self.script_version.script.save_path else self.script_version.script.save_path),
+            str(self.uuid),
+        ]
+        return os.path.join(*[i for i in directories if i])
 
     def get_output_path(self):
         path = self.output_path
@@ -264,14 +281,14 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         return {'stdout': self.stdout, 'stderr': self.stderr}
 
     def get_stdout(self):
-        if self.status != WooeyJob.COMPLETED:
+        if self.status not in WooeyJob.TERMINAL_STATES:
             rt = self.get_realtime().get('stdout')
             if rt:
                 return rt
         return self.stdout
 
     def get_stderr(self):
-        if self.status != WooeyJob.COMPLETED:
+        if self.status not in WooeyJob.TERMINAL_STATES:
             rt = self.get_realtime().get('stderr')
             if rt:
                 return rt
@@ -289,7 +306,8 @@ class ScriptParameterGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
         verbose_name_plural = _('script parameter groups')
 
     def __str__(self):
-        return '{}: {}'.format(self.script_version.first().script.script_name, self.group_name)
+        script_version = self.script_version.first()
+        return '{}: {}'.format(script_version.script.script_name if script_version else 'No Script Assigned', self.group_name)
 
 
 class ScriptParser(WooeyPy2Mixin, models.Model):
@@ -297,21 +315,22 @@ class ScriptParser(WooeyPy2Mixin, models.Model):
     script_version = models.ManyToManyField('ScriptVersion')
 
     def __str__(self):
-        return '{}: {}'.format(self.script_version.first().script.script_name, self.name)
+        script_version = self.script_version.first()
+        return '{}: {}'.format(script_version.script.script_name if script_version else 'No Script Assigned', self.name)
 
 
 class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     """
         This holds the parameter mapping for each script, and enforces uniqueness by each script via a FK.
     """
-    parser = models.ForeignKey('ScriptParser', on_delete=models.PROTECT)
+    parser = models.ForeignKey('ScriptParser', on_delete=models.CASCADE)
     script_version = models.ManyToManyField('ScriptVersion')
     short_param = models.CharField(max_length=255, blank=True)
     script_param = models.TextField()
     slug = AutoSlugField(populate_from='script_param', unique=True)
     is_output = models.BooleanField(default=None)
     required = models.BooleanField(default=False)
-    choices = models.CharField(max_length=255, null=True, blank=True)
+    choices = models.TextField(null=True, blank=True)
     choice_limit = models.CharField(max_length=10, null=True, blank=True)
     collapse_arguments = models.BooleanField(
         default=True,
@@ -327,7 +346,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     param_help = models.TextField(verbose_name=_('help'), null=True, blank=True)
     is_checked = models.BooleanField(default=False)
     hidden = models.BooleanField(default=False)
-    parameter_group = models.ForeignKey('ScriptParameterGroup', on_delete=models.PROTECT)
+    parameter_group = models.ForeignKey('ScriptParameterGroup', on_delete=models.CASCADE)
     param_order = models.SmallIntegerField(help_text=_('The order the parameter appears to the user.'), default=0)
 
     class Meta:
@@ -378,7 +397,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
     """
     # the details of the actual executed scripts
     job = models.ForeignKey('WooeyJob', on_delete=models.CASCADE)
-    parameter = models.ForeignKey('ScriptParameter', on_delete=models.PROTECT)
+    parameter = models.ForeignKey('ScriptParameter', on_delete=models.CASCADE)
     # we store a JSON dumped string in here to attempt to keep our types in order
     _value = models.TextField(db_column='value')
 
@@ -516,7 +535,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
             else:
                 if value:
                     local_storage = utils.get_storage(local=True)
-                    current_path = local_storage.path(value)
+                    current_path = local_storage.path(value.name)
                     checksum = utils.get_checksum(path=value)
                     path = utils.get_upload_path(current_path, checksum=checksum)
                     if hasattr(value, 'size'):
@@ -572,6 +591,10 @@ class UserFile(WooeyPy2Mixin, models.Model):
 
     def __str__(self):
         return '{}: {}'.format(self.job.job_name, self.system_file)
+
+    @property
+    def filepath(self):
+        return self.system_file.filepath
 
 
 class WooeyFile(WooeyPy2Mixin, models.Model):

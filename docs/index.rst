@@ -40,6 +40,7 @@ Getting Started
    customizations
    remote
    upgrade_help
+   changelog
    security
 
 
@@ -50,13 +51,5 @@ Developers
    :maxdepth: 2
    
    dev_install
-   api
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 

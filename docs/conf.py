@@ -14,52 +14,16 @@
 
 import sys
 import os
+import django
 
-from mock import MagicMock
-
-
-class Mock(MagicMock):
-    __all__ = []
-
-    def __init__(self, *args, **kwargs):
-        super(Mock, self).__init__()
-
-    @classmethod
-    def __getattr__(cls, name):
-        if name in ('__file__', '__path__'):
-            return os.devnull
-        else:
-            return Mock()
-
-    @classmethod
-    def __setattr__(*args, **kwargs):
-        pass
-
-    def __setitem__(self, *args, **kwargs):
-        return
-
-    def __getitem__(self, *args, **kwargs):
-        return
-
-# Add any modules that cannot be installed by RTD to this array
-MOCK_MODULES = [
-    'boto',
-    'boto.utils',
-    'storages',
-    'storages.backends',
-    'storages.backends.s3boto',
-]
-
-for mod_name in MOCK_MODULES:
-    sys.modules[mod_name] = Mock()
-
-os.environ['DJANGO_SETTINGS_MODULE'] = 'wooey.docs_settings'
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
+os.environ['DJANGO_SETTINGS_MODULE'] = 'wooey.test_settings'
+django.setup()
 
 # -- General configuration ------------------------------------------------
 
@@ -109,7 +73,7 @@ release = '3.0.0'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+exclude_patterns = ['_build', 'wooey/*']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.

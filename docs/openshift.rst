@@ -81,7 +81,7 @@ Next, you want to setup a database and a message broker for Celery
 
 2. Setting up Celery
 
-    * Add CloudAMPQ as a service, which can be done once again through the OpenShift Marketplace.
+    * Add CloudAMQP as a service, which can be done once again through the OpenShift Marketplace.
 
     * Update the user_settings.py file and uncomment the following:
 
@@ -97,7 +97,7 @@ Next, you want to setup a database and a message broker for Celery
         ACKS_LATE = True
         CELERY_IMPORTS = ('wooey.tasks',)
 
-    * Change AMPQ_URL to CLOUDAMQP_URI, which is the environment variable setup in your app.
+    * Change AMQP_URL to CLOUDAMQP_URI, which is the environment variable setup in your app.
     * Next, we need to tell the server to start celery. We will make a new deployment hook for this. Create the file project_root/.openshift/action_hooks/post_start with the following content:
 
       ::

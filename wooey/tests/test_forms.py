@@ -1,7 +1,7 @@
 import os
 
 import six
-from django.test import TestCase
+from django.test import TransactionTestCase
 from django.http.request import MultiValueDict
 from django.core.files.uploadedfile import SimpleUploadedFile
 
@@ -21,7 +21,7 @@ from . import (
 )
 
 
-class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
+class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TransactionTestCase):
 
     @staticmethod
     def get_mvdict(data):
@@ -219,3 +219,28 @@ class FormTestCase(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase)
                 'class': 'custom',
             }
         )
+
+    def test_handles_special_characters(self):
+        script_version = self.choice_script
+        # Associate a custom widget with a field
+        choice_str_slug = test_utils.get_subparser_form_slug(script_version, 'choices_str')
+        choice_str = 'This & is special'
+        form = utils.get_master_form(script_version=script_version)
+        qdict = self.get_mvdict({choice_str_slug: [choice_str], 'wooey_type': [script_version.pk], 'job_name': ['abc']})
+        utils.validate_form(form=form, data=qdict)
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data[choice_str_slug], [choice_str])
+
+    def test_subparser_selection(self):
+        script_version = self.subparser_script
+        subparser = script_version.scriptparser_set.get(name='subparser2')
+        form = utils.get_master_form(script_version=script_version, parser=subparser.pk)
+        sp1_slug = test_utils.get_subparser_form_slug(script_version, 'sp1')
+        sp2_slug = test_utils.get_subparser_form_slug(script_version, 'sp2')
+        test_arg_slug = test_utils.get_subparser_form_slug(script_version, 'test_arg')
+
+        # The sp1 slug is only present in subparser1, so we should not see it, but we should
+        # see the sp2 slug and the general subparser options of test_arg
+        self.assertIn(sp2_slug, form.fields)
+        self.assertNotIn(sp1_slug, form.fields)
+        self.assertIn(test_arg_slug, form.fields)

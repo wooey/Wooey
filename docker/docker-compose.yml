@@ -26,12 +26,12 @@ services:
     command: watchmedo auto-restart --directory=$BUILD_DIR/wooey --recursive --ignore-patterns="*.pyc" -- celery worker -A $WOOEY_PROJECT -c 4 -B -l debug -s schedule
 
   rabbit:
-    image: rabbitmq:management
+    image: rabbitmq:3.9.29-management-alpine
     ports:
       - 15672:15672
 
   db:
-    image: postgres
+    image: postgres:13.10
     volumes:
       - wooey_db:/var/lib/postgresql/data
     environment:

@@ -31,7 +31,7 @@ services:
       - 15672:15672
 
   db:
-    image: postgres:11.3
+    image: postgres:13.10
     volumes:
       - wooey_db:/var/lib/postgresql/data
     environment:

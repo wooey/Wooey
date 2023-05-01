@@ -53,8 +53,10 @@ django-celery-results==2.0.1
     # via -r requirements.in
 django-storages==1.13.2
     # via -r requirements.in
-docutils==0.19
-    # via sphinx
+docutils==0.18.1
+    # via
+    #   sphinx
+    #   sphinx-rtd-theme
 exceptiongroup==1.1.1
     # via pytest
 factory-boy==2.12.0
@@ -135,7 +137,12 @@ six==1.16.0
     #   python-dateutil
 snowballstemmer==2.2.0
     # via sphinx
-sphinx==7.0.0
+sphinx==6.2.1
+    # via
+    #   -r requirements.in
+    #   sphinx-rtd-theme
+    #   sphinxcontrib-jquery
+sphinx-rtd-theme==1.2.0
     # via -r requirements.in
 sphinxcontrib-applehelp==1.0.4
     # via sphinx
@@ -143,6 +150,8 @@ sphinxcontrib-devhelp==1.0.2
     # via sphinx
 sphinxcontrib-htmlhelp==2.0.1
     # via sphinx
+sphinxcontrib-jquery==4.1
+    # via sphinx-rtd-theme
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
 sphinxcontrib-qthelp==1.0.3

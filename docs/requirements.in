@@ -14,5 +14,6 @@ mock
 pytest
 pytest-cov
 sphinx
+sphinx-rtd-theme
 tox
 watchdog[watchmedo]

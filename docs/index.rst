@@ -51,7 +51,6 @@ Developers
    :maxdepth: 2
    
    dev_install
-   api
 
 
 Indices and tables

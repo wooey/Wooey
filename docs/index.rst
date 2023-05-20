@@ -44,10 +44,10 @@ Getting Started
    security
 
 
-Developers
-==========
+Contributing
+============
 
 .. toctree::
    :maxdepth: 2
 
-   dev_install
+   dev_setup

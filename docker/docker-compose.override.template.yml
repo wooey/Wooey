@@ -6,7 +6,8 @@ services:
   wooey:
     volumes: &package-volumes
       - ../wooey:$BUILD_DIR/wooey
-      - ../../clinto/clinto:/usr/local/lib/python3.6/site-packages/clinto
+      # Mount over the clinto parser install if desired.
+      # - ../../clinto/clinto:/usr/local/lib/python3.6/site-packages/clinto
     ports:
       - 8080:8080
 

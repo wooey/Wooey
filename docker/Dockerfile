@@ -26,6 +26,7 @@ USER wooey
 RUN wooify -p ${WOOEY_PROJECT}
 
 WORKDIR ${BUILD_DIR}/${WOOEY_PROJECT}
+ENV PYTHONPATH=${BUILD_DIR}/${WOOEY_PROJECT}:${PYTHONPATH}
 
 COPY docker/scripts/run-server run-server
 

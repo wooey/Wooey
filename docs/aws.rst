@@ -29,7 +29,7 @@ Steps to Follow
             <AllowedHeader>Authorization</AllowedHeader>
         </CORSRule>
         <CORSRule>
-            <AllowedOrigin>wooey.herokuapp.com</AllowedOrigin>
+            <AllowedOrigin>wooey.fly.dev</AllowedOrigin>
             <AllowedMethod>GET</AllowedMethod>
             <AllowedMethod>POST</AllowedMethod>
             <AllowedMethod>PUT</AllowedMethod>
@@ -59,7 +59,7 @@ Steps to Follow
         ALLOWED_HOSTS = (
             'localhost',
             '127.0.0.1',
-            "wooey.herokuapp.com",  # put your site here
+            "wooey.fly.dev",  # put your site here
         )
 
 
@@ -97,7 +97,7 @@ Steps to Follow
         STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = 'wooey.wooeystorage.CachedS3BotoStorage'
         WOOEY_EPHEMERAL_FILES = True
 
-In the above step, make sure you change wooey.herokuapp.com to your app's address.
+In the above step, make sure you change wooey.fly.dev to your app's address.
 
 Configuration Settings
 ----------------------
@@ -114,3 +114,7 @@ If you are using Heroku, you can set them as follows::
     heroku config:set -a wooey AWS_ACCESS_KEY_ID=access_key
     heroku config:set -a wooey AWS_SECRET_ACCESS_KEY=secret_key
     heroku config:set -a wooey AWS_STORAGE_BUCKET_NAME=bucket_name
+
+For fly.dev (which we now use to host) ::
+
+    flyctl secrets set KEY=value

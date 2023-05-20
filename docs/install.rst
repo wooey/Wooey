@@ -69,5 +69,6 @@ For examples not listed here, you are free to open up an `issue <https://github.
    heroku
    digitalocean
    openshift
+   fly
    aws
    celery

@@ -1,0 +1,18 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: https://github.com/psf/black
+    rev: 22.10.0
+    hooks:
+      - id: black
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: "6fd1ced85fc139abd7f5ab4f3d78dab37592cd5e"
+    hooks:
+      - id: prettier
+
+default_language_version:
+  python: python3.9.7

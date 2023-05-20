@@ -11,7 +11,6 @@ repos:
       - id: black
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: "v2.7.1"
-    exclude: .*\.html
     hooks:
       - id: prettier
   - repo: https://github.com/rtts/djhtml

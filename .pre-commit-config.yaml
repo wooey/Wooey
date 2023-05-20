@@ -20,4 +20,4 @@ repos:
       - id: djhtml
 
 default_language_version:
-  python: python3.9.7
+  python: python3.9

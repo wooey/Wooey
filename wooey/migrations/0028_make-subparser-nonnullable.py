@@ -9,13 +9,15 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0028_update_script_subparser_data'),
+        ("wooey", "0028_update_script_subparser_data"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='scriptparameter',
-            name='parser',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='wooey.ScriptParser'),
+            model_name="scriptparameter",
+            name="parser",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, to="wooey.ScriptParser"
+            ),
         ),
     ]

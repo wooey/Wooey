@@ -15,20 +15,34 @@ class CommandTests(mixins.ScriptFactoryMixin, TestCase):
         pass
 
     def test_addscript(self):
-        call_command('addscript', os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate.py'))
+        call_command(
+            "addscript", os.path.join(config.WOOEY_TEST_SCRIPTS, "translate.py")
+        )
         # Test we can update the script
-        script_version = ScriptVersion.objects.latest('created_date')
+        script_version = ScriptVersion.objects.latest("created_date")
         old_parameters = list(script_version.get_parameters())
-        call_command('addscript', '--name', 'translate', os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate2.py'))
-        new_version = ScriptVersion.objects.latest('created_date')
+        call_command(
+            "addscript",
+            "--name",
+            "translate",
+            os.path.join(config.WOOEY_TEST_SCRIPTS, "translate2.py"),
+        )
+        new_version = ScriptVersion.objects.latest("created_date")
 
         # make sure we updated
-        self.assertEqual(new_version.script_iteration, script_version.script_iteration + 1)
+        self.assertEqual(
+            new_version.script_iteration, script_version.script_iteration + 1
+        )
 
         # Make sure the parameters have not changed
         self.assertListEqual(old_parameters, list(new_version.get_parameters()))
 
         # Make sure we don't duplicate
-        call_command('addscript', '--name', 'translate', os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate2.py'))
-        newest_version = ScriptVersion.objects.latest('created_date')
+        call_command(
+            "addscript",
+            "--name",
+            "translate",
+            os.path.join(config.WOOEY_TEST_SCRIPTS, "translate2.py"),
+        )
+        newest_version = ScriptVersion.objects.latest("created_date")
         self.assertEqual(new_version.pk, newest_version.pk)

@@ -8,13 +8,16 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0021_fix_verbose_names'),
+        ("wooey", "0021_fix_verbose_names"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='scriptparameter',
-            name='collapse_arguments',
-            field=models.BooleanField(default=True, help_text='Collapse separate inputs to a given argument to a single input (ie: --arg 1 --arg 2 becomes --arg 1 2)'),
+            model_name="scriptparameter",
+            name="collapse_arguments",
+            field=models.BooleanField(
+                default=True,
+                help_text="Collapse separate inputs to a given argument to a single input (ie: --arg 1 --arg 2 becomes --arg 1 2)",
+            ),
         ),
     ]

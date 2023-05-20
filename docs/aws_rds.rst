@@ -2,4 +2,3 @@
 
 Configuring an Amazon Relation Database
 =======================================
-

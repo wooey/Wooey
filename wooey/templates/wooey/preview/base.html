@@ -4,21 +4,21 @@
     <div class="thumbnail panel {% if output_file_content.object.id in favorite_file_ids %}panel-warning is-favorite{% else %}panel-default{% endif %}" id="favorite-{{ output_file_content.object|app_model_id }}">
         <div class="panel-heading"><span class="glyphicon glyphicon-picture"></span> {{ output_file_content.basename }}
 
-        <a class="icon icon-download" href="{{ output_file_content.url }}" download  title="{% trans "Download this output" %}"></a>
-        <a class="icon icon-pushpin requires-login" data-favorite="{{ output_file_content.object|app_model_id }}" href="#" title="{% trans "Pin in scrapbook" %}"></a>
+            <a class="icon icon-download" href="{{ output_file_content.url }}" download  title="{% trans "Download this output" %}"></a>
+            <a class="icon icon-pushpin requires-login" data-favorite="{{ output_file_content.object|app_model_id }}" href="#" title="{% trans "Pin in scrapbook" %}"></a>
         </div>
         {% block preview_content %}{% endblock %}
         {% if show_preview_metadata %}
             {% with output_file_content.object as file %}
-            {% url 'wooey:celery_results' job_id=file.job.id as result_url %}
-            {% url 'wooey:celery_results' job_id=file.job.id as celery_results_url %}
-            <div class="panel-footer preview-metadata">
-                {% blocktrans with job_name=file.job.job_name job_id=file.job.id result_url=result_url celery_results_url=celery_results_url %}
-                Output from <a href="{{ result_url }}">{{ job_name }}</a> job <a href="{{ celery_results_url }}">#{{ job_id }}</a>
-                {% endblocktrans %}
-                <span class="glyphicon glyphicon-calendar"></span> {{ file.job.created_date }}
-                {% if file.size_bytes %}<span class="glyphicon glyphicon-file"></span>  {{ file.size_bytes|filesizeformat }}{% endif %}
-            </div>
+                {% url 'wooey:celery_results' job_id=file.job.id as result_url %}
+                {% url 'wooey:celery_results' job_id=file.job.id as celery_results_url %}
+                <div class="panel-footer preview-metadata">
+                    {% blocktrans with job_name=file.job.job_name job_id=file.job.id result_url=result_url celery_results_url=celery_results_url %}
+                        Output from <a href="{{ result_url }}">{{ job_name }}</a> job <a href="{{ celery_results_url }}">#{{ job_id }}</a>
+                    {% endblocktrans %}
+                    <span class="glyphicon glyphicon-calendar"></span> {{ file.job.created_date }}
+                    {% if file.size_bytes %}<span class="glyphicon glyphicon-file"></span>  {{ file.size_bytes|filesizeformat }}{% endif %}
+                </div>
 
             {% endwith %}
         {% endif %}

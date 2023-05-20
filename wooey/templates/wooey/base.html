@@ -3,498 +3,498 @@
 {% load wooey_tags %}
 <!DOCTYPE html>
 <html>
-<head lang="en">
-    <meta charset="UTF-8">
-    <title>{% block title %}{% get_wooey_setting "WOOEY_SITE_NAME" %}{% endblock title %}</title>
-    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="//cdn.datatables.net/1.10.6/css/jquery.dataTables.min.css"/>
-    <link rel="stylesheet" href="//cdn.datatables.net/responsive/1.0.5/css/dataTables.responsive.css"/>
-    <link rel="stylesheet" href="{% static "wooey/css/base.css" %}"/>
-    <link rel="stylesheet" href="{% static "wooey/css/simple-sidebar.css" %}"/>
-    <link href='//fonts.googleapis.com/css?family=Pacifico' rel='stylesheet' type='text/css'>
+    <head lang="en">
+        <meta charset="UTF-8">
+        <title>{% block title %}{% get_wooey_setting "WOOEY_SITE_NAME" %}{% endblock title %}</title>
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"/>
+        <link rel="stylesheet" href="//cdn.datatables.net/1.10.6/css/jquery.dataTables.min.css"/>
+        <link rel="stylesheet" href="//cdn.datatables.net/responsive/1.0.5/css/dataTables.responsive.css"/>
+        <link rel="stylesheet" href="{% static "wooey/css/base.css" %}"/>
+        <link rel="stylesheet" href="{% static "wooey/css/simple-sidebar.css" %}"/>
+        <link href='//fonts.googleapis.com/css?family=Pacifico' rel='stylesheet' type='text/css'>
 
-    {% block extra_css %}
-    {% endblock extra_css %}
+        {% block extra_css %}
+        {% endblock extra_css %}
 
 
-    <style>
-      .center-div {
-        background: url('{% static "wooey/images/pinstripe.png" %}');
-      }
-      {% block extra_style %}
-      {% endblock extra_style %}
-    </style>
-</head>
-<body class="{% if user.is_authenticated %}user-is-authenticated{% else %}user-is-anonymous{% endif %}">
-    <nav class="navbar navbar-inverse navbar-fixed-top">
+        <style>
+            .center-div {
+                background: url('{% static "wooey/images/pinstripe.png" %}');
+            }
+            {% block extra_style %}
+            {% endblock extra_style %}
+        </style>
+    </head>
+    <body class="{% if user.is_authenticated %}user-is-authenticated{% else %}user-is-anonymous{% endif %}">
+        <nav class="navbar navbar-inverse navbar-fixed-top">
 {#    from http://www.bootply.com/3iSOTAyumP for brand centering #}
-      <div class="container-fluid">
+            <div class="container-fluid">
         <!-- Brand and toggle get grouped for better mobile display -->
-        <div class="navbar-header">
-              <button id="menu-toggle" class="navbar-toggle">
-                  <span class="sr-only"></span>
-                  <span class="icon-bar"></span>
-                  <span class="icon-bar"></span>
-                  <span class="icon-bar"></span>
-              </button>
-            <ol class="breadcrumb navbar-breadcrumb">
-              <li><a href="{% url 'wooey:wooey_home' %}" class="navbar-brand wooey">{% get_wooey_setting "WOOEY_SITE_NAME" %}</a></li>
-                {% block breadcrumbs %}{% endblock %}
-            </ol>
+                <div class="navbar-header">
+                    <button id="menu-toggle" class="navbar-toggle">
+                        <span class="sr-only"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <ol class="breadcrumb navbar-breadcrumb">
+                        <li><a href="{% url 'wooey:wooey_home' %}" class="navbar-brand wooey">{% get_wooey_setting "WOOEY_SITE_NAME" %}</a></li>
+                        {% block breadcrumbs %}{% endblock %}
+                    </ol>
 
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1">
-                <span class="sr-only">{% trans "Toggle navigation" %}</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-        </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1">
+                        <span class="sr-only">{% trans "Toggle navigation" %}</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
 
         <!-- Collect the nav links, forms, and other content for toggling -->
-        <div class="collapse navbar-collapse" id="navbar-collapse-1">
-          <ul class="nav navbar-nav navbar-right">
+                <div class="collapse navbar-collapse" id="navbar-collapse-1">
+                    <ul class="nav navbar-nav navbar-right">
               <!-- List global job queue active, waiting (limit N) -->
-              <li class="dropdown" id="job-list-global">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Queue" %} <span class="badge jobs-badge" id="jobs-badge-global">8</span> <span class="caret"></span></a>
+                        <li class="dropdown" id="job-list-global">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Queue" %} <span class="badge jobs-badge" id="jobs-badge-global">8</span> <span class="caret"></span></a>
 
-                  <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-global-list">
-                  </ul>
+                            <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-global-list">
+                            </ul>
 
-              </li>
+                        </li>
 
               <!-- List all currently active, waiting jobs for current user -->
-              <li class="dropdown" id="job-list-user">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Jobs" %} <span class="badge jobs-badge" id="jobs-badge-user">8</span> <span class="caret"></span></a>
+                        <li class="dropdown" id="job-list-user">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Jobs" %} <span class="badge jobs-badge" id="jobs-badge-user">8</span> <span class="caret"></span></a>
 
-                  <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-user-list">
-                  </ul>
+                            <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-user-list">
+                            </ul>
 
-              </li>
+                        </li>
               <!-- List latest N completed jobs -->
-              <li class="dropdown" id="job-list-results">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Results" %} <span class="badge jobs-badge" id="jobs-badge-results">8</span> <span class="caret"></span></a>
+                        <li class="dropdown" id="job-list-results">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Results" %} <span class="badge jobs-badge" id="jobs-badge-results">8</span> <span class="caret"></span></a>
 
-                  <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-results-list">
-                  </ul>
+                            <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" id="job-list-results-list">
+                            </ul>
 
-              </li>
-              <li>
-                  <form id="language-selector" class="navbar-form form-inline" action="{% url 'wooey:set_language' %}" method="post">{% csrf_token %}
-                    <input name="next" type="hidden" value="{{ redirect_to }}" />
-                    {% get_current_language as LANGUAGE_CODE %}
-                    {% get_language_info for LANGUAGE_CODE as lang_info %}
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{ lang_info.name_local }}<span class="caret"></span></a>
-                    <ul id="language-dropdown" class="dropdown-menu">
-                    {% get_available_languages as LANGUAGES %}
-                    {% get_language_info_list for LANGUAGES as languages %}
-                    {% for language in languages %}
-                      {% if language.code != lang_info.code %}
-                      <li><button name="language" class="btn btn-link" type="submit" value="{{ language.code }}">{{ language.name_local }} ({{ language.code }})</button></li>
-                      {% endif %}
-                    {% endfor %}
+                        </li>
+                        <li>
+                            <form id="language-selector" class="navbar-form form-inline" action="{% url 'wooey:set_language' %}" method="post">{% csrf_token %}
+                                <input name="next" type="hidden" value="{{ redirect_to }}" />
+                                {% get_current_language as LANGUAGE_CODE %}
+                                {% get_language_info for LANGUAGE_CODE as lang_info %}
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{ lang_info.name_local }}<span class="caret"></span></a>
+                                <ul id="language-dropdown" class="dropdown-menu">
+                                    {% get_available_languages as LANGUAGES %}
+                                    {% get_language_info_list for LANGUAGES as languages %}
+                                    {% for language in languages %}
+                                        {% if language.code != lang_info.code %}
+                                            <li><button name="language" class="btn btn-link" type="submit" value="{{ language.code }}">{{ language.name_local }} ({{ language.code }})</button></li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            </form>
+                        </li>
+
+                        {% if request.user.is_authenticated %}
+                            <li class="dropdown" id="job-list-user">
+                                <a href="{% url 'wooey:scrapbook' %}" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Scrapbook" %} <span class="badge scrapbook-badge" id="favorite-wooey-userfile-count">{% get_user_favorite_count request.user 'wooey' 'userfile' %}</span></a>
+                            </li>
+
+                            <li><a href="{% url 'wooey:profile_home' %}"><span class="glyphicon glyphicon-user"> </span> {{ request.user.username }}</a></li>
+                            <li><a href="{% url 'admin:logout' %}?next={{ request.path }}">{% trans "Logout" %}</a></li>
+                        {% else %}
+                            <li>{% include "wooey/registration/login_header.html" %}</li>
+                        {% endif %}
                     </ul>
-                  </form>
-              </li>
-
-              {% if request.user.is_authenticated %}
-                <li class="dropdown" id="job-list-user">
-                  <a href="{% url 'wooey:scrapbook' %}" role="button" aria-haspopup="true" aria-expanded="false">{% trans "Scrapbook" %} <span class="badge scrapbook-badge" id="favorite-wooey-userfile-count">{% get_user_favorite_count request.user 'wooey' 'userfile' %}</span></a>
-                </li>
-
-                <li><a href="{% url 'wooey:profile_home' %}"><span class="glyphicon glyphicon-user"> </span> {{ request.user.username }}</a></li>
-                <li><a href="{% url 'admin:logout' %}?next={{ request.path }}">{% trans "Logout" %}</a></li>
-              {% else %}
-                <li>{% include "wooey/registration/login_header.html" %}</li>
-              {% endif %}
-          </ul>
-        </div><!-- /.navbar-collapse -->
-      </div><!-- /.container-fluid -->
-    </nav>
+                </div><!-- /.navbar-collapse -->
+            </div><!-- /.container-fluid -->
+        </nav>
 
 
-    <div id="wrapper">
+        <div id="wrapper">
 
         <!-- Sidebar -->
-        <div id="sidebar-wrapper" class="sidebar-wrapper">
-            <ul class="sidebar-nav">
-                <li>
-                    <form>
-                     <div class="form-group">
-                        <input type="text" class="form-control" id="sidebarsearchform"  placeholder="{% trans 'Search for scripts...' %}" value="{{ request.GET.q }}">
-                      </div>
-                    </form>
-                </li>
-                <div id="sidebarsearchresults">
-                </div>
-            </ul>
-        </div>
+            <div id="sidebar-wrapper" class="sidebar-wrapper">
+                <ul class="sidebar-nav">
+                    <li>
+                        <form>
+                            <div class="form-group">
+                                <input type="text" class="form-control" id="sidebarsearchform"  placeholder="{% trans 'Search for scripts...' %}" value="{{ request.GET.q }}">
+                            </div>
+                        </form>
+                    </li>
+                    <div id="sidebarsearchresults">
+                    </div>
+                </ul>
+            </div>
         <!-- /#sidebar-wrapper -->
 
-        <div id="page-content-wrapper" class="{% block page_content_class %}{% endblock page_content_class %}">
-        {% block outer_content %}{% endblock %}
-        {% block center %}
-            <div class="center-div {% block center_content_class %}col-md-10 col-xs-6{% endblock center_content_class %}">
-                {% block center_content %}
-                {% endblock center_content %}
+            <div id="page-content-wrapper" class="{% block page_content_class %}{% endblock page_content_class %}">
+                {% block outer_content %}{% endblock %}
+                {% block center %}
+                    <div class="center-div {% block center_content_class %}col-md-10 col-xs-6{% endblock center_content_class %}">
+                        {% block center_content %}
+                        {% endblock center_content %}
+                    </div>
+
+                {% endblock center %}
             </div>
 
-        {% endblock center %}
         </div>
 
-    </div>
 
+        {% block js %}
+            <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+            <script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+            <script type="text/javascript" src="//cdn.datatables.net/1.10.6/js/jquery.dataTables.min.js"></script>
+            <script type="text/javascript" src="//cdn.datatables.net/responsive/1.0.5/js/dataTables.responsive.min.js"></script>
+            <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+            <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/showdown/1.2.2/showdown.min.js"></script>
+        {% endblock js %}
 
-    {% block js %}
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-    <script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="//cdn.datatables.net/1.10.6/js/jquery.dataTables.min.js"></script>
-    <script type="text/javascript" src="//cdn.datatables.net/responsive/1.0.5/js/dataTables.responsive.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/showdown/1.2.2/showdown.min.js"></script>
-    {% endblock js %}
+        {% block extra_js %}
+        {% endblock extra_js %}
 
-    {% block extra_js %}
-    {% endblock extra_js %}
+        <div id="inline-js">
+            {% block inline_js %}
+                <script type="text/javascript">
 
-    <div id="inline-js">
-    {% block inline_js %}
-    <script type="text/javascript">
-
-            (function($) {
+                    (function($) {
                 // https://github.com/bgrins/bindWithDelay/blob/master/bindWithDelay.js
-                $.fn.bindWithDelay = function( type, data, fn, timeout, throttle ) {
+                        $.fn.bindWithDelay = function( type, data, fn, timeout, throttle ) {
 
-                    if ( $.isFunction( data ) ) {
-                        throttle = timeout;
-                        timeout = fn;
-                        fn = data;
-                        data = undefined;
-                    }
+                            if ( $.isFunction( data ) ) {
+                                throttle = timeout;
+                                timeout = fn;
+                                fn = data;
+                                data = undefined;
+                            }
 
                     // Allow delayed function to be removed with fn in unbind function
-                    fn.guid = fn.guid || ($.guid && $.guid++);
+                            fn.guid = fn.guid || ($.guid && $.guid++);
 
                     // Bind each separately so that each element has its own delay
-                    return this.each(function() {
+                            return this.each(function() {
 
-                        var wait = null;
+                                var wait = null;
 
-                        function cb() {
-                            var e = $.extend(true, { }, arguments[0]);
-                            var ctx = this;
-                            var throttler = function() {
-                                wait = null;
-                                fn.apply(ctx, [e]);
-                            };
+                                function cb() {
+                                    var e = $.extend(true, { }, arguments[0]);
+                                    var ctx = this;
+                                    var throttler = function() {
+                                        wait = null;
+                                        fn.apply(ctx, [e]);
+                                    };
 
-                            if (!throttle) { clearTimeout(wait); wait = null; }
-                            if (!wait) { wait = setTimeout(throttler, timeout); }
-                        }
+                                    if (!throttle) { clearTimeout(wait); wait = null; }
+                                    if (!wait) { wait = setTimeout(throttler, timeout); }
+                                }
 
-                        cb.guid = fn.guid;
+                                cb.guid = fn.guid;
 
-                        $(this).bind(type, data, cb);
-                    });
-                };
+                                $(this).bind(type, data, cb);
+                            });
+                        };
 
-                })(jQuery);
+                    })(jQuery);
 
-            function clearErrors($form){
-                $form.find('.errorlist').remove();
-                $form.find('.has-error').toggleClass('has-error');
-            }
+                    function clearErrors($form){
+                        $form.find('.errorlist').remove();
+                        $form.find('.has-error').toggleClass('has-error');
+                    }
 
-            function addUlError($field, error){
-                $field.closest('.form-group').addClass('has-error');
-                $field.after('<ul class="errorlist list-unstyled alert alert-danger"><li class="error">'+error+'</li></ul>');
-            }
+                    function addUlError($field, error){
+                        $field.closest('.form-group').addClass('has-error');
+                        $field.after('<ul class="errorlist list-unstyled alert alert-danger"><li class="error">'+error+'</li></ul>');
+                    }
 
-            function addInlineError($field, error){
-                $field.closest('.form-group').addClass('has-error');
-                $field.append('<span class="errorlist error alert-danger">'+error+'</span>');
-            }
+                    function addInlineError($field, error){
+                        $field.closest('.form-group').addClass('has-error');
+                        $field.append('<span class="errorlist error alert-danger">'+error+'</span>');
+                    }
 
-            function processErrors($form, errors){
-                var previous_tab_error = false;
+                    function processErrors($form, errors){
+                        var previous_tab_error = false;
 
-                for (var key in errors){
-                    for(var i=0;i<errors[key].length;i++) {
-                        var error = errors[key][i];
-                        var $field;
-                        if (key == '__all__') {
+                        for (var key in errors){
+                            for(var i=0;i<errors[key].length;i++) {
+                                var error = errors[key][i];
+                                var $field;
+                                if (key == '__all__') {
                             //stick it at the form's top
-                            $field = $('<ul class="errorlist"></ul>');
-                            $field.prependTo($form);
-                        }
-                        else {
-                            $field = $('#' + key);
-                            if (!$field.length)
-                                $field = $('[name="' + key + '"]');
-                            if($form.hasClass('form-inline') || $form.hasClass('navbar-form')){
-                                $field2 = $('<span class="errorlist"></span>');
-                                $field2.appendTo($field.parent());
-                                $field = $field2;
-                            }
-                        }
-                        if ($form.hasClass('form-inline') || $form.hasClass('navbar-form')) {
-                            addInlineError($field, error);
-                        } else
-                            addUlError($field, error);
+                                    $field = $('<ul class="errorlist"></ul>');
+                                    $field.prependTo($form);
+                                }
+                                else {
+                                    $field = $('#' + key);
+                                    if (!$field.length)
+                                        $field = $('[name="' + key + '"]');
+                                    if($form.hasClass('form-inline') || $form.hasClass('navbar-form')){
+                                        $field2 = $('<span class="errorlist"></span>');
+                                        $field2.appendTo($field.parent());
+                                        $field = $field2;
+                                    }
+                                }
+                                if ($form.hasClass('form-inline') || $form.hasClass('navbar-form')) {
+                                    addInlineError($field, error);
+                                } else
+                                addUlError($field, error);
 
                         // See if we're in a tabbed view; find the parent tab and set it to error state
-                        $tab_pane = $field.closest('.tab-pane');
-                        if($tab_pane){
-                            id = $tab_pane.attr('id');
-                            $obj = $('a[href="#' + id + '"]');
-                            $obj.addClass('tab-error');
+                                $tab_pane = $field.closest('.tab-pane');
+                                if($tab_pane){
+                                    id = $tab_pane.attr('id');
+                                    $obj = $('a[href="#' + id + '"]');
+                                    $obj.addClass('tab-error');
 
                             // If first time we've seen a tab error, change the (.active) tab
-                            if(!previous_tab_error){
-                                $obj.tab('show');
+                                    if(!previous_tab_error){
+                                        $obj.tab('show');
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            }
 
-        $(document).ready(function(){
-            $('[data-toggle="popover"]').popover();
-            $('[data-toggle="tooltip"]').tooltip();
-            $('#wooey-login').click(function(event){
-            event.preventDefault();
-            var $form = $(this).closest('form');
+                    $(document).ready(function(){
+                        $('[data-toggle="popover"]').popover();
+                        $('[data-toggle="tooltip"]').tooltip();
+                        $('#wooey-login').click(function(event){
+                            event.preventDefault();
+                            var $form = $(this).closest('form');
             // if we are cloning a job, we need to specify the fields as the files because the file type input
             // will be blank
-            var formData = $form.serializeArray();
-            $.ajax({
-                url: $form.attr('action'),
-                type: 'POST',
-                data: formData,
-                dataType: 'json',
-                async: false,
-                cache: false,
-                success: function(data){
-                    clearErrors($form);
-                    if(data.valid){
-                        if(data.redirect){
-                            window.location.href = data.redirect;
-                        }
-                    }
-                    else{
-                        processErrors($form, data.errors)
-                    }
-                    }
-                });
-            });
-
-            /* Job urls definitions: need to be template processed */
-            var wooey_job_list_urls = {
-                global: "{% url 'wooey:global_queue' %}",
-                user: "{% url 'wooey:user_queue' %}",
-                results: "{% url 'wooey:user_results' %}",
-            }
-
-
-            function celeryRefresh() {
-                /* Update the script status lists (navbar) and count pills */
-                $.get("{% url "wooey:all_queues_json" %}", function(data){
-
-                    for(var table_key in data['items']) {
-
-                        /* Do total counts first */
-                        var total_jobs = data['totals'][table_key]
-
-                        $('#jobs-badge-' + table_key).text( total_jobs )
-                        if( total_jobs > 0){
-                            $('#jobs-badge-' + table_key).show();
-                            $('#job-list-' + table_key).removeClass('disabled')
-                            $('#job-list-' + table_key + ' > a').removeClass('disabled')
-                        } else {
-                            $('#jobs-badge-' + table_key).hide();
-                            $('#job-list-' + table_key).addClass('disabled')
-                            $('#job-list-' + table_key + ' > a').addClass('disabled')
-                        }
-
-
-                        var items = [];
-                        /* Now add the jobs to the dropdown lists */
-                        var job_data = data['items'][table_key];
-                        for (var i = 0; i < job_data.length; i++) {
-                            job = job_data[i]
-                            items.push('<li><a href="' + job['url'] + '">' + job['status'] + '&nbsp;' + job['name'] + '</a></li>')
-                        }
-
-                        if (job_data.length) {
-                            items.push('<li role="separator" class="divider"></li>');
-                            items.push('<li><a href="'+ wooey_job_list_urls[table_key] +'">{% trans "View Details" %}</a>');
-                        }
-
-                        /* Empty the list: might be nicer to replace, edit, more intelligently */
-                        $("#job-list-" + table_key + "-list").empty();
-                        $("#job-list-" + table_key + "-list").append(items);
-
-                    }
-                }, "json");
-            }
-
-
-            celeryRefresh();
-            /* Update the interface ~15 secs */
-            window.setInterval(celeryRefresh, 15 * 1000);
-
-
-        });
-
-        // using jQuery
-        function getCookie(name) {
-            var cookieValue = null;
-            if (document.cookie && document.cookie != '') {
-                var cookies = document.cookie.split(';');
-                for (var i = 0; i < cookies.length; i++) {
-                    var cookie = jQuery.trim(cookies[i]);
-                    // Does this cookie string begin with the name we want?
-                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
-        var csrftoken = getCookie('csrftoken');
-
-        function csrfSafeMethod(method) {
-            // these HTTP methods do not require CSRF protection
-            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-        }
-        $.ajaxSetup({
-            crossDomain: false, // obviates need for sameOrigin test
-            beforeSend: function(xhr, settings) {
-                if (!csrfSafeMethod(settings.type)) {
-                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
-                }
-            }
-        });
-
-
-        function toggleFavorite(event) {
-            /* Submit JSON favorite request and act on result */
-
-            favorite_item = $(event.target);
-            var data = new Object();
-            identifer = $(event.target).data('favorite');
-            identifiers = identifer.split('-');
-
-            data.app = identifiers[0];
-            data.model = identifiers[1];
-            data.pk = identifiers[2];
-
-            $.ajax({
-                url: '/favorite/toggle',
-                data: data,
-                type: 'post',
-                dataType: 'json',
-                cache: false,
-                success: function(data){
-                    /* Act on result */
-                        if(data.is_favorite){
-                            $('#favorite-' + identifer).addClass('panel-warning is-favorite');
-                            $('#favorite-' + identifer).removeClass('panel-default');
-                        } else {
-                            $('#favorite-' + identifer).addClass('panel-default');
-                            $('#favorite-' + identifer).removeClass('panel-warning is-favorite');
-                        }
-
-                    $('#favorite-' + data.app + '-' + data.model + '-count').text(data.count);
-
-                    }
-                });
-
-            return false;
-            }
-
-        var converter = new showdown.Converter({
-            'github_flavouring': true,
-            'tables': true
-        });
-
-        $(document).ready(function(){
-
-            $("a[data-favorite]").click(toggleFavorite);
-
-            $(document).delegate('*[data-toggle="lightbox"]', 'click', function(event) {
-                event.preventDefault();
-                $(this).ekkoLightbox();
-            });
-
-
-            $("#menu-toggle").click(function(e) {
-                e.preventDefault();
-                $("#wrapper").toggleClass("toggled");
-            });
-
-
-
-            $("#sidebarsearchform").bindWithDelay("keyup", function(event){
-                var query = $('#sidebarsearchform').val();
-                $.ajax({
-                    url: '{% url 'wooey:wooey_search_script_json' %}',
-                    method: 'GET',
-                    data: {q: query},
-                    dataType: 'json',
-                    async: true,
-                    cache: false,
-                    contentType: false,
-                    success: function(data){
-
-                        $('#sidebarsearchresults').empty()
-                        for (var i in data['results']) {
-                            $("#sidebarsearchresults").append('<li class="sidebarsearchresult"><a href="' + data['results'][i].url + '">' + data['results'][i].name + '</a></li>')
-                        }
-
-                        $('.sidebarsearchresult').bind("click", function(event){
+                            var formData = $form.serializeArray();
                             $.ajax({
-                                url: event.target.href,
-                                method: 'GET',
-                                dataType: 'html',
-                                async: true,
-
+                                url: $form.attr('action'),
+                                type: 'POST',
+                                data: formData,
+                                dataType: 'json',
+                                async: false,
                                 cache: false,
-                                contentType: false,
-                                success: function(html){
-                                    $("#page-content-wrapper").html( $(html).find("#page-content-wrapper") );
-
-                                    var div = document.createElement("div");
-                                    div.innerHTML = html;
-                                    var scripts = div.getElementsByTagName('script');
-                                    for (var ix = 0; ix < scripts.length; ix++) {
-                                        eval(scripts[ix].text);
+                                success: function(data){
+                                    clearErrors($form);
+                                    if(data.valid){
+                                        if(data.redirect){
+                                            window.location.href = data.redirect;
+                                        }
                                     }
-
-                                    jQuery.ready();
-
-                                },
-                              });
-                            return false;
+                                    else{
+                                        processErrors($form, data.errors)
+                                    }
+                                }
+                            });
                         });
 
+            /* Job urls definitions: need to be template processed */
+                        var wooey_job_list_urls = {
+                            global: "{% url 'wooey:global_queue' %}",
+                            user: "{% url 'wooey:user_queue' %}",
+                            results: "{% url 'wooey:user_results' %}",
+                        }
+
+
+                        function celeryRefresh() {
+                /* Update the script status lists (navbar) and count pills */
+                            $.get("{% url "wooey:all_queues_json" %}", function(data){
+
+                                for(var table_key in data['items']) {
+
+                        /* Do total counts first */
+                                    var total_jobs = data['totals'][table_key]
+
+                                    $('#jobs-badge-' + table_key).text( total_jobs )
+                                    if( total_jobs > 0){
+                                        $('#jobs-badge-' + table_key).show();
+                                        $('#job-list-' + table_key).removeClass('disabled')
+                                        $('#job-list-' + table_key + ' > a').removeClass('disabled')
+                                    } else {
+                                        $('#jobs-badge-' + table_key).hide();
+                                        $('#job-list-' + table_key).addClass('disabled')
+                                        $('#job-list-' + table_key + ' > a').addClass('disabled')
+                                    }
+
+
+                                    var items = [];
+                        /* Now add the jobs to the dropdown lists */
+                                    var job_data = data['items'][table_key];
+                                    for (var i = 0; i < job_data.length; i++) {
+                                        job = job_data[i]
+                                        items.push('<li><a href="' + job['url'] + '">' + job['status'] + '&nbsp;' + job['name'] + '</a></li>')
+                                    }
+
+                                    if (job_data.length) {
+                                        items.push('<li role="separator" class="divider"></li>');
+                                        items.push('<li><a href="'+ wooey_job_list_urls[table_key] +'">{% trans "View Details" %}</a>');
+                                    }
+
+                        /* Empty the list: might be nicer to replace, edit, more intelligently */
+                                    $("#job-list-" + table_key + "-list").empty();
+                                    $("#job-list-" + table_key + "-list").append(items);
+
+                                }
+                            }, "json");
+                        }
+
+
+                        celeryRefresh();
+            /* Update the interface ~15 secs */
+                        window.setInterval(celeryRefresh, 15 * 1000);
+
+
+                    });
+
+        // using jQuery
+                    function getCookie(name) {
+                        var cookieValue = null;
+                        if (document.cookie && document.cookie != '') {
+                            var cookies = document.cookie.split(';');
+                            for (var i = 0; i < cookies.length; i++) {
+                                var cookie = jQuery.trim(cookies[i]);
+                    // Does this cookie string begin with the name we want?
+                                if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                    break;
+                                }
+                            }
+                        }
+                        return cookieValue;
                     }
-                });
+                    var csrftoken = getCookie('csrftoken');
+
+                    function csrfSafeMethod(method) {
+            // these HTTP methods do not require CSRF protection
+                        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+                    }
+                    $.ajaxSetup({
+                        crossDomain: false, // obviates need for sameOrigin test
+                        beforeSend: function(xhr, settings) {
+                            if (!csrfSafeMethod(settings.type)) {
+                                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                            }
+                        }
+                    });
 
 
-            }, 100);
+                    function toggleFavorite(event) {
+            /* Submit JSON favorite request and act on result */
 
-            $(".markdown").each(function( index ) {
-                $( this ).html( converter.makeHtml( $( this ).html() ) );
-            });
+                        favorite_item = $(event.target);
+                        var data = new Object();
+                        identifer = $(event.target).data('favorite');
+                        identifiers = identifer.split('-');
+
+                        data.app = identifiers[0];
+                        data.model = identifiers[1];
+                        data.pk = identifiers[2];
+
+                        $.ajax({
+                            url: '/favorite/toggle',
+                            data: data,
+                            type: 'post',
+                            dataType: 'json',
+                            cache: false,
+                            success: function(data){
+                    /* Act on result */
+                                if(data.is_favorite){
+                                    $('#favorite-' + identifer).addClass('panel-warning is-favorite');
+                                    $('#favorite-' + identifer).removeClass('panel-default');
+                                } else {
+                                    $('#favorite-' + identifer).addClass('panel-default');
+                                    $('#favorite-' + identifer).removeClass('panel-warning is-favorite');
+                                }
+
+                                $('#favorite-' + data.app + '-' + data.model + '-count').text(data.count);
+
+                            }
+                        });
+
+                        return false;
+                    }
+
+                    var converter = new showdown.Converter({
+                        'github_flavouring': true,
+                        'tables': true
+                    });
+
+                    $(document).ready(function(){
+
+                        $("a[data-favorite]").click(toggleFavorite);
+
+                        $(document).delegate('*[data-toggle="lightbox"]', 'click', function(event) {
+                            event.preventDefault();
+                            $(this).ekkoLightbox();
+                        });
+
+
+                        $("#menu-toggle").click(function(e) {
+                            e.preventDefault();
+                            $("#wrapper").toggleClass("toggled");
+                        });
 
 
 
-        });
+                        $("#sidebarsearchform").bindWithDelay("keyup", function(event){
+                            var query = $('#sidebarsearchform').val();
+                            $.ajax({
+                                url: '{% url 'wooey:wooey_search_script_json' %}',
+                                method: 'GET',
+                                data: {q: query},
+                                dataType: 'json',
+                                async: true,
+                                cache: false,
+                                contentType: false,
+                                success: function(data){
 
-    </script>
-    {% endblock inline_js %}
-    </div>
+                                    $('#sidebarsearchresults').empty()
+                                    for (var i in data['results']) {
+                                        $("#sidebarsearchresults").append('<li class="sidebarsearchresult"><a href="' + data['results'][i].url + '">' + data['results'][i].name + '</a></li>')
+                                    }
 
-</body>
+                                    $('.sidebarsearchresult').bind("click", function(event){
+                                        $.ajax({
+                                            url: event.target.href,
+                                            method: 'GET',
+                                            dataType: 'html',
+                                            async: true,
+
+                                            cache: false,
+                                            contentType: false,
+                                            success: function(html){
+                                                $("#page-content-wrapper").html( $(html).find("#page-content-wrapper") );
+
+                                                var div = document.createElement("div");
+                                                div.innerHTML = html;
+                                                var scripts = div.getElementsByTagName('script');
+                                                for (var ix = 0; ix < scripts.length; ix++) {
+                                                    eval(scripts[ix].text);
+                                                }
+
+                                                jQuery.ready();
+
+                                            },
+                                        });
+                                        return false;
+                                    });
+
+                                }
+                            });
+
+
+                        }, 100);
+
+                        $(".markdown").each(function( index ) {
+                            $( this ).html( converter.makeHtml( $( this ).html() ) );
+                        });
+
+
+
+                    });
+
+                </script>
+            {% endblock inline_js %}
+        </div>
+
+    </body>
 </html>

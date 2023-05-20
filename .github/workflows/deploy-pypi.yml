@@ -3,11 +3,10 @@ name: Deploy-To-Pypi
 on:
   push:
     tags:
-    - 'v*'
+      - "v*"
 
 jobs:
   build:
-
     runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 4
@@ -16,17 +15,17 @@ jobs:
         os: [ubuntu-latest]
 
     steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Setup Packaging Tools
-      run: |
-       pip install -U setuptools twine pip
-    - name: Upload to pypi
-      env:
-        PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-      run: |
-        python setup.py sdist
-        twine upload -u __token__ -p $PYPI_API_TOKEN dist/*
+      - uses: actions/checkout@v1
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Setup Packaging Tools
+        run: |
+          pip install -U setuptools twine pip
+      - name: Upload to pypi
+        env:
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          python setup.py sdist
+          twine upload -u __token__ -p $PYPI_API_TOKEN dist/*

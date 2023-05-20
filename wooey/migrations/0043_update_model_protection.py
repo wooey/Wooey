@@ -7,33 +7,47 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0042_allow_deletion_of_scripts'),
+        ("wooey", "0042_allow_deletion_of_scripts"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='script',
-            name='script_group',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='wooey.ScriptGroup'),
+            model_name="script",
+            name="script_group",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="wooey.ScriptGroup",
+            ),
         ),
         migrations.AlterField(
-            model_name='scriptparameter',
-            name='parameter_group',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='wooey.ScriptParameterGroup'),
+            model_name="scriptparameter",
+            name="parameter_group",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                to="wooey.ScriptParameterGroup",
+            ),
         ),
         migrations.AlterField(
-            model_name='scriptparameter',
-            name='parser',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='wooey.ScriptParser'),
+            model_name="scriptparameter",
+            name="parser",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, to="wooey.ScriptParser"
+            ),
         ),
         migrations.AlterField(
-            model_name='scriptparameters',
-            name='parameter',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='wooey.ScriptParameter'),
+            model_name="scriptparameters",
+            name="parameter",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, to="wooey.ScriptParameter"
+            ),
         ),
         migrations.AlterField(
-            model_name='wooeyjob',
-            name='script_version',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='wooey.ScriptVersion'),
+            model_name="wooeyjob",
+            name="script_version",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, to="wooey.ScriptVersion"
+            ),
         ),
     ]

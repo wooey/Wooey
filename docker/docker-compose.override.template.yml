@@ -1,6 +1,6 @@
 # This file should be renamed to docker-compose.overrides.yml with whatever
 # overrides are specific to the particular setup
-version: '2.1'
+version: "2.1"
 
 services:
   wooey:

@@ -9,18 +9,20 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0040_add-widget-class'),
+        ("wooey", "0040_add-widget-class"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='scriptparameter',
-            name='parser',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='wooey.ScriptParser'),
+            model_name="scriptparameter",
+            name="parser",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT, to="wooey.ScriptParser"
+            ),
         ),
         migrations.AlterField(
-            model_name='scriptparameter',
-            name='script_param',
+            model_name="scriptparameter",
+            name="script_param",
             field=models.TextField(),
         ),
     ]

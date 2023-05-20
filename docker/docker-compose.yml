@@ -1,4 +1,4 @@
-version: '2.1'
+version: "2.1"
 volumes:
   user_uploads:
   wooey_db:

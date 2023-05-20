@@ -8,16 +8,16 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0030_populate-sv-m2m'),
+        ("wooey", "0030_populate-sv-m2m"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='scriptparametergroup',
-            name='script_version',
+            model_name="scriptparametergroup",
+            name="script_version",
         ),
         migrations.RemoveField(
-            model_name='scriptparser',
-            name='script_version',
+            model_name="scriptparser",
+            name="script_version",
         ),
     ]

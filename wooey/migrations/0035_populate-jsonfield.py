@@ -7,7 +7,7 @@ from django.db import migrations
 
 
 def populate_default(apps, schema_editor):
-    ScriptParameter = apps.get_model('wooey', 'ScriptParameter')
+    ScriptParameter = apps.get_model("wooey", "ScriptParameter")
     for obj in ScriptParameter.objects.all():
         try:
             obj.default = json.loads(obj.default)
@@ -23,9 +23,7 @@ def reverse_populate_default(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0034_update-checksums'),
+        ("wooey", "0034_update-checksums"),
     ]
 
-    operations = [
-        migrations.RunPython(populate_default, reverse_populate_default)
-    ]
+    operations = [migrations.RunPython(populate_default, reverse_populate_default)]

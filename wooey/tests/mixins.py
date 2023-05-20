@@ -24,7 +24,7 @@ class FileCleanupMixin(object):
                 if wooey_settings.WOOEY_EPHEMERAL_FILES:
                     utils.get_storage(local=False).delete(path)
             except WindowsError:
-                print('unable to delete {}'.format(path))
+                print("unable to delete {}".format(path))
         # delete job dirs
         local_storage = utils.get_storage(local=True)
         for i in WooeyJob.objects.all():
@@ -32,8 +32,9 @@ class FileCleanupMixin(object):
             try:
                 shutil.rmtree(local_storage.path(path))
             except WindowsError:
-                    print('unable to delete {}'.format(path))
+                print("unable to delete {}".format(path))
         super(FileCleanupMixin, self).tearDown()
+
 
 class ScriptTearDown(object):
     def tearDown(self):
@@ -44,29 +45,39 @@ class ScriptTearDown(object):
                 try:
                     utils.get_storage(local=False).delete(name)
                 except WindowsError:
-                    print('unable to delete {}'.format(name))
-            name += 'c'  # handle pyc junk
+                    print("unable to delete {}".format(name))
+            name += "c"  # handle pyc junk
             try:
                 utils.get_storage().delete(name)
             except WindowsError:
-                print('unable to delete {}'.format(name))
+                print("unable to delete {}".format(name))
         super(ScriptTearDown, self).tearDown()
+
 
 class ScriptFactoryMixin(ScriptTearDown, object):
     def setUp(self):
-        self.translate_script = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'translate.py'))
-        self.choice_script = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'choices.py'))
-        self.without_args = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'without_args.py'))
-        self.subparser_script = factories.generate_script(os.path.join(config.WOOEY_TEST_SCRIPTS, 'subparser_script.py'))
+        self.translate_script = factories.generate_script(
+            os.path.join(config.WOOEY_TEST_SCRIPTS, "translate.py")
+        )
+        self.choice_script = factories.generate_script(
+            os.path.join(config.WOOEY_TEST_SCRIPTS, "choices.py")
+        )
+        self.without_args = factories.generate_script(
+            os.path.join(config.WOOEY_TEST_SCRIPTS, "without_args.py")
+        )
+        self.subparser_script = factories.generate_script(
+            os.path.join(config.WOOEY_TEST_SCRIPTS, "subparser_script.py")
+        )
         self.version1_script = factories.generate_script(
-            os.path.join(config.WOOEY_TEST_SCRIPTS, 'versioned_script', 'v1.py'),
-            script_name='version_test',
+            os.path.join(config.WOOEY_TEST_SCRIPTS, "versioned_script", "v1.py"),
+            script_name="version_test",
         )
         self.version2_script = factories.generate_script(
-            os.path.join(config.WOOEY_TEST_SCRIPTS, 'versioned_script', 'v2.py'),
-            script_name='version_test',
+            os.path.join(config.WOOEY_TEST_SCRIPTS, "versioned_script", "v2.py"),
+            script_name="version_test",
         )
         super(ScriptFactoryMixin, self).setUp()
+
 
 class FileMixin(object):
     def setUp(self):
@@ -75,5 +86,5 @@ class FileMixin(object):
         super(FileMixin, self).setUp()
 
     def get_any_file(self):
-        script = os.path.join(config.WOOEY_TEST_SCRIPTS, 'command_order.py')
-        return self.storage.save(self.filename_func('command_order.py'), open(script))
+        script = os.path.join(config.WOOEY_TEST_SCRIPTS, "command_order.py")
+        return self.storage.save(self.filename_func("command_order.py"), open(script))

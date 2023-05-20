@@ -8,18 +8,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0031_remove-sv'),
+        ("wooey", "0031_remove-sv"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='scriptparametergroup',
-            old_name='new_script_version',
-            new_name='script_version'
+            model_name="scriptparametergroup",
+            old_name="new_script_version",
+            new_name="script_version",
         ),
         migrations.RenameField(
-            model_name='scriptparser',
-            old_name='new_script_version',
-            new_name='script_version'
-        )
+            model_name="scriptparser",
+            old_name="new_script_version",
+            new_name="script_version",
+        ),
     ]

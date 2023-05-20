@@ -6,18 +6,20 @@ from django.db import migrations
 
 
 def createParsers(apps, schema_editor):
-    ScriptParameter = apps.get_model('wooey', 'ScriptParameter')
-    ScriptParser = apps.get_model('wooey', 'ScriptParser')
+    ScriptParameter = apps.get_model("wooey", "ScriptParameter")
+    ScriptParser = apps.get_model("wooey", "ScriptParser")
 
     for param in ScriptParameter.objects.all():
         script_version = param.script_version.last()
-        parser = list(ScriptParser.objects.filter(script_version__script=script_version.script))
+        parser = list(
+            ScriptParser.objects.filter(script_version__script=script_version.script)
+        )
         if parser:
             parser = parser[-1]
         else:
             parser = ScriptParser(
                 script_version=script_version,
-                name='',
+                name="",
             )
             parser.save()
         param.parser = parser
@@ -27,7 +29,7 @@ def createParsers(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0028_add_script_subparser'),
+        ("wooey", "0028_add_script_subparser"),
     ]
 
     operations = [

@@ -51,7 +51,7 @@ Your server can then be run by the simple command:
 ::
 
     honcho start
-    
+
 On Windows, the ``--beat`` option may not be supported.
 
 

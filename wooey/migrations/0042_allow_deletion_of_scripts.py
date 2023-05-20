@@ -7,13 +7,17 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0041_change-script-param-to-textfield'),
+        ("wooey", "0041_change-script-param-to-textfield"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='scriptversion',
-            name='script',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='script_version', to='wooey.Script'),
+            model_name="scriptversion",
+            name="script",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="script_version",
+                to="wooey.Script",
+            ),
         ),
     ]

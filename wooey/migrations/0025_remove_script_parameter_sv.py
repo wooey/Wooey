@@ -8,12 +8,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0024_script_parameter_m2m_data'),
+        ("wooey", "0024_script_parameter_m2m_data"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='scriptparameter',
-            name='script_version',
+            model_name="scriptparameter",
+            name="script_version",
         ),
     ]

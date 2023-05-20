@@ -52,7 +52,7 @@ Then we can follow the guide along with a couple changes:
 
 3. Deploying static files
 
-    * So far I have ignored this altogether and no problems...      
+    * So far I have ignored this altogether and no problems...
 
 4. nginx and uWSGI and test.py
 

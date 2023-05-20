@@ -6,20 +6,19 @@ from django.db import migrations
 
 
 def populate_m2m(apps, schema_editor):
-    ScriptParser = apps.get_model('wooey', 'ScriptParser')
-    ScriptParameterGroup = apps.get_model('wooey', 'ScriptParameterGroup')
+    ScriptParser = apps.get_model("wooey", "ScriptParser")
+    ScriptParameterGroup = apps.get_model("wooey", "ScriptParameterGroup")
     for obj in ScriptParser.objects.all():
         obj.new_script_version.add(obj.script_version)
 
     for obj in ScriptParameterGroup.objects.all():
         obj.new_script_version.add(obj.script_version)
 
+
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0029_add-m2m-sv'),
+        ("wooey", "0029_add-m2m-sv"),
     ]
 
-    operations = [
-        migrations.RunPython(populate_m2m)
-    ]
+    operations = [migrations.RunPython(populate_m2m)]

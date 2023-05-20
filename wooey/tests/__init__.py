@@ -1,3 +1,4 @@
-__author__ = 'chris'
+__author__ = "chris"
 import os
-os.environ['TESTING'] = 'True'
+
+os.environ["TESTING"] = "True"

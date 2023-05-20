@@ -18,8 +18,8 @@
 {% block extra_style %}
     {{ extra_style.super }}
     #wooey-job-submit {
-      float: left;
-      margin-left: 3px;
+    float: left;
+    margin-left: 3px;
     }
 {% endblock extra_style %}
 {% block center_content_class %}col-md-12 col-xs-12{% endblock center_content_class %}
@@ -27,277 +27,277 @@
 
 {% block center_content %}
 
-{% if job_error %}
-    <h1 class="text-center">{{ job_error }}</h1>
-{% else %}
-    <div class="page-header">
+    {% if job_error %}
+        <h1 class="text-center">{{ job_error }}</h1>
+    {% else %}
+        <div class="page-header">
 
         <!-- Nav tabs -->
-        <div class="pull-right">
+            <div class="pull-right">
 
-            <div class="btn-toolbar" role="toolbar" >
+                <div class="btn-toolbar" role="toolbar" >
 
-                <div class="btn-group status-completed-toggle">
-                    <a href="{{ job_info.archives.0.url }}" role="button" class="btn btn-primary">
-                        <span class="glyphicon glyphicon-download-alt" aria-hidden="true"></span> {% trans "Download" %}
-                    </a>
-                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                        <span class="caret"></span>
-                        <span class="sr-only">{% trans "Toggle Dropdown" %}</span>
-                    </button>
-                    <ul class="dropdown-menu" role="menu">
-                        {% for archive in job_info.archives %}
-                            <li><a href="{{ archive.url }}"><span class="glyphicon glyphicon-compressed"></span> {% if archive.url|endswith:"zip" %}.zip{% else %}.tar.gz{% endif %}</a></li>
-                        {% endfor %}
-                    </ul>
-                </div>
-
-                <div class="btn-group status-completed-toggle">
-                    <a href="{{ job_info.archives.0.url }}" role="button" class="btn btn-success">
-                        {% url 'wooey:celery_results_uuid' job_info.job.uuid as permalink %}
-                        {% absolute_url permalink as permalink %}
-                        <span class="glyphicon glyphicon-share" aria-hidden="true"></span> {% trans "Share" %}
-                    </a>
-                    <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                        <span class="caret"></span>
-                        <span class="sr-only">{% trans "Toggle Dropdown" %}</span>
-                    </button>
-                    <ul class="dropdown-menu" role="menu">
-                        <!-- <li><a href="""><span class="glyphicon glyphicon-figshare"></span> Figshare</a></li> -->
-                    <li>
-                        <a href="{{ permalink }}" onclick="$('#modal-permalink').modal(); return false;"><span class="glyphicon glyphicon-link"></span> {% trans "Permalink" %}</a>
-                    </li>
-
-                    <li>
-                        <a href="mailto:?subject={% blocktrans with job_id=job_info.job.id job_status=job_info.job.status %}Wooey Job #{{ job_id }} is {{ job_status }}{% endblocktrans %}&body={% blocktrans with permalink=permalink %}You can see the result and any outputs at the following link:%0D%0A{{ permalink }}{% endblocktrans %}"><span class="glyphicon glyphicon-envelope"></span> {% trans "Email" %}</a>
-                    </li>
-                    </ul>
-                </div>
-
-                <div class="btn-group clone-job">
-                    <a href="{%  url 'wooey:wooey_script_clone' slug=job_info.job.script_version.script.slug job_id=job_info.job.id %}" role="button" class="btn btn-primary">
-                        <span class="glyphicon glyphicon-copy" aria-hidden="true"></span> {% trans "Clone" %}
-                    </a>
-                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                        <span class="caret"></span>
-                        <span class="sr-only">{% trans "Clone Job to Previous Script Versions" %}</span>
-                    </button>
-                    <ul class="dropdown-menu" role="menu">
-                        <li class="dropdown-header">{% trans "Clone job using previous script version" %}</li>
-                        <li>
-                            <a href="{% url 'wooey:wooey_script' slug=job_info.job.script_version.script.slug script_version=job_info.job.script_version.script_version script_iteration=job_info.job.script_version.script_iteration job_id=job_info.job.id %}">
-                                {% trans "Clone using version job ran with" %}
-                            </a>
-                        </li>
-                        <li role="separator" class="divider"></li>
-                        {% regroup job_info.job.script_version.script.get_previous_versions by script_version as script_version_list %}
-                        {% for past_script_versions in script_version_list %}
-                            <li class="dropdown-header">{% blocktrans with version=past_script_versions.grouper %}Version {{ version }}{% endblocktrans %}</li>
-                            {% for past_script in past_script_versions.list %}
-                                <li><a href="{% url 'wooey:wooey_script' slug=past_script.script.slug script_version=past_script.script_version script_iteration=past_script.script_iteration job_id=job_info.job.id %}">
-                                    {% blocktrans with iteration=past_script.script_iteration %}Iteration {{ iteration }}{% endblocktrans %}</a>
-                                </li>
+                    <div class="btn-group status-completed-toggle">
+                        <a href="{{ job_info.archives.0.url }}" role="button" class="btn btn-primary">
+                            <span class="glyphicon glyphicon-download-alt" aria-hidden="true"></span> {% trans "Download" %}
+                        </a>
+                        <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                            <span class="caret"></span>
+                            <span class="sr-only">{% trans "Toggle Dropdown" %}</span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                            {% for archive in job_info.archives %}
+                                <li><a href="{{ archive.url }}"><span class="glyphicon glyphicon-compressed"></span> {% if archive.url|endswith:"zip" %}.zip{% else %}.tar.gz{% endif %}</a></li>
                             {% endfor %}
-                        {% endfor %}
-                    </ul>
+                        </ul>
+                    </div>
+
+                    <div class="btn-group status-completed-toggle">
+                        <a href="{{ job_info.archives.0.url }}" role="button" class="btn btn-success">
+                            {% url 'wooey:celery_results_uuid' job_info.job.uuid as permalink %}
+                            {% absolute_url permalink as permalink %}
+                            <span class="glyphicon glyphicon-share" aria-hidden="true"></span> {% trans "Share" %}
+                        </a>
+                        <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                            <span class="caret"></span>
+                            <span class="sr-only">{% trans "Toggle Dropdown" %}</span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                        <!-- <li><a href="""><span class="glyphicon glyphicon-figshare"></span> Figshare</a></li> -->
+                            <li>
+                                <a href="{{ permalink }}" onclick="$('#modal-permalink').modal(); return false;"><span class="glyphicon glyphicon-link"></span> {% trans "Permalink" %}</a>
+                            </li>
+
+                            <li>
+                                <a href="mailto:?subject={% blocktrans with job_id=job_info.job.id job_status=job_info.job.status %}Wooey Job #{{ job_id }} is {{ job_status }}{% endblocktrans %}&body={% blocktrans with permalink=permalink %}You can see the result and any outputs at the following link:%0D%0A{{ permalink }}{% endblocktrans %}"><span class="glyphicon glyphicon-envelope"></span> {% trans "Email" %}</a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="btn-group clone-job">
+                        <a href="{%  url 'wooey:wooey_script_clone' slug=job_info.job.script_version.script.slug job_id=job_info.job.id %}" role="button" class="btn btn-primary">
+                            <span class="glyphicon glyphicon-copy" aria-hidden="true"></span> {% trans "Clone" %}
+                        </a>
+                        <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                            <span class="caret"></span>
+                            <span class="sr-only">{% trans "Clone Job to Previous Script Versions" %}</span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                            <li class="dropdown-header">{% trans "Clone job using previous script version" %}</li>
+                            <li>
+                                <a href="{% url 'wooey:wooey_script' slug=job_info.job.script_version.script.slug script_version=job_info.job.script_version.script_version script_iteration=job_info.job.script_version.script_iteration job_id=job_info.job.id %}">
+                                    {% trans "Clone using version job ran with" %}
+                                </a>
+                            </li>
+                            <li role="separator" class="divider"></li>
+                            {% regroup job_info.job.script_version.script.get_previous_versions by script_version as script_version_list %}
+                            {% for past_script_versions in script_version_list %}
+                                <li class="dropdown-header">{% blocktrans with version=past_script_versions.grouper %}Version {{ version }}{% endblocktrans %}</li>
+                                {% for past_script in past_script_versions.list %}
+                                    <li><a href="{% url 'wooey:wooey_script' slug=past_script.script.slug script_version=past_script.script_version script_iteration=past_script.script_iteration job_id=job_info.job.id %}">
+                                        {% blocktrans with iteration=past_script.script_iteration %}Iteration {{ iteration }}{% endblocktrans %}</a>
+                                    </li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    {% include 'wooey/modals/permalink_modal.html' %}
+                    <form action="{% url 'wooey:celery_task_command' %}" id="wooey-job-submit" method="post">
+                        {% csrf_token %}
+                        <input name="job-id" value="{{ job_info.job.pk }}" type="hidden">
+
+                        {% get_wooey_setting "WOOEY_CELERY_STOPPABLE_JOBS" as stoppable_jobs %}
+                        <button {% if not stoppable_jobs %}data-placement="bottom" data-toggle="tooltip" title="The current celery broker does not support stoppable jobs and stopping will likely not work. To resolve this, use RabbitMQ as a celery message broker."{% endif %}class="btn btn-primary btn-danger status-running-toggle status-submitted-toggle status-pending-toggle" name="celery-command" value="stop" type="submit">
+                            <span class="glyphicon glyphicon-stop" aria-hidden="true"></span> {% trans "Stop" %}
+                        </button>
+                        <button class="btn btn-primary btn-warning status-completed-toggle status-revoked-toggle status-failure-toggle" name="celery-command" value="rerun" type="submit">
+                            <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span> {% trans "Re-run" %}
+                        </button>
+                        <button class="btn btn-warning" name="celery-command" value="resubmit" type="submit">
+                            <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span> {% trans "Resubmit" %}
+                        </button>
+
+                        <button class="btn btn-danger" name="celery-command" value="delete" type="submit">
+                            <span class="glyphicon glyphicon-trash" aria-hidden="true"></span> {% trans "Delete" %}
+                        </button>
+
+
+                    </form>
+
                 </div>
+            </div>
 
-                {% include 'wooey/modals/permalink_modal.html' %}
-                <form action="{% url 'wooey:celery_task_command' %}" id="wooey-job-submit" method="post">
-                    {% csrf_token %}
-                    <input name="job-id" value="{{ job_info.job.pk }}" type="hidden">
-
-                    {% get_wooey_setting "WOOEY_CELERY_STOPPABLE_JOBS" as stoppable_jobs %}
-                    <button {% if not stoppable_jobs %}data-placement="bottom" data-toggle="tooltip" title="The current celery broker does not support stoppable jobs and stopping will likely not work. To resolve this, use RabbitMQ as a celery message broker."{% endif %}class="btn btn-primary btn-danger status-running-toggle status-submitted-toggle status-pending-toggle" name="celery-command" value="stop" type="submit">
-                        <span class="glyphicon glyphicon-stop" aria-hidden="true"></span> {% trans "Stop" %}
-                    </button>
-                    <button class="btn btn-primary btn-warning status-completed-toggle status-revoked-toggle status-failure-toggle" name="celery-command" value="rerun" type="submit">
-                        <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span> {% trans "Re-run" %}
-                    </button>
-                    <button class="btn btn-warning" name="celery-command" value="resubmit" type="submit">
-                        <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span> {% trans "Resubmit" %}
-                    </button>
-
-                    <button class="btn btn-danger" name="celery-command" value="delete" type="submit">
-                        <span class="glyphicon glyphicon-trash" aria-hidden="true"></span> {% trans "Delete" %}
-                    </button>
+            <h1>{{ job_info.job.job_name }} <small>{{ job_info.job.job_description }}</small></h1>
 
 
-                </form>
+            <div class="job-metadata">
+                • {% trans "Priority 1" %}
+                • {% blocktrans with job_submission_date=job_info.job.created_date|timesince job_user=job_info.job.user %}Submitted {{ job_submission_date }} ago by {{ job_user }}{% endblocktrans %}
+                • {% blocktrans with job_last_modified_date=job_info.last_modified|timesince %}Updated {{ job_last_modified_date }} ago{% endblocktrans %}
 
-        </div>
+                <span class="status-submitted-toggle label label-default"><span class="glyphicon glyphicon-hourglass"></span> {%  trans "Waiting" %}</span>
+                <span class="status-pending-toggle label label-default"><span class="glyphicon time"></span> {% trans "Queued" %}</span>
+                <span class="status-running-toggle label label-success"><span class="glyphicon glyphicon-refresh spinning"></span> {% trans "Executing" %}</span>
+                <span class="status-completed-toggle label label-success"><span class="glyphicon glyphicon-ok"></span> {% trans "Success" %}</span>
+                <span class="status-revoked-toggle label label-danger"><span class="glyphicon glyphicon-stop"></span> {% trans "Halted" %}</span>
+                <span class="status-failure-toggle label label-danger"><span class="glyphicon glyphicon-exclamation-sign"></span> {% trans "Failed" %}</span>
+                <span class="status-error-toggle label label-danger"><span class="glyphicon glyphicon-exclamation-sign"></span> {% trans "Error" %}</span>
+
+            </div>
         </div>
 
-      <h1>{{ job_info.job.job_name }} <small>{{ job_info.job.job_description }}</small></h1>
+        {% include "wooey/modals/resubmit_modal.html" %}
 
+        <div id="job-outputs" class="row">
 
-      <div class="job-metadata">
-          • {% trans "Priority 1" %}
-          • {% blocktrans with job_submission_date=job_info.job.created_date|timesince job_user=job_info.job.user %}Submitted {{ job_submission_date }} ago by {{ job_user }}{% endblocktrans %}
-          • {% blocktrans with job_last_modified_date=job_info.last_modified|timesince %}Updated {{ job_last_modified_date }} ago{% endblocktrans %}
-
-        <span class="status-submitted-toggle label label-default"><span class="glyphicon glyphicon-hourglass"></span> {%  trans "Waiting" %}</span>
-        <span class="status-pending-toggle label label-default"><span class="glyphicon time"></span> {% trans "Queued" %}</span>
-        <span class="status-running-toggle label label-success"><span class="glyphicon glyphicon-refresh spinning"></span> {% trans "Executing" %}</span>
-        <span class="status-completed-toggle label label-success"><span class="glyphicon glyphicon-ok"></span> {% trans "Success" %}</span>
-        <span class="status-revoked-toggle label label-danger"><span class="glyphicon glyphicon-stop"></span> {% trans "Halted" %}</span>
-        <span class="status-failure-toggle label label-danger"><span class="glyphicon glyphicon-exclamation-sign"></span> {% trans "Failed" %}</span>
-        <span class="status-error-toggle label label-danger"><span class="glyphicon glyphicon-exclamation-sign"></span> {% trans "Error" %}</span>
-
-      </div>
-    </div>
-
-    {% include "wooey/modals/resubmit_modal.html" %}
-
-    <div id="job-outputs" class="row">
-
-        {% for output_group, output_files in job_info.file_groups.items %}
+            {% for output_group, output_files in job_info.file_groups.items %}
                 {% for output_file_content in output_files %}
                     {%if output_group %}{% include 'wooey/preview/'|concat:output_group|concat:'.html' %}{% endif %}
                 {% endfor %}
-        {% endfor %}
+            {% endfor %}
 
-    </div>
+        </div>
 
-    <div class="row">
+        <div class="row">
 
         <!-- Output command and stderr, stdout in console-style view -->
-        <div class="col-sm-12 col-md-12">
-          <div class="thumbnail panel panel-{% if job_info.job.stderr %}danger{% else %}default{% endif %}">
-                <div class="panel-heading">
-                    <span class="glyphicon glyphicon-console"></span> {% trans "Console" %} <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-console" href="#collapse-console"></a>
-                </div>
-                <div id="collapse-console" class="panel-collapse collapse in">
-                    <div class="panel-body console">
+            <div class="col-sm-12 col-md-12">
+                <div class="thumbnail panel panel-{% if job_info.job.stderr %}danger{% else %}default{% endif %}">
+                    <div class="panel-heading">
+                        <span class="glyphicon glyphicon-console"></span> {% trans "Console" %} <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-console" href="#collapse-console"></a>
+                    </div>
+                    <div id="collapse-console" class="panel-collapse collapse in">
+                        <div class="panel-body console">
                       <pre id="job-command" class="console-body console-command">{{ job_info.job.command }}</pre>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
         <!-- List all files -->
-        <div class="col-sm-12 col-md-12">
-            <div class="thumbnail panel panel-default">
-                <div class="panel-heading"> <span class="glyphicon glyphicon-file"></span> {% trans "All Files" %} <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-files" href="#collapse-files"></a></div>
+            <div class="col-sm-12 col-md-12">
+                <div class="thumbnail panel panel-default">
+                    <div class="panel-heading"> <span class="glyphicon glyphicon-file"></span> {% trans "All Files" %} <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-files" href="#collapse-files"></a></div>
 
-                <div id="collapse-files" class="panel-collapse collapse in">
-                <div class="panel-body panel-nopad">
-                    <table id="job-files" class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>{% trans "Filename" %}</th>
-                                <th>{% trans "Parameter" %}</th>
-                                <th></th>
-                                <th></th>
-                                <th style="text-align:center;">{% trans "Size" %}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for file in job_info.all_files %}
-                            {% include 'wooey/jobs/results/table_row.html' with file=file only %}
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                    <div id="collapse-files" class="panel-collapse collapse in">
+                        <div class="panel-body panel-nopad">
+                            <table id="job-files" class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>{% trans "Filename" %}</th>
+                                        <th>{% trans "Parameter" %}</th>
+                                        <th></th>
+                                        <th></th>
+                                        <th style="text-align:center;">{% trans "Size" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for file in job_info.all_files %}
+                                        {% include 'wooey/jobs/results/table_row.html' with file=file only %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+
         </div>
 
-
-</div>
-
-{% endif %}
+    {% endif %}
 {% endblock center_content %}
 
 {% block inline_js %}
-{{ block.super }}
-{% if not job_error %}
-    <script  type="text/javascript">
+    {{ block.super }}
+    {% if not job_error %}
+        <script  type="text/javascript">
 
-        $(document).ready(function(){
+            $(document).ready(function(){
 
-            $('#wooey-job-submit button').click(function(event){
-                event.preventDefault();
-                var $form = $(this).closest('form');
-                var formData = $form.serializeArray();
-                formData.push({'name': 'celery-command', 'value': $(this).attr('value')});
-                $.ajax({
-                    url: $form.attr('action'),
-                    type: 'POST',
-                    data: formData,
-                    dataType: 'json',
-                    success: function(data){
-                        if (data.valid){
-                            if(data.redirect){
-                                window.location.replace(data.redirect);
+                $('#wooey-job-submit button').click(function(event){
+                    event.preventDefault();
+                    var $form = $(this).closest('form');
+                    var formData = $form.serializeArray();
+                    formData.push({'name': 'celery-command', 'value': $(this).attr('value')});
+                    $.ajax({
+                        url: $form.attr('action'),
+                        type: 'POST',
+                        data: formData,
+                        dataType: 'json',
+                        success: function(data){
+                            if (data.valid){
+                                if(data.redirect){
+                                    window.location.replace(data.redirect);
+                                }
+                                else{
+                                // the only way we end here is from a resubmission at the moment
+                                    $('#new-job-url').attr('href', data.extra.job_url);
+                                    $('#modal-resubmit').modal();
+                                }
                             }
                             else{
-                                // the only way we end here is from a resubmission at the moment
-                                $('#new-job-url').attr('href', data.extra.job_url);
-                                $('#modal-resubmit').modal();
+                                clearErrors($form.parent());
+                                processErrors($form.parent(), data.errors);
                             }
                         }
-                        else{
-                            clearErrors($form.parent());
-                            processErrors($form.parent(), data.errors);
-                        }
-                    }
+                    });
+                    return true;
                 });
-                return true;
-            });
 
-            function createConsoles() {
-                var $console = $('.panel-body.console');
-                {% if job_info.job.status|lower == 'completed' %}
-                    {% if job_info.job.stdout %}
+                function createConsoles() {
+                    var $console = $('.panel-body.console');
+                    {% if job_info.job.status|lower == 'completed' %}
+                        {% if job_info.job.stdout %}
+                            $console.append('<pre id="console-stdout" class="console-body console-stdout">{{ job_info.job.stdout|linebreaks|escapejs }}</pre>');
+                        {% endif %}
+                        {% if job_info.job.stderr %}
+                            $console.append('<pre id="console-stderr" class="console-body console-stderr">{{ job_info.job.stderr|linebreaks|escapejs }}</pre>');
+                        {% endif %}
+                    {% else %}
                         $console.append('<pre id="console-stdout" class="console-body console-stdout">{{ job_info.job.stdout|linebreaks|escapejs }}</pre>');
-                    {% endif %}
-                    {% if job_info.job.stderr %}
                         $console.append('<pre id="console-stderr" class="console-body console-stderr">{{ job_info.job.stderr|linebreaks|escapejs }}</pre>');
                     {% endif %}
-                {% else %}
-                    $console.append('<pre id="console-stdout" class="console-body console-stdout">{{ job_info.job.stdout|linebreaks|escapejs }}</pre>');
-                    $console.append('<pre id="console-stderr" class="console-body console-stderr">{{ job_info.job.stderr|linebreaks|escapejs }}</pre>');
-                {% endif %}
-            }
+                }
 
-            function jobRefresh() {
+                function jobRefresh() {
                 /* Update the job data, items, outputs etc. */
-                $.get("{% url "wooey:celery_results_json_html" job_info.job.id  %}", function(data){
-                    $('#page-content-wrapper').removeClass().addClass('status-' + data['status']);
-                    var $commandText = $('#job-command');
-                    var $stdoutConsole = $('#console-stdout');
-                    if($stdoutConsole.length == 0) {
-                        createConsoles();
-                        $stdoutConsole = $('#console-stdout');
-                    }
-                    if ($commandText.text().length == 0){
-                        $commandText.html(data['command']);
-                    }
-                    $stdoutConsole.text(data['stdout']);
-                    $('#console-stderr').text(data['stderr']);
+                    $.get("{% url "wooey:celery_results_json_html" job_info.job.id  %}", function(data){
+                        $('#page-content-wrapper').removeClass().addClass('status-' + data['status']);
+                        var $commandText = $('#job-command');
+                        var $stdoutConsole = $('#console-stdout');
+                        if($stdoutConsole.length == 0) {
+                            createConsoles();
+                            $stdoutConsole = $('#console-stdout');
+                        }
+                        if ($commandText.text().length == 0){
+                            $commandText.html(data['command']);
+                        }
+                        $stdoutConsole.text(data['stdout']);
+                        $('#console-stderr').text(data['stderr']);
 
-                    $('#job-outputs').html(data['preview_outputs_html']);
-                    $('#job-files > tbody').html(data['file_outputs_html']);
-                    $("a[data-favorite]").click(toggleFavorite);
+                        $('#job-outputs').html(data['preview_outputs_html']);
+                        $('#job-files > tbody').html(data['file_outputs_html']);
+                        $("a[data-favorite]").click(toggleFavorite);
 
-                    if(data['status'] === 'completed' || data['status'] === 'failure' || data['status'] === 'error'){
-                        window.clearInterval(refreshtimerID);
-                    }
+                        if(data['status'] === 'completed' || data['status'] === 'failure' || data['status'] === 'error'){
+                            window.clearInterval(refreshtimerID);
+                        }
 
-                }, "json");
-            }
+                    }, "json");
+                }
 
             /* Don't update if the job is complete */
-            if('{{ job_info.job.status|lower }}' != 'completed'){
+                if('{{ job_info.job.status|lower }}' != 'completed'){
                 /* Update the interface ~3 secs */
-                refreshtimerID = window.setInterval(jobRefresh, 3 * 1000);
-            }
-            else {
-                createConsoles();
-            }
+                    refreshtimerID = window.setInterval(jobRefresh, 3 * 1000);
+                }
+                else {
+                    createConsoles();
+                }
 
-        });
-    </script>
-{% endif %}
+            });
+        </script>
+    {% endif %}
 {% endblock %}

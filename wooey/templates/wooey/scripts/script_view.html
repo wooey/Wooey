@@ -3,7 +3,7 @@
 {% load wooey_tags %}
 
 {% block breadcrumbs %}
-    <li><a href="#">{{ script.script_name }}</a></li>
+  <li><a href="#">{{ script.script_name }}</a></li>
 {% endblock %}
 
 {% block left_sidebar %}{% endblock left_sidebar %}
@@ -11,29 +11,29 @@
 
 {% block center_content %}
 
-    <div class="page-header">
-        <h3 id="wooey-script-title">
-          {{ script.script_name }}
-          <small id="wooey-script-info">(
-            v{{ script_version }}.{{ script_iteration }},
-            Last modified on {{ script_created_date }}
-            {% if script_modified_by %}
-            by {{ script_modified_by }}
-            {% endif %}
-          )</small>
-        </h3>
-        <p id="wooey-script-description">{{ script.script_description }}</p>
-    </div>
+  <div class="page-header">
+    <h3 id="wooey-script-title">
+      {{ script.script_name }}
+      <small id="wooey-script-info">(
+        v{{ script_version }}.{{ script_iteration }},
+        Last modified on {{ script_created_date }}
+        {% if script_modified_by %}
+          by {{ script_modified_by }}
+        {% endif %}
+        )</small>
+    </h3>
+    <p id="wooey-script-description">{{ script.script_description }}</p>
+  </div>
 
   <div class="container-fluid">
 
     {% if script.documentation %}
-    <div class="panel panel-default">
-      <div class="panel-heading">{% trans "Documentation" %} <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-metadata" href="#collapse-metadata"></a></div>
-      <div id="collapse-metadata" class="panel-collapse collapse in">
-      <div class="panel-body markdown">{{ script.documentation }}</div>
+      <div class="panel panel-default">
+        <div class="panel-heading">{% trans "Documentation" %} <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-metadata" href="#collapse-metadata"></a></div>
+        <div id="collapse-metadata" class="panel-collapse collapse in">
+          <div class="panel-body markdown">{{ script.documentation }}</div>
+        </div>
       </div>
-    </div>
     {% endif %}
 
 
@@ -41,38 +41,38 @@
       {% csrf_token %}
       {{ form.wooey_form }}
 
-        <div class="panel panel-default argument-group-panel {% if form.parsers|length != 1 %}subparsers{% endif %}">
-          <div class="panel-heading">
-            {% if form.parsers|length != 1 %}
-              <div class="btn-group">
-                <button id="selected-subparser" type="button" class="btn btn-default">
-                  {% with parser_name=form.parsers.0.1 %}
-                    {% if not parser_name %}{% trans "Main Parser Parameters" %}{% else %}{{ parser_name|title }}{% endif %}
+      <div class="panel panel-default argument-group-panel {% if form.parsers|length != 1 %}subparsers{% endif %}">
+        <div class="panel-heading">
+          {% if form.parsers|length != 1 %}
+            <div class="btn-group">
+              <button id="selected-subparser" type="button" class="btn btn-default">
+                {% with parser_name=form.parsers.0.1 %}
+                  {% if not parser_name %}{% trans "Main Parser Parameters" %}{% else %}{{ parser_name|title }}{% endif %}
+                {% endwith %}
+              </button>
+              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                {% for parser_info, parser_groups in form.parsers.items %}
+                  {% with parser_pk=parser_info.0 parser_name=parser_info.1 %}
+                    <li class="{% if forloop.first %}active{% endif %}"><a data-toggle="tab" data-parser-pk="{{ parser_pk }}" href="#parsergroup-{{ parser_pk }}">{% if not parser_name %}{% trans "Main Parser Parameters" %}{% else %}{{ parser_name|title }}{% endif %}</a></li>
+                    {% if forloop.first %}
+                      <li role="separator" class="divider"></li>
+                    {% endif %}
                   {% endwith %}
-                </button>
-                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu">
-                  {% for parser_info, parser_groups in form.parsers.items %}
-                    {% with parser_pk=parser_info.0 parser_name=parser_info.1 %}
-                      <li class="{% if forloop.first %}active{% endif %}"><a data-toggle="tab" data-parser-pk="{{ parser_pk }}" href="#parsergroup-{{ parser_pk }}">{% if not parser_name %}{% trans "Main Parser Parameters" %}{% else %}{{ parser_name|title }}{% endif %}</a></li>
-                      {% if forloop.first %}
-                        <li role="separator" class="divider"></li>
-                      {% endif %}
-                    {% endwith %}
-                  {% endfor %}
-                </ul>
-              </div>
-            {% else %}
-              <div class="info">
-                {% trans "Settings" %}
-              </div>
-            {% endif %}
+                {% endfor %}
+              </ul>
+            </div>
+          {% else %}
+            <div class="info">
+              {% trans "Settings" %}
+            </div>
+          {% endif %}
 
 
-            <div class="tab-content">
-              {% for parser_info, parser_groups in form.parsers.items %}
+          <div class="tab-content">
+            {% for parser_info, parser_groups in form.parsers.items %}
               {% with parser_pk=parser_info.0 parser_name=parser_info.1 %}
                 <div id="parsergroup-{{ parser_pk }}" data-parser-pk="{{ parser_pk }}" class="tab-pane fade{% if forloop.first %} in active{% endif %}">
                   <div class="panel-nav-tabs">
@@ -82,22 +82,22 @@
                           <li class="{% if forloop.first %}active{% endif %}"><a data-toggle="tab" href="#optiongroup-{{ parser_pk }}-{{ group_slug }}">{{ group.group_name|title }}</a></li>
                         {% endwith %}
                       {% empty %}
-                          <li class="no-parser-spacer"></li>
+                        <li class="no-parser-spacer"></li>
                       {% endfor %}
                     </ul>
                   </div>
                 </div>
               {% endwith %}
-              {% endfor %}
-            </div>
-
-            <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-settings" href="#collapse-settings"></a>
-
+            {% endfor %}
           </div>
 
-          <div id="collapse-settings" class="panel-collapse collapse in panel-body">
-            <div class="tab-content">
-              {% for parser_info, parser_groups in form.parsers.items %}
+          <a class="icon icon-collapse" data-toggle="collapse" data-target="#collapse-settings" href="#collapse-settings"></a>
+
+        </div>
+
+        <div id="collapse-settings" class="panel-collapse collapse in panel-body">
+          <div class="tab-content">
+            {% for parser_info, parser_groups in form.parsers.items %}
               {% with parser_pk=parser_info.0 parser_name=parser_info.1 first_parser=forloop.first %}
                 {% for group in parser_groups %}
                   {% with group_slug=group.group_name|slugify first_group=forloop.first %}
@@ -106,11 +106,11 @@
                         <div class="form-group row">
                           {{ field.errors }}
                           {% if not field.is_hidden %}
-                          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                           {% endif %}
                           {{ field }}
                           {% if not field.is_hidden %}
-                          <p class="help-block">{{ field.help_text }}</p>
+                            <p class="help-block">{{ field.help_text }}</p>
                           {% endif %}
                         </div>
                       {% endfor %}
@@ -118,9 +118,9 @@
                   {% endwith %}
                 {% endfor %}
               {% endwith %}
-              {% endfor %}
-            </div>
+            {% endfor %}
           </div>
+        </div>
       </div>
 
       <div class="panel panel-default">
@@ -144,193 +144,193 @@
 
       <input name="wooey_clone_task_id" id="wooey_clone_task_id" type="hidden">
       <div class="pull-right">
-          <button id="wooey-form-submit" type="submit" class="btn btn-primary">{% trans "Submit" %}</button>
+        <button id="wooey-form-submit" type="submit" class="btn btn-primary">{% trans "Submit" %}</button>
       </div>
     </form>
-</div>
+  </div>
 
 {% endblock center_content %}
 
 {% block inline_js %}
-{{ block.super }}
-<script  type="text/javascript">
+  {{ block.super }}
+  <script  type="text/javascript">
 
 
-        $(document).ready(function(){
-            var filesUploaded = {};
+    $(document).ready(function(){
+      var filesUploaded = {};
 
-            var multi_selector = 'a[href=#wooey-multi-input]';
-            var wooey_remove_selector = 'a[href=#wooey-multi-input-remove]';
-            var all_multi_selectors = 'a[href=#wooey-multi-input], a[href=#wooey-multi-input-remove]';
-            var wooey_multiple_selector = '[data-wooey-multiple]';
-            var wooey_choice_limit = 'wooey-choice-limit';
+      var multi_selector = 'a[href=#wooey-multi-input]';
+      var wooey_remove_selector = 'a[href=#wooey-multi-input-remove]';
+      var all_multi_selectors = 'a[href=#wooey-multi-input], a[href=#wooey-multi-input-remove]';
+      var wooey_multiple_selector = '[data-wooey-multiple]';
+      var wooey_choice_limit = 'wooey-choice-limit';
 
-            var $wooey_parser_selector = $('a[href^=#parsergroup]');
-            var $wooey_parser = $('#id_wooey_parser');
-            var selected_subparser = 'selected-subparser';
+      var $wooey_parser_selector = $('a[href^=#parsergroup]');
+      var $wooey_parser = $('#id_wooey_parser');
+      var selected_subparser = 'selected-subparser';
 
-            $('[href^=#parsergroup-]').click(function(evt){
-              var $this = $(evt.target);
-              var $parser_group = $($this.attr('href'));
+      $('[href^=#parsergroup-]').click(function(evt){
+        var $this = $(evt.target);
+        var $parser_group = $($this.attr('href'));
               // Set the selected subparser text
-              $('#' + selected_subparser).text($this.text());
+        $('#' + selected_subparser).text($this.text());
 
               // We need to manually remove the 'active' class from the subparser dropdown menu on selection.
               // Not entirely sure why bootstrap isn't doing this for us.
-              $this.parent('li').siblings('li').removeClass('active');
+        $this.parent('li').siblings('li').removeClass('active');
 
               // We need to re-trigger whatever tab is currently selected for the given subparser so its
               // content populates the parameter selection div
-              var $previously_active_tab = $parser_group.find('li.active > a');
+        var $previously_active_tab = $parser_group.find('li.active > a');
               // We remove the active class so bootstrap will re-trigger the tab show event
-              $previously_active_tab.parent('li').removeClass('active');
-              $previously_active_tab.trigger('click');
+        $previously_active_tab.parent('li').removeClass('active');
+        $previously_active_tab.trigger('click');
 
-            });
+      });
 
-            var maxChoices = function($element){
-                $element.popover({
-                    content: "{% trans "No more choices may be added for this selection" %}",
-                    trigger: 'manual'
-                }).popover('show');
-                setTimeout(function(){$element.popover('destroy')}, 1000);
-            };
+      var maxChoices = function($element){
+        $element.popover({
+          content: "{% trans "No more choices may be added for this selection" %}",
+          trigger: 'manual'
+        }).popover('show');
+        setTimeout(function(){$element.popover('destroy')}, 1000);
+      };
 
-            var initializeWooeyScript = function(){
+      var initializeWooeyScript = function(){
                 // Add the - button so users can remove elements from cloned jobs
-                $(wooey_multiple_selector).parent().each(
-                    function(element, value){
-                        var $wooey_multiples = $(value).find(wooey_multiple_selector);
-                        if($wooey_multiples.length !== 1) {
-                            for (var i = 0; i < $wooey_multiples.length; i++) {
-                                var $remove_button = removeMultiInput();
-                                $remove_button.appendTo($wooey_multiples[i]);
-                            }
-                        }
-                    }
-                );
+        $(wooey_multiple_selector).parent().each(
+          function(element, value){
+            var $wooey_multiples = $(value).find(wooey_multiple_selector);
+            if($wooey_multiples.length !== 1) {
+              for (var i = 0; i < $wooey_multiples.length; i++) {
+                var $remove_button = removeMultiInput();
+                $remove_button.appendTo($wooey_multiples[i]);
+              }
+            }
+          }
+        );
 
-                var $multi_selector = $(multi_selector);
-                $multi_selector.click(function(event){
-                    event.preventDefault();
-                    var $this = $(this);
+        var $multi_selector = $(multi_selector);
+        $multi_selector.click(function(event){
+          event.preventDefault();
+          var $this = $(this);
 
-                    var $containers = $this.siblings(wooey_multiple_selector);
+          var $containers = $this.siblings(wooey_multiple_selector);
                     // check the choice limit, are we at it?
-                    var choice_limit = $this.data(wooey_choice_limit);
-                    if(choice_limit && ($containers.length === choice_limit)){
+          var choice_limit = $this.data(wooey_choice_limit);
+          if(choice_limit && ($containers.length === choice_limit)){
                         // give a notice
-                        maxChoices($this);
-                        return;
-                    }
+            maxChoices($this);
+            return;
+          }
 
-                    var $container = $containers.first();
+          var $container = $containers.first();
                     // if the container doesn't have a remove button since it's the first one, add one
-                    if($container.find(wooey_remove_selector).length === 0){
-                        removeMultiInput().appendTo($container);
-                    }
-                    var $new_target = $container.clone();
-                    $new_target.insertAfter($container);
+          if($container.find(wooey_remove_selector).length === 0){
+            removeMultiInput().appendTo($container);
+          }
+          var $new_target = $container.clone();
+          $new_target.insertAfter($container);
                     // remove any existing removal buttons from the container
-                    $new_target.find(all_multi_selectors).remove();
+          $new_target.find(all_multi_selectors).remove();
                     // add a way to remove the new container
-                    var $remove_button = removeMultiInput();
-                    $remove_button.appendTo($new_target);
-                });
+          var $remove_button = removeMultiInput();
+          $remove_button.appendTo($new_target);
+        });
 
                 // setup the choice limits for select fields
-                $('select[data-wooey-choice-limit] option').click(function(event){
-                    var $this = $(this);
-                    var $select = $this.parent();
-                    var choice_limit = $select.data(wooey_choice_limit);
-                    var selected = $select.find(':selected').length;
-                    if(choice_limit && (selected > choice_limit)){
-                        $this.prop("selected", false);
-                        maxChoices($select);
-                        return;
-                    }
-                });
+        $('select[data-wooey-choice-limit] option').click(function(event){
+          var $this = $(this);
+          var $select = $this.parent();
+          var choice_limit = $select.data(wooey_choice_limit);
+          var selected = $select.find(':selected').length;
+          if(choice_limit && (selected > choice_limit)){
+            $this.prop("selected", false);
+            maxChoices($select);
+            return;
+          }
+        });
 
-                var selectWooeyParser = function ($el) {
-                    $wooey_parser.val($el.data('parser-pk'));
-                };
+        var selectWooeyParser = function ($el) {
+          $wooey_parser.val($el.data('parser-pk'));
+        };
 
-                if ($wooey_parser_selector.length) {
-                    $wooey_parser_selector.click(function (evt) {
-                        selectWooeyParser($(this))
-                    });
-                } else {
-                    selectWooeyParser($('div[id^=parsergroup-]'))
-                }
+        if ($wooey_parser_selector.length) {
+          $wooey_parser_selector.click(function (evt) {
+            selectWooeyParser($(this))
+          });
+        } else {
+          selectWooeyParser($('div[id^=parsergroup-]'))
+        }
 
-                var $initial_parser = $("a[data-parser-pk=" + $wooey_parser.val() + "]");
-                if ($initial_parser.length) {
-                    $initial_parser.click();
-                }
-            };
+        var $initial_parser = $("a[data-parser-pk=" + $wooey_parser.val() + "]");
+        if ($initial_parser.length) {
+          $initial_parser.click();
+        }
+      };
 
 
-            var removeMultiInput = function(){
-                var $remove_input = $('<a href="#wooey-multi-input-remove"><span class="glyphicon glyphicon-minus"></span></a>');
-                $remove_input.click(function(event){
-                    event.preventDefault();
-                    var $multi_input = $(this).parent(wooey_multiple_selector);
+      var removeMultiInput = function(){
+        var $remove_input = $('<a href="#wooey-multi-input-remove"><span class="glyphicon glyphicon-minus"></span></a>');
+        $remove_input.click(function(event){
+          event.preventDefault();
+          var $multi_input = $(this).parent(wooey_multiple_selector);
 
                     // all other containers with multi-selections for this parameter
-                    var $others = $multi_input.siblings(wooey_multiple_selector);
+          var $others = $multi_input.siblings(wooey_multiple_selector);
                     // remove us
-                    $multi_input.remove();
+          $multi_input.remove();
                     // if there is only 1 container left, remove the button to remove it
-                    if($others.length == 1){
-                        $others.find(wooey_remove_selector).remove();
-                    }
-                });
-                return $remove_input;
-            };
+          if($others.length == 1){
+            $others.find(wooey_remove_selector).remove();
+          }
+        });
+        return $remove_input;
+      };
 
-            {% if job_info %}
+      {% if job_info %}
                 // Track file changes
-                $("input:file").change(function (){
-                   var fileName = $(this).val();
-                   filesUploaded[$(this).attr('name')] = fileName;
-                 });
-            {% endif %}
-            initializeWooeyScript();
+        $("input:file").change(function (){
+          var fileName = $(this).val();
+          filesUploaded[$(this).attr('name')] = fileName;
+        });
+      {% endif %}
+      initializeWooeyScript();
 
-            $('#wooey-form-submit').click(function(event){
-                event.preventDefault();
-                var $form = $(this).closest('form');
+      $('#wooey-form-submit').click(function(event){
+        event.preventDefault();
+        var $form = $(this).closest('form');
                 // if we are cloning a job, we need to specify the fields as the files because the file type input
                 // will be blank
-                var formData = new FormData($form[0]);
-                $('input[type="file"]').each(function(index, value){
-                    if(filesUploaded[$(this).attr('name')] === undefined){
+        var formData = new FormData($form[0]);
+        $('input[type="file"]').each(function(index, value){
+          if(filesUploaded[$(this).attr('name')] === undefined){
                         // the user has not selected a file to replace this one
-                        formData.append($(this).attr('name'), $(this).siblings('a').text());
-                    }
-                });
-                $.ajax({
-                    url: $form.attr('action'),
-                    type: 'POST',
-                    data: formData,
-                    dataType: 'json',
-                    async: false,
-                    cache: false,
-                    contentType: false,
-                    processData: false,
-                    success: function(data){
-                        clearErrors($form);
-                        if(data.valid){
-                            // clear form and indicate they can proceed
-                            $form[0].reset();
-                            location.href = data.redirect;
-                        }
-                        else{
-                            processErrors($form, data.errors)
-                        }
-                    }
-                });
-            });
+            formData.append($(this).attr('name'), $(this).siblings('a').text());
+          }
         });
-</script>
+        $.ajax({
+          url: $form.attr('action'),
+          type: 'POST',
+          data: formData,
+          dataType: 'json',
+          async: false,
+          cache: false,
+          contentType: false,
+          processData: false,
+          success: function(data){
+            clearErrors($form);
+            if(data.valid){
+                            // clear form and indicate they can proceed
+              $form[0].reset();
+              location.href = data.redirect;
+            }
+            else{
+              processErrors($form, data.errors)
+            }
+          }
+        });
+      });
+    });
+  </script>
 {% endblock inline_js %}

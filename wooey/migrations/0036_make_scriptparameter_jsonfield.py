@@ -9,13 +9,13 @@ import jsonfield.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0035_populate-jsonfield'),
+        ("wooey", "0035_populate-jsonfield"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='scriptparameter',
-            name='default',
+            model_name="scriptparameter",
+            name="default",
             field=jsonfield.fields.JSONCharField(blank=True, max_length=255, null=True),
         ),
     ]

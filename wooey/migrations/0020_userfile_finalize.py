@@ -7,16 +7,16 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0019_userfile_data'),
+        ("wooey", "0019_userfile_data"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='wooeyfile',
-            name='job',
+            model_name="wooeyfile",
+            name="job",
         ),
         migrations.RemoveField(
-            model_name='wooeyfile',
-            name='parameter',
+            model_name="wooeyfile",
+            name="parameter",
         ),
     ]

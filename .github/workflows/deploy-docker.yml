@@ -3,11 +3,10 @@ name: Deploy-To-Docker
 on:
   push:
     tags:
-    - 'v*'
+      - "v*"
 
 jobs:
   build:
-
     runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 4
@@ -15,16 +14,16 @@ jobs:
         os: [ubuntu-latest]
 
     steps:
-    - uses: actions/checkout@v1
-    - name: Build image
-      run: |
-        docker build -f docker/Dockerfile -t wooey/wooey:latest .
-        docker tag wooey/wooey:latest wooey/wooey:${GITHUB_REF#refs/tags/}
-    - name: Upload image to Dockerhub
-      env:
-        DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        docker login --username wooeyservice -p ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-        docker push wooey/wooey:latest
-        docker push wooey/wooey:${GITHUB_REF#refs/tags/}
+      - uses: actions/checkout@v1
+      - name: Build image
+        run: |
+          docker build -f docker/Dockerfile -t wooey/wooey:latest .
+          docker tag wooey/wooey:latest wooey/wooey:${GITHUB_REF#refs/tags/}
+      - name: Upload image to Dockerhub
+        env:
+          DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          docker login --username wooeyservice -p ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+          docker push wooey/wooey:latest
+          docker push wooey/wooey:${GITHUB_REF#refs/tags/}

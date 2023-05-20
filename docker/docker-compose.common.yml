@@ -1,4 +1,4 @@
-version: '2.1'
+version: "2.1"
 volumes:
   user_uploads:
   wooey_db:
@@ -12,7 +12,7 @@ services:
         BUILD_DIR:
         WOOEY_PROJECT:
     image: wooey:dev
-    volumes :
+    volumes:
       - ./user_settings.py:$BUILD_DIR/$WOOEY_PROJECT/$WOOEY_PROJECT/settings/user_settings.py
       - ./celeryconfig.py:$BUILD_DIR/$WOOEY_PROJECT/$WOOEY_PROJECT/settings/celeryconfig.py
       - user_uploads:$BUILD_DIR/$WOOEY_PROJECT/$WOOEY_PROJECT/user_uploads

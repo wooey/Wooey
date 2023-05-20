@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0032_rename-new-sv'),
+        ("wooey", "0032_rename-new-sv"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='scriptversion',
-            name='checksum',
+            model_name="scriptversion",
+            name="checksum",
             field=models.CharField(blank=True, max_length=40),
         ),
     ]

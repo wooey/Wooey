@@ -1,12 +1,12 @@
 import errno
 import os
 from .wooey_settings import *
+
 # This file is where the user can override and customize their installation of wooey
 
 # Wooey Apps - add additional apps here after the initial install (remember to follow everything by a comma)
 
-INSTALLED_APPS += (
-)
+INSTALLED_APPS += ()
 
 # Whether to allow anonymous job submissions, set False to disallow 'guest' job submissions
 WOOEY_ALLOW_ANONYMOUS = True
@@ -14,17 +14,17 @@ WOOEY_ALLOW_ANONYMOUS = True
 ## Celery related options
 
 INSTALLED_APPS += (
-    'django_celery_results',
-    'kombu.transport.filesystem',
+    "django_celery_results",
+    "kombu.transport.filesystem",
 )
 
 # This stores the results of tasks. For larger sites, a database may become slow and other solutions
 # such as redis should be considered.
-CELERY_RESULT_BACKEND = 'django-db'
+CELERY_RESULT_BACKEND = "django-db"
 
 # This should absolutely be changed to a non-filesystem based broker for production deployments!
 # http://docs.celeryproject.org/en/latest/getting-started/brokers/
-CELERY_BROKER_URL = 'filesystem://'
+CELERY_BROKER_URL = "filesystem://"
 
 # This function exists just to ensure the filesystem has the correct folders
 def ensure_path(path):
@@ -37,7 +37,8 @@ def ensure_path(path):
             raise
     return path
 
-broker_dir = ensure_path(os.path.join(BASE_DIR, '.broker'))
+
+broker_dir = ensure_path(os.path.join(BASE_DIR, ".broker"))
 CELERY_BROKER_TRANSPORT_OPTIONS = {
     "data_folder_in": ensure_path(os.path.join(broker_dir, "out")),
     "data_folder_out": ensure_path(os.path.join(broker_dir, "out")),
@@ -48,29 +49,29 @@ CELERY_BROKER_TRANSPORT_OPTIONS = {
 CELERY_TRACK_STARTED = True
 WOOEY_CELERY = True
 CELERY_SEND_EVENTS = True
-CELERY_IMPORTS = ('wooey.tasks',)
+CELERY_IMPORTS = ("wooey.tasks",)
 
 # A cache interface. This provides realtime updates for scriots and should definitely be changed
 # to use something like redis or memcached in production
-WOOEY_REALTIME_CACHE = 'default'
+WOOEY_REALTIME_CACHE = "default"
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'wooey_cache_table',
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "wooey_cache_table",
     }
 }
 
 # Things you most likely do not need to change
 
 # the directory for uploads (physical directory)
-MEDIA_ROOT = os.path.join(BASE_DIR, 'user_uploads')
+MEDIA_ROOT = os.path.join(BASE_DIR, "user_uploads")
 # the url mapping
-MEDIA_URL = '/uploads/'
+MEDIA_URL = "/uploads/"
 
 # the directory to store our webpage assets (images, javascript, etc.)
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 # the url mapping
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
 ## Here is a setup example for production servers
 
 ## A postgres database -- for multiple users a sqlite based database is asking for trouble
@@ -150,4 +151,4 @@ STATIC_URL = '/static/'
 # STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = 'wooey.wooeystorage.CachedS3BotoStorage'
 # WOOEY_EPHEMERAL_FILES = True
 
-AUTHENTICATION_BACKEND = 'django.contrib.auth.backends.ModelBackend'
+AUTHENTICATION_BACKEND = "django.contrib.auth.backends.ModelBackend"

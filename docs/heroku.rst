@@ -144,4 +144,3 @@ Check out your app
 ------------------
 
 Now, your app should be online. You can check it at <appname>.herokuapp.com.
-

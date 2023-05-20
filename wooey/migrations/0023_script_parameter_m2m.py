@@ -9,18 +9,25 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0022_add_collapse_arguments'),
+        ("wooey", "0022_add_collapse_arguments"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='scriptparameter',
-            name='script_versions',
-            field=models.ManyToManyField(related_name='scriptparameters', to='wooey.ScriptVersion'),
+            model_name="scriptparameter",
+            name="script_versions",
+            field=models.ManyToManyField(
+                related_name="scriptparameters", to="wooey.ScriptVersion"
+            ),
         ),
         migrations.AlterField(
-            model_name='scriptparameter',
-            name='script_version',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='scriptparameter', to='wooey.ScriptVersion'),
+            model_name="scriptparameter",
+            name="script_version",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="scriptparameter",
+                to="wooey.ScriptVersion",
+            ),
         ),
     ]

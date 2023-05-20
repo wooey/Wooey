@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0043_update_model_protection'),
+        ("wooey", "0043_update_model_protection"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='scriptparameter',
-            name='choices',
+            model_name="scriptparameter",
+            name="choices",
             field=models.TextField(blank=True, null=True),
         ),
     ]

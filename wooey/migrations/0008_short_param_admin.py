@@ -7,13 +7,13 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0007_script_documentation'),
+        ("wooey", "0007_script_documentation"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='scriptparameter',
-            name='short_param',
+            model_name="scriptparameter",
+            name="short_param",
             field=models.CharField(max_length=255, blank=True),
         ),
     ]

@@ -26,14 +26,14 @@ try:
 except ImportError:
     from queue import Empty, Queue  # python 3.x
 
-ON_POSIX = 'posix' in sys.builtin_module_names
+ON_POSIX = "posix" in sys.builtin_module_names
 
 celery_app = app.app_or_default()
 
 
 def enqueue_output(out, q):
-    for line in iter(out.readline, b''):
-        q.put(line.decode('utf-8'))
+    for line in iter(out.readline, b""):
+        q.put(line.decode("utf-8"))
     try:
         out.close()
     except IOError:
@@ -55,7 +55,7 @@ def update_from_output_queue(queue, out):
         except Empty:
             break
 
-    out += ''.join(map(str, lines))
+    out += "".join(map(str, lines))
     return out
 
 
@@ -63,6 +63,7 @@ def update_from_output_queue(queue, out):
 def configure_workers(*args, **kwargs):
     # this sets up Django on nodes started by the worker daemon.
     import django
+
     django.setup()
 
 
@@ -105,11 +106,12 @@ def get_latest_script(script_version):
 
 @celery_app.task(base=WooeyTask)
 def submit_script(**kwargs):
-    job_id = kwargs.pop('wooey_job')
-    resubmit = kwargs.pop('wooey_resubmit', False)
+    job_id = kwargs.pop("wooey_job")
+    resubmit = kwargs.pop("wooey_resubmit", False)
     from .models import WooeyJob, UserFile
+
     job = WooeyJob.objects.get(pk=job_id)
-    stdout, stderr = '', ''
+    stdout, stderr = "", ""
 
     try:
         command = utils.get_job_commands(job=job)
@@ -122,7 +124,7 @@ def submit_script(**kwargs):
         cwd = job.get_output_path()
 
         abscwd = os.path.abspath(os.path.join(settings.MEDIA_ROOT, cwd))
-        job.command = ' '.join(command)
+        job.command = " ".join(command)
         job.save_path = cwd
 
         utils.mkdirs(abscwd)
@@ -130,11 +132,16 @@ def submit_script(**kwargs):
         # executing jobs on a worker node.
         get_latest_script(job.script_version)
 
-
         job.status = WooeyJob.RUNNING
         job.save()
 
-        proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=abscwd, bufsize=0)
+        proc = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=abscwd,
+            bufsize=0,
+        )
 
         # We need to use subprocesses to capture the IO, otherwise they will block one another
         # i.e. a check against stderr will sit waiting on stderr before returning
@@ -173,22 +180,24 @@ def submit_script(**kwargs):
         def get_valid_file(cwd, name, ext):
             out = os.path.join(cwd, name)
             index = 0
-            while os.path.exists(six.u('{}.{}').format(out, ext)):
+            while os.path.exists(six.u("{}.{}").format(out, ext)):
                 index += 1
-                out = os.path.join(cwd, six.u('{}_{}').format(name, index))
-            return six.u('{}.{}').format(out, ext)
+                out = os.path.join(cwd, six.u("{}_{}").format(name, index))
+            return six.u("{}.{}").format(out, ext)
 
         # fetch the job again in case the database connection was lost during the job or something else changed.
         job = WooeyJob.objects.get(pk=job_id)
         # if there are files generated, make zip/tar files for download
         if len(os.listdir(abscwd)):
-            tar_out = get_valid_file(abscwd, get_valid_filename(job.job_name), 'tar.gz')
+            tar_out = get_valid_file(abscwd, get_valid_filename(job.job_name), "tar.gz")
             tar = tarfile.open(tar_out, "w:gz")
-            tar_name = os.path.splitext(os.path.splitext(os.path.split(tar_out)[1])[0])[0]
+            tar_name = os.path.splitext(os.path.splitext(os.path.split(tar_out)[1])[0])[
+                0
+            ]
             tar.add(abscwd, arcname=tar_name)
             tar.close()
 
-            zip_out = get_valid_file(abscwd, get_valid_filename(job.job_name), 'zip')
+            zip_out = get_valid_file(abscwd, get_valid_filename(job.job_name), "zip")
             zip = zipfile.ZipFile(zip_out, "w")
             arcname = os.path.splitext(os.path.split(zip_out)[1])[0]
             zip.write(abscwd, arcname=arcname)
@@ -196,9 +205,9 @@ def submit_script(**kwargs):
             for root, folders, filenames in os.walk(base_dir):
                 for filename in filenames:
                     path = os.path.join(root, filename)
-                    archive_name = path.replace(base_dir, '')
+                    archive_name = path.replace(base_dir, "")
                     if archive_name.startswith(os.path.sep):
-                        archive_name = archive_name.replace(os.path.sep, '', 1)
+                        archive_name = archive_name.replace(os.path.sep, "", 1)
                     archive_name = os.path.join(arcname, archive_name)
                     if path == tar_out:
                         continue
@@ -207,30 +216,30 @@ def submit_script(**kwargs):
                     try:
                         zip.write(path, arcname=archive_name)
                     except:
-                        stderr = '{}\n{}'.format(stderr, traceback.format_exc())
+                        stderr = "{}\n{}".format(stderr, traceback.format_exc())
             try:
                 zip.close()
             except:
-                stderr = '{}\n{}'.format(stderr, traceback.format_exc())
+                stderr = "{}\n{}".format(stderr, traceback.format_exc())
 
             # save all the files generated as well to our default storage for ephemeral storage setups
             if wooey_settings.WOOEY_EPHEMERAL_FILES:
                 for root, folders, files in os.walk(abscwd):
                     for filename in files:
                         filepath = os.path.join(root, filename)
-                        s3path = os.path.join(root[root.find(cwd):], filename)
+                        s3path = os.path.join(root[root.find(cwd) :], filename)
                         remote = utils.get_storage(local=False)
                         exists = remote.exists(s3path)
                         filesize = remote.size(s3path) if exists else 0
                         if not exists or (exists and filesize == 0):
                             if exists:
                                 remote.delete(s3path)
-                            remote.save(s3path, File(open(filepath, 'rb')))
+                            remote.save(s3path, File(open(filepath, "rb")))
         utils.create_job_fileinfo(job)
         job.status = WooeyJob.COMPLETED if return_code == 0 else WooeyJob.FAILED
         job.update_realtime(delete=True)
     except Exception:
-        stderr = '{}\n{}'.format(stderr, traceback.format_exc())
+        stderr = "{}\n{}".format(stderr, traceback.format_exc())
         job.status = WooeyJob.ERROR
 
     job.stdout = stdout
@@ -246,13 +255,17 @@ def cleanup_wooey_jobs(**kwargs):
     from .models import WooeyJob
 
     cleanup_settings = wooey_settings.WOOEY_JOB_EXPIRATION
-    anon_settings = cleanup_settings.get('anonymous')
+    anon_settings = cleanup_settings.get("anonymous")
     now = timezone.now()
     if anon_settings:
-        WooeyJob.objects.filter(user=None, created_date__lte=now-anon_settings).delete()
-    user_settings = cleanup_settings.get('user')
+        WooeyJob.objects.filter(
+            user=None, created_date__lte=now - anon_settings
+        ).delete()
+    user_settings = cleanup_settings.get("user")
     if user_settings:
-        WooeyJob.objects.filter(user__isnull=False, created_date__lte=now-user_settings).delete()
+        WooeyJob.objects.filter(
+            user__isnull=False, created_date__lte=now - user_settings
+        ).delete()
 
 
 @celery_app.task(base=WooeyTask)
@@ -273,7 +286,9 @@ def cleanup_dead_jobs():
     if not worker_info:
         return
 
-    active_tasks = {task['id'] for worker, tasks in six.iteritems(worker_info) for task in tasks}
+    active_tasks = {
+        task["id"] for worker, tasks in six.iteritems(worker_info) for task in tasks
+    }
 
     # find jobs that are marked as running but not present in celery's active tasks
     active_jobs = WooeyJob.objects.filter(status=WooeyJob.RUNNING)
@@ -285,13 +300,15 @@ def cleanup_dead_jobs():
     WooeyJob.objects.filter(pk__in=to_disable).update(status=WooeyJob.FAILED)
 
 
-celery_app.conf.beat_schedule.update({
-    'cleanup-old-jobs': {
-        'task': 'wooey.tasks.cleanup_wooey_jobs',
-        'schedule': crontab(hour=0, minute=0),  # cleanup at midnight each day
-    },
-    'cleanup-dead-jobs': {
-        'task': 'wooey.tasks.cleanup_dead_jobs',
-        'schedule': crontab(minute='*/10'),  # run every 6 minutes
+celery_app.conf.beat_schedule.update(
+    {
+        "cleanup-old-jobs": {
+            "task": "wooey.tasks.cleanup_wooey_jobs",
+            "schedule": crontab(hour=0, minute=0),  # cleanup at midnight each day
+        },
+        "cleanup-dead-jobs": {
+            "task": "wooey.tasks.cleanup_dead_jobs",
+            "schedule": crontab(minute="*/10"),  # run every 6 minutes
+        },
     }
-})
+)

@@ -7,18 +7,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0014_wooeyjob_uuid_finalise'),
+        ("wooey", "0014_wooeyjob_uuid_finalise"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='scriptparameter',
-            name='hidden',
+            model_name="scriptparameter",
+            name="hidden",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='scriptparametergroup',
-            name='hidden',
+            model_name="scriptparametergroup",
+            name="hidden",
             field=models.BooleanField(default=False),
         ),
     ]

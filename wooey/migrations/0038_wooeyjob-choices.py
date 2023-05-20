@@ -8,13 +8,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0037_repeat_migration_spg_sp_script_version'),
+        ("wooey", "0037_repeat_migration_spg_sp_script_version"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='wooeyjob',
-            name='status',
-            field=models.CharField(choices=[('completed', 'Completed'), ('deleted', 'Deleted'), ('FAILURE', 'Failed'), ('running', 'Running'), ('submitted', 'Submitted')], default='submitted', max_length=255),
+            model_name="wooeyjob",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("completed", "Completed"),
+                    ("deleted", "Deleted"),
+                    ("FAILURE", "Failed"),
+                    ("running", "Running"),
+                    ("submitted", "Submitted"),
+                ],
+                default="submitted",
+                max_length=255,
+            ),
         ),
     ]

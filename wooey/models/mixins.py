@@ -11,4 +11,3 @@ class UpdateScriptsMixin(object):
 class WooeyPy2Mixin(object):
     def __unicode__(self):
         return unicode(self.__str__())
-

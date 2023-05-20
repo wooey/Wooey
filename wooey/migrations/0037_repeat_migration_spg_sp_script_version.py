@@ -8,20 +8,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0036_make_scriptparameter_jsonfield'),
+        ("wooey", "0036_make_scriptparameter_jsonfield"),
     ]
 
     operations = [
         # These migrations were covered by 0029->0032 but for some reason Django wants to
         # repeat them. This should be a pointless change.
         migrations.AlterField(
-            model_name='scriptparametergroup',
-            name='script_version',
-            field=models.ManyToManyField(to='wooey.ScriptVersion'),
+            model_name="scriptparametergroup",
+            name="script_version",
+            field=models.ManyToManyField(to="wooey.ScriptVersion"),
         ),
         migrations.AlterField(
-            model_name='scriptparser',
-            name='script_version',
-            field=models.ManyToManyField(to='wooey.ScriptVersion'),
+            model_name="scriptparser",
+            name="script_version",
+            field=models.ManyToManyField(to="wooey.ScriptVersion"),
         ),
     ]

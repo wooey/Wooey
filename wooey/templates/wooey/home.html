@@ -5,7 +5,7 @@
 {% block extra_style %}
     {{ block.super }}
     .wooey-script-dropdown {
-        display: inline-block;
+    display: inline-block;
     }
 
 {% endblock extra_style %}
@@ -14,8 +14,8 @@
     {{ block.super }}
     {% if not request.user.is_authenticated %}
         <div class="jumbotron frontpage">
-          <h1 class="wooey">{% get_wooey_setting "WOOEY_SITE_NAME" %}</h1>
-          <p>{% get_wooey_setting "WOOEY_SITE_TAG" %}</p>
+            <h1 class="wooey">{% get_wooey_setting "WOOEY_SITE_NAME" %}</h1>
+            <p>{% get_wooey_setting "WOOEY_SITE_TAG" %}</p>
         </div>
     {% endif %}
 {% endblock %}
@@ -28,51 +28,51 @@
     <div class="row">
         <div class="col-sm-12 col-md-12">
             <form>
-             <div class="form-group">
-                <input type="text" class="form-control" id="searchform" placeholder="{% trans "Search for scripts..." %}">
-              </div>
+                <div class="form-group">
+                    <input type="text" class="form-control" id="searchform" placeholder="{% trans "Search for scripts..." %}">
+                </div>
             </form>
         </div>
     </div>
 
     <div class="row" id="script-list">
 
-    {% for script in scripts %}
-        {% include 'wooey/scripts/script_panel.html' %}
-    {% endfor %}
+        {% for script in scripts %}
+            {% include 'wooey/scripts/script_panel.html' %}
+        {% endfor %}
 
-</div>
+    </div>
 
 
 
 {% endblock center_content %}
 
 {% block inline_js %}
-{{ block.super }}
-<script  type="text/javascript">
+    {{ block.super }}
+    <script  type="text/javascript">
 
-    $(document).ready(function(){
-        $("#searchform").bindWithDelay("keyup", function(event){
-            var query = $('#searchform').val();
-            $.ajax({
-                url: '{% url 'wooey:wooey_search_script_jsonhtml' %}',
-                method: 'GET',
-                data: {q: query},
-                dataType: 'json',
-                async: true,
-                cache: false,
-                contentType: false,
-                success: function(data){
-                    $("#script-list").empty()
-                    for (var i in data['results']) {
-                        $("#script-list").append(data['results'][i]);
+        $(document).ready(function(){
+            $("#searchform").bindWithDelay("keyup", function(event){
+                var query = $('#searchform').val();
+                $.ajax({
+                    url: '{% url 'wooey:wooey_search_script_jsonhtml' %}',
+                    method: 'GET',
+                    data: {q: query},
+                    dataType: 'json',
+                    async: true,
+                    cache: false,
+                    contentType: false,
+                    success: function(data){
+                        $("#script-list").empty()
+                        for (var i in data['results']) {
+                            $("#script-list").append(data['results'][i]);
+                        }
+                        $("a[data-favorite]").click(toggleFavorite);
                     }
-                    $("a[data-favorite]").click(toggleFavorite);
-                }
-            });
+                });
 
 
-        }, 100);
-    });
-</script>
+            }, 100);
+        });
+    </script>
 {% endblock inline_js %}

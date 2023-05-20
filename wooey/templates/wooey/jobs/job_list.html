@@ -9,59 +9,59 @@
         <p id="wooey-job-list-description">{% blocktrans with obj_len=object_list|length %}{{ obj_len }} job(s){% endblocktrans %}</p>
     </div>
 
-  <div class="row">
-    <div class="col-sm-12 col-md-12">
-<div class="panel panel-default">
-  <div class="panel-body panel-table">
-      <table class="table table-striped table-hover table-responsive table-panel" id="wooey-job-table-user">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>{% trans "Job" %}</th>
-                <th>{% trans "Script" %}</th>
-                <th>{% trans "Submitted" %}</th>
-                <th>{% trans "Status" %}</th>
+    <div class="row">
+        <div class="col-sm-12 col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-body panel-table">
+                    <table class="table table-striped table-hover table-responsive table-panel" id="wooey-job-table-user">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>{% trans "Job" %}</th>
+                                <th>{% trans "Script" %}</th>
+                                <th>{% trans "Submitted" %}</th>
+                                <th>{% trans "Status" %}</th>
 
-            </tr>
-        </thead>
-        <tbody>
-          {% for job in object_list %}
-            <tr>
-                <td>{{ job.id }}</td>
-                <td><a href="{% url 'wooey:celery_results' job_id=job.pk %}">{{ job.job_name }}</a></td>
-                <td>{{ job.script_version.script.script_name }}</td>
-                <td>{{ job.created_date|timesince }} </td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for job in object_list %}
+                                <tr>
+                                    <td>{{ job.id }}</td>
+                                    <td><a href="{% url 'wooey:celery_results' job_id=job.pk %}">{{ job.job_name }}</a></td>
+                                    <td>{{ job.script_version.script.script_name }}</td>
+                                    <td>{{ job.created_date|timesince }} </td>
 
-                <td>
+                                    <td>
 
-                {% if job.status == 'completed' %}
-                <span class="label label-success"><span class="glyphicon glyphicon-ok"></span> {% trans "Success" %}</span>
-                {% elif job.status == 'running' %}
-                <span class="label label-success"><span class="glyphicon glyphicon-refresh spinning"></span> {% trans "Executing" %}</span>
-                {% elif job.status == 'pending' %}
-                <span class="label label-default"><span class="glyphicon time"></span> {% trans "Queued" %}</span>
-                {% elif job.status == 'revoked' %}
-                <span class="label label-danger"><span class="glyphicon glyphicon-stop"></span> {% trans "Halted" %}</span>
-                {% elif job.status == 'FAILURE' %}
-                <span class="label label-danger"><span class="glyphicon glyphicon-exclamation-sign"></span> {% trans "Failure" %}</span>
-                {% elif job.status == 'submitted' %}
-                <span class="label label-default"><span class="glyphicon glyphicon-hourglass"></span> {% trans "Waiting" %}</span>
-                {% else %}
-                <span class="label label-danger"><span class="glyphicon glyphicon-question-sign"></span> {{ job.status|title }}</span>
-                {% endif %}
+                                        {% if job.status == 'completed' %}
+                                            <span class="label label-success"><span class="glyphicon glyphicon-ok"></span> {% trans "Success" %}</span>
+                                        {% elif job.status == 'running' %}
+                                            <span class="label label-success"><span class="glyphicon glyphicon-refresh spinning"></span> {% trans "Executing" %}</span>
+                                        {% elif job.status == 'pending' %}
+                                            <span class="label label-default"><span class="glyphicon time"></span> {% trans "Queued" %}</span>
+                                        {% elif job.status == 'revoked' %}
+                                            <span class="label label-danger"><span class="glyphicon glyphicon-stop"></span> {% trans "Halted" %}</span>
+                                        {% elif job.status == 'FAILURE' %}
+                                            <span class="label label-danger"><span class="glyphicon glyphicon-exclamation-sign"></span> {% trans "Failure" %}</span>
+                                        {% elif job.status == 'submitted' %}
+                                            <span class="label label-default"><span class="glyphicon glyphicon-hourglass"></span> {% trans "Waiting" %}</span>
+                                        {% else %}
+                                            <span class="label label-danger"><span class="glyphicon glyphicon-question-sign"></span> {{ job.status|title }}</span>
+                                        {% endif %}
 
-                </td>
+                                    </td>
 
-            </tr>
-          {% endfor %}
-        </tbody>
-    </table>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
 
-  </div>
-  </div>
+                </div>
+            </div>
 
-          </div>
-  </div>
+        </div>
+    </div>
 
 
 {% endblock %}
@@ -69,11 +69,11 @@
 {% block inline_js %}
     {{ block.super }}
     <script  type="text/javascript">
-    $(document).ready(function(){
-        var $jobtable_user = $('#wooey-job-table-user');
-        var wooey_dt_user = $jobtable_user.dataTable({
-            "order": [[ 0, "desc" ]],
+        $(document).ready(function(){
+            var $jobtable_user = $('#wooey-job-table-user');
+            var wooey_dt_user = $jobtable_user.dataTable({
+                "order": [[ 0, "desc" ]],
+            });
         });
-    });
     </script>
 {% endblock inline_js %}

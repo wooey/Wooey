@@ -7,12 +7,12 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0001_initial'),
+        ("wooey", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='scriptparameter',
-            name='output_path',
+            model_name="scriptparameter",
+            name="output_path",
         ),
     ]

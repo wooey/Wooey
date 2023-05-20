@@ -8,8 +8,8 @@ except ImportError:
 
 
 class WooeyConfig(AppConfig):
-    name = 'wooey'
-    verbose_name = 'Wooey'
+    name = "wooey"
+    verbose_name = "Wooey"
 
     def ready(self):
         from . import signals

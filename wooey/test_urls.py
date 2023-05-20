@@ -9,9 +9,9 @@ settings.DEBUG = True
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('wooey.urls')),
-    path('', include('django.contrib.auth.urls')),
+    path("admin/", admin.site.urls),
+    path("", include("wooey.urls")),
+    path("", include("django.contrib.auth.urls")),
 ]
 
 urlpatterns += static(test_settings.MEDIA_URL, document_root=test_settings.MEDIA_ROOT)

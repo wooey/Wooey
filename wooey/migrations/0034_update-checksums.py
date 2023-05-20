@@ -6,8 +6,9 @@ from django.db import migrations
 
 
 def update_checksums(apps, schema_editor):
-    ScriptVersion = apps.get_model('wooey', 'ScriptVersion')
+    ScriptVersion = apps.get_model("wooey", "ScriptVersion")
     from wooey.backend import utils
+
     for obj in ScriptVersion.objects.all():
         checksum = utils.get_checksum(buff=obj.script_path.read())
         obj.checksum = checksum
@@ -17,9 +18,7 @@ def update_checksums(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0033_add-script-checksum'),
+        ("wooey", "0033_add-script-checksum"),
     ]
 
-    operations = [
-        migrations.RunPython(update_checksums)
-    ]
+    operations = [migrations.RunPython(update_checksums)]

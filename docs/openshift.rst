@@ -178,4 +178,3 @@ Check out your app
 ------------------
 
 Now, your app should be online.
-

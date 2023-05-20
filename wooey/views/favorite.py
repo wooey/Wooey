@@ -26,7 +26,11 @@ def toggle_favorite(request):
         return HttpResponseForbidden()
 
     try:
-        app, model, pk = request.POST['app'], request.POST['model'], int(request.POST['pk'])
+        app, model, pk = (
+            request.POST["app"],
+            request.POST["model"],
+            int(request.POST["pk"]),
+        )
 
     except ValueError:
         return HttpResponseBadRequest()
@@ -39,7 +43,9 @@ def toggle_favorite(request):
         return HttpResponseNotFound()
 
     try:
-        fave = Favorite.objects.get(content_type=ctype, object_id=obj.id, user=request.user)
+        fave = Favorite.objects.get(
+            content_type=ctype, object_id=obj.id, user=request.user
+        )
 
     except Favorite.DoesNotExist:
         # Does not exist, so create it
@@ -53,12 +59,16 @@ def toggle_favorite(request):
         is_favorite = False
 
     # Return the current total number for UI updates
-    favorites_count = Favorite.objects.filter(content_type=ctype, user=request.user).count()
+    favorites_count = Favorite.objects.filter(
+        content_type=ctype, user=request.user
+    ).count()
 
-    return JsonResponse({
-        'app': app,
-        'model': model,
-        'pk': pk,
-        'is_favorite': is_favorite,
-        'count': favorites_count,
-    })
+    return JsonResponse(
+        {
+            "app": app,
+            "model": model,
+            "pk": pk,
+            "is_favorite": is_favorite,
+            "count": favorites_count,
+        }
+    )

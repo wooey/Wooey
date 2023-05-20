@@ -8,18 +8,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0028_make-subparser-nonnullable'),
+        ("wooey", "0028_make-subparser-nonnullable"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='scriptparametergroup',
-            name='new_script_version',
-            field=models.ManyToManyField(related_name='new_script_version_group', to='wooey.ScriptVersion'),
+            model_name="scriptparametergroup",
+            name="new_script_version",
+            field=models.ManyToManyField(
+                related_name="new_script_version_group", to="wooey.ScriptVersion"
+            ),
         ),
         migrations.AddField(
-            model_name='scriptparser',
-            name='new_script_version',
-            field=models.ManyToManyField(related_name='new_script_version', to='wooey.ScriptVersion'),
+            model_name="scriptparser",
+            name="new_script_version",
+            field=models.ManyToManyField(
+                related_name="new_script_version", to="wooey.ScriptVersion"
+            ),
         ),
     ]

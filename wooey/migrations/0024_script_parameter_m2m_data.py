@@ -6,7 +6,7 @@ from django.db import migrations
 
 
 def update_script_versions(apps, schema_editor):
-    ScriptParameter = apps.get_model('wooey', 'ScriptParameter')
+    ScriptParameter = apps.get_model("wooey", "ScriptParameter")
 
     for script_parameter in ScriptParameter.objects.all():
         script_parameter.script_versions.add(script_parameter.script_version)
@@ -15,7 +15,7 @@ def update_script_versions(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wooey', '0023_script_parameter_m2m'),
+        ("wooey", "0023_script_parameter_m2m"),
     ]
 
     operations = [

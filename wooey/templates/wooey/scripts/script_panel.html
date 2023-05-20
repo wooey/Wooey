@@ -2,47 +2,47 @@
 {% load wooey_tags %}
 {% get_wooey_setting "WOOEY_SHOW_LOCKED_SCRIPTS" as wooey_show_locked_scripts %}
 {% if script.is_active or wooey_show_locked_scripts %}
-<div class="col-sm-6 col-md-4">
+    <div class="col-sm-6 col-md-4">
 
-    {% with group_show=script.script_group|valid_user:request.user %}
-        {% if group_show != 'hide' %}
+        {% with group_show=script.script_group|valid_user:request.user %}
+            {% if group_show != 'hide' %}
 
-        <div class="panel {% if script.id in favorite_script_ids %}panel-warning is-favorite{% else %}panel-default{% endif %} thumbnail wooey_script_thumbnail {% if not script.is_active or group_show == 'disabled' %}wooey_script_disabled {% endif %}"  id="favorite-{{ script|app_model_id }}">
-            <div class="panel-heading">
+                <div class="panel {% if script.id in favorite_script_ids %}panel-warning is-favorite{% else %}panel-default{% endif %} thumbnail wooey_script_thumbnail {% if not script.is_active or group_show == 'disabled' %}wooey_script_disabled {% endif %}"  id="favorite-{{ script|app_model_id }}">
+                    <div class="panel-heading">
 
-                {% if script.is_active and group_show == True %}
-                    <a href="{% url 'wooey:wooey_script' slug=script.slug %}">{{ script.script_name }}</a>
-                    {% with previous_versions=script.get_previous_versions %}
-                        {% if previous_versions %}
-                            <div class="dropdown wooey-script-dropdown">
-                                <a href="#" class="dropdown dropdown-toggle" id="{{ script.id }}_scriptDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-                                    <span class="caret"></span>
-                                </a>
-                                <ul class="dropdown-menu">
-                                    {% regroup previous_versions by script_version as script_version_list %}
-                                    {% for past_script_versions in script_version_list %}
-                                        <li class="dropdown-header">{% blocktrans with version=past_script_versions.grouper %}Version {{ version }}{% endblocktrans %}</li>
-                                        {% for past_script in past_script_versions.list %}
-                                            <li><a href="{{ past_script.get_version_url }}">
-                                                {% blocktrans with iteration=past_script.script_iteration %}Iteration {{ iteration }}{% endblocktrans %}</a>
-                                            </li>
-                                        {% endfor %}
-                                    {% endfor %}
-                                </ul>
-                            </div>
+                        {% if script.is_active and group_show == True %}
+                            <a href="{% url 'wooey:wooey_script' slug=script.slug %}">{{ script.script_name }}</a>
+                            {% with previous_versions=script.get_previous_versions %}
+                                {% if previous_versions %}
+                                    <div class="dropdown wooey-script-dropdown">
+                                        <a href="#" class="dropdown dropdown-toggle" id="{{ script.id }}_scriptDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                                            <span class="caret"></span>
+                                        </a>
+                                        <ul class="dropdown-menu">
+                                            {% regroup previous_versions by script_version as script_version_list %}
+                                            {% for past_script_versions in script_version_list %}
+                                                <li class="dropdown-header">{% blocktrans with version=past_script_versions.grouper %}Version {{ version }}{% endblocktrans %}</li>
+                                                {% for past_script in past_script_versions.list %}
+                                                    <li><a href="{{ past_script.get_version_url }}">
+                                                        {% blocktrans with iteration=past_script.script_iteration %}Iteration {{ iteration }}{% endblocktrans %}</a>
+                                                    </li>
+                                                {% endfor %}
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                        {% else %}
+                            {{ script.script_name }}
+                            <a class="icon icon-locked" href="#" title="This script is unavailable."></a>
                         {% endif %}
-                    {% endwith %}
-                {% else %}
-                    {{ script.script_name }}
-                    <a class="icon icon-locked" href="#" title="This script is unavailable."></a>
-                {% endif %}
-                <a class="icon icon-favorite requires-login" data-favorite="{{ script|app_model_id }}"  href="#"></a>
-            </div>
-        <div class="panel-body">{{ script.script_description }}</div>
-        <div class="wooey-script-group">{{ script.script_group.group_name }}</div>
+                        <a class="icon icon-favorite requires-login" data-favorite="{{ script|app_model_id }}"  href="#"></a>
+                    </div>
+                    <div class="panel-body">{{ script.script_description }}</div>
+                    <div class="wooey-script-group">{{ script.script_group.group_name }}</div>
 
-        </div>
-        {% endif %}
-    {% endwith %}
-</div>
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
 {% endif %}

@@ -2,10 +2,10 @@ Developer Setup
 ===============
 
 Dev Environment
-===============
+---------------
 
 Docker
-======
+^^^^^^
 
 The `docker` folder contains the Docker setup. Wooey can be built and run by simply
 running
@@ -29,7 +29,7 @@ Several convenience scripts exist for common scenarios:
 * test -- run all unit tests.
 
 System
-======
+^^^^^^
 
 For developers not using Docker, dependenices can be installed via
 
@@ -38,6 +38,6 @@ For developers not using Docker, dependenices can be installed via
     pip install .[dev]
 
 Style
-=====
+-----
 
 `Pre-commit <https://pre-commit.com/>`_ is used to standardize the tools used for linting and code formatting.

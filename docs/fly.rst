@@ -2,12 +2,13 @@ Configuration on Fly.io
 =======================
 
 How to get Wooey up and running on fly.io. This assumes the `wooify` command was run with `app` as the project's name and the
-fly.io project is named `wooey-test`
+fly.io project is named `wooey-test`.
 
 Directory Layout
 ----------------
 
 ::
+
     app
     ├── app
     │   ├── application files
@@ -23,6 +24,7 @@ Here is an example fly.toml file. One arbitary choice is the webserver used. Her
 gunicorn and uwsgi.
 
 ::
+
     app = "wooey-test"
     kill_signal = "SIGINT"
     kill_timeout = 5
@@ -76,6 +78,7 @@ Dockerfile
 Here is an example Dockerfile
 
 ::
+
     FROM python:3.10.9-slim-buster
 
     ENV VIRTUAL_ENV=/opt/venv
@@ -100,6 +103,7 @@ Requirements
 Here is an example requirements.txt
 
 ::
+
     Django~=3.2.14
     wooey==0.13.2
     django-celery-results~=1.0

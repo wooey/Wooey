@@ -5,7 +5,7 @@ Dev Environment
 ---------------
 
 Docker
-^^^^^^
+~~~~~~
 
 The `docker` folder contains the Docker setup. Wooey can be built and run by simply
 running
@@ -29,7 +29,7 @@ Several convenience scripts exist for common scenarios:
 * test -- run all unit tests.
 
 System
-^^^^^^
+~~~~~~
 
 For developers not using Docker, dependenices can be installed via
 

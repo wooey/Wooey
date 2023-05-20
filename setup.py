@@ -23,7 +23,6 @@ setup(
         "clinto>=0.3.0",
         'Django>=3,<4 ;python_version>="3.7"',
         "django-autoslug",
-        "django-celery-results",
         "django-storages",
         'eventlet>=0.22.1 ;platform_system=="Windows"',
         "importlib-metadata<5.0",

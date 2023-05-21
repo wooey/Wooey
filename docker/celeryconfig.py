@@ -1,4 +1,3 @@
-result_backend = "django-db"
 broker_url = "amqp://guest@rabbit"
 track_started = True
 send_events = True

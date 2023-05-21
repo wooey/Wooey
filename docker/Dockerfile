@@ -1,6 +1,12 @@
 FROM python:3.7
 
-RUN useradd -u 1000 wooey
+ARG HOST_USER=1000
+ENV HOST_USER=${HOST_USER}
+ARG HOST_GROUP=1000
+ENV HOST_GROUP=${HOST_GROUP}
+
+RUN addgroup --gid ${HOST_GROUP} wooey
+RUN useradd -u ${HOST_USER} -g ${HOST_GROUP} wooey
 
 ARG BUILD_DIR=/wooey_build
 ENV BUILD_DIR=${BUILD_DIR}

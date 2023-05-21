@@ -8,6 +8,8 @@ services:
       - ../wooey:$BUILD_DIR/wooey
       # Mount over the clinto parser install if desired.
       # - ../../clinto/clinto:/usr/local/lib/python3.6/site-packages/clinto
+      # if you want to run docker commands from within the container
+      # - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - 8080:8080
 

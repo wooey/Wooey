@@ -76,3 +76,15 @@ Deleting Scripts
 
 Scripts may be deleted from the admin interface. When deleting a script,
 all related objects, such as previously run jobs, will also be deleted.
+
+Other Script Runners
+--------------------
+
+There have been several requests for more advanced script setups, such as executing R code or docker.
+For now, there is no official integrations with these languages, but it is possible to create a simple
+wrapper script that calls docker or another programming language.
+
+.. toctree::
+   :maxdepth: 1
+
+   docker_scripts

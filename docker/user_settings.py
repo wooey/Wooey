@@ -5,10 +5,8 @@ from .wooey_settings import *
 WOOEY_ALLOW_ANONYMOUS = True
 
 ## Celery related options
-INSTALLED_APPS += ("django_celery_results",)
 
 WOOEY_CELERY = True
-CELERY_RESULT_BACKEND = "django-db"
 CELERY_BROKER_URL = "amqp://guest@rabbit"
 CELERY_TRACK_STARTED = True
 CELERY_SEND_EVENTS = True

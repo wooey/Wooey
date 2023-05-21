@@ -13,14 +13,7 @@ WOOEY_ALLOW_ANONYMOUS = True
 
 ## Celery related options
 
-INSTALLED_APPS += (
-    "django_celery_results",
-    "kombu.transport.filesystem",
-)
-
-# This stores the results of tasks. For larger sites, a database may become slow and other solutions
-# such as redis should be considered.
-CELERY_RESULT_BACKEND = "django-db"
+INSTALLED_APPS += ("kombu.transport.filesystem",)
 
 # This should absolutely be changed to a non-filesystem based broker for production deployments!
 # http://docs.celeryproject.org/en/latest/getting-started/brokers/

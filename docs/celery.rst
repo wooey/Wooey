@@ -39,4 +39,4 @@ For heroku, you will want to add AMQP to your app through the dashboard, which s
 Fly.dev Setup
 -------------
 
-For fly.dev, we use the `Cloudamqp service <https://www.cloudamqp.com/>`_`, whose free tier is sufficient for our needs.
+For fly.dev, we use the `Cloudamqp service <https://www.cloudamqp.com/>`_, whose free tier is sufficient for our needs.

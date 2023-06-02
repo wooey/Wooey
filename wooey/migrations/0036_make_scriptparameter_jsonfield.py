@@ -7,6 +7,7 @@ from django.db import migrations, models
 
 try:
     from jsonfield.fields import JSONCharField as JSONField
+
     JSONField = partial(JSONField, max_length=255)
 except ImportError:
     JSONField = models.JSONField

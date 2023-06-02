@@ -17,7 +17,7 @@ INSTALLED_APPS += ("kombu.transport.filesystem",)
 
 # This should absolutely be changed to a non-filesystem based broker for production deployments!
 # http://docs.celeryproject.org/en/latest/getting-started/brokers/
-CELERY_BROKER_URL = "filesystem://"
+broker_url = "filesystem://"
 
 # This function exists just to ensure the filesystem has the correct folders
 def ensure_path(path):
@@ -32,17 +32,17 @@ def ensure_path(path):
 
 
 broker_dir = ensure_path(os.path.join(BASE_DIR, ".broker"))
-CELERY_BROKER_TRANSPORT_OPTIONS = {
+broker_transport_options = {
     "data_folder_in": ensure_path(os.path.join(broker_dir, "out")),
     "data_folder_out": ensure_path(os.path.join(broker_dir, "out")),
     "data_folder_processed": ensure_path(os.path.join(broker_dir, "processed")),
 }
 
 
-CELERY_TRACK_STARTED = True
+task_track_started = True
 WOOEY_CELERY = True
-CELERY_SEND_EVENTS = True
-CELERY_IMPORTS = ("wooey.tasks",)
+worker_send_task_events = True
+imports = ("wooey.tasks",)
 
 # A cache interface. This provides realtime updates for scriots and should definitely be changed
 # to use something like redis or memcached in production

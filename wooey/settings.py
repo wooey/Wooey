@@ -16,7 +16,7 @@ WOOEY_REGISTER_URL = get("WOOEY_REGISTER_URL", "/accounts/register/")
 # Celery and job queue settings
 WOOEY_CELERY = get("WOOEY_CELERY", True)
 WOOEY_CELERY_TASKS = get("WOOEY_CELERY_TASKS", "wooey.tasks")
-WOOEY_CELERY_STOPPABLE_JOBS = "amqp" in get("CELERY_BROKER_URL", "")
+WOOEY_CELERY_STOPPABLE_JOBS = "amqp" in get("CELERY_BROKER_URL", get("broker_url", ""))
 
 # Site setup settings
 WOOEY_DEFAULT_SCRIPT_GROUP = get("WOOEY_DEFAULT_SCRIPT_GROUP", _("Scripts"))

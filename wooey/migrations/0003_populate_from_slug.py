@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
-import autoslug.fields
 
 
 class Migration(migrations.Migration):
@@ -15,22 +14,16 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="script",
             name="slug",
-            field=models.SlugField(
-                populate_from="script_name", unique=True, editable=False
-            ),
+            field=models.SlugField(unique=True, editable=False),
         ),
         migrations.AlterField(
             model_name="scriptgroup",
             name="slug",
-            field=models.SlugField(
-                populate_from="group_name", unique=True, editable=False
-            ),
+            field=models.SlugField(unique=True, editable=False),
         ),
         migrations.AlterField(
             model_name="scriptparameter",
             name="slug",
-            field=models.SlugField(
-                populate_from="script_param", unique=True, editable=False
-            ),
+            field=models.SlugField(unique=True, editable=False),
         ),
     ]

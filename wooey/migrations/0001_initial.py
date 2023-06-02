@@ -118,7 +118,6 @@ class Migration(migrations.Migration):
                 ("is_active", models.BooleanField(default=True)),
                 ("user_groups", models.ManyToManyField(to="auth.Group", blank=True)),
             ],
-            bases=(models.Model),
         ),
         migrations.CreateModel(
             name="ScriptParameter",
@@ -161,7 +160,6 @@ class Migration(migrations.Migration):
                 ),
                 ("is_checked", models.BooleanField(default=False)),
             ],
-            bases=(models.Model),
         ),
         migrations.CreateModel(
             name="ScriptParameterGroup",
@@ -181,7 +179,6 @@ class Migration(migrations.Migration):
                     models.ForeignKey(to="wooey.Script", on_delete=models.PROTECT),
                 ),
             ],
-            bases=(models.Model),
         ),
         migrations.CreateModel(
             name="ScriptParameters",

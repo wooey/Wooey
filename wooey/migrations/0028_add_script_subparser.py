@@ -34,7 +34,6 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            bases=(models.Model),
         ),
         migrations.AddField(
             model_name="scriptparameter",

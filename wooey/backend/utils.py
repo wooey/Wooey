@@ -23,7 +23,7 @@ from django.db import transaction
 from django.db.utils import OperationalError
 from django.core.files.storage import default_storage
 from django.core.files import File
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 
 from .. import errors

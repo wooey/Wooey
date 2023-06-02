@@ -3,9 +3,9 @@ testenv:
 
 test:
 	pytest --cov=wooey --cov-branch tests/*
-	coverage run --append --branch --source=wooey django-admin test --settings=wooey.test_settings wooey.tests
-	coverage report --omit='*migrations*','*wooey_scripts*','*tests/scripts*','*conf/*'
-	coverage xml --omit='*migrations*','*wooey_scripts*','*tests/scripts*','*conf/*'
+	python -m coverage run --append --branch --source=wooey django-admin test --settings=wooey.test_settings wooey.tests
+	python -m coverage report --omit='*migrations*','*wooey_scripts*','*tests/scripts*','*conf/*'
+	python -m coverage xml --omit='*migrations*','*wooey_scripts*','*tests/scripts*','*conf/*'
 
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
 

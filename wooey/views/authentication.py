@@ -4,7 +4,7 @@ from django.forms.models import modelform_factory
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse
 from django.urls import reverse
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_text
 from django.views.generic import CreateView
 

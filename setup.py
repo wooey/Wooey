@@ -19,7 +19,7 @@ setup(
     },
     python_requires=">3.5.0",
     install_requires=[
-        "celery>=4.0,<5",
+        "celery>=4,<6",
         "clinto>=0.3.0",
         "Django>=3,<5",
         "django-autoslug",

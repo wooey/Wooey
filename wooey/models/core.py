@@ -11,13 +11,12 @@ from celery import states
 from django.db import models, transaction
 from django.conf import settings
 from django.core.cache import caches as django_cache
-from django.core.files.storage import SuspiciousFileOperation
+from django.core.exceptions import SuspiciousFileOperation
 from django.contrib.auth.models import Group, User
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.db import transaction
 from django.urls import reverse
 from django.utils.text import get_valid_filename
-from jsonfield import JSONCharField
 
 from .mixins import UpdateScriptsMixin, WooeyPy2Mixin
 from .. import settings as wooey_settings
@@ -411,7 +410,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
         ),
     )
     form_field = models.CharField(max_length=255)
-    default = JSONCharField(max_length=255, null=True, blank=True)
+    default = models.JSONField(null=True, blank=True)
     input_type = models.CharField(
         max_length=255,
         help_text=_(

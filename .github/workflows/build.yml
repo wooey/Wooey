@@ -18,6 +18,11 @@ jobs:
             django-version: "2.2"
           - python-version: 2.7
             django-version: "3.2"
+          # These 2 windows python versions do not ship the json sqlite3 extension we need
+          - os: windows-latest
+            python-version: 3.7
+          - os: windows-latest
+            python-version: 3.8
 
     steps:
       - uses: actions/checkout@v1

@@ -10,7 +10,7 @@ jobs:
       matrix:
         # Up to date compatibility matrix
         # https://docs.djangoproject.com/en/dev/faq/install/#what-python-version-can-i-use-with-django
-        python-version: [3.7, 3.8, 3.9, "3.10"]
+        python-version: [3.7, 3.8, 3.9, "3.10", "3.11"]
         os: [ubuntu-latest, windows-latest]
         django-version: ["3.2", "4.2"]
         exclude:
@@ -23,6 +23,10 @@ jobs:
             python-version: 3.7
           - os: windows-latest
             python-version: 3.8
+          - python-version: 3.11
+            django-version: "3.2"
+          - python-version: 3.7
+            django-version: "4.2"
 
     steps:
       - uses: actions/checkout@v1

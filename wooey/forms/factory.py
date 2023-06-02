@@ -9,8 +9,9 @@ from functools import partial
 
 import six
 from django import forms
-from django.forms.utils import flatatt, format_html
+from django.forms.utils import flatatt
 from django.http.request import QueryDict
+from django.utils.html import format_html
 from django.utils.module_loading import import_string
 from django.utils.safestring import mark_safe
 

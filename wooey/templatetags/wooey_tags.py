@@ -4,8 +4,6 @@ import hashlib
 from django import template
 from django.utils.safestring import mark_safe
 from django.contrib.contenttypes.models import ContentType
-from django.template.base import TemplateSyntaxError
-from django.template.library import TagHelperNode, parse_bits
 from six.moves.urllib_parse import urlencode
 
 from .. import settings as wooey_settings

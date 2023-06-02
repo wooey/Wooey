@@ -2,8 +2,6 @@ from __future__ import absolute_import
 import os
 
 from django.contrib.admin import ModelAdmin, site, TabularInline
-from django.forms import ModelForm, ValidationError
-from django.utils.translation import gettext_lazy as _
 
 from .models import (
     Script,

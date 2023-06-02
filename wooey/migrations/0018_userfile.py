@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
-import wooey.models.mixins
 
 
 class Migration(migrations.Migration):
@@ -39,7 +38,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            bases=(wooey.models.mixins.WooeyPy2Mixin, models.Model),
+            bases=(models.Model),
         ),
         migrations.AddField(
             model_name="userfile",

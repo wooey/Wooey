@@ -1,5 +1,5 @@
 import os
-from .wooey_settings import *
+from .wooey_settings import *  # noqa: F403
 
 # Whether to allow anonymous job submissions, set False to disallow 'guest' job submissions
 WOOEY_ALLOW_ANONYMOUS = True
@@ -15,12 +15,12 @@ task_serializer = "json"
 task_acks_late = True
 
 # the directory for uploads (physical directory)
-MEDIA_ROOT = os.path.join(BASE_DIR, "user_uploads")
+MEDIA_ROOT = os.path.join(BASE_DIR, "user_uploads")  # noqa: F405
 # the url mapping
 MEDIA_URL = "/uploads/"
 
 # the directory to store our webpage assets (images, javascript, etc.)
-STATIC_ROOT = os.path.join(BASE_DIR, "static")
+STATIC_ROOT = os.path.join(BASE_DIR, "static")  # noqa: F405
 # the url mapping
 STATIC_URL = "/static/"
 ## Here is a setup example for production servers

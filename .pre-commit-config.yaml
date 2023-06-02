@@ -17,6 +17,10 @@ repos:
     rev: "3.0.6"
     hooks:
       - id: djhtml
+  - repo: https://github.com/pycqa/flake8
+    rev: "6.0.0"
+    hooks:
+      - id: flake8
 
 default_language_version:
   python: python3.9

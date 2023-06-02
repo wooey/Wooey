@@ -5,7 +5,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.forms import FileField
 from django.http import JsonResponse
-from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.encoding import force_str
@@ -146,11 +145,11 @@ class WooeyScriptBase(DetailView):
             parser_pk = form.cleaned_data.get("wooey_parser")
             script_version = ScriptVersion.objects.get(pk=version_pk)
             valid = utils.valid_user(script_version.script, request.user).get("valid")
-            if valid == True:
+            if valid:
                 group_valid = utils.valid_user(
                     script_version.script.script_group, request.user
-                ).get("valid")
-                if valid == True and group_valid == True:
+                )["valid"]
+                if valid and group_valid:
                     job = utils.create_wooey_job(
                         script_parser_pk=parser_pk,
                         script_version_pk=version_pk,

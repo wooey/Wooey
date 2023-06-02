@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 __author__ = "chris"
-from django.forms import CharField, FileField, FilePathField
+from django.forms import FileField
 from django.forms import widgets
 
 

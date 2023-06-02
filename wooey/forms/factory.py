@@ -17,7 +17,6 @@ from django.utils.safestring import mark_safe
 
 from . import config
 from .scripts import WooeyForm
-from .. import version
 from ..backend import utils
 from ..models import ScriptVersion
 

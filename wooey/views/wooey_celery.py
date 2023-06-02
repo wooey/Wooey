@@ -134,9 +134,9 @@ def celery_task_command(request):
         "valid": False,
     }
     valid = valid_user(job.script_version.script, request.user)
-    if valid.get("valid") == True:
+    if valid["valid"]:
         user = request.user if request.user.is_authenticated else None
-        if user == job.user or job.user == None:
+        if user == job.user or not job.user:
             if command == "resubmit":
                 new_job = job.submit_to_celery(resubmit=True, user=request.user)
                 response.update(

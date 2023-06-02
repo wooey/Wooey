@@ -7,7 +7,6 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 
 from ..backend import utils
 from ..forms import (
-    factory,
     WooeyForm,
 )
 from ..forms import config as forms_config
@@ -136,7 +135,7 @@ class FormTestCase(
             try:
                 form_slug = test_utils.get_subparser_form_slug(script_version, key)
                 qdict[form_slug] = value
-            except:
+            except Exception:
                 qdict[key] = value
         qdict = self.get_mvdict(qdict)
 
@@ -145,7 +144,7 @@ class FormTestCase(
             try:
                 form_slug = test_utils.get_subparser_form_slug(script_version, key)
                 fdict[form_slug] = value
-            except:
+            except Exception:
                 fdict[key] = value
 
         uploaded_files = {}

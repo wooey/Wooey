@@ -14,11 +14,9 @@ from django.core.cache import caches as django_cache
 from django.core.exceptions import SuspiciousFileOperation
 from django.contrib.auth.models import Group, User
 from django.utils.translation import gettext_lazy as _
-from django.db import transaction
 from django.urls import reverse
 from django.utils.text import get_valid_filename
 
-from .mixins import UpdateScriptsMixin, WooeyPy2Mixin
 from .. import settings as wooey_settings
 from ..backend import utils
 
@@ -26,7 +24,7 @@ from ..backend import utils
 tasks = importlib.import_module(wooey_settings.WOOEY_CELERY_TASKS)
 
 
-class ScriptGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
+class ScriptGroup(models.Model):
     """
     This is a group of scripts, it holds general information
     about a collection of scripts, and allows for custom descriptions
@@ -49,7 +47,7 @@ class ScriptGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
         return self.group_name
 
 
-class Script(WooeyPy2Mixin, models.Model):
+class Script(models.Model):
     script_name = models.CharField(max_length=255)
     slug = AutoSlugField(populate_from="script_name", unique=True)
     # we create defaults for the script_group in the clean method of the model. We have to set it to null/blank=True
@@ -111,7 +109,7 @@ class Script(WooeyPy2Mixin, models.Model):
         return self.script_version.all().order_by("script_version", "script_iteration")
 
 
-class ScriptVersion(WooeyPy2Mixin, models.Model):
+class ScriptVersion(models.Model):
     # when a script updates, increment this to keep old scripts that are cloned working. The downside is we get redundant
     # parameters, but even a huge site may only have a few thousand parameters to query though.
     script_version = models.CharField(
@@ -181,7 +179,7 @@ class ScriptVersion(WooeyPy2Mixin, models.Model):
         )
 
 
-class WooeyJob(WooeyPy2Mixin, models.Model):
+class WooeyJob(models.Model):
     """
     This model serves to link the submitted celery tasks to a script submitted
     """
@@ -317,7 +315,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
 
     def update_realtime(self, stdout="", stderr="", delete=False):
         wooey_cache = wooey_settings.WOOEY_REALTIME_CACHE
-        if delete == False and wooey_cache is None:
+        if not delete and wooey_cache is None:
             self.stdout = stdout
             self.stderr = stderr
             self.save()
@@ -355,7 +353,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
         return self.stderr
 
 
-class ScriptParameterGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
+class ScriptParameterGroup(models.Model):
     group_name = models.TextField()
     hidden = models.BooleanField(default=False)
     script_version = models.ManyToManyField("ScriptVersion")
@@ -375,7 +373,7 @@ class ScriptParameterGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
         )
 
 
-class ScriptParser(WooeyPy2Mixin, models.Model):
+class ScriptParser(models.Model):
     name = models.CharField(max_length=255, blank=True, default="")
     script_version = models.ManyToManyField("ScriptVersion")
 
@@ -389,7 +387,7 @@ class ScriptParser(WooeyPy2Mixin, models.Model):
         )
 
 
-class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
+class ScriptParameter(models.Model):
     """
     This holds the parameter mapping for each script, and enforces uniqueness by each script via a FK.
     """
@@ -472,7 +470,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
 
 
 # TODO: find a better name for this class. Job parameter? SelectedParameter?
-class ScriptParameters(WooeyPy2Mixin, models.Model):
+class ScriptParameters(models.Model):
     """
     This holds the actual parameters sent with the submission
     """
@@ -611,7 +609,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
                 else None
             )
         elif field == self.BOOLEAN:
-            if value is None or value == False:
+            if value is None or value is False:
                 value = None
             if value:
                 value = True
@@ -683,7 +681,7 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
             )
 
 
-class UserFile(WooeyPy2Mixin, models.Model):
+class UserFile(models.Model):
     filename = models.TextField()
     job = models.ForeignKey("WooeyJob", on_delete=models.CASCADE)
     system_file = models.ForeignKey("WooeyFile", on_delete=models.CASCADE)
@@ -702,7 +700,7 @@ class UserFile(WooeyPy2Mixin, models.Model):
         return self.system_file.filepath
 
 
-class WooeyFile(WooeyPy2Mixin, models.Model):
+class WooeyFile(models.Model):
     filepath = models.FileField(max_length=500)
     filepreview = models.TextField(null=True, blank=True)
     filetype = models.CharField(max_length=255, null=True, blank=True)

@@ -1,1 +1,1 @@
-from .user_urls import *
+from .user_urls import *  # noqa: F401, F403

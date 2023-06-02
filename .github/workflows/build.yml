@@ -20,9 +20,9 @@ jobs:
           - os: windows-latest
             python-version: 3.8
           - python-version: 3.11
-            django-version: "3.2"
+            django-version: 3.2
           - python-version: 3.7
-            django-version: "4.2"
+            django-version: 4.2
 
     steps:
       - uses: actions/checkout@v1

@@ -3,7 +3,7 @@ testenv:
 
 test:
 	pytest --cov=wooey --cov-branch tests/*
-	python -m coverage run --append --branch --source=wooey django-admin test --settings=wooey.test_settings wooey.tests
+	python -m coverage run --append --branch --source=wooey `which django-admin` test --settings=wooey.test_settings wooey.tests
 	python -m coverage report --omit='*migrations*','*wooey_scripts*','*tests/scripts*','*conf/*'
 	python -m coverage xml --omit='*migrations*','*wooey_scripts*','*tests/scripts*','*conf/*'
 

@@ -38,7 +38,6 @@ setup(
             "pytest",
             "pytest-cov",
             "sphinx",
-            "tox",
             "watchdog[watchmedo]",
         ]
     },

@@ -15,8 +15,7 @@ from django.contrib.auth.models import Group, User
 from django.utils.translation import gettext_lazy as _
 from django.db import transaction
 from django.urls import reverse
-from django.utils import slugify
-from django.utils.text import get_valid_filename
+from django.utils.text import get_valid_filename, slugify
 
 from .mixins import UpdateScriptsMixin, WooeyPy2Mixin
 from .. import settings as wooey_settings

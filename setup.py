@@ -25,7 +25,6 @@ setup(
         "django-autoslug",
         "django-storages",
         'eventlet>=0.22.1 ;platform_system=="Windows"',
-        "importlib-metadata<5.0",
         'pypiwin32 ;(platform_system=="Windows" and python_version>"3.4")',
         "six",
     ],

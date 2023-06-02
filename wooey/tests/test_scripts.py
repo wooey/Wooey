@@ -5,7 +5,7 @@ from django.test import TransactionTestCase
 
 from . import config, mixins, utils as test_utils
 from ..backend import utils
-from ..models import ScriptParameter, ScriptVersion
+from ..models import ScriptVersion
 
 
 class ScriptAdditionTests(

@@ -98,7 +98,7 @@ def get_latest_script(script_version):
 def submit_script(**kwargs):
     job_id = kwargs.pop("wooey_job")
     resubmit = kwargs.pop("wooey_resubmit", False)
-    from .models import WooeyJob, UserFile
+    from .models import WooeyJob
 
     job = WooeyJob.objects.get(pk=job_id)
     stdout, stderr = "", ""
@@ -205,11 +205,11 @@ def submit_script(**kwargs):
                         continue
                     try:
                         zip.write(path, arcname=archive_name)
-                    except:
+                    except Exception:
                         stderr = "{}\n{}".format(stderr, traceback.format_exc())
             try:
                 zip.close()
-            except:
+            except Exception:
                 stderr = "{}\n{}".format(stderr, traceback.format_exc())
 
             # save all the files generated as well to our default storage for ephemeral storage setups

@@ -1,12 +1,12 @@
 import errno
 import os
-from .wooey_settings import *
+from .wooey_settings import *  # noqa: F401, F403
 
 # This file is where the user can override and customize their installation of wooey
 
 # Wooey Apps - add additional apps here after the initial install (remember to follow everything by a comma)
 
-INSTALLED_APPS += ()
+INSTALLED_APPS += ()  # noqa: F405
 
 # Whether to allow anonymous job submissions, set False to disallow 'guest' job submissions
 WOOEY_ALLOW_ANONYMOUS = True
@@ -31,7 +31,7 @@ def ensure_path(path):
     return path
 
 
-broker_dir = ensure_path(os.path.join(BASE_DIR, ".broker"))
+broker_dir = ensure_path(os.path.join(BASE_DIR, ".broker"))  # noqa: F405
 broker_transport_options = {
     "data_folder_in": ensure_path(os.path.join(broker_dir, "out")),
     "data_folder_out": ensure_path(os.path.join(broker_dir, "out")),
@@ -57,12 +57,12 @@ CACHES = {
 # Things you most likely do not need to change
 
 # the directory for uploads (physical directory)
-MEDIA_ROOT = os.path.join(BASE_DIR, "user_uploads")
+MEDIA_ROOT = os.path.join(BASE_DIR, "user_uploads")  # noqa: F405
 # the url mapping
 MEDIA_URL = "/uploads/"
 
 # the directory to store our webpage assets (images, javascript, etc.)
-STATIC_ROOT = os.path.join(BASE_DIR, "static")
+STATIC_ROOT = os.path.join(BASE_DIR, "static")  # noqa: F405
 # the url mapping
 STATIC_URL = "/static/"
 ## Here is a setup example for production servers

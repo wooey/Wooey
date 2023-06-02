@@ -4,7 +4,7 @@ import os
 from django.test import Client, TestCase, TransactionTestCase
 from six.moves.urllib_parse import quote
 
-from wooey import models, version
+from wooey import models
 
 from . import factories, config, mixins, utils as test_utils
 

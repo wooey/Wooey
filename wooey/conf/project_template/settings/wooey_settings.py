@@ -1,7 +1,7 @@
-from .django_settings import *
+from .django_settings import *  # noqa: F403
 from django.utils.translation import gettext_lazy as _
 
-INSTALLED_APPS += (
+INSTALLED_APPS += (  # noqa: F405
     # 'corsheaders',
     "wooey",
 )
@@ -19,7 +19,7 @@ LANGUAGES = [
 ]
 
 NEW_MIDDLEWARE = []
-for i in MIDDLEWARE:
+for i in MIDDLEWARE:  # noqa: F405
     NEW_MIDDLEWARE.append(i)
     if i == "django.contrib.sessions.middleware.SessionMiddleware":
         NEW_MIDDLEWARE.append("django.middleware.locale.LocaleMiddleware")

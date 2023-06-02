@@ -2,11 +2,10 @@ from __future__ import absolute_import
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from .mixins import WooeyPy2Mixin
 from ..backend import utils
 
 
-class WooeyWidget(WooeyPy2Mixin, models.Model):
+class WooeyWidget(models.Model):
     name = models.CharField(_("Widget Name"), max_length=50)
     widget_class = models.CharField(
         max_length=50,

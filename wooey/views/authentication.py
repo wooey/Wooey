@@ -17,7 +17,7 @@ class WooeyRegister(CreateView):
     fields = ("username", "email", "password")
 
     def dispatch(self, request, *args, **kwargs):
-        if wooey_settings.WOOEY_AUTH == False:
+        if not wooey_settings.WOOEY_AUTH:
             return HttpResponseRedirect(wooey_settings.WOOEY_REGISTER_URL)
         return super(WooeyRegister, self).dispatch(request, *args, **kwargs)
 
@@ -51,7 +51,7 @@ class WooeyRegister(CreateView):
 
 
 def wooey_login(request):
-    if wooey_settings.WOOEY_AUTH == False:
+    if not wooey_settings.WOOEY_AUTH:
         return HttpResponseRedirect(wooey_settings.WOOEY_LOGIN_URL)
     User = get_user_model()
     form = modelform_factory(User, fields=("username", "password"))

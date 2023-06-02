@@ -17,9 +17,9 @@ extra_settings["TEMPLATES"] = [
 settings.configure(**extra_settings)
 django.setup()
 
-import wooey
+import wooey  # noqa: E402
 
-from .. import django_compat
+from .. import django_compat  # noqa: E402
 
 
 def which(pgm):
@@ -32,7 +32,7 @@ def which(pgm):
 
 
 def walk_dir(templates, dest, filter=None):
-    l = []
+    file_list = []
     for root, folders, files in os.walk(templates):
         for filename in files:
             if filename.endswith(".pyc") or (filter and filename not in filter):
@@ -40,8 +40,10 @@ def walk_dir(templates, dest, filter=None):
             relative_dir = ".{0}".format(
                 os.path.split(os.path.join(root, filename).replace(templates, ""))[0]
             )
-            l.append((os.path.join(root, filename), os.path.join(dest, relative_dir)))
-    return l
+            file_list.append(
+                (os.path.join(root, filename), os.path.join(dest, relative_dir))
+            )
+    return file_list
 
 
 def bootstrap(env=None, cwd=None):
@@ -112,7 +114,7 @@ def bootstrap(env=None, cwd=None):
         to_name = os.path.join(dest_dir, os.path.split(template_file.name)[1])
         try:
             os.mkdir(dest_dir)
-        except:
+        except Exception:
             pass
         with open(to_name, "wb") as new_file:
             new_file.write(content)

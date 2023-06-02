@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 import os
 
 from django.core.files import File
-from django.conf import settings
 
 BASE_DIR = os.path.split(__file__)[0]
 WOOEY_TEST_SCRIPTS = os.path.join(BASE_DIR, "scripts")

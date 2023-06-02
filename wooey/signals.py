@@ -102,7 +102,7 @@ def script_version_postsave(instance, created, **kwargs):
         instance._script_upgrade = False
         instance._script_cl_creation = False
         instance._rename_script = False
-        if res["valid"] == False:
+        if not res["valid"]:
             # delete the model on exceptions.
             instance.delete()
             raise res["errors"]

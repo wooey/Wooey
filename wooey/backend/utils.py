@@ -114,7 +114,7 @@ def get_job_commands(job=None):
                 append_parser(param_info)
                 if param and (
                     param_info is None
-                    or param_info.collapse_arguments == False
+                    or not param_info.collapse_arguments
                     or index == 0
                 ):
                     com.append(param)
@@ -128,11 +128,9 @@ def create_wooey_job(
     user=None, script_version_pk=None, script_parser_pk=None, data=None
 ):
     from ..models import (
-        Script,
         WooeyJob,
         ScriptParameter,
         ScriptParameters,
-        ScriptParser,
         ScriptVersion,
     )
 
@@ -231,7 +229,7 @@ def get_current_scripts():
     for sv in non_default_scripts:
         try:
             version_string = parse_version(str(sv.script_version))
-        except:
+        except Exception:
             sys.stderr.write(
                 "Error converting script version:\n{}".format(traceback.format_exc())
             )
@@ -396,7 +394,7 @@ def add_wooey_script(
         version_string = "1"
     try:
         parse_version(version_string)
-    except:
+    except Exception:
         sys.stderr.write(
             "Error parsing version, defaulting to 1. Error message:\n {}".format(
                 traceback.format_exc()
@@ -508,7 +506,7 @@ def add_wooey_script(
                 is_out = (
                     True
                     if (
-                        param.get("upload", None) == False
+                        param.get("upload", None) is False
                         and param.get("type") == "file"
                     )
                     else not param.get("upload", False)
@@ -599,7 +597,7 @@ def valid_user(obj, user):
             ret["error"] = _("You are not permitted to use this script")
         if not groups and obj.is_active:
             ret["valid"] = True
-        if obj.is_active == True:
+        if obj.is_active:
             if set(list(user.groups.all())) & set(list(groups)):
                 ret["valid"] = True
     ret["display"] = "disabled" if wooey_settings.WOOEY_SHOW_LOCKED_SCRIPTS else "hide"
@@ -629,15 +627,15 @@ def get_file_info(filepath):
     # returns info about the file
     filetype, preview = False, None
     tests = [("tabular", test_delimited), ("fasta", test_fastx), ("image", test_image)]
-    while filetype == False and tests:
+    while not filetype and tests:
         ptype, pmethod = tests.pop()
         filetype, preview = pmethod(filepath)
         filetype = ptype if filetype else filetype
-    preview = None if filetype == False else preview
-    filetype = None if filetype == False else filetype
+    preview = None if not filetype else preview
+    filetype = None if not filetype else filetype
     try:
         json_preview = json.dumps(preview)
-    except:
+    except Exception:
         sys.stderr.write(
             "Error encountered in file preview:\n {}\n".format(traceback.format_exc())
         )
@@ -648,7 +646,7 @@ def get_file_info(filepath):
 def test_image(filepath):
     import imghdr
 
-    return imghdr.what(filepath) != None, None
+    return imghdr.what(filepath) is not None, None
 
 
 def test_delimited(filepath):
@@ -697,11 +695,11 @@ def test_fastx(filepath):
                 break
             if not row.strip():
                 continue
-            if found_caret == False and row[0] != ">":
+            if not found_caret and row[0] != ">":
                 if row[0] == ";":
                     continue
                 break
-            elif found_caret == False and row[0] == ">":
+            elif not found_caret and row[0] == ">":
                 found_caret = True
             if row and row[0] == ">":
                 if seq:
@@ -746,7 +744,7 @@ def create_job_fileinfo(job):
                         try:
                             with transaction.atomic():
                                 field.save()
-                        except:
+                        except Exception:
                             sys.stderr.write("{}\n".format(traceback.format_exc()))
                         continue
                 d = {"parameter": field, "file": value, "size_bytes": value.size}
@@ -792,7 +790,7 @@ def create_job_fileinfo(job):
                             "size_bytes": storage_file.size,
                             "checksum": checksum,
                         }
-                except:
+                except Exception:
                     sys.stderr.write(
                         "Error in accessing stored file {}:\n{}".format(
                             rel_path, traceback.format_exc()
@@ -871,11 +869,11 @@ def create_job_fileinfo(job):
                             wooey_file.save()
                         job.save()
                         UserFile.objects.get_or_create(**userfile_kwargs)
-                except:
+                except Exception:
                     sys.stderr.write(
                         "Error in saving DJFile: {}\n".format(traceback.format_exc())
                     )
-            except:
+            except Exception:
                 sys.stderr.write(
                     "Error in saving DJFile: {}\n".format(traceback.format_exc())
                 )

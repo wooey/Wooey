@@ -1,6 +1,3 @@
-import traceback
-import sys
-
 try:
     from django.apps import AppConfig
 except ImportError:
@@ -12,4 +9,4 @@ class WooeyConfig(AppConfig):
     verbose_name = "Wooey"
 
     def ready(self):
-        from . import signals
+        from . import signals  # noqa: F401

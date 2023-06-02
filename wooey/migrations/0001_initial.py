@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 from django.db import models, migrations
 import autoslug.fields
 from django.conf import settings
-import wooey.models.mixins
 
 
 class Migration(migrations.Migration):
@@ -119,7 +118,6 @@ class Migration(migrations.Migration):
                 ("is_active", models.BooleanField(default=True)),
                 ("user_groups", models.ManyToManyField(to="auth.Group", blank=True)),
             ],
-            bases=(wooey.models.mixins.UpdateScriptsMixin, models.Model),
         ),
         migrations.CreateModel(
             name="ScriptParameter",
@@ -162,7 +160,6 @@ class Migration(migrations.Migration):
                 ),
                 ("is_checked", models.BooleanField(default=False)),
             ],
-            bases=(wooey.models.mixins.UpdateScriptsMixin, models.Model),
         ),
         migrations.CreateModel(
             name="ScriptParameterGroup",
@@ -182,7 +179,6 @@ class Migration(migrations.Migration):
                     models.ForeignKey(to="wooey.Script", on_delete=models.PROTECT),
                 ),
             ],
-            bases=(wooey.models.mixins.UpdateScriptsMixin, models.Model),
         ),
         migrations.CreateModel(
             name="ScriptParameters",

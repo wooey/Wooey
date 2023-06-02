@@ -6,7 +6,6 @@ import six
 import uuid
 from io import IOBase
 
-from autoslug import AutoSlugField
 from celery import states
 from django.db import models, transaction
 from django.conf import settings
@@ -16,6 +15,7 @@ from django.contrib.auth.models import Group, User
 from django.utils.translation import gettext_lazy as _
 from django.db import transaction
 from django.urls import reverse
+from django.utils import slugify
 from django.utils.text import get_valid_filename
 
 from .mixins import UpdateScriptsMixin, WooeyPy2Mixin
@@ -34,7 +34,7 @@ class ScriptGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     """
 
     group_name = models.TextField()
-    slug = AutoSlugField(populate_from="group_name", unique=True)
+    slug = models.SlugField(unique=True)
     group_description = models.TextField(null=True, blank=True)
     group_order = models.SmallIntegerField(default=1)
     is_active = models.BooleanField(default=True)
@@ -48,10 +48,15 @@ class ScriptGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     def __str__(self):
         return self.group_name
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.group_name)
+        return super().save(*args, **kwargs)
+
 
 class Script(WooeyPy2Mixin, models.Model):
     script_name = models.CharField(max_length=255)
-    slug = AutoSlugField(populate_from="script_name", unique=True)
+    slug = models.SlugField(unique=True)
     # we create defaults for the script_group in the clean method of the model. We have to set it to null/blank=True
     # or else we will fail form validation before we hit the model.
     script_group = models.ForeignKey(
@@ -106,6 +111,11 @@ class Script(WooeyPy2Mixin, models.Model):
                     group_name=wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP
                 )
             self.script_group = group
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.script_name)
+        return super().save(*args, **kwargs)
 
     def get_previous_versions(self):
         return self.script_version.all().order_by("script_version", "script_iteration")
@@ -398,7 +408,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     script_version = models.ManyToManyField("ScriptVersion")
     short_param = models.CharField(max_length=255, blank=True)
     script_param = models.TextField()
-    slug = AutoSlugField(populate_from="script_param", unique=True)
+    slug = models.SlugField(unique=True)
     is_output = models.BooleanField(default=None)
     required = models.BooleanField(default=False)
     choices = models.TextField(null=True, blank=True)
@@ -465,6 +475,11 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
             return -1
         else:
             return choice_limit
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.script_param)
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         scripts = ", ".join([i.script.script_name for i in self.script_version.all()])

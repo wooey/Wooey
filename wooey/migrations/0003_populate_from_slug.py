@@ -15,21 +15,21 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="script",
             name="slug",
-            field=autoslug.fields.AutoSlugField(
+            field=models.SlugField(
                 populate_from="script_name", unique=True, editable=False
             ),
         ),
         migrations.AlterField(
             model_name="scriptgroup",
             name="slug",
-            field=autoslug.fields.AutoSlugField(
+            field=models.SlugField(
                 populate_from="group_name", unique=True, editable=False
             ),
         ),
         migrations.AlterField(
             model_name="scriptparameter",
             name="slug",
-            field=autoslug.fields.AutoSlugField(
+            field=models.SlugField(
                 populate_from="script_param", unique=True, editable=False
             ),
         ),

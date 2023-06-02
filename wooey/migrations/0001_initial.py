@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
-import autoslug.fields
 from django.conf import settings
 import wooey.models.mixins
 
@@ -80,7 +79,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("script_name", models.CharField(max_length=255)),
-                ("slug", autoslug.fields.AutoSlugField(unique=True, editable=False)),
+                ("slug", models.SlugField(unique=True, editable=False)),
                 ("script_description", models.TextField(null=True, blank=True)),
                 ("script_order", models.PositiveSmallIntegerField(default=1)),
                 ("is_active", models.BooleanField(default=True)),
@@ -113,7 +112,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("group_name", models.TextField()),
-                ("slug", autoslug.fields.AutoSlugField(unique=True, editable=False)),
+                ("slug", models.SlugField(unique=True, editable=False)),
                 ("group_description", models.TextField(null=True, blank=True)),
                 ("group_order", models.SmallIntegerField(default=1)),
                 ("is_active", models.BooleanField(default=True)),
@@ -135,7 +134,7 @@ class Migration(migrations.Migration):
                 ),
                 ("short_param", models.CharField(max_length=255)),
                 ("script_param", models.CharField(max_length=255)),
-                ("slug", autoslug.fields.AutoSlugField(unique=True, editable=False)),
+                ("slug", models.SlugField(unique=True, editable=False)),
                 ("is_output", models.BooleanField(default=None)),
                 ("required", models.BooleanField(default=False)),
                 (

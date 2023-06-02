@@ -519,7 +519,6 @@ def add_wooey_script(
                     "is_output": is_out,
                     "required": param.get("required", False),
                     "form_field": param["model"],
-                    "default": param.get("value"),
                     "input_type": param.get("type"),
                     "choices": json.dumps(param.get("choices")),
                     "choice_limit": json.dumps(param.get("choice_limit", 1)),
@@ -529,6 +528,11 @@ def add_wooey_script(
                     "collapse_arguments": SPECIFY_EVERY_PARAM
                     not in param.get("param_action", set()),
                 }
+                default_value = param.get("value")
+                if "value" not in param:
+                    script_param_kwargs["default__isnull"] = True
+                else:
+                    script_param_kwargs["default"] = default_value
 
                 parameter_index += 1
 
@@ -537,7 +541,6 @@ def add_wooey_script(
                 # keyword arguments can ignore.
                 if not param["param"]:
                     script_param_kwargs["param_order"] = parameter_index
-
                 script_params = (
                     ScriptParameter.objects.filter(**script_param_kwargs)
                     .filter(

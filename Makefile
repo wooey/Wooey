@@ -3,6 +3,7 @@ testenv:
 
 test:
 	pytest --cov=wooey --cov-branch tests/*
+	# we use `which django-admin` so coverage gets an absolute path to django-admin as it sometimes cannot find it in CI
 	python -m coverage run --append --branch --source=wooey `which django-admin` test --settings=wooey.test_settings wooey.tests
 	python -m coverage report --omit='*migrations*','*wooey_scripts*','*tests/scripts*','*conf/*'
 	python -m coverage xml --omit='*migrations*','*wooey_scripts*','*tests/scripts*','*conf/*'

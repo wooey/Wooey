@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from django.template.defaultfilters import escape
 from django.template.loader import render_to_string
 from django.urls import reverse
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView, ListView
 
@@ -181,10 +181,10 @@ def celery_task_command(request):
                 )
             else:
                 response.update(
-                    {"errors": {"__all__": [force_text(_("Unknown Command"))]}}
+                    {"errors": {"__all__": [force_str(_("Unknown Command"))]}}
                 )
     else:
-        response.update({"errors": {"__all__": [force_text(valid.get("error"))]}})
+        response.update({"errors": {"__all__": [force_str(valid.get("error"))]}})
     return JsonResponse(response)
 
 

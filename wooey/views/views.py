@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.urls import reverse
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView, TemplateView, View
 
@@ -92,7 +92,7 @@ class WooeyScriptBase(DetailView):
                 "valid": False,
                 "errors": {
                     "__all__": [
-                        force_text(_("You are not permitted to access this script."))
+                        force_str(_("You are not permitted to access this script."))
                     ]
                 },
             }
@@ -164,7 +164,7 @@ class WooeyScriptBase(DetailView):
                 "valid": False,
                 "errors": {
                     "__all__": [
-                        force_text(_("You are not permitted to access this script."))
+                        force_str(_("You are not permitted to access this script."))
                     ]
                 },
             }

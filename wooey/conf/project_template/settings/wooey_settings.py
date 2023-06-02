@@ -1,5 +1,4 @@
 from .django_settings import *
-from wooey.version import DJANGO_VERSION, DJ110
 from django.utils.translation import ugettext_lazy as _
 
 INSTALLED_APPS += (
@@ -7,8 +6,6 @@ INSTALLED_APPS += (
     "wooey",
 )
 
-MIDDLEWARE = list(MIDDLEWARE)
-MIDDLEWARE.append("{{ project_name }}.middleware.ProcessExceptionMiddleware")
 
 LANGUAGES = [
     ("de", _("German")),

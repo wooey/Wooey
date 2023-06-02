@@ -2,16 +2,13 @@ __author__ = "chris"
 import traceback
 import sys
 
-from wooey.version import DJANGO_VERSION, DJ110
 
-if DJANGO_VERSION >= DJ110:
-    from django.utils.deprecation import MiddlewareMixin
-else:
-    MiddlewareMixin = object
+class ProcessExceptionMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
 
-
-class ProcessExceptionMiddleware(MiddlewareMixin):
-    def process_response(self, request, response):
+    def __call__(self, request):
+        response = self.get_response(request)
         if response.status_code != 200:
             try:
                 sys.stderr.write("{}".format("".join(traceback.format_exc())))

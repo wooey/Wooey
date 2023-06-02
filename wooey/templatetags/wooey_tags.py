@@ -10,97 +10,10 @@ from django.template.library import TagHelperNode, parse_bits
 from six.moves.urllib_parse import urlencode
 
 from .. import settings as wooey_settings
-from ..version import DJANGO_VERSION, DJ19
 
 
 class Library(template.Library):
-    if DJANGO_VERSION >= DJ19:
-        simple_assignment_tag = template.Library.simple_tag
-    else:
-
-        def simple_assignment_tag(self, func=None, takes_context=None, name=None):
-            """
-            Like assignment_tag but when "as" not provided, falls back to simple_tag behavior!
-            NOTE: this is based on Django's assignment_tag implementation, modified as needed.
-
-            https://gist.github.com/natevw/f14812604be62c073461
-            """
-            # (nvw) imports necessary to match original context
-
-            def dec(func):
-                params, varargs, varkw, defaults = getargspec(func)
-
-                # (nvw) added from Django's simple_tag implementation
-                class SimpleNode(TagHelperNode):
-                    def render(self, context):
-                        resolved_args, resolved_kwargs = self.get_resolved_arguments(
-                            context
-                        )
-                        return func(*resolved_args, **resolved_kwargs)
-
-                class AssignmentNode(TagHelperNode):
-                    def __init__(self, takes_context, args, kwargs, target_var):
-                        super(AssignmentNode, self).__init__(
-                            takes_context, args, kwargs
-                        )
-                        self.target_var = target_var
-
-                    def render(self, context):
-                        resolved_args, resolved_kwargs = self.get_resolved_arguments(
-                            context
-                        )
-                        context[self.target_var] = func(
-                            *resolved_args, **resolved_kwargs
-                        )
-                        return ""
-
-                function_name = (
-                    name or getattr(func, "_decorated_function", func).__name__
-                )
-
-                def compile_func(parser, token):
-                    bits = token.split_contents()[1:]
-                    if len(bits) > 2 and bits[-2] == "as":
-                        target_var = bits[-1]
-                        bits = bits[:-2]
-                        args, kwargs = parse_bits(
-                            parser,
-                            bits,
-                            params,
-                            varargs,
-                            varkw,
-                            defaults,
-                            takes_context,
-                            function_name,
-                        )
-                        return AssignmentNode(takes_context, args, kwargs, target_var)
-                    else:
-                        args, kwargs = parse_bits(
-                            parser,
-                            bits,
-                            params,
-                            varargs,
-                            varkw,
-                            defaults,
-                            takes_context,
-                            function_name,
-                        )
-                        return SimpleNode(takes_context, args, kwargs)
-
-                compile_func.__doc__ = func.__doc__
-                self.tag(function_name, compile_func)
-                return func
-
-            if func is None:
-                # @register.assignment_tag(...)
-                return dec
-            elif callable(func):
-                # @register.assignment_tag
-                return dec(func)
-            else:
-                raise TemplateSyntaxError(
-                    "Invalid arguments provided to assignment_tag"
-                )
+    simple_assignment_tag = template.Library.simple_tag
 
 
 register = Library()

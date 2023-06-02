@@ -67,7 +67,7 @@ def bootstrap(env=None, cwd=None):
     env["DJANGO_SETTINGS_MODULE"] = ""
     admin_command = [sys.executable] if sys.executable else []
     for possible_path in ["django-admin.py", "django-admin", "django-admin.exe"]:
-        admin_path = which("django-admin.py")
+        admin_path = which(possible_path)
         if admin_path:
             break
     if admin_path.endswith(".exe"):

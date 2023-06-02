@@ -13,7 +13,6 @@ from django.utils.text import get_valid_filename
 from django.core.files import File
 from django.conf import settings
 
-from celery import Task
 from celery import app
 from celery.schedules import crontab
 from celery.signals import worker_process_init
@@ -67,15 +66,6 @@ def configure_workers(*args, **kwargs):
     django.setup()
 
 
-class WooeyTask(Task):
-    pass
-
-    # def after_return(self, status, retval, task_id, args, kwargs, einfo):
-    #     job, created = WooeyJob.objects.get_or_create(wooey_celery_id=task_id)
-    #     job.content_type.wooey_celery_state = status
-    #     job.save()
-
-
 def get_latest_script(script_version):
     """Downloads the latest script version to the local storage.
 
@@ -104,7 +94,7 @@ def get_latest_script(script_version):
     return False
 
 
-@celery_app.task(base=WooeyTask)
+@celery_app.task()
 def submit_script(**kwargs):
     job_id = kwargs.pop("wooey_job")
     resubmit = kwargs.pop("wooey_resubmit", False)
@@ -249,7 +239,7 @@ def submit_script(**kwargs):
     return (stdout, stderr)
 
 
-@celery_app.task(base=WooeyTask)
+@celery_app.task()
 def cleanup_wooey_jobs(**kwargs):
     from django.utils import timezone
     from .models import WooeyJob
@@ -268,7 +258,7 @@ def cleanup_wooey_jobs(**kwargs):
         ).delete()
 
 
-@celery_app.task(base=WooeyTask)
+@celery_app.task()
 def cleanup_dead_jobs():
     """
     This cleans up jobs that have been marked as ran, but are not queue'd in celery. It is meant

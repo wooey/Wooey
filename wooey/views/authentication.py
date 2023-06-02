@@ -4,8 +4,8 @@ from django.forms.models import modelform_factory
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse
 from django.urls import reverse
-from django.utils.translation import ugettext_lazy as _
-from django.utils.encoding import force_text
+from django.utils.translation import gettext_lazy as _
+from django.utils.encoding import force_str
 from django.views.generic import CreateView
 
 from .. import settings as wooey_settings
@@ -70,7 +70,7 @@ def wooey_login(request):
                     "valid": False,
                     "errors": {
                         "__all__": [
-                            force_text(
+                            force_str(
                                 _("You have entered an invalid username or password.")
                             )
                         ]

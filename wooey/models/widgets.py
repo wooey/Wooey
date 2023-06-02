@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from .mixins import WooeyPy2Mixin
 from ..backend import utils

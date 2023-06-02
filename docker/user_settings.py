@@ -7,12 +7,12 @@ WOOEY_ALLOW_ANONYMOUS = True
 ## Celery related options
 
 WOOEY_CELERY = True
-CELERY_BROKER_URL = "amqp://guest@rabbit"
-CELERY_TRACK_STARTED = True
-CELERY_SEND_EVENTS = True
-CELERY_IMPORTS = ("wooey.tasks",)
-CELERY_TASK_SERIALIZER = "json"
-CELERY_TASK_ACKS_LATE = True
+broker_url = "amqp://guest@rabbit"
+task_track_started = True
+worker_send_task_events = True
+imports = ("wooey.tasks",)
+task_serializer = "json"
+task_acks_late = True
 
 # the directory for uploads (physical directory)
 MEDIA_ROOT = os.path.join(BASE_DIR, "user_uploads")

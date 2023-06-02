@@ -1,6 +1,5 @@
 from __future__ import division, absolute_import
 import hashlib
-from inspect import getargspec
 
 from django import template
 from django.utils.safestring import mark_safe

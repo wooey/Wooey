@@ -21,7 +21,7 @@ setup(
     install_requires=[
         "celery>=4.0,<5",
         "clinto>=0.3.0",
-        'Django>=3,<4 ;python_version>="3.7"',
+        "Django>=3,<5",
         "django-autoslug",
         "django-storages",
         'eventlet>=0.22.1 ;platform_system=="Windows"',

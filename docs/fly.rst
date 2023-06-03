@@ -106,7 +106,7 @@ Here is an example requirements.txt
 
     Django~=3.2.14
     wooey==0.13.2
-    django-storages<1.10
+    django-storages==1.13.2
     django-autoslug==1.9.8
     dj-database-url==1.0.0
     boto3==1.26.27

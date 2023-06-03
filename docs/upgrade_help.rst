@@ -23,13 +23,89 @@ Upgrading to 0.14
 
 This is largely a cleanup and deprecation release.
 
-1) Support for versions of Django less than 3.2 are dropped. This should only
-matter for users who are running Wooey as an installed app in their own Django
-project (not those who bootstrapped with `wooify`).
+1) Support for versions of Django less than 3.2 are dropped. This removed quite a few functions
+and requires modifying several files listed in later steps.
 
 2) The minimum supported Python version is 3.7. For supporting scripts written
 in older versions of Python, one approach is to create a docker wrapper, such
 as in :ref:`docker_scripts`.
+
+3) The function ugettext_lazy has been removed in Django 3.2 as the unicode/string
+representation is no longer relevant in python3. Thus, all uses of this should be
+replaced with gettext_lazy (one will be in `wooey_settings.py`).
+
+  .. code-block:: python
+
+    from django.utils.translation import ugettext_lazy as _
+
+  becomes
+
+  .. code-block:: python
+
+    from django.utils.translation import gettext_lazy as _
+
+4) `django-celery-results` has been removed from Wooey as its tasks do not require a backend.
+This should be removed from `INSTALLED_APPS` in `user_settings.py`.
+
+5) In `user_urls.py`, the `url` import should be removed (this was an unused import and is no longer
+a function in Django3.2+).
+
+This entire line should be removed:
+
+  .. code-block:: python
+
+    from django.conf.urls import include, url
+
+6) In `django_urls.py`, `url` should instead be replaced with `re_path`.
+
+  .. code-block:: python
+
+    from django.conf.urls import include, url
+    from django.contrib import admin
+    from django.contrib.auth import views as auth_views
+
+    urlpatterns = [
+        url(r'^admin/', admin.site.urls),
+        url(r'^accounts/logout/$', auth_views.LogoutView.as_view(), name='logout'),
+    ]
+
+  becomes
+
+  .. code-block:: python
+
+    from django.urls import include, re_path
+    from django.contrib import admin
+    from django.contrib.auth import views as auth_views
+
+    urlpatterns = [
+        re_path(r'^admin/', admin.site.urls),
+        re_path(r'^accounts/logout/$', auth_views.LogoutView.as_view(), name='logout'),
+    ]
+
+7) In `wooey_urls.py`, `url` also needs to be changed to `path`.
+
+  .. code-block:: python
+
+    urlpatterns += [
+        #url(r'^admin/', include(admin.site.urls)),
+        url(r'^', include('wooey.urls')),
+    ]
+
+
+  becomes
+
+  .. code-block:: python
+
+    from django.urls import include, path
+
+    urlpatterns += [
+        # path('admin/', include(admin.site.urls)),
+        path("", include("wooey.urls")),
+        path("", include("django.contrib.auth.urls")),
+    ]
+
+8) If you were using a S3 bucket, you likely need to upgrade `django-storages`. You may need to change
+the `AWS_QUERYSTRING_AUTH` settings from `False` to `True` to comply with recent changes to S3.
 
 
 0.9.11 To 0.10

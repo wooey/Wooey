@@ -9,7 +9,7 @@ from ..forms import (
     WooeyForm,
 )
 from ..forms import config as forms_config
-from ..models import ScriptVersion, WooeyJob
+from ..models import ScriptParameterGroup, ScriptParameter, ScriptVersion, WooeyJob
 
 from . import (
     config,
@@ -81,9 +81,8 @@ class FormTestCase(
         subparser = script_version.scriptparser_set.first()
         subparser_key = (subparser.pk, subparser.name)
         self.assertEqual(len(form["parsers"][subparser_key]), 2)
-        # test we can hide parameters and groups
-        from wooey.models import ScriptParameterGroup, ScriptParameter
 
+        # test we can hide parameters and groups
         groups = ScriptParameterGroup.objects.filter(script_version=script_version)
         group = groups[1]
         group.hidden = True

@@ -727,7 +727,7 @@ def create_job_fileinfo(job):
                 if value is None:
                     continue
                 if isinstance(value, str):
-                    # check if this was ever created and make a fileobject if so
+                    # if this exists locally, but not remotely, upload the asset
                     if local_storage.exists(value):
                         if not get_storage(local=False).exists(value):
                             get_storage(local=False).save(
@@ -904,6 +904,16 @@ def get_checksum(path=None, buff=None, extra=None):
                 buf = path.read(BLOCKSIZE)
             path.seek(start)
     return hasher.hexdigest()
+
+
+def get_available_file(cwd, name, ext):
+    "Returns an available filename"
+    out = os.path.join(cwd, name)
+    index = 0
+    while os.path.exists("{}.{}".format(out, ext)):
+        index += 1
+        out = os.path.join(cwd, "{}_{}".format(name, index))
+    return "{}.{}".format(out, ext)
 
 
 def get_grouped_file_previews(files):

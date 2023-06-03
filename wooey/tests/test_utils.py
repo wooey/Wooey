@@ -1,5 +1,7 @@
 import os
+import tempfile
 import zipfile
+from pathlib import Path
 
 from django.test import TestCase, TransactionTestCase
 
@@ -182,3 +184,22 @@ class TestFileDetectors(TestCase):
             [i.strip().split("\t") for i in open(self.file).readlines()],
             "Delimited Preview Fail",
         )
+
+
+class TestGetAvailableFile(TransactionTestCase):
+    def test_returns_file_unchanged_if_doesnt_exist(self):
+        td = tempfile.mkdtemp()
+        assert utils.get_available_file(td, "a_file", "txt") == os.path.join(
+            td, "a_file.txt"
+        )
+
+    def test_appends_number_if_file_exists(self):
+        td = tempfile.mkdtemp()
+        with tempfile.NamedTemporaryFile(dir=td, suffix=".txt") as tf:
+            filename = os.path.splitext(os.path.basename(tf.name))[0]
+            available_filename = os.path.join(td, "{}_1.txt".format(filename))
+            assert utils.get_available_file(td, filename, "txt") == available_filename
+            Path(available_filename).touch()
+            assert utils.get_available_file(td, filename, "txt") == os.path.join(
+                td, "{}_2.txt".format(filename)
+            )

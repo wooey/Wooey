@@ -165,20 +165,13 @@ def submit_script(**kwargs):
         stdout, stderr, prev_std = check_output(job, stdout, stderr, prev_std)
         return_code = proc.returncode
 
-        # tar/zip up the generated content for bulk downloads
-        def get_valid_file(cwd, name, ext):
-            out = os.path.join(cwd, name)
-            index = 0
-            while os.path.exists("{}.{}".format(out, ext)):
-                index += 1
-                out = os.path.join(cwd, "{}_{}".format(name, index))
-            return "{}.{}".format(out, ext)
-
         # fetch the job again in case the database connection was lost during the job or something else changed.
         job = WooeyJob.objects.get(pk=job_id)
         # if there are files generated, make zip/tar files for download
         if len(os.listdir(abscwd)):
-            tar_out = get_valid_file(abscwd, get_valid_filename(job.job_name), "tar.gz")
+            tar_out = utils.get_available_file(
+                abscwd, get_valid_filename(job.job_name), "tar.gz"
+            )
             tar = tarfile.open(tar_out, "w:gz")
             tar_name = os.path.splitext(os.path.splitext(os.path.split(tar_out)[1])[0])[
                 0
@@ -186,7 +179,9 @@ def submit_script(**kwargs):
             tar.add(abscwd, arcname=tar_name)
             tar.close()
 
-            zip_out = get_valid_file(abscwd, get_valid_filename(job.job_name), "zip")
+            zip_out = utils.get_available_file(
+                abscwd, get_valid_filename(job.job_name), "zip"
+            )
             zip = zipfile.ZipFile(zip_out, "w")
             arcname = os.path.splitext(os.path.split(zip_out)[1])[0]
             zip.write(abscwd, arcname=arcname)

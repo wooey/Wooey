@@ -4,6 +4,7 @@ import os
 
 from django.core.files.storage import get_storage_class, FileSystemStorage
 from storages.backends.s3boto3 import S3Boto3Storage
+from storage.utils import clean_name
 
 
 class CachedS3Boto3Storage(S3Boto3Storage):
@@ -30,7 +31,7 @@ class CachedS3Boto3Storage(S3Boto3Storage):
         # we have to remove the name from the _entries cache or else deleted files will persist in our cache
         # and give false information
         super(CachedS3Boto3Storage, self).delete(name)
-        name = self._normalize_name(self._clean_name(name))
+        name = self._normalize_name(clean_name(name))
         encoded_name = self._encode_name(name)
         self._entries.pop(encoded_name, None)
 

@@ -1,5 +1,4 @@
 import os
-import six
 import zipfile
 
 from django.test import TestCase, TransactionTestCase
@@ -94,8 +93,8 @@ class TestUtils(mixins.ScriptFactoryMixin, mixins.FileMixin, TransactionTestCase
         zip_file = UserFile.objects.get(job=job, filename__endswith="zip")
         _zip = zipfile.ZipFile(zip_file.system_file.filepath)
         files = [filename.filename for filename in _zip.filelist]
-        six.assertCountEqual(
-            self, files, ["abc/", "abc/test_file", "abc/test_dir/test_file"]
+        self.assertCountEqual(
+            files, ["abc/", "abc/test_file", "abc/test_dir/test_file"]
         )
 
     def test_duplicate_scriptversion_checksums(self):

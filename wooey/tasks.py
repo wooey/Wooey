@@ -8,7 +8,6 @@ import traceback
 import zipfile
 from threading import Thread
 
-import six
 from django.utils.text import get_valid_filename
 from django.core.files import File
 from django.conf import settings
@@ -170,10 +169,10 @@ def submit_script(**kwargs):
         def get_valid_file(cwd, name, ext):
             out = os.path.join(cwd, name)
             index = 0
-            while os.path.exists(six.u("{}.{}").format(out, ext)):
+            while os.path.exists("{}.{}".format(out, ext)):
                 index += 1
-                out = os.path.join(cwd, six.u("{}_{}").format(name, index))
-            return six.u("{}.{}").format(out, ext)
+                out = os.path.join(cwd, "{}_{}".format(name, index))
+            return "{}.{}".format(out, ext)
 
         # fetch the job again in case the database connection was lost during the job or something else changed.
         job = WooeyJob.objects.get(pk=job_id)
@@ -277,7 +276,7 @@ def cleanup_dead_jobs():
         return
 
     active_tasks = {
-        task["id"] for worker, tasks in six.iteritems(worker_info) for task in tasks
+        task["id"] for worker, tasks in worker_info.items() for task in tasks
     }
 
     # find jobs that are marked as running but not present in celery's active tasks

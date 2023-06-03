@@ -2,7 +2,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 import os
 import importlib
 import json
-import six
 import uuid
 from io import IOBase
 
@@ -544,7 +543,7 @@ class ScriptParameters(models.Model):
             value = str(value)
         except ValueError:
             pass
-        com["value"] = value if isinstance(value, six.string_types) else six.u(value)
+        com["value"] = str(value)
         return com
 
     def force_value(self, value):

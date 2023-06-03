@@ -1,10 +1,10 @@
 from __future__ import division, absolute_import
 import hashlib
+from urllib.parse import urlencode
 
 from django import template
 from django.utils.safestring import mark_safe
 from django.contrib.contenttypes.models import ContentType
-from six.moves.urllib_parse import urlencode
 
 from .. import settings as wooey_settings
 

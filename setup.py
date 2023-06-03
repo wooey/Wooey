@@ -27,7 +27,6 @@ setup(
         'eventlet>=0.22.1 ;platform_system=="Windows"',
         'importlib-metadata<5.0 ;python_version<="3.7"',
         'pypiwin32 ;(platform_system=="Windows" and python_version>"3.4")',
-        "six",
     ],
     extras_require={
         "dev": [

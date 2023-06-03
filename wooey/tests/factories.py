@@ -1,5 +1,4 @@
 import factory
-import six
 from django.contrib.auth import get_user_model
 
 from ..models import Script, ScriptGroup, WooeyJob, WooeyWidget
@@ -59,8 +58,8 @@ class BaseJobFactory(factory.DjangoModelFactory):
     class Meta:
         model = WooeyJob
 
-    job_name = six.u("\xd0\xb9\xd1\x86\xd1\x83")
-    job_description = six.u("\xd0\xb9\xd1\x86\xd1\x83\xd0\xb5\xd0\xba\xd0\xb5")
+    job_name = "\xd0\xb9\xd1\x86\xd1\x83"
+    job_description = "\xd0\xb9\xd1\x86\xd1\x83\xd0\xb5\xd0\xba\xd0\xb5"
 
 
 class WooeyWidgetFactory(factory.DjangoModelFactory):

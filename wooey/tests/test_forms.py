@@ -1,6 +1,5 @@
 import os
 
-import six
 from django.test import TransactionTestCase
 from django.http.request import MultiValueDict
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -131,7 +130,7 @@ class FormTestCase(
         self.assertTrue(forms_config.WOOEY_MULTI_WIDGET_ATTR in form_str)
 
         qdict = {}
-        for key, value in six.iteritems(config.SCRIPT_DATA["choices"].get("data")):
+        for key, value in config.SCRIPT_DATA["choices"]["data"].items():
             try:
                 form_slug = test_utils.get_subparser_form_slug(script_version, key)
                 qdict[form_slug] = value
@@ -140,7 +139,7 @@ class FormTestCase(
         qdict = self.get_mvdict(qdict)
 
         fdict = {}
-        for key, value in six.iteritems(config.SCRIPT_DATA["choices"].get("files")):
+        for key, value in config.SCRIPT_DATA["choices"]["files"].items():
             try:
                 form_slug = test_utils.get_subparser_form_slug(script_version, key)
                 fdict[form_slug] = value

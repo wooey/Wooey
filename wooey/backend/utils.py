@@ -4,7 +4,6 @@ import errno
 import os
 import re
 import sys
-import six
 import traceback
 from collections import OrderedDict, defaultdict
 from contextlib import contextmanager
@@ -168,7 +167,7 @@ def create_wooey_job(
         ]
     )
 
-    for form_slug, param in six.iteritems(parameters):
+    for form_slug, param in parameters.items():
         # If the parser has no name, it indicates it is the base parser. Otherwise, only parametrize the
         # chosen parser
         if param.parser_id != script_parser_pk and param.parser.name:
@@ -471,7 +470,7 @@ def add_wooey_script(
 
     # make our parameters
     parameter_index = 0
-    for parser_name, parser_inputs in six.iteritems(script_schema["inputs"]):
+    for parser_name, parser_inputs in script_schema["inputs"].items():
         parsers = ScriptParser.objects.filter(
             name=parser_name, script_version__script=wooey_script
         ).distinct()
@@ -652,11 +651,7 @@ def test_image(filepath):
 def test_delimited(filepath):
     import csv
 
-    if six.PY3:
-        handle = open(filepath, "r", newline="")
-    else:
-        handle = open(filepath, "rb")
-    with handle as csv_file:
+    with open(filepath, "r", newline="") as csv_file:
         try:
             dialect = csv.Sniffer().sniff(csv_file.read(1024 * 16), delimiters=",\t")
         except Exception as e:
@@ -713,7 +708,7 @@ def test_fastx(filepath):
             sequences[header] = "".join(seq)
         if sequences:
             rows = []
-            [rows.extend([i, v]) for i, v in six.iteritems(sequences)]
+            [rows.extend([i, v]) for i, v in sequences.items()]
             return True, rows
     return False, None
 
@@ -731,8 +726,8 @@ def create_job_fileinfo(job):
                 value = field.value
                 if value is None:
                     continue
-                if isinstance(value, six.string_types):
-                    # check if this was ever created and make a fileobject if so
+                if isinstance(value, str):
+                    # if this exists locally, but not remotely, upload the asset
                     if local_storage.exists(value):
                         if not get_storage(local=False).exists(value):
                             get_storage(local=False).save(
@@ -826,12 +821,12 @@ def create_job_fileinfo(job):
     grouped = set(
         [
             i["file"].path
-            for file_type, groups in six.iteritems(file_groups)
+            for file_type, groups in file_groups.items()
             for i in groups
             if file_type != "all"
         ]
     )
-    for file_type, group_files in six.iteritems(file_groups):
+    for file_type, group_files in file_groups.items():
         for group_file in group_files:
             if file_type == "all" and group_file["file"].path in grouped:
                 continue
@@ -888,13 +883,13 @@ def get_checksum(path=None, buff=None, extra=None):
     if extra:
         if isinstance(extra, (list, tuple)):
             for i in extra:
-                hasher.update(six.u(str(i)).encode("utf-8"))
-        elif isinstance(extra, six.string_types):
+                hasher.update(str(i).encode("utf-8"))
+        elif isinstance(extra, str):
             hasher.update(extra)
     if buff is not None:
         hasher.update(buff)
     elif path is not None:
-        if isinstance(path, six.string_types):
+        if isinstance(path, str):
             with open(path, "rb") as afile:
                 buf = afile.read(BLOCKSIZE)
                 while len(buf) > 0:
@@ -909,6 +904,16 @@ def get_checksum(path=None, buff=None, extra=None):
                 buf = path.read(BLOCKSIZE)
             path.seek(start)
     return hasher.hexdigest()
+
+
+def get_available_file(cwd, name, ext):
+    "Returns an available filename"
+    out = os.path.join(cwd, name)
+    index = 0
+    while os.path.exists("{}.{}".format(out, ext)):
+        index += 1
+        out = os.path.join(cwd, "{}_{}".format(name, index))
+    return "{}.{}".format(out, ext)
 
 
 def get_grouped_file_previews(files):

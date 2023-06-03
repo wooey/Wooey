@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-import six
+
 
 from celery import app, states
 from django.contrib.contenttypes.models import ContentType
@@ -46,7 +46,7 @@ def generate_job_list(job_query):
                 "id": job.pk,
                 "name": escape(job.job_name),
                 "description": escape(
-                    six.u("Script: {}\n{}").format(
+                    "Script: {}\n{}".format(
                         job.script_version.script.script_name, job.job_description
                     )
                 ),

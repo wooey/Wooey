@@ -1,6 +1,5 @@
 import os
 
-import six
 from django.test import TransactionTestCase
 from django.http.request import MultiValueDict
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -10,7 +9,7 @@ from ..forms import (
     WooeyForm,
 )
 from ..forms import config as forms_config
-from ..models import ScriptVersion, WooeyJob
+from ..models import ScriptParameterGroup, ScriptParameter, ScriptVersion, WooeyJob
 
 from . import (
     config,
@@ -82,9 +81,8 @@ class FormTestCase(
         subparser = script_version.scriptparser_set.first()
         subparser_key = (subparser.pk, subparser.name)
         self.assertEqual(len(form["parsers"][subparser_key]), 2)
-        # test we can hide parameters and groups
-        from wooey.models import ScriptParameterGroup, ScriptParameter
 
+        # test we can hide parameters and groups
         groups = ScriptParameterGroup.objects.filter(script_version=script_version)
         group = groups[1]
         group.hidden = True
@@ -131,7 +129,7 @@ class FormTestCase(
         self.assertTrue(forms_config.WOOEY_MULTI_WIDGET_ATTR in form_str)
 
         qdict = {}
-        for key, value in six.iteritems(config.SCRIPT_DATA["choices"].get("data")):
+        for key, value in config.SCRIPT_DATA["choices"]["data"].items():
             try:
                 form_slug = test_utils.get_subparser_form_slug(script_version, key)
                 qdict[form_slug] = value
@@ -140,7 +138,7 @@ class FormTestCase(
         qdict = self.get_mvdict(qdict)
 
         fdict = {}
-        for key, value in six.iteritems(config.SCRIPT_DATA["choices"].get("files")):
+        for key, value in config.SCRIPT_DATA["choices"]["files"].items():
             try:
                 form_slug = test_utils.get_subparser_form_slug(script_version, key)
                 fdict[form_slug] = value

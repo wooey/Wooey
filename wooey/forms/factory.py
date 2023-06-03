@@ -6,8 +6,8 @@ import json
 import os
 from collections import OrderedDict
 from functools import partial
+import urllib.parse
 
-import six
 from django import forms
 from django.forms.utils import flatatt
 from django.http.request import QueryDict
@@ -65,9 +65,7 @@ def multi_value_from_datadict(func):
         return [
             func(
                 QueryDict(
-                    "{name}={value}".format(
-                        name=name, value=six.moves.urllib.parse.quote(i)
-                    )
+                    "{name}={value}".format(name=name, value=urllib.parse.quote(i))
                 ),
                 files,
                 name,
@@ -234,7 +232,7 @@ class WooeyFormFactory(object):
                 )
 
         # If there are no required groups in a parser, remove them
-        for parser, group_map in six.iteritems(parser_group_map):
+        for parser, group_map in parser_group_map.items():
             if not len(group_map[REQUIRED_GROUP]["fields"]):
                 del group_map[REQUIRED_GROUP]
 
@@ -252,7 +250,7 @@ class WooeyFormFactory(object):
         }
 
         # create individual forms for each group and subparser
-        for parser, group_map in six.iteritems(parser_group_map):
+        for parser, group_map in parser_group_map.items():
             parser_pk = parser[0]
             if (
                 wooey_form.fields["wooey_parser"].initial is None
@@ -260,10 +258,9 @@ class WooeyFormFactory(object):
             ):
                 wooey_form.fields["wooey_parser"].initial = parser_pk
             parser_groups = script_info["parsers"].setdefault(parser, [])
-            for group_index, group in enumerate(six.iteritems(group_map)):
-                group_pk, group_info = group
+            for group_index, (group_pk, group_info) in enumerate(group_map.items()):
                 form = forms.Form()
-                for form_slug, field in six.iteritems(group_info["fields"]):
+                for form_slug, field in group_info["fields"].items():
                     form.fields[form_slug] = field
 
                 if render_fn:

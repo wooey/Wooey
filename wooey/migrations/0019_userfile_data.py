@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+from io import StringIO
 
 from django.apps import apps
 from wooey.version import DJANGO_VERSION, DJ111
@@ -62,7 +63,6 @@ def gen_userfiles(apps, schema_editor):
 
 
 def setup_wooey_files(apps, schema_editor):
-    from six.moves import StringIO
     from django.core.files import File
     from wooey.backend.utils import get_storage
 

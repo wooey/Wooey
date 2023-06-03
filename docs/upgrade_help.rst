@@ -18,6 +18,20 @@ the app models are up to date with `python manage.py migrate`. Generally, this
 command should be baked in with the startup script of your webserver to ensure
 no instance is running with unapplied migrations.
 
+Upgrading to 0.14
+-----------------
+
+This is largely a cleanup and deprecation release.
+
+1) Support for versions of Django less than 3.2 are dropped. This should only
+matter for users who are running Wooey as an installed app in their own Django
+project (not those who bootstrapped with `wooify`).
+
+2) The minimum supported Python version is 3.7. For supporting scripts written
+in older versions of Python, one approach is to create a docker wrapper, such
+as in :ref:`docker_scripts`.
+
+
 0.9.11 To 0.10
 --------------
 

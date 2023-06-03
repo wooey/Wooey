@@ -83,13 +83,12 @@ STATIC_URL = "/static/"
 # }
 
 ## A better celery broker -- using RabbitMQ (these defaults are from two free rabbitmq Heroku providers)
-# CELERY_BROKER_URL = os.environ.get('AMQP_URL') or \
+# broker_url = os.environ.get('AMQP_URL') or \
 #              os.environ.get('RABBITMQ_BIGWIG_TX_URL') or \
 #              os.environ.get('CLOUDAMQP_URL', 'amqp://guest:guest@localhost:5672/')
-# CELERY_BROKER_POOL_LIMIT = 1
-# CELERYD_CONCURRENCY = 1
-# CELERY_TASK_SERIALIZER = 'json'
-# CELERY_TASK_ACKS_LATE = True
+# broker_pool_limit = 1
+# worker_concurrency = 1
+# task_acks_late = True
 #
 
 ## for production environments, django-storages abstracts away much of the difficulty of various storage engines.

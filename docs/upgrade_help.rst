@@ -107,6 +107,10 @@ This entire line should be removed:
 8) If you were using a S3 bucket, you likely need to upgrade `django-storages`. You may need to change
 the `AWS_QUERYSTRING_AUTH` settings from `False` to `True` to comply with recent changes to S3.
 
+9) Celery settings have been changed to coincide with the upcoming configuration change. Please review
+`Celery Configuration <https://docs.celeryq.dev/en/stable/userguide/configuration.html>`_ to evaluate
+what names need to be remapped. In `wooey_celery_app.py`, you should remove the `namespace=CELERY` line
+after making appropiate changes.
 
 0.9.11 To 0.10
 --------------

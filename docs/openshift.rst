@@ -87,15 +87,13 @@ Next, you want to setup a database and a message broker for Celery
 
       ::
 
-        CELERY_RESULT_BACKEND = 'amqp'
-        BROKER_URL = os.environ.get('AMQP_URL') or \
+        broker_url = os.environ.get('AMQP_URL') or \
                      os.environ.get('RABBITMQ_BIGWIG_TX_URL') or \
                      os.environ.get('CLOUDAMQP_URL', 'amqp://guest:guest@localhost:5672/')
-        BROKER_POOL_LIMIT = 1
-        CELERYD_CONCURRENCY = 1
-        CELERY_TASK_SERIALIZER = 'json'
-        ACKS_LATE = True
-        CELERY_IMPORTS = ('wooey.tasks',)
+        broker_pool_limit = 1
+        worker_concurrency = 1
+        task_acks_late = True
+        imports = ('wooey.tasks',)
 
     * Change AMQP_URL to CLOUDAMQP_URI, which is the environment variable setup in your app.
     * Next, we need to tell the server to start celery. We will make a new deployment hook for this. Create the file project_root/.openshift/action_hooks/post_start with the following content:

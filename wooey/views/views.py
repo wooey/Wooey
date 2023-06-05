@@ -12,7 +12,15 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView, TemplateView, View
 
 from ..backend import utils
-from ..models import WooeyJob, Script, UserFile, Favorite, ScriptVersion
+from ..models import (
+    APIKey,
+    WooeyJob,
+    Script,
+    UserFile,
+    Favorite,
+    ScriptVersion,
+    WooeyProfile,
+)
 from .. import settings as wooey_settings
 
 
@@ -227,13 +235,35 @@ class WooeyProfileView(TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super(WooeyProfileView, self).get_context_data(**kwargs)
 
+        user = None
         if "username" in self.kwargs:
-            user = get_user_model()
-            ctx["profile_user"] = user.objects.get(username=self.kwargs.get("username"))
-
+            User = get_user_model()
+            user = User.objects.get(username=self.kwargs.get("username"))
         else:
             if self.request.user and self.request.user.is_authenticated:
-                ctx["profile_user"] = self.request.user
+                user = self.request.user
+
+        ctx["user_obj"] = user
+        is_logged_in_user = False
+
+        if self.request.user.is_authenticated:
+            user_profile, _ = WooeyProfile.objects.get_or_create(user=user)
+            ctx["user_profile"] = user_profile
+            is_logged_in_user = user_profile.user == self.request.user
+
+            if is_logged_in_user:
+                ctx["api_keys"] = [
+                    {
+                        "id": i.id,
+                        "name": i.name,
+                        "active": i.active,
+                        "created_date": i.created_date,
+                        "last_used": i.last_used,
+                    }
+                    for i in APIKey.objects.filter(profile=user_profile)
+                ]
+
+        ctx["is_logged_in_user"] = is_logged_in_user
 
         return ctx
 

@@ -1,0 +1,9 @@
+.profile-contents,
+.profile-contents > * {
+  background: white;
+}
+
+#api-key-table tr.deleted {
+  background: grey;
+  text-decoration: line-through;
+}

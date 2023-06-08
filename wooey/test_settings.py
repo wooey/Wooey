@@ -81,6 +81,7 @@ ROOT_URLCONF = "wooey.test_urls"
 WOOEY_EPHEMERAL_FILES = True
 WOOEY_CELERY = False
 WOOEY_FILE_DIR = "wooey_test"
+WOOEY_ENABLE_API_KEYS = True
 
 if os.environ.get("WOOEY_TEST_S3"):
     STATICFILES_STORAGE = (

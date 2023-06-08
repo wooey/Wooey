@@ -1,6 +1,4 @@
-from django.contrib.auth import hashers
 from django.http import HttpResponse, JsonResponse
-from django.utils.crypto import get_random_string
 
 from ..forms import APIKeyForm, APIKeyIDForm
 from ..models import APIKey, WooeyProfile
@@ -19,7 +17,7 @@ def requires_login(func):
 @requires_login
 def toggle_api_key(request):
     user = request.user
-    profile = WooeyProfile.objects.get(user=user)
+    profile, _ = WooeyProfile.objects.get_or_create(user=user)
     form = APIKeyIDForm(request.POST)
     if not form.is_valid():
         return JsonResponse(
@@ -42,22 +40,21 @@ def toggle_api_key(request):
 @requires_login
 def create_api_key(request):
     user = request.user
-    profile = WooeyProfile.objects.get(user=user)
+    profile, _ = WooeyProfile.objects.get_or_create(user=user)
     form = APIKeyForm(request.POST)
     if form.is_valid():
-        api_key = get_random_string(32)
-        hashed_key = hashers.make_password(api_key)
-        new_key = APIKey(
-            name=form.cleaned_data["name"], key=hashed_key, profile=profile
+        api_key = APIKey(
+            name=form.cleaned_data["name"],
+            profile=profile,
         )
-        new_key.save()
+        api_key.save()
 
         return JsonResponse(
             {
-                "id": new_key.id,
-                "name": new_key.name,
-                "created_date": new_key.created_date,
-                "api_key": api_key,
+                "id": api_key.id,
+                "name": api_key.name,
+                "created_date": api_key.created_date,
+                "api_key": api_key._api_key,
             }
         )
     else:
@@ -67,7 +64,7 @@ def create_api_key(request):
 @requires_login
 def delete_api_key(request):
     user = request.user
-    profile = WooeyProfile.objects.get(user=user)
+    profile = WooeyProfile.objects.get_or_create(user=user)
     form = APIKeyIDForm(request.POST)
     if not form.is_valid():
         return JsonResponse(

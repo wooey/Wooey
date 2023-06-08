@@ -1,7 +1,7 @@
 import factory
 from django.contrib.auth import get_user_model
 
-from ..models import Script, ScriptGroup, WooeyJob, WooeyWidget
+from ..models import APIKey, Script, ScriptGroup, WooeyJob, WooeyProfile, WooeyWidget
 from . import utils as test_utils
 
 
@@ -52,6 +52,22 @@ class UserFactory(factory.DjangoModelFactory):
     username = "user"
     email = "a@a.com"
     password = "testuser"
+
+
+class ProfileFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = WooeyProfile
+        django_get_or_create = ("user",)
+
+    user = factory.SubFactory("wooey.tests.factories.UserFactory")
+
+
+class APIKeyFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = APIKey
+
+    name = factory.Sequence(lambda n: "api key %d" % n)
+    profile = factory.SubFactory("wooey.tests.factories.ProfileFactory")
 
 
 class BaseJobFactory(factory.DjangoModelFactory):

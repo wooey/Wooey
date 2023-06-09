@@ -144,10 +144,14 @@
     }
 
     function deleteApiKey(id) {
-      $.ajax({url: "{% url "wooey:delete_api_key" id=123 %}".replace("/123/", `/${id}/`), type: 'DELETE', success: function(data){
-        $(`td[data-key-id=${id}]`).parent().addClass('deleted');
-        $(`td[data-key-id=${id}]`).parent().find('*').attr('disabled', true)
-      }})
+      $.ajax({
+        url: "{% url "wooey:delete_api_key" id=123 %}".replace("/123/", `/${id}/`),
+        type: 'DELETE',
+        success: function(data){
+          $(`td[data-key-id=${id}]`).parent().addClass('deleted');
+          $(`td[data-key-id=${id}]`).parent().find('*').attr('disabled', true)
+        }
+      })
     }
   </script>
 {% endblock inline_js %}

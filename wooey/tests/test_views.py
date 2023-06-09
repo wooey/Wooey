@@ -398,3 +398,50 @@ class WoeeyScriptSearchViews(
         self.assertEqual(
             set(result["id"] for result in d["results"]), {self.script2.id}
         )
+
+
+class TestApiKeyViews(TestCase):
+    def setUp(self):
+        self.request = RequestFactory()
+
+    def test_can_create_api_key(self):
+        url = reverse("wooey:create_api_key")
+        request = self.request.post(url, data={"name": "test-key"})
+        request.user = factories.UserFactory()
+        response = wooey_views.create_api_key(request)
+        data = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(data["name"], "test-key")
+        self.assertIn("api_key", data)
+
+    def test_can_toggle_api_key(self):
+        api_key = factories.APIKeyFactory()
+        self.assertTrue(api_key.active)
+        url = reverse("wooey:toggle_api_key", kwargs={"id": api_key.id})
+        request = self.request.post(url)
+        request.user = factories.UserFactory()
+        response = wooey_views.toggle_api_key(request, id=api_key.id)
+        api_key.refresh_from_db()
+        self.assertFalse(api_key.active)
+        response = wooey_views.toggle_api_key(request, id=api_key.id)
+        api_key.refresh_from_db()
+        self.assertTrue(api_key.active)
+
+    def test_cant_toggle_api_key_if_wrong_user(self):
+        api_key = factories.APIKeyFactory()
+        self.assertTrue(api_key.active)
+        url = reverse("wooey:toggle_api_key", kwargs={"id": api_key.id})
+        request = self.request.post(url)
+        new_profile = factories.ProfileFactory(user__username="foo")
+        request.user = new_profile.user
+        response = wooey_views.toggle_api_key(request, id=api_key.id)
+        self.assertEqual(response.status_code, 404)
+
+    def test_cant_delete_api_key_if_wrong_user(self):
+        api_key = factories.APIKeyFactory()
+        self.assertEqual(models.APIKey.objects.filter(pk=api_key.id).count(), 1)
+        url = reverse("wooey:delete_api_key", kwargs={"id": api_key.id})
+        request = self.request.delete(url)
+        new_profile = factories.ProfileFactory(user__username="foo")
+        request.user = new_profile.user
+        response = wooey_views.delete_api_key(request, id=api_key.id)
+        self.assertEqual(response.status_code, 404)

@@ -1,6 +1,7 @@
 from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_http_methods
 
-from ..forms import APIKeyForm, APIKeyIDForm
+from ..forms import APIKeyForm
 from ..models import APIKey, WooeyProfile
 
 
@@ -8,25 +9,21 @@ def requires_login(func):
     def inner(request, *args, **kwargs):
         user = request.user
         if not user.is_authenticated:
-            return HttpResponse(status_code=403)
+            return HttpResponse("Must be authenticated to use this method.", status=403)
         return func(request, *args, **kwargs)
 
     return inner
 
 
+@require_http_methods(["POST"])
 @requires_login
-def toggle_api_key(request):
+def toggle_api_key(request, id):
     user = request.user
     profile, _ = WooeyProfile.objects.get_or_create(user=user)
-    form = APIKeyIDForm(request.POST)
-    if not form.is_valid():
-        return JsonResponse(
-            {
-                "valid": False,
-                "errors": form.errors,
-            }
-        )
-    api_key = APIKey.objects.get(pk=form.cleaned_data["id"], profile=profile)
+    try:
+        api_key = APIKey.objects.get(pk=id, profile=profile)
+    except APIKey.DoesNotExist:
+        return HttpResponse("API Key not found", status=404)
     api_key.active = not api_key.active
     api_key.save()
     return JsonResponse(
@@ -37,6 +34,7 @@ def toggle_api_key(request):
     )
 
 
+@require_http_methods(["POST"])
 @requires_login
 def create_api_key(request):
     user = request.user
@@ -61,19 +59,15 @@ def create_api_key(request):
         return JsonResponse({"valid": False, "errors": form.errors})
 
 
+@require_http_methods(["DELETE"])
 @requires_login
-def delete_api_key(request):
+def delete_api_key(request, id):
     user = request.user
-    profile = WooeyProfile.objects.get_or_create(user=user)
-    form = APIKeyIDForm(request.POST)
-    if not form.is_valid():
-        return JsonResponse(
-            {
-                "valid": False,
-                "errors": form.errors,
-            }
-        )
-    api_key = APIKey.objects.get(pk=form.cleaned_data["id"], profile=profile)
+    profile, _ = WooeyProfile.objects.get_or_create(user=user)
+    try:
+        api_key = APIKey.objects.get(pk=id, profile=profile)
+    except APIKey.DoesNotExist:
+        return HttpResponse("API Key not found", status=404)
     api_key.delete()
     return JsonResponse(
         {

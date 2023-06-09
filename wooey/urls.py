@@ -105,12 +105,12 @@ wooey_patterns = [
         name="create_api_key",
     ),
     re_path(
-        r"^settings/api-keys/delete/$",
+        r"^settings/api-keys/(?P<id>\d+)/delete/$",
         views.delete_api_key,
         name="delete_api_key",
     ),
     re_path(
-        r"^settings/api-keys/toggle/$",
+        r"^settings/api-keys/(?P<id>\d+)/toggle/$",
         views.toggle_api_key,
         name="toggle_api_key",
     ),

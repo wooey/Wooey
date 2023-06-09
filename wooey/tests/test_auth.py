@@ -1,6 +1,8 @@
 from django.test import Client, TestCase
 from django.urls import reverse
 
+from .. import settings as wooey_settings
+
 from . import factories
 
 
@@ -16,3 +18,11 @@ class TestApiKeyLogin(TestCase):
         c = Client(HTTP_AUTHORIZATION="Bearer {}".format(api_key._api_key))
         response = c.get(reverse("wooey:wooey_home"))
         self.assertNotEqual(response.wsgi_request.user, api_key.profile.user)
+
+    def test_only_works_if_setting_is_enabled(self):
+        wooey_settings.WOOEY_ENABLE_API_KEYS = False
+        api_key = factories.APIKeyFactory()
+        c = Client(HTTP_AUTHORIZATION="Bearer {}".format(api_key._api_key))
+        response = c.get(reverse("wooey:wooey_home"))
+        self.assertNotEqual(response.wsgi_request.user, api_key.profile.user)
+        wooey_settings.WOOEY_ENABLE_API_KEYS = True

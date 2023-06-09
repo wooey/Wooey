@@ -137,17 +137,17 @@
     }
 
     function toggleApiKey(id) {
-      $.post("{% url "wooey:toggle_api_key" %}", {id: id}, function(data){
+      $.post("{% url "wooey:toggle_api_key" id=123 %}".replace("/123/", `/${id}/`), function(data){
         $(`td[data-key-id=${data.id}]`).siblings('.key-active').text(`${data.active ? "{% trans 'True' %}" : "{% trans 'False' %}"}`);
         $(`td[data-key-id=${data.id}]`).siblings('td').find('.api-key-toggle').text(`${data.active ? "{% trans 'Deactivate' %}" : "{% trans 'Activate' %}"}`)
       })
     }
 
     function deleteApiKey(id) {
-      $.post("{% url "wooey:delete_api_key" %}", {id: id}, function(data){
+      $.ajax({url: "{% url "wooey:delete_api_key" id=123 %}".replace("/123/", `/${id}/`), type: 'DELETE', success: function(data){
         $(`td[data-key-id=${id}]`).parent().addClass('deleted');
-        $(`td[data-key-id=${id}]`).parent().parent().find('*').attr('disabled', true)
-      })
+        $(`td[data-key-id=${id}]`).parent().find('*').attr('disabled', true)
+      }})
     }
   </script>
 {% endblock inline_js %}

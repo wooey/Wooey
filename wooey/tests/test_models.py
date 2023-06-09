@@ -219,6 +219,6 @@ class TestApiKey(TestCase):
     def test_can_fetch_user_by_key(self):
         new_profile = factories.ProfileFactory()
         api_key = factories.APIKeyFactory(profile=new_profile)
-        self.assetEqual(
+        self.assertEqual(
             api_key.profile.user, models.APIKey.get_user_by_key(api_key._api_key)
         )

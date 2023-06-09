@@ -13,6 +13,14 @@ class TestApiKeyLogin(TestCase):
         response = c.get(reverse("wooey:wooey_home"))
         self.assertEqual(response.wsgi_request.user, api_key.profile.user)
 
+    def test_records_last_time_api_key_used(self):
+        api_key = factories.APIKeyFactory()
+        c = Client(HTTP_AUTHORIZATION="Bearer {}".format(api_key._api_key))
+        self.assertIsNone(api_key.last_used)
+        response = c.get(reverse("wooey:wooey_home"))
+        api_key.refresh_from_db()
+        self.assertIsNotNone(api_key.last_used)
+
     def test_fails_if_api_key_inactive(self):
         api_key = factories.APIKeyFactory(active=False)
         c = Client(HTTP_AUTHORIZATION="Bearer {}".format(api_key._api_key))

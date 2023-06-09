@@ -1,6 +1,11 @@
 Changelog
 =========
 
+v0.14.0
+-------
+
+| [`Feature <https://github.com/wooey/Wooey/pull/383>`__] API Keys were added
+
 v0.12.0
 -------
 

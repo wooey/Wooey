@@ -12,6 +12,9 @@ jobs by anonymous users. (Default: ``True``)
 By default, Wooey has a basic user account system. It is very basic, and
 doesn't confirm registrations via email.
 
+:code:`WOOEY_ENABLE_API_KEYS`: Boolean, whether to enable remote authentication
+via API Keys.
+
 :code:`WOOEY_AUTH`: Boolean, whether to use the authorization system of
 Wooey for simple login/registration. (Default: ``True``)
 

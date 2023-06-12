@@ -445,3 +445,29 @@ class TestApiKeyViews(TestCase):
         request.user = new_profile.user
         response = wooey_views.delete_api_key(request, id=api_key.id)
         self.assertEqual(response.status_code, 404)
+
+
+class TestProfileView(TestCase):
+    def test_doesnt_show_settings_if_not_logged_in_user(self):
+        request_factory = RequestFactory()
+        other_user = factories.UserFactory(username="someone-else")
+        user = factories.UserFactory()
+        url = reverse("wooey:profile", kwargs={"username": user.username})
+
+        request = request_factory.get(url)
+        request.user = other_user
+        view = wooey_views.WooeyProfileView.as_view()
+        response = view(request, username=user.username)
+        self.assertFalse(response.context_data["is_logged_in_user"])
+
+    def test_show_settings_if_logged_in_user(self):
+        request_factory = RequestFactory()
+        factories.UserFactory(username="someone-else")
+        user = factories.UserFactory()
+        url = reverse("wooey:profile", kwargs={"username": user.username})
+
+        request = request_factory.get(url)
+        request.user = user
+        view = wooey_views.WooeyProfileView.as_view()
+        response = view(request, username=user.username)
+        self.assertTrue(response.context_data["is_logged_in_user"])

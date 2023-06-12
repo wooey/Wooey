@@ -99,6 +99,21 @@ wooey_patterns = [
         views.WooeyProfileView.as_view(),
         name="profile",
     ),
+    re_path(
+        r"^settings/api-keys/new/$",
+        views.create_api_key,
+        name="create_api_key",
+    ),
+    re_path(
+        r"^settings/api-keys/(?P<id>\d+)/delete/$",
+        views.delete_api_key,
+        name="delete_api_key",
+    ),
+    re_path(
+        r"^settings/api-keys/(?P<id>\d+)/toggle/$",
+        views.toggle_api_key,
+        name="toggle_api_key",
+    ),
     re_path(r"^$", views.WooeyHomeView.as_view(), name="wooey_home"),
     re_path(r"^$", views.WooeyHomeView.as_view(), name="wooey_job_launcher"),
     re_path(

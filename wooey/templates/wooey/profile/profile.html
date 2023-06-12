@@ -1,31 +1,37 @@
 {% extends "wooey/base.html" %}
 {% load i18n %}
+{% load static %}
 {% load wooey_tags %}
 {% block center_content_class %}col-md-12 col-xs-12{% endblock center_content_class %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static "wooey/css/profile.css" %}"/>
+{% endblock extra_css %}
 
 {% block center_content %}
   <div class="page-header">
 
-    <img src="{% gravatar profile_user.email 64 %}" class="gravatar gravatar-64">
+    <img src="{% gravatar user_obj.email 64 %}" class="gravatar gravatar-64">
     <div class="profile-gravatar-adjust">
       <h1>
-        {% if profile_user.first_name or profile_user.last_name %}
-          {{ profile_user.get_full_name }}
+        {% if user_obj.first_name or user_obj.last_name %}
+          {{ user_obj.get_full_name }}
         {% else %}
-          {{ profile_user.username }}
+          {{ user_obj.username }}
         {% endif %}
-        <small>{{ profile_user.username }}</small></h1>
+        <small>{{ user_obj.username }}</small></h1>
 
 
       <div class="profile-metadata">
-        {% blocktrans with join_date=profile_user.date_joined|timesince %}
+        {% blocktrans with join_date=user_obj.date_joined|timesince %}
           Joined {{ join_date }} ago
         {% endblocktrans %}
-        {% if profile_user.is_superuser %}
+        {% if user_obj.is_superuser %}
           • <span class="glyphicon glyphicon-fire"></span> {% trans "Superuser" %}
         {% endif %}
 
-        {% if profile_user.is_staff %}
+        {% if user_obj.is_staff %}
           • <span class="glyphicon glyphicon-education"></span> {% trans "Staff" %}
         {% endif %}
 
@@ -33,6 +39,119 @@
 
     </div>
   </div>
+  {% if is_logged_in_user %}
+    <div class="profile-contents">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-md-2">
+            <ul class="nav nav-pills nav-stacked" role="tablist">
+              <li role="presentation" class="active"><a href="#api_keys" data-toggle="tab" role="tab">{% trans "API Keys" %}</a></li>
+            </ul>
+          </div>
+          <div class="col-md-10 tab-content">
+            <div role="tabpanel" class="tab-pane active" id="api_keys">
+              <button type="button" class="btn btn-default" data-toggle="modal" onclick="showApiKeyModal()">{% trans "Create API Key" %}</button>
+              <br />
+              <table id="api-key-table" class="table">
+                <thead>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Active</th>
+                  <th>Created on</th>
+                  <th>Last Used</th>
+                  <th>Actions</th>
+                </thead>
+                <tbody>
+                  {% for key in api_keys %}
+                    <tr>
+                      <td data-key-id="{{ key.id }}">{{ key.id }}</td>
+                      <td>{{ key.name }}</td>
+                      <td class="key-active">{{ key.active }}</td>
+                      <td>{{ key.created_date|date:"N d, Y - G:i:s" }}</td>
+                      <td>{{ key.last_use|date:"N d, Y - G:i:s" }}</td>
+                      <td>
+                        <div class="btn-group" role="group" aria-label="{% trans "API Key Actions" %}">
+                          <button type="button" class="btn btn-default api-key-toggle" onclick="toggleApiKey({{ key.id }})">{% if key.active %}{% trans "Deactivate" %}{% else %}{% trans "Activate" %}{% endif %}</button>
+                          <button type="button" class="btn btn-danger" onclick="deleteApiKey({{ key.id }})">{% trans "Delete" %}</button>
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+
+              <div class="modal fade" tabindex="-1" role="dialog" id="create-api-key-modal">
+                <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                      <h4 class="modal-title">{% trans "Create new API Key" %}</h4>
+                    </div>
+                    <div class="modal-body">
+                      <form>
+                        <div class="form-group">
+                          <label for="api-key-name">{% trans "API Key Name" %}</label>
+                          <input type="text" class="form-control" id="api-key-name" placeholder="{% trans "work laptop..." %}">
+                        </div>
+                      </form>
+                      <div class="hidden">
+                        <p>This is your API Key. This is your only chance to copy its value.<br /><strong id="new-api-key"></strong></p>
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Close" %}</button>
+                      <button id="create-api-key" type="button" class="btn btn-primary" onclick="createApiKey()">{% trans "Create Key" %}</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
 
 
 {% endblock center_content %}
+
+
+{% block inline_js %}
+  {{ block.super }}
+  <script type="text/javascript">
+    function createApiKey() {
+      $.post("{% url "wooey:create_api_key" %}", {name: $('#api-key-name').val()}, function(data){
+        $("#create-api-key-modal .modal-body > form").addClass('hidden');
+        $("#create-api-key").addClass('hidden');
+        $("#create-api-key-modal .modal-body > div").removeClass('hidden');
+        $('#new-api-key').html(data.api_key);
+        $('#api-key-table > tbody').append(`<tr><td>${data.id}</td><td>${data.name}</td><td>True</td><td></td><td></td><td></td></tr>`)
+      })
+    }
+
+    function showApiKeyModal() {
+      $("#create-api-key-modal .modal-body > form").removeClass('hidden');
+      $("#create-api-key").removeClass('hidden');
+      $("#create-api-key-modal .modal-body > div").addClass('hidden');
+      $("#create-api-key-modal").modal('show');
+    }
+
+    function toggleApiKey(id) {
+      $.post("{% url "wooey:toggle_api_key" id=123 %}".replace("/123/", `/${id}/`), function(data){
+        $(`td[data-key-id=${data.id}]`).siblings('.key-active').text(`${data.active ? "{% trans 'True' %}" : "{% trans 'False' %}"}`);
+        $(`td[data-key-id=${data.id}]`).siblings('td').find('.api-key-toggle').text(`${data.active ? "{% trans 'Deactivate' %}" : "{% trans 'Activate' %}"}`)
+      })
+    }
+
+    function deleteApiKey(id) {
+      $.ajax({
+        url: "{% url "wooey:delete_api_key" id=123 %}".replace("/123/", `/${id}/`),
+        type: 'DELETE',
+        success: function(data){
+          $(`td[data-key-id=${id}]`).parent().addClass('deleted');
+          $(`td[data-key-id=${id}]`).parent().find('*').attr('disabled', true)
+        }
+      })
+    }
+  </script>
+{% endblock inline_js %}

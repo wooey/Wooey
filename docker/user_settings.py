@@ -4,6 +4,8 @@ from .wooey_settings import *  # noqa: F403
 # Whether to allow anonymous job submissions, set False to disallow 'guest' job submissions
 WOOEY_ALLOW_ANONYMOUS = True
 
+WOOEY_ENABLE_API_KEYS = True
+
 ## Celery related options
 
 WOOEY_CELERY = True

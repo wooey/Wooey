@@ -16,12 +16,13 @@ WOOEY_ALLOW_ANONYMOUS = get("WOOEY_ALLOW_ANONYMOUS", True)
 WOOEY_AUTH = get("WOOEY_AUTH", True)
 WOOEY_LOGIN_URL = get("WOOEY_LOGIN_URL", settings.LOGIN_URL)
 WOOEY_REGISTER_URL = get("WOOEY_REGISTER_URL", "/accounts/register/")
+WOOEY_ENABLE_API_KEYS = get("WOOEY_ENABLE_API_KEYS", False)
 
 # Celery and job queue settings
 WOOEY_CELERY = get("WOOEY_CELERY", True)
 WOOEY_CELERY_TASKS = get("WOOEY_CELERY_TASKS", "wooey.tasks")
-WOOEY_CELERY_STOPPABLE_JOBS = "amqp" in celery_app.conf.get(
-    "CELERY_BROKER_URL", celery_app.conf.get("broker_url", "")
+WOOEY_CELERY_STOPPABLE_JOBS = "amqp" in str(
+    celery_app.conf.get("CELERY_BROKER_URL", celery_app.conf.get("broker_url", ""))
 )
 
 # Site setup settings

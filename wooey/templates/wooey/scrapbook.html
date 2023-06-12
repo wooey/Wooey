@@ -3,15 +3,15 @@
 {% load wooey_tags %}
 
 {% block extra_js %}
-    {{ js.super }}
+    {{ block.super }}
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/ekko-lightbox/3.3.0/ekko-lightbox.min.js"></script>
 {% endblock extra_js %}
 {% block extra_css %}
-    {{ extra_css.super }}
+    {{ block.super }}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ekko-lightbox/3.3.0/ekko-lightbox.min.css"/>
 {% endblock extra_css %}
 {% block extra_style %}
-    {{ extra_style.super }}
+    {{ block.super }}
     #wooey-task-submit {
     float: left;
     margin-left: 3px;

@@ -43,3 +43,8 @@ to parse this information), updates to the script version will result in a new
 version being created. If a command line library doesn't support versioning
 or the version has not been updated in a script, the Script Iteration counter
 will be incremented.
+
+.. toctree::
+   :maxdepth: 2
+
+   api_keys

@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from django.urls import include, re_path
 
+from . import api
 from . import views
 from . import settings as wooey_settings
 
@@ -47,6 +48,11 @@ wooey_patterns = [
         r"^jobs/(?P<uuid>[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12})/json$",
         views.JobJSON.as_view(),
         name="celery_results_json_uuid",
+    ),
+    re_path(
+        r"^api/scripts/v1/(?P<slug>[a-zA-Z0-9\-\_]+)/submit/$",
+        api.submit_script,
+        name="api_submit_script",
     ),
     re_path(
         r"^scripts/(?P<slug>[a-zA-Z0-9\-\_]+)/$",

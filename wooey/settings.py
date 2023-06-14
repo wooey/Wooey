@@ -22,7 +22,7 @@ WOOEY_ENABLE_API_KEYS = get("WOOEY_ENABLE_API_KEYS", False)
 WOOEY_CELERY = get("WOOEY_CELERY", True)
 WOOEY_CELERY_TASKS = get("WOOEY_CELERY_TASKS", "wooey.tasks")
 WOOEY_CELERY_STOPPABLE_JOBS = "amqp" in str(
-    celery_app.conf.get("CELERY_BROKER_URL", celery_app.conf.get("broker_url", ""))
+    celery_app.conf.get("CELERY_BROKER_URL", celery_app.conf.get("broker_url") or "")
 )
 
 # Site setup settings

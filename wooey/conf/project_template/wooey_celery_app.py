@@ -10,7 +10,10 @@ app = Celery("{{ project_name }}")
 
 # Using a string here means the worker will not have to
 # pickle the object when using Windows.
-app.config_from_object("django.conf:settings")
+if "CELERY_CONFIG_MODULE" in os.environ:
+    app.config_from_envvar("CELERY_CONFIG_MODULE")
+else:
+    app.config_from_object("django.conf:settings")
 app.autodiscover_tasks()
 
 

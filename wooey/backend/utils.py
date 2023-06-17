@@ -250,7 +250,11 @@ def validate_form(form=None, data=None, files=None):
 
     # Now append any new files into our cleaned form data
     for field in files or {}:
-        v = files.getlist(field)
+        v = (
+            files.getlist(field)
+            if isinstance(files, (MultiValueDict, QueryDict))
+            else files[field]
+        )
         if field in form.cleaned_data:
             cleaned = form.cleaned_data[field]
             cleaned = cleaned if isinstance(cleaned, list) else [cleaned]

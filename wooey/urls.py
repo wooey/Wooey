@@ -55,6 +55,11 @@ wooey_patterns = [
         name="api_submit_script",
     ),
     re_path(
+        r"^api/scripts/v1/add-or-update/$",
+        api.add_or_update_script,
+        name="api_add_or_update_script",
+    ),
+    re_path(
         r"^api/jobs/v1/(?P<job_id>[a-zA-Z0-9\-\_]+)/status/$",
         api.job_status,
         name="api_job_status",

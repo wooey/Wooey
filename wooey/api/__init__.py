@@ -2,4 +2,7 @@ from .jobs import (  # noqa: F401
     job_details,
     job_status,
 )
-from .scripts import submit_script  # noqa: F401
+from .scripts import (  # noqa: F401
+    add_or_update_script,
+    submit_script,
+)

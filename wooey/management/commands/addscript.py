@@ -47,7 +47,7 @@ class Command(BaseCommand):
                 )
         if not os.path.exists(script):
             raise CommandError("{0} does not exist.".format(script))
-        group = options.get("group", "Wooey Scripts")
+        group = options.get("group", wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP)
         scripts = (
             [os.path.join(script, i) for i in os.listdir(script)]
             if os.path.isdir(script)

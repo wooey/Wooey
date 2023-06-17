@@ -40,6 +40,8 @@ def sanitize_string(value):
 
 
 def ensure_list(value):
+    if value is None:
+        return []
     return value if isinstance(value, list) else list(value)
 
 
@@ -359,9 +361,7 @@ def add_wooey_script(
     ):
         return {
             "valid": False,
-            "errors": errors.DuplicateScriptError(
-                ScriptVersion.error_messages["duplicate_script"]
-            ),
+            "errors": ScriptVersion.error_messages["duplicate_script"],
             "script": existing_version,
         }
 

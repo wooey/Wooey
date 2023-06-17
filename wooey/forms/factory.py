@@ -70,7 +70,11 @@ def multi_value_from_datadict(func):
                 files,
                 name,
             )
-            for i in data.getlist(name)
+            for i in (
+                data.getlist(name)
+                if isinstance(data, QueryDict)
+                else utils.ensure_list(data[name])
+            )
         ]
 
     return value_from_datadict

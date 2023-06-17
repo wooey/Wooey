@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import shlex
 from itertools import groupby
 
@@ -11,7 +12,8 @@ from django.views.decorators.http import require_http_methods
 
 from .. import models
 from ..backend import utils
-from .forms import SubmitForm
+from .forms import AddScriptForm, SubmitForm
+from .. import settings as wooey_settings
 
 
 def create_argparser(script_version):
@@ -139,3 +141,54 @@ def submit_script(request, slug=None):
             },
             status=403,
         )
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def add_or_update_script(request):
+    submitted_data = request.POST.dict()
+    files = request.FILES
+
+    form = AddScriptForm(submitted_data)
+    if not form.is_valid():
+        return JsonResponse({"valid": False, "errors": form.errors})
+
+    data = form.cleaned_data
+    group = data["group"] or wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP
+
+    response = []
+
+    for script_name, script_file in files.items():
+        script_path = utils.default_storage.save(
+            os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, script_file.name),
+            script_file,
+        )
+        if wooey_settings.WOOEY_EPHEMERAL_FILES:
+            # save it locally as well (the default_storage will default to the remote store)
+            script_file.seek(0)
+            local_storage = utils.get_storage(local=True)
+            local_storage.save(
+                os.path.join(
+                    wooey_settings.WOOEY_SCRIPT_DIR,
+                    script_file.name,
+                ),
+                script_file,
+            )
+        add_kwargs = {
+            "script_path": script_path,
+            "group": group,
+            "script_name": script_name,
+        }
+        results = utils.add_wooey_script(**add_kwargs)
+        output = {
+            "script": script_name,
+            "success": results["valid"],
+            "errors": results["errors"],
+        }
+        if results["valid"]:
+            output["version"] = results["script"].script_version
+            output["iteration"] = results["script"].script_iteration
+            output["is_default"] = results["script"].default_version
+        response.append(output)
+
+    return JsonResponse(response, safe=False)

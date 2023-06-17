@@ -132,7 +132,7 @@ def submit_script(request, slug=None):
             {
                 "valid": False,
                 "errors": {
-                    "__all__": [
+                    "script": [
                         force_str(_("You are not permitted to access this script."))
                     ]
                 },

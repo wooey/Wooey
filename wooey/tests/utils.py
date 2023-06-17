@@ -5,8 +5,8 @@ from django.core.files.storage import default_storage
 from .. import settings as wooey_settings
 
 
-def get_subparser_form_slug(script_version, slug):
-    return script_version.scriptparameter_set.get(script_param=slug).form_slug
+def get_subparser_form_slug(script_version, param):
+    return script_version.scriptparameter_set.get(script_param=param).form_slug
 
 
 def save_script_path(script_path):

@@ -246,7 +246,7 @@ def validate_form(form=None, data=None, files=None):
             del form.errors[field]
 
     # Now append any new files into our cleaned form data
-    for field in files:
+    for field in files or {}:
         v = files.getlist(field)
         if field in form.cleaned_data:
             cleaned = form.cleaned_data[field]

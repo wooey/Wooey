@@ -43,9 +43,7 @@ class WooeyScriptBase(DetailView):
 
         if job_id:
             job = WooeyJob.objects.get(pk=job_id)
-            if job.user is None or (
-                self.request.user.is_authenticated and job.user == self.request.user
-            ):
+            if job.can_user_view(self.request.user):
                 context["job_info"] = {"job_id": job_id}
 
                 parser_used = None

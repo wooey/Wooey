@@ -352,6 +352,9 @@ class WooeyJob(models.Model):
                 return rt
         return self.stderr
 
+    def can_user_view(self, user):
+        return self.user is None or (user.is_authenticated and self.user == user)
+
 
 class ScriptParameterGroup(models.Model):
     group_name = models.TextField()

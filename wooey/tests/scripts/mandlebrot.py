@@ -32,14 +32,14 @@ def mandel(n, m, itermax, xmin, xmax, ymin, ymax):
     iy.shape = n * m
     c.shape = n * m
     z = copy(c)
-    for i in xrange(itermax):
+    for i in range(itermax):
         if not len(z):
             break
         multiply(z, z, z)
         add(z, c, z)
         rem = abs(z) > 2.0
         img[ix[rem], iy[rem]] = i + 1
-        rem = -rem
+        rem = ~rem
         z = z[rem]
         ix, iy = ix[rem], iy[rem]
         c = c[rem]

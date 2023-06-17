@@ -10,7 +10,8 @@ import urllib.parse
 
 from django import forms
 from django.forms.utils import flatatt
-from django.http.request import MultiValueDict, QueryDict
+from django.http.request import QueryDict
+from django.utils.datastructures import MultiValueDict
 from django.utils.html import format_html
 from django.utils.module_loading import import_string
 from django.utils.safestring import mark_safe

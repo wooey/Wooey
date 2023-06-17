@@ -23,7 +23,8 @@ from django.db.utils import OperationalError
 from django.core.files.storage import default_storage
 from django.core.files import File
 from django.forms import FileField
-from django.http import MultiValueDict, QueryDict
+from django.http import QueryDict
+from django.utils.datastructures import MultiValueDict
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 

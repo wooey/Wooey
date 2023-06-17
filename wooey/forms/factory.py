@@ -10,7 +10,7 @@ import urllib.parse
 
 from django import forms
 from django.forms.utils import flatatt
-from django.http.request import QueryDict
+from django.http.request import MultiValueDict, QueryDict
 from django.utils.html import format_html
 from django.utils.module_loading import import_string
 from django.utils.safestring import mark_safe
@@ -72,7 +72,7 @@ def multi_value_from_datadict(func):
             )
             for i in (
                 data.getlist(name)
-                if isinstance(data, QueryDict)
+                if isinstance(data, (MultiValueDict, QueryDict))
                 else utils.ensure_list(data[name])
             )
         ]

@@ -23,7 +23,7 @@ from django.db.utils import OperationalError
 from django.core.files.storage import default_storage
 from django.core.files import File
 from django.forms import FileField
-from django.http import QueryDict
+from django.http import MultiValueDict, QueryDict
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 
@@ -222,7 +222,7 @@ def validate_form(form=None, data=None, files=None):
             # if we have a value set, reassert this
             new_values = (
                 list(filter(lambda x: x, data.getlist(field)))
-                if isinstance(data, QueryDict)
+                if isinstance(data, (MultiValueDict, QueryDict))
                 else ensure_list(data.get(field))
             )
             cleaned_values = []

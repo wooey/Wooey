@@ -256,8 +256,7 @@ def validate_form(form=None, data=None, files=None):
             else files[field]
         )
         if field in form.cleaned_data:
-            cleaned = form.cleaned_data[field]
-            cleaned = cleaned if isinstance(cleaned, list) else [cleaned]
+            cleaned = ensure_list(form.cleaned_data[field])
             form.cleaned_data[field] = list(set(cleaned).union(set(v)))
 
 

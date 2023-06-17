@@ -3,7 +3,6 @@ from collections import defaultdict
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from django.forms import FileField
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -107,46 +106,7 @@ class WooeyScriptBase(DetailView):
         form = utils.get_master_form(
             pk=int(post["wooey_type"]), parser=int(post.get("wooey_parser", 0))
         )
-        # TODO: Check with people who know more if there's a smarter way to do this
         utils.validate_form(form=form, data=post, files=request.FILES)
-        # for cloned jobs, we don't have the files in input fields, they'll be in a list like ['', filename]
-        # This will cause issues.
-        to_delete = []
-        for i in post:
-            if isinstance(form.fields.get(i), FileField):
-                # if we have a value set, reassert this
-                new_values = list(filter(lambda x: x, post.getlist(i)))
-                cleaned_values = []
-                for new_value in new_values:
-                    if i not in request.FILES and (
-                        i not in form.cleaned_data
-                        or (
-                            new_value
-                            and (
-                                form.cleaned_data[i] is None
-                                or not [j for j in form.cleaned_data[i] if j]
-                            )
-                        )
-                    ):
-                        # this is a previously set field, so a cloned job
-                        if new_value is not None:
-                            cleaned_values.append(
-                                utils.get_storage(local=False).open(new_value)
-                            )
-                        to_delete.append(i)
-                if cleaned_values:
-                    form.cleaned_data[i] = cleaned_values
-        for i in to_delete:
-            if i in form.errors:
-                del form.errors[i]
-
-        # because we can have multiple files for a field, we need to update our form.cleaned_data to be a list of files
-        for i in request.FILES:
-            v = request.FILES.getlist(i)
-            if i in form.cleaned_data:
-                cleaned = form.cleaned_data[i]
-                cleaned = cleaned if isinstance(cleaned, list) else [cleaned]
-                form.cleaned_data[i] = list(set(cleaned).union(set(v)))
 
         if not form.errors:
             version_pk = form.cleaned_data.get("wooey_type")

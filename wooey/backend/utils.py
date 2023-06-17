@@ -22,6 +22,8 @@ from django.db import transaction
 from django.db.utils import OperationalError
 from django.core.files.storage import default_storage
 from django.core.files import File
+from django.forms import FileField
+from django.http import QueryDict
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 
@@ -35,6 +37,10 @@ def sanitize_name(name):
 
 def sanitize_string(value):
     return value.replace('"', '\\"')
+
+
+def ensure_list(value):
+    return value if isinstance(value, list) else list(value)
 
 
 def get_storage(local=True):
@@ -205,6 +211,47 @@ def validate_form(form=None, data=None, files=None):
     form.files = files if files is not None else {}
     form.is_bound = True
     form.full_clean()
+
+    # for cloned jobs, because we do not open a file selection window again in the browser, the pointer to files will just be a list
+    # like ['', filename]. We need to remap these to previously submitted files and merge with any new files provided.
+    to_delete = []
+    for field in data:
+        if isinstance(form.fields.get(field), FileField):
+            # if we have a value set, reassert this
+            new_values = (
+                list(filter(lambda x: x, data.getlist(field)))
+                if isinstance(data, QueryDict)
+                else ensure_list(data.get(field))
+            )
+            cleaned_values = []
+            for new_value in new_values:
+                if field not in files and (
+                    field not in form.cleaned_data
+                    or (
+                        new_value
+                        and (
+                            form.cleaned_data[field] is None
+                            or not [j for j in form.cleaned_data[field] if j]
+                        )
+                    )
+                ):
+                    # this is a previously set field, so a cloned job
+                    if new_value is not None:
+                        cleaned_values.append(get_storage(local=False).open(new_value))
+                    to_delete.append(field)
+            if cleaned_values:
+                form.cleaned_data[field] = cleaned_values
+    for field in to_delete:
+        if field in form.errors:
+            del form.errors[field]
+
+    # Now append any new files into our cleaned form data
+    for field in files:
+        v = files.getlist(field)
+        if field in form.cleaned_data:
+            cleaned = form.cleaned_data[field]
+            cleaned = cleaned if isinstance(cleaned, list) else [cleaned]
+            form.cleaned_data[field] = list(set(cleaned).union(set(v)))
 
 
 def get_current_scripts():

@@ -41,7 +41,13 @@ def create_argparser(script_version):
 @csrf_exempt
 @require_http_methods(["POST"])
 def submit_script(request, slug=None):
-    form = SubmitForm(json.loads(request.body.decode("utf-8")))
+    if request.POST:
+        submitted_data = request.POST.dict()
+        files = request.FILES
+    else:
+        submitted_data = json.loads(request.body.decode("utf-8"))
+        files = None
+    form = SubmitForm(submitted_data)
     if not form.is_valid():
         return JsonResponse({"valid": False, "errors": form.errors})
     data = form.cleaned_data
@@ -67,7 +73,6 @@ def submit_script(request, slug=None):
 
         parser = create_argparser(script_version)
         parsed_command = parser.parse_args(shlex.split(command))
-        # TODO: figure out subparser used and pass through
         if valid and group_valid:
             job_data = vars(parsed_command)
             job_data["job_name"] = data["job_name"]
@@ -79,18 +84,28 @@ def submit_script(request, slug=None):
             )
             wooey_form_data = job_data.copy()
             wooey_form_data["wooey_type"] = script_version.pk
-            utils.validate_form(form=form, data=wooey_form_data)
-            import pdb
+            utils.validate_form(form=form, data=wooey_form_data, files=files)
 
-            pdb.set_trace()
-            job = utils.create_wooey_job(
-                script_parser_pk=subparser_id,
-                script_version_pk=script_version.id,
-                user=request.user,
-                data=job_data,
-            )
-            job.submit_to_celery()
-            return JsonResponse({"valid": True, "job_id": job.id})
+            if not form.errors:
+                job = utils.create_wooey_job(
+                    script_parser_pk=subparser_id,
+                    script_version_pk=script_version.id,
+                    user=request.user,
+                    data=job_data,
+                )
+                job.submit_to_celery()
+                return JsonResponse({"valid": True, "job_id": job.id})
+            else:
+                return {"valid": False, "errors": form.errors}
+    else:
+        return {
+            "valid": False,
+            "errors": {
+                "__all__": [
+                    force_str(_("You are not permitted to access this script."))
+                ]
+            },
+        }
 
     return JsonResponse(
         {

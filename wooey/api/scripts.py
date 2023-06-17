@@ -96,24 +96,16 @@ def submit_script(request, slug=None):
                 job.submit_to_celery()
                 return JsonResponse({"valid": True, "job_id": job.id})
             else:
-                return {"valid": False, "errors": form.errors}
+                return JsonResponse({"valid": False, "errors": form.errors}, status=400)
     else:
-        return {
-            "valid": False,
-            "errors": {
-                "__all__": [
-                    force_str(_("You are not permitted to access this script."))
-                ]
+        return JsonResponse(
+            {
+                "valid": False,
+                "errors": {
+                    "__all__": [
+                        force_str(_("You are not permitted to access this script."))
+                    ]
+                },
             },
-        }
-
-    return JsonResponse(
-        {
-            "valid": False,
-            "errors": {
-                "__all__": [
-                    force_str(_("You are not permitted to access this script."))
-                ]
-            },
-        }
-    )
+            status=403,
+        )

@@ -57,6 +57,14 @@ class TestJobDetails(
         self.assertEqual(job.job_name, data["job_name"])
 
 
+class TestScriptAddition(mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTestCase):
+    def test_can_add_new_script(self):
+        pass
+
+    def test_can_update_existing_script(self):
+        pass
+
+
 class TestScriptSubmission(
     mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTestCase
 ):

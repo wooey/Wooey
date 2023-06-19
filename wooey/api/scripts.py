@@ -13,6 +13,7 @@ from django.views.decorators.http import require_http_methods
 from .. import models
 from ..backend import utils
 from .forms import AddScriptForm, SubmitForm
+from ..utils import requires_login
 from .. import settings as wooey_settings
 
 
@@ -57,6 +58,8 @@ def create_argparser(script_version):
             active_parser = parser
         for argument in arguments:
             argument_kwargs = {"dest": argument.form_slug, "default": argument.default}
+            if argument.multiple_choice:
+                argument_kwargs["nargs"] = "*"
             if argument.short_param:
                 argument_kwargs["required"] = argument.required
                 active_parser.add_argument(argument.short_param, **argument_kwargs)
@@ -67,13 +70,13 @@ def create_argparser(script_version):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+@requires_login
 def submit_script(request, slug=None):
-    if request.POST:
-        submitted_data = request.POST.dict()
-        files = request.FILES
-    else:
+    submitted_data = request.POST
+    files = request.FILES
+    if not submitted_data:
         submitted_data = json.loads(request.body.decode("utf-8"))
-        files = None
+
     form = SubmitForm(submitted_data)
     if not form.is_valid():
         return JsonResponse({"valid": False, "errors": form.errors})
@@ -116,6 +119,32 @@ def submit_script(request, slug=None):
             )
             wooey_form_data = job_data.copy()
             wooey_form_data["wooey_type"] = script_version.pk
+
+            # We need to remap uploaded files to the correct slug
+            form_slugs = list(wooey_form_data)
+            for form_slug in form_slugs:
+                form_value = wooey_form_data[form_slug]
+                if isinstance(form_value, list):
+                    to_append = []
+                    for index, value in enumerate(form_value):
+                        if value in files:
+                            to_append.append(index)
+                    if to_append:
+                        existing_files = files.get(form_slug, [])
+                        files.setlist(
+                            form_slug,
+                            utils.flatten(
+                                existing_files
+                                + [files.pop(form_value[i]) for i in to_append]
+                            ),
+                        )
+                        for index in reversed(to_append):
+                            form_value.pop(index)
+                else:
+                    if form_value in files:
+                        files.setlist(form_slug, files.pop(form_value))
+                        wooey_form_data[form_slug] = [""]
+
             utils.validate_form(form=form, data=wooey_form_data, files=files)
 
             if not form.errors:
@@ -123,7 +152,7 @@ def submit_script(request, slug=None):
                     script_parser_pk=subparser_id,
                     script_version_pk=script_version.id,
                     user=request.user,
-                    data=job_data,
+                    data=form.cleaned_data,
                 )
                 job.submit_to_celery()
                 return JsonResponse({"valid": True, "job_id": job.id})
@@ -145,6 +174,7 @@ def submit_script(request, slug=None):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+@requires_login
 def add_or_update_script(request):
     submitted_data = request.POST.dict()
     files = request.FILES

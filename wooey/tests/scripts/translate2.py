@@ -128,7 +128,7 @@ def main():
         return "".join(
             [
                 CODON_TABLE.get(seq[i : i + 3], "X")
-                for i in xrange(frame, len(seq), 3)
+                for i in range(frame, len(seq), 3)
                 if i + 3 <= len(seq)
             ]
         )

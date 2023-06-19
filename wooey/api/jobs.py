@@ -5,10 +5,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from .. import models
+from ..utils import requires_login
 
 
 @csrf_exempt
 @require_http_methods(["GET"])
+@requires_login
 def job_status(request, job_id):
     job = models.WooeyJob.objects.get(id=job_id)
     if job.can_user_view(request.user):
@@ -34,6 +36,7 @@ def job_status(request, job_id):
 
 @csrf_exempt
 @require_http_methods(["GET"])
+@requires_login
 def job_details(request, job_id):
     job = models.WooeyJob.objects.get(id=job_id)
     if job.can_user_view(request.user):

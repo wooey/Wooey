@@ -43,7 +43,17 @@ def sanitize_string(value):
 def ensure_list(value):
     if value is None:
         return []
-    return value if isinstance(value, list) else list(value)
+    return value if isinstance(value, list) else [value]
+
+
+def flatten(value):
+    new_list = []
+    for element in value:
+        if isinstance(element, list):
+            new_list.extend(flatten(element))
+        else:
+            new_list.append(element)
+    return new_list
 
 
 def get_storage(local=True):

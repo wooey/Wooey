@@ -5,6 +5,9 @@ from ..models import ScriptVersion, WooeyFile, WooeyJob
 from ..backend import utils
 from .. import settings as wooey_settings
 from . import factories, config
+from .utils import (
+    get_subparser_form_slug,
+)
 
 
 # TODO: Track down where file handles are not being closed. This is not a problem on Linux/Mac, but is on Windows
@@ -76,14 +79,27 @@ class ScriptFactoryMixin(ScriptTearDown, object):
             os.path.join(config.WOOEY_TEST_SCRIPTS, "versioned_script", "v2.py"),
             script_name="version_test",
         )
-        super(ScriptFactoryMixin, self).setUp()
+        return super(ScriptFactoryMixin, self).setUp()
+
+    def create_job_with_output_files(self):
+        script = self.translate_script
+        from ..backend import utils
+
+        sequence_slug = get_subparser_form_slug(script, "sequence")
+        out_slug = get_subparser_form_slug(script, "out")
+        job = utils.create_wooey_job(
+            script_version_pk=script.pk,
+            data={"job_name": "abc", sequence_slug: "aaa", out_slug: "abc"},
+        )
+        job = job.submit_to_celery()
+        return job
 
 
 class FileMixin(object):
     def setUp(self):
         self.storage = utils.get_storage(local=not wooey_settings.WOOEY_EPHEMERAL_FILES)
         self.filename_func = lambda x: os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, x)
-        super(FileMixin, self).setUp()
+        return super(FileMixin, self).setUp()
 
     def get_any_file(self):
         script = os.path.join(config.WOOEY_TEST_SCRIPTS, "command_order.py")

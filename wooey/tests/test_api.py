@@ -57,7 +57,9 @@ class TestJobDetails(
         self.assertEqual(job.job_name, data["job_name"])
 
 
-class TestScriptAddition(mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTestCase):
+class TestScriptSubmission(
+    mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTestCase
+):
     def test_can_submit_script_with_json(self):
         script_version = self.translate_script
         payload = {

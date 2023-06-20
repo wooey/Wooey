@@ -16,9 +16,9 @@ class ApiTestMixin(object):
         return super().setUp()
 
 
-class TestJobStatus(ApiTestMixin, TransactionTestCase):
+class TestJobStatus(mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTestCase):
     def test_reports_when_job_is_complete(self):
-        job = factories.WooeyJob()
+        job = factories.generate_job(self.translate_script)
         response = self.client.get(
             reverse("wooey:api_job_status", kwargs={"job_id": job.id})
         )
@@ -32,7 +32,9 @@ class TestJobStatus(ApiTestMixin, TransactionTestCase):
 
     def test_error_when_invalid_user(self):
         another_user = factories.UserFactory(username="bob")
-        job = factories.WooeyJob(user=another_user)
+        job = factories.generate_job(self.translate_script)
+        job.user = another_user
+        job.save()
         response = self.client.get(
             reverse("wooey:api_job_status", kwargs={"job_id": job.id})
         )
@@ -198,6 +200,7 @@ class TestScriptSubmission(
         script_version = self.translate_script
         payload = {
             "job_name": "test",
+            "job_description": "a test job",
             "command": "--sequence aaa",
         }
         response = self.client.post(
@@ -210,6 +213,7 @@ class TestScriptSubmission(
         data = response.json()
         self.assertTrue(data["valid"])
         job = WooeyJob.objects.get(id=data["job_id"])
+        self.assertEqual(job.job_description, "a test job")
         self.assertEqual(
             job.scriptparameters_set.get(parameter__slug="sequence").value, "aaa"
         )

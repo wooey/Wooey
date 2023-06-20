@@ -3,6 +3,7 @@ from django import forms
 
 class SubmitForm(forms.Form):
     job_name = forms.CharField()
+    job_description = forms.CharField(required=False)
     version = forms.CharField(required=False)
     iteration = forms.IntegerField(required=False)
     command = forms.CharField(required=False)

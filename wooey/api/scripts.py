@@ -116,6 +116,8 @@ def submit_script(request, slug=None):
         if valid and group_valid:
             job_data = vars(parsed_command)
             job_data["job_name"] = data["job_name"]
+            if data["job_description"]:
+                job_data["job_description"] = data["job_description"]
             subparser_id = script_version.scriptparser_set.get(
                 name=job_data.pop("wooey_subparser", "")
             ).id

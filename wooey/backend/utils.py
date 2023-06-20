@@ -325,7 +325,11 @@ def get_storage_object(path, local=False, close=True):
 
 
 def add_wooey_script(
-    script_version=None, script_path=None, group=None, script_name=None
+    script_version=None,
+    script_path=None,
+    group=None,
+    script_name=None,
+    set_default_version=True,
 ):
     # There is a class called 'Script' which contains the general information about a script. However, that is not where the file details
     # of the script lie. That is the ScriptVersion model. This allows the end user to tag a script as a favorite/etc. and set
@@ -470,7 +474,7 @@ def add_wooey_script(
         version_kwargs = {
             "script_version": version_string,
             "script_path": local_file,
-            "default_version": True,
+            "default_version": set_default_version,
             "checksum": checksum,
         }
         # does this script already exist in the database?
@@ -481,7 +485,7 @@ def add_wooey_script(
             wooey_script = Script(**script_kwargs)
             wooey_script._script_cl_creation = True
             wooey_script.save()
-            version_kwargs.update({"script_iteration": 1})
+            version_kwargs.update({"script_iteration": 1, "default_version": True})
         else:
             # we're updating it
             wooey_script = Script.objects.get(**script_kwargs)
@@ -500,9 +504,10 @@ def add_wooey_script(
                     sorted([i.script_iteration for i in current_versions])[-1] + 1
                 )
             # disable older versions
-            ScriptVersion.objects.filter(script=wooey_script).update(
-                default_version=False
-            )
+            if set_default_version:
+                ScriptVersion.objects.filter(script=wooey_script).update(
+                    default_version=False
+                )
             version_kwargs.update({"script_iteration": next_iteration})
         version_kwargs.update({"script": wooey_script})
         script_version = ScriptVersion(**version_kwargs)
@@ -521,9 +526,13 @@ def add_wooey_script(
         ).exclude(pk=script_version.pk)
         if len(past_versions) == 0:
             script_version.script_version = version_string
+            script_version.default_version = True
         script_version.script_iteration = past_versions.count() + 1
         # Make all old versions non-default
-        ScriptVersion.objects.filter(script=wooey_script).update(default_version=False)
+        if set_default_version:
+            ScriptVersion.objects.filter(script=wooey_script).update(
+                default_version=False
+            )
         script_version.default_version = True
         script_version.checksum = checksum
         wooey_script.save()

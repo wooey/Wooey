@@ -93,7 +93,12 @@ def submit_script(request, slug=None):
             qs = qs.filter(script_version=version)
         if iteration:
             qs = qs.filter(script_iteration=iteration)
-    script_version = qs.get()
+    try:
+        script_version = qs.get()
+    except models.ScriptVersion.DoesNotExist:
+        return JsonResponse(
+            {"valid": False, "errors": {"script": _("Unable to find script.")}}
+        )
 
     valid = utils.valid_user(script_version.script, request.user).get("valid")
     if valid:
@@ -208,6 +213,7 @@ def add_or_update_script(request):
             "script_path": script_path,
             "group": group,
             "script_name": script_name,
+            "set_default_version": data["default"],
         }
         results = utils.add_wooey_script(**add_kwargs)
         output = {

@@ -58,16 +58,142 @@ class TestJobDetails(
 
 
 class TestScriptAddition(mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTestCase):
-    def test_can_add_new_script(self):
-        pass
+    def test_can_add_new_scripts(self):
+        payload = {
+            "group": "test group",
+            "translate-script": open(self.translate_script_path, "rb"),
+            "choice-script": open(self.choice_script_path, "rb"),
+        }
+        response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data=payload,
+        )
+        data = response.json()
+        self.assertEqual(data[0]["script"], "translate-script")
+        self.assertEqual(data[1]["script"], "choice-script")
 
     def test_can_update_existing_script(self):
-        pass
+        payload = {
+            "group": "test group",
+            "update-script": open(self.version1_script_path, "rb"),
+        }
+        response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data=payload,
+        )
+        data = response.json()
+        self.assertEqual(data[0]["script"], "update-script")
+        self.assertEqual(data[0]["iteration"], 1)
+        self.assertEqual(data[0]["version"], "1")
+        payload = {
+            "group": "test group",
+            "update-script": open(self.version2_script_path, "rb"),
+        }
+        response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data=payload,
+        )
+        data = response.json()
+        self.assertEqual(data[0]["script"], "update-script")
+        self.assertEqual(data[0]["version"], "1")
+        self.assertEqual(data[0]["iteration"], 2)
+        self.assertEqual(data[0]["is_default"], True)
+
+    def test_can_disable_default_update(self):
+        payload = {
+            "group": "test group 2",
+            "update-script": open(self.version1_script_path, "rb"),
+        }
+        response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data=payload,
+        )
+        data = response.json()
+        self.assertEqual(data[0]["script"], "update-script")
+        self.assertEqual(data[0]["iteration"], 1)
+        self.assertEqual(data[0]["version"], "1")
+        payload = {
+            "group": "test group 2",
+            "default": False,
+            "update-script": open(self.version2_script_path, "rb"),
+        }
+        response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data=payload,
+        )
+        data = response.json()
+        self.assertEqual(data[0]["script"], "update-script")
+        self.assertEqual(data[0]["version"], "1")
+        self.assertEqual(data[0]["iteration"], 2)
+        self.assertEqual(data[0]["is_default"], False)
 
 
 class TestScriptSubmission(
     mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTestCase
 ):
+    def test_defaults_to_latest_script(self):
+        payload = {
+            "group": "test group 2",
+            "update-script": open(self.version1_script_path, "rb"),
+        }
+        response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data=payload,
+        )
+        payload = {
+            "group": "test group 2",
+            "update-script": open(self.version2_script_path, "rb"),
+        }
+        response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data=payload,
+        )
+        payload = {
+            "job_name": "test",
+            "command": "--one 1 --two 2",
+        }
+        response = self.client.post(
+            reverse("wooey:api_submit_script", kwargs={"slug": "update-script"}),
+            data=payload,
+            content_type="application/json",
+        )
+        data = response.json()
+        self.assertTrue(data["valid"])
+        job = WooeyJob.objects.get(id=data["job_id"])
+        self.assertEqual(job.script_version.script_iteration, 2)
+
+    def test_can_specify_version(self):
+        payload = {
+            "group": "test group 2",
+            "update-script": open(self.version1_script_path, "rb"),
+        }
+        response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data=payload,
+        )
+        payload = {
+            "group": "test group 2",
+            "update-script": open(self.version2_script_path, "rb"),
+        }
+        response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data=payload,
+        )
+        payload = {
+            "job_name": "test",
+            "iteration": 1,
+            "command": "--one 1",
+        }
+        response = self.client.post(
+            reverse("wooey:api_submit_script", kwargs={"slug": "update-script"}),
+            data=payload,
+            content_type="application/json",
+        )
+        data = response.json()
+        self.assertTrue(data["valid"])
+        job = WooeyJob.objects.get(id=data["job_id"])
+        self.assertEqual(job.script_version.script_iteration, 1)
+
     def test_can_submit_script_with_json(self):
         script_version = self.translate_script
         payload = {

@@ -2,7 +2,8 @@ Wooey API
 =========
 
 Wooey's API allows for programmatic access to manage scripts as well as submit and query jobs.
-All use of the API requires a user to be authenticated via :ref:`API keys <api_keys>`
+All use of the API requires a user to be authenticated via :ref:`API keys <api_keys>` and
+the API to be enabled by setting `WOOEY_ENABLE_API_KEYS` in your user_settings.py file.
 
 Script Management API
 ~~~~~~~~~~~~~~~~~~~~~

@@ -73,7 +73,7 @@ def create_argparser(script_version):
 @requires_login
 def submit_script(request, slug=None):
     if "application/json" in request.headers.get("Content-Type", "").lower():
-        submitted_data = json.loads(request.body.decode("utf-8"))
+        submitted_data = json.loads(request.body)
     else:
         submitted_data = request.POST
     files = request.FILES

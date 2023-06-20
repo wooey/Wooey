@@ -198,7 +198,7 @@ class TestJob(
         job = job.submit_to_celery()
 
     def test_anyone_can_view_anonymous_jobs(self):
-        job = factories.WooeyJob(user=AnonymousUser)
+        job = factories.WooeyJob(user=None)
         new_user = factories.UserFactory()
         self.assertTrue(job.can_user_view(AnonymousUser))
         self.assertTrue(job.can_user_view(new_user))

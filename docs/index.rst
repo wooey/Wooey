@@ -38,6 +38,7 @@ Getting Started
    scripts
    wooey_ui
    api
+   api_keys
    customizations
    remote
    upgrade_help

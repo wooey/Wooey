@@ -59,6 +59,26 @@ script's name, but can be found by looking at the url of a given script.
     data = response.json()
     # {"job_id": 123, "valid": True}
 
+For jobs that require files, the uploaded file can be provided and referenced in the `command` parameter. For example:
+
+.. code-block:: python
+
+    import requests
+
+    response = requests.post(
+      'https://wooey.fly.dev/api/scripts/v1/protein-translation/submit/',
+      data={
+        "job_name": "test job",
+        "command": "--fasta protein_sequences"
+      },
+      files={
+        "protein_sequences": open('./proteins.fasta')
+      },
+      headers={'Authorization': 'Bearer your_token_here'},
+    )
+
+Currently, this is only supported if the parameter is marked as a filetype (such as `here <https://docs.python.org/3/library/argparse.html#filetype-objects>`_).
+
 Querying Jobs
 #############
 

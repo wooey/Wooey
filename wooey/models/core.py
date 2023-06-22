@@ -148,6 +148,7 @@ class ScriptVersion(models.Model):
         app_label = "wooey"
         verbose_name = _("script version")
         verbose_name_plural = _("script versions")
+        get_latest_by = "-created_date"
 
     def __str__(self):
         return "{}({}: {})".format(
@@ -350,6 +351,9 @@ class WooeyJob(models.Model):
             if rt:
                 return rt
         return self.stderr
+
+    def can_user_view(self, user):
+        return self.user is None or (user.is_authenticated and self.user == user)
 
 
 class ScriptParameterGroup(models.Model):

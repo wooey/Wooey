@@ -1,6 +1,7 @@
 import os
 from urllib.parse import quote
 
+from django.contrib.auth.models import AnonymousUser
 from django.test import Client, TestCase, TransactionTestCase
 
 from wooey import models
@@ -195,6 +196,20 @@ class TestJob(
         ]
         self.assertEqual(choices, choice_params)
         job = job.submit_to_celery()
+
+    def test_anyone_can_view_anonymous_jobs(self):
+        job = factories.WooeyJob(user=None)
+        new_user = factories.UserFactory()
+        self.assertTrue(job.can_user_view(AnonymousUser))
+        self.assertTrue(job.can_user_view(new_user))
+
+    def test_jobs_with_user_only_viewable_by_user(self):
+        job_user = factories.UserFactory(username="someone new")
+        other_user = factories.UserFactory(username="a different user")
+        job = factories.WooeyJob(user=job_user)
+        self.assertFalse(job.can_user_view(AnonymousUser))
+        self.assertFalse(job.can_user_view(other_user))
+        self.assertTrue(job.can_user_view(job_user))
 
 
 class TestCustomWidgets(TestCase):

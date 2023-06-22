@@ -1,8 +1,8 @@
 import os
 
 from django.test import TransactionTestCase
-from django.http.request import MultiValueDict
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils.datastructures import MultiValueDict
 
 from ..backend import utils
 from ..forms import (

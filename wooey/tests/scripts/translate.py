@@ -99,7 +99,7 @@ parser = argparse.ArgumentParser(
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("--sequence", help="The sequence to translate.", type=str)
 group.add_argument(
-    "--fasta", help="The fasta file to translate.", type=argparse.FileType("rb")
+    "--fasta", help="The fasta file to translate.", type=argparse.FileType("r")
 )
 simple_group = parser.add_argument_group("Parameter Group")
 simple_group.add_argument(
@@ -110,7 +110,7 @@ simple_group.add_argument(
     default="+1",
 )
 simple_group.add_argument(
-    "--out", help="The file to save translations to.", type=argparse.FileType("wb")
+    "--out", help="The file to save translations to.", type=argparse.FileType("w")
 )
 
 
@@ -126,7 +126,7 @@ def main():
         return "".join(
             [
                 CODON_TABLE.get(seq[i : i + 3], "X")
-                for i in xrange(frame, len(seq), 3)
+                for i in range(frame, len(seq), 3)
                 if i + 3 <= len(seq)
             ]
         )

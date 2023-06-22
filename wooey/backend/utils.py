@@ -22,6 +22,9 @@ from django.db import transaction
 from django.db.utils import OperationalError
 from django.core.files.storage import default_storage
 from django.core.files import File
+from django.forms import FileField
+from django.http import QueryDict
+from django.utils.datastructures import MultiValueDict
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 
@@ -35,6 +38,22 @@ def sanitize_name(name):
 
 def sanitize_string(value):
     return value.replace('"', '\\"')
+
+
+def ensure_list(value):
+    if value is None:
+        return []
+    return value if isinstance(value, list) else [value]
+
+
+def flatten(value):
+    new_list = []
+    for element in value:
+        if isinstance(element, list):
+            new_list.extend(flatten(element))
+        else:
+            new_list.append(element)
+    return new_list
 
 
 def get_storage(local=True):
@@ -206,6 +225,50 @@ def validate_form(form=None, data=None, files=None):
     form.is_bound = True
     form.full_clean()
 
+    # for cloned jobs, because we do not open a file selection window again in the browser, the pointer to files will just be a list
+    # like ['', filename]. We need to remap these to previously submitted files and merge with any new files provided.
+    to_delete = []
+    for field in data:
+        if isinstance(form.fields.get(field), FileField):
+            # if we have a value set, reassert this
+            new_values = (
+                list(filter(lambda x: x, data.getlist(field)))
+                if isinstance(data, (MultiValueDict, QueryDict))
+                else ensure_list(data.get(field))
+            )
+            cleaned_values = []
+            for new_value in new_values:
+                if field not in files and (
+                    field not in form.cleaned_data
+                    or (
+                        new_value
+                        and (
+                            form.cleaned_data[field] is None
+                            or not [j for j in form.cleaned_data[field] if j]
+                        )
+                    )
+                ):
+                    # this is a previously set field, so a cloned job
+                    if new_value is not None:
+                        cleaned_values.append(get_storage(local=False).open(new_value))
+                    to_delete.append(field)
+            if cleaned_values:
+                form.cleaned_data[field] = cleaned_values
+    for field in to_delete:
+        if field in form.errors:
+            del form.errors[field]
+
+    # Now append any new files into our cleaned form data
+    for field in files or {}:
+        v = (
+            files.getlist(field)
+            if isinstance(files, (MultiValueDict, QueryDict))
+            else files[field]
+        )
+        if field in form.cleaned_data:
+            cleaned = ensure_list(form.cleaned_data[field])
+            form.cleaned_data[field] = list(set(cleaned).union(set(v)))
+
 
 def get_current_scripts():
     from ..models import ScriptVersion
@@ -262,7 +325,11 @@ def get_storage_object(path, local=False, close=True):
 
 
 def add_wooey_script(
-    script_version=None, script_path=None, group=None, script_name=None
+    script_version=None,
+    script_path=None,
+    group=None,
+    script_name=None,
+    set_default_version=True,
 ):
     # There is a class called 'Script' which contains the general information about a script. However, that is not where the file details
     # of the script lie. That is the ScriptVersion model. This allows the end user to tag a script as a favorite/etc. and set
@@ -312,9 +379,7 @@ def add_wooey_script(
     ):
         return {
             "valid": False,
-            "errors": errors.DuplicateScriptError(
-                ScriptVersion.error_messages["duplicate_script"]
-            ),
+            "errors": ScriptVersion.error_messages["duplicate_script"],
             "script": existing_version,
         }
 
@@ -409,7 +474,7 @@ def add_wooey_script(
         version_kwargs = {
             "script_version": version_string,
             "script_path": local_file,
-            "default_version": True,
+            "default_version": set_default_version,
             "checksum": checksum,
         }
         # does this script already exist in the database?
@@ -420,7 +485,7 @@ def add_wooey_script(
             wooey_script = Script(**script_kwargs)
             wooey_script._script_cl_creation = True
             wooey_script.save()
-            version_kwargs.update({"script_iteration": 1})
+            version_kwargs.update({"script_iteration": 1, "default_version": True})
         else:
             # we're updating it
             wooey_script = Script.objects.get(**script_kwargs)
@@ -439,9 +504,10 @@ def add_wooey_script(
                     sorted([i.script_iteration for i in current_versions])[-1] + 1
                 )
             # disable older versions
-            ScriptVersion.objects.filter(script=wooey_script).update(
-                default_version=False
-            )
+            if set_default_version:
+                ScriptVersion.objects.filter(script=wooey_script).update(
+                    default_version=False
+                )
             version_kwargs.update({"script_iteration": next_iteration})
         version_kwargs.update({"script": wooey_script})
         script_version = ScriptVersion(**version_kwargs)
@@ -460,9 +526,13 @@ def add_wooey_script(
         ).exclude(pk=script_version.pk)
         if len(past_versions) == 0:
             script_version.script_version = version_string
+            script_version.default_version = True
         script_version.script_iteration = past_versions.count() + 1
         # Make all old versions non-default
-        ScriptVersion.objects.filter(script=wooey_script).update(default_version=False)
+        if set_default_version:
+            ScriptVersion.objects.filter(script=wooey_script).update(
+                default_version=False
+            )
         script_version.default_version = True
         script_version.checksum = checksum
         wooey_script.save()

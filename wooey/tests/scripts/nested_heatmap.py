@@ -70,7 +70,7 @@ def main():
         multi.groupby(level=major_index).var().mean(axis=1).order(ascending=False)
     )
     # and group by 20s
-    for i in xrange(11):
+    for i in range(11):
         dat = multi[
             multi.index.get_level_values(major_index).isin(
                 most_variable.index[10 * i : 10 * (i + 1)]

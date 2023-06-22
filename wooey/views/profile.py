@@ -3,16 +3,7 @@ from django.views.decorators.http import require_http_methods
 
 from ..forms import APIKeyForm
 from ..models import APIKey, WooeyProfile
-
-
-def requires_login(func):
-    def inner(request, *args, **kwargs):
-        user = request.user
-        if not user.is_authenticated:
-            return HttpResponse("Must be authenticated to use this method.", status=403)
-        return func(request, *args, **kwargs)
-
-    return inner
+from ..utils import requires_login
 
 
 @require_http_methods(["POST"])

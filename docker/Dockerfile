@@ -14,7 +14,7 @@ ENV BUILD_DIR=${BUILD_DIR}
 WORKDIR ${BUILD_DIR}
 RUN chown wooey:wooey ${BUILD_DIR}
 
-RUN pip install psycopg2
+RUN pip install docker psycopg2
 
 COPY --chown=wooey:wooey setup.py MANIFEST.in Makefile README.md ${BUILD_DIR}/
 COPY --chown=wooey:wooey scripts ${BUILD_DIR}/scripts

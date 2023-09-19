@@ -33,6 +33,15 @@ class ScriptAdmin(ModelAdmin):
     class Media:
         js = (os.path.join("wooey", "js", "admin", "script.js"),)
 
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        for obj in instances:
+            if isinstance(obj, ScriptVersion):
+                if not obj.id:
+                    obj.created_by = request.user
+                obj.modified_by = request.user
+        formset.save()
+
 
 class ParameterAdmin(ModelAdmin):
     list_display = ("script_versions", "parameter_group", "short_param")

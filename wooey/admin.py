@@ -39,7 +39,7 @@ class ScriptAdmin(ModelAdmin):
             if isinstance(obj, ScriptVersion):
                 if not obj.id:
                     obj.created_by = request.user
-                obj.updated_by = request.user
+                obj.modified_by = request.user
         formset.save()
 
 class ParameterAdmin(ModelAdmin):

@@ -42,6 +42,7 @@ class ScriptAdmin(ModelAdmin):
                 obj.modified_by = request.user
         formset.save()
 
+
 class ParameterAdmin(ModelAdmin):
     list_display = ("script_versions", "parameter_group", "short_param")
 

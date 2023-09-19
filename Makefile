@@ -33,7 +33,7 @@ dist: clean ## builds source and wheel package
 	ls -l dist
 
 release/major release/minor release/patch release/rc:
-	bumpversion $(@F)
+	bump2version $(@F)
 	git push
 	git push --tags
 

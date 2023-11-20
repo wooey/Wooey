@@ -5,6 +5,7 @@ import json
 from django.test import TestCase, RequestFactory
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
+from django.contrib.contenttypes.models import ContentType
 from django.http import Http404
 from django.urls import reverse
 
@@ -471,3 +472,42 @@ class TestProfileView(TestCase):
         view = wooey_views.WooeyProfileView.as_view()
         response = view(request, username=user.username)
         self.assertTrue(response.context_data["is_logged_in_user"])
+
+
+class TestHomeView(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
+    def test_sorts_scripts_by_name_and_favorite(self):
+        request_factory = RequestFactory()
+        user = factories.UserFactory()
+        url = reverse("wooey:wooey_home")
+        request = request_factory.get(url)
+        request.user = user
+
+        # by default, we sort by name
+        view = wooey_views.WooeyHomeView.as_view()
+        response = view(request)
+
+        sorted_scripts = sorted(
+            models.Script.objects.all(), key=lambda x: x.script_name
+        )
+        self.assertEqual(response.context_data["scripts"], sorted_scripts)
+
+        ctype = ContentType.objects.get_for_model(models.Script)
+        models.Favorite(
+            content_type=ctype, user=user, object_id=self.translate_script.script.id
+        ).save()
+
+        # assert this script isn't naturally the first one
+        self.assertNotEqual(sorted_scripts[0].id, self.translate_script.script.id)
+
+        view = wooey_views.WooeyHomeView.as_view()
+        response = view(request)
+
+        self.assertTrue(
+            response.context_data["scripts"][0].id, self.translate_script.script.id
+        )
+
+        # the rest after the favorite are sorted alphabetically
+        self.assertEqual(
+            response.context_data["scripts"][1:],
+            [i for i in sorted_scripts if i.id != self.translate_script.script.id],
+        )

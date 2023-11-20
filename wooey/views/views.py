@@ -185,8 +185,9 @@ class WooeyHomeView(TemplateView):
             # put favorite scripts at the top of the sort order
             ctx["scripts"] = sorted(
                 ctx["scripts"],
-                key=lambda x: (x.id in favorite_scripts, x.script_name),
-                reverse=True,
+                # we do the `not` so we can sort in ascending order for both the
+                # favorite status and get alphabetical sorting
+                key=lambda x: (x.id not in favorite_scripts, x.script_name),
             )
         else:
             ctx["favorite_script_ids"] = []

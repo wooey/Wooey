@@ -178,9 +178,17 @@ class WooeyHomeView(TemplateView):
         if self.request.user.is_authenticated:
             # Get the id of every favorite (scrapbook) file
             ctype = ContentType.objects.get_for_model(Script)
-            ctx["favorite_script_ids"] = Favorite.objects.filter(
+            favorite_scripts = Favorite.objects.filter(
                 content_type=ctype, user__id=self.request.user.id
             ).values_list("object_id", flat=True)
+            ctx["favorite_script_ids"] = favorite_scripts
+            # put favorite scripts at the top of the sort order
+            ctx["scripts"] = sorted(
+                ctx["scripts"],
+                # we do the `not` so we can sort in ascending order for both the
+                # favorite status and get alphabetical sorting
+                key=lambda x: (x.id not in favorite_scripts, x.script_name),
+            )
         else:
             ctx["favorite_script_ids"] = []
 

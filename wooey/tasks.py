@@ -93,6 +93,51 @@ def get_latest_script(script_version):
     return False
 
 
+def run_and_stream_command(command, cwd=None, job=None):
+    stdout, stderr = "", ""
+    proc = subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=cwd,
+        bufsize=0,
+    )
+
+    # We need to use subprocesses to capture the IO, otherwise they will block one another
+    # i.e. a check against stderr will sit waiting on stderr before returning
+    # we use Queues to communicate
+    qout, qerr = Queue(), Queue()
+    pout = output_monitor_queue(qout, proc.stdout)
+    perr = output_monitor_queue(qerr, proc.stderr)
+
+    prev_std = None
+
+    def check_output(job, stdout, stderr, prev_std):
+        # Check for updates from either (non-blocking)
+        stdout = update_from_output_queue(qout, stdout)
+        stderr = update_from_output_queue(qerr, stderr)
+
+        # If there are changes, update the db
+        if (stdout, stderr) != prev_std:
+            job.update_realtime(stdout=stdout, stderr=stderr)
+            prev_std = (stdout, stderr)
+
+        return stdout, stderr, prev_std
+
+    # Loop until the process is complete + both stdout/stderr have EOFd
+    while proc.poll() is None or pout.is_alive() or perr.is_alive():
+        stdout, stderr, prev_std = check_output(job, stdout, stderr, prev_std)
+
+    # Catch any remaining output
+    try:
+        proc.stdout.flush()
+    except ValueError:  # Handle if stdout is closed
+        pass
+    stdout, stderr, prev_std = check_output(job, stdout, stderr, prev_std)
+    return_code = proc.returncode
+    return (stdout, stderr, return_code)
+
+
 @celery_app.task()
 def submit_script(**kwargs):
     job_id = kwargs.pop("wooey_job")
@@ -100,10 +145,56 @@ def submit_script(**kwargs):
     from .models import WooeyJob
 
     job = WooeyJob.objects.get(pk=job_id)
-    stdout, stderr = "", ""
+    stdout, stderr = [], []
 
     try:
-        command = utils.get_job_commands(job=job)
+        virtual_environment = job.script_version.script.virtual_environment
+        if virtual_environment:
+            venv_path = os.path.join(
+                virtual_environment.venv_directory, virtual_environment.name
+            )
+            os.makedirs(virtual_environment.venv_directory, exist_ok=True)
+            if not os.path.exists(venv_path):
+                venv_command = [
+                    virtual_environment.python_binary,
+                    "-m",
+                    "venv",
+                    venv_path,
+                ]
+                print(venv_command)
+                (
+                    venv_setup_stdout,
+                    venv_setup_stderr,
+                    return_code,
+                ) = run_and_stream_command(venv_command, cwd=None, job=job)
+                stdout.append(venv_setup_stdout)
+                stderr.append(venv_setup_stderr)
+            venv_executable = os.path.join(venv_path, "bin", "python")
+            with tempfile.NamedTemporaryFile(
+                mode="w", prefix="requirements", suffix=".txt"
+            ) as reqs_txt:
+                reqs_txt.write(virtual_environment.requirements)
+                reqs_txt.flush()
+                os.fsync(reqs_txt.fileno())
+                venv_command = [
+                    venv_executable,
+                    "-m",
+                    "pip",
+                    "install",
+                    "-r",
+                    reqs_txt.name,
+                ]
+                (
+                    venv_setup_stdout,
+                    venv_setup_stderr,
+                    return_code,
+                ) = run_and_stream_command(venv_command, cwd=None, job=job)
+            stdout.append(venv_setup_stdout)
+            stderr.append(venv_setup_stderr)
+        else:
+            venv_executable = None
+
+        command = utils.get_job_commands(job=job, executable=venv_executable)
         if resubmit:
             # clone ourselves, setting pk=None seems hackish but it works
             job.pk = None
@@ -124,46 +215,11 @@ def submit_script(**kwargs):
         job.status = WooeyJob.RUNNING
         job.save()
 
-        proc = subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            cwd=abscwd,
-            bufsize=0,
+        job_stdout, job_stderr, return_code = run_and_stream_command(
+            command, abscwd, job
         )
-
-        # We need to use subprocesses to capture the IO, otherwise they will block one another
-        # i.e. a check against stderr will sit waiting on stderr before returning
-        # we use Queues to communicate
-        qout, qerr = Queue(), Queue()
-        pout = output_monitor_queue(qout, proc.stdout)
-        perr = output_monitor_queue(qerr, proc.stderr)
-
-        prev_std = None
-
-        def check_output(job, stdout, stderr, prev_std):
-            # Check for updates from either (non-blocking)
-            stdout = update_from_output_queue(qout, stdout)
-            stderr = update_from_output_queue(qerr, stderr)
-
-            # If there are changes, update the db
-            if (stdout, stderr) != prev_std:
-                job.update_realtime(stdout=stdout, stderr=stderr)
-                prev_std = (stdout, stderr)
-
-            return stdout, stderr, prev_std
-
-        # Loop until the process is complete + both stdout/stderr have EOFd
-        while proc.poll() is None or pout.is_alive() or perr.is_alive():
-            stdout, stderr, prev_std = check_output(job, stdout, stderr, prev_std)
-
-        # Catch any remaining output
-        try:
-            proc.stdout.flush()
-        except ValueError:  # Handle if stdout is closed
-            pass
-        stdout, stderr, prev_std = check_output(job, stdout, stderr, prev_std)
-        return_code = proc.returncode
+        stdout.append(job_stdout)
+        stderr.append(job_stderr)
 
         # fetch the job again in case the database connection was lost during the job or something else changed.
         job = WooeyJob.objects.get(pk=job_id)
@@ -226,8 +282,8 @@ def submit_script(**kwargs):
         stderr = "{}\n{}".format(stderr, traceback.format_exc())
         job.status = WooeyJob.ERROR
 
-    job.stdout = stdout
-    job.stderr = stderr
+    job.stdout = "\n".join(stdout)
+    job.stderr = "\n".join(stderr)
     job.save()
 
     return (stdout, stderr)

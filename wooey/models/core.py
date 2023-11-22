@@ -70,6 +70,9 @@ class Script(models.Model):
         help_text="By default save to the script name,"
         " this will change the output folder.",
     )
+    virtual_environment = models.ForeignKey(
+        "VirtualEnvironment", on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
@@ -717,3 +720,18 @@ class WooeyFile(models.Model):
 
     def __str__(self):
         return self.filepath.name
+
+
+class VirtualEnvironment(models.Model):
+    name = models.CharField(max_length=25)
+    python_binary = models.CharField(max_length=1024)
+    requirements = models.TextField()
+    venv_directory = models.CharField(max_length=1024)
+
+    class Meta:
+        app_label = "wooey"
+        verbose_name = _("virtual environment")
+        verbose_name_plural = _("virtual environments")
+
+    def __str__(self):
+        return self.name

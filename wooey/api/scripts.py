@@ -217,6 +217,7 @@ def add_or_update_script(request):
             "group": group,
             "script_name": script_name,
             "set_default_version": data["default"],
+            "ignore_bad_imports": data["ignore_bad_imports"],
         }
         results = utils.add_wooey_script(**add_kwargs)
         output = {

@@ -29,6 +29,11 @@ class Command(BaseCommand):
             help="The name of the script. Default: None (uses the filename)",
         )
         parser.add_argument(
+            "--ignore-bad-imports",
+            action="store_true",
+            help="Ignore failed imports. Useful when importing into a VirtualEnv",
+        )
+        parser.add_argument(
             "--update", dest="update", action="store_true", help=argparse.SUPPRESS
         )
 
@@ -48,6 +53,7 @@ class Command(BaseCommand):
         if not os.path.exists(script):
             raise CommandError("{0} does not exist.".format(script))
         group = options.get("group", wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP)
+        ignore_bad_imports = options.get("ignore_bad_imports")
         scripts = (
             [os.path.join(script, i) for i in os.listdir(script)]
             if os.path.isdir(script)
@@ -84,6 +90,7 @@ class Command(BaseCommand):
                     "script_path": script,
                     "group": group,
                     "script_name": base_name,
+                    "ignore_bad_imports": ignore_bad_imports,
                 }
                 res = add_wooey_script(**add_kwargs)
                 if res["valid"]:

@@ -59,6 +59,12 @@ class Script(models.Model):
     script_order = models.PositiveSmallIntegerField(default=1)
     is_active = models.BooleanField(default=True)
     user_groups = models.ManyToManyField(Group, blank=True)
+    ignore_bad_imports = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Ignore bad imports when adding scripts. This is useful if a script is under a virtual environment."
+        ),
+    )
 
     execute_full_path = models.BooleanField(
         default=True

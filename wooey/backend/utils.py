@@ -336,6 +336,7 @@ def add_wooey_script(
     set_default_version=True,
     ignore_bad_imports=False,
 ):
+
     # There is a class called 'Script' which contains the general information about a script. However, that is not where the file details
     # of the script lie. That is the ScriptVersion model. This allows the end user to tag a script as a favorite/etc. and set
     # information such as script descriptions/names that do not constantly need to be updated with every version change. Thus,
@@ -479,6 +480,7 @@ def add_wooey_script(
         script_kwargs = {
             "script_group": script_group,
             "script_name": script_name or script_schema["name"],
+            "ignore_bad_imports": ignore_bad_imports,
         }
         version_kwargs = {
             "script_version": version_string,

@@ -99,7 +99,7 @@ def script_version_postsave(instance, created, **kwargs):
         res = utils.add_wooey_script(
             script_version=instance,
             group=instance.script.script_group,
-            ignore_bad_imports=getattr(instance, "_ignore_bad_imports", False),
+            ignore_bad_imports=instance.script.ignore_bad_imports,
         )
         instance._script_upgrade = False
         instance._script_cl_creation = False

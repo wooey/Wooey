@@ -3,7 +3,6 @@ import os
 
 from django.contrib.admin import ModelAdmin, site, TabularInline
 
-from .forms import ScriptAdminForm
 from .models import (
     Script,
     ScriptVersion,
@@ -31,16 +30,13 @@ class ScriptVersionInline(TabularInline):
 class ScriptAdmin(ModelAdmin):
     list_display = ("script_name", "script_group", "is_active")
     inlines = [ScriptVersionInline]
-    form = ScriptAdminForm
 
     class Media:
         js = (os.path.join("wooey", "js", "admin", "script.js"),)
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
-        ignore_bad_imports = form.cleaned_data["ignore_bad_imports"]
         for obj in instances:
-            obj._ignore_bad_imports = ignore_bad_imports
             if isinstance(obj, ScriptVersion):
                 if not obj.id:
                     obj.created_by = request.user

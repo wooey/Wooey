@@ -93,8 +93,7 @@ def get_latest_script(script_version):
     return False
 
 
-def run_and_stream_command(command, cwd=None, job=None):
-    stdout, stderr = "", ""
+def run_and_stream_command(command, cwd=None, job=None, stdout="", stderr=""):
     proc = subprocess.Popen(
         command,
         stdout=subprocess.PIPE,
@@ -110,7 +109,7 @@ def run_and_stream_command(command, cwd=None, job=None):
     pout = output_monitor_queue(qout, proc.stdout)
     perr = output_monitor_queue(qerr, proc.stderr)
 
-    prev_std = None
+    prev_std = (stdout, stderr)
 
     def check_output(job, stdout, stderr, prev_std):
         # Check for updates from either (non-blocking)
@@ -145,15 +144,18 @@ def submit_script(**kwargs):
     from .models import WooeyJob
 
     job = WooeyJob.objects.get(pk=job_id)
-    stdout, stderr = [], []
+    job.update_realtime(delete=True)
+    stdout, stderr = "", ""
 
     try:
         virtual_environment = job.script_version.script.virtual_environment
         if virtual_environment:
-            venv_path = os.path.join(
-                virtual_environment.venv_directory, virtual_environment.name
+            venv_binary_namespace = os.path.join(
+                virtual_environment.venv_directory,
+                "".join(x for x in virtual_environment.python_binary if x.isalnum()),
             )
-            os.makedirs(virtual_environment.venv_directory, exist_ok=True)
+            venv_path = os.path.join(venv_binary_namespace, virtual_environment.name)
+            os.makedirs(venv_binary_namespace, exist_ok=True)
             if not os.path.exists(venv_path):
                 venv_command = [
                     virtual_environment.python_binary,
@@ -161,14 +163,11 @@ def submit_script(**kwargs):
                     "venv",
                     venv_path,
                 ]
-                print(venv_command)
-                (
-                    venv_setup_stdout,
-                    venv_setup_stderr,
-                    return_code,
-                ) = run_and_stream_command(venv_command, cwd=None, job=job)
-                stdout.append(venv_setup_stdout)
-                stderr.append(venv_setup_stderr)
+                (stdout, stderr, return_code,) = run_and_stream_command(
+                    venv_command, cwd=None, job=job, stdout=stdout, stderr=stderr
+                )
+                if return_code:
+                    raise Exception("VirtualEnv setup failed.")
             venv_executable = os.path.join(venv_path, "bin", "python")
             with tempfile.NamedTemporaryFile(
                 mode="w", prefix="requirements", suffix=".txt"
@@ -184,13 +183,9 @@ def submit_script(**kwargs):
                     "-r",
                     reqs_txt.name,
                 ]
-                (
-                    venv_setup_stdout,
-                    venv_setup_stderr,
-                    return_code,
-                ) = run_and_stream_command(venv_command, cwd=None, job=job)
-            stdout.append(venv_setup_stdout)
-            stderr.append(venv_setup_stderr)
+                (stdout, stderr, return_code,) = run_and_stream_command(
+                    venv_command, cwd=None, job=job, stdout=stdout, stderr=stderr
+                )
         else:
             venv_executable = None
 
@@ -215,11 +210,9 @@ def submit_script(**kwargs):
         job.status = WooeyJob.RUNNING
         job.save()
 
-        job_stdout, job_stderr, return_code = run_and_stream_command(
-            command, abscwd, job
+        stdout, stderr, return_code = run_and_stream_command(
+            command, abscwd, job, stdout, stderr
         )
-        stdout.append(job_stdout)
-        stderr.append(job_stderr)
 
         # fetch the job again in case the database connection was lost during the job or something else changed.
         job = WooeyJob.objects.get(pk=job_id)
@@ -256,11 +249,11 @@ def submit_script(**kwargs):
                     try:
                         zip.write(path, arcname=archive_name)
                     except Exception:
-                        stderr = "{}\n{}".format(stderr, traceback.format_exc())
+                        stderr.append("{}\n{}".format(stderr, traceback.format_exc()))
             try:
                 zip.close()
             except Exception:
-                stderr = "{}\n{}".format(stderr, traceback.format_exc())
+                stderr.append("{}\n{}".format(stderr, traceback.format_exc()))
 
             # save all the files generated as well to our default storage for ephemeral storage setups
             if wooey_settings.WOOEY_EPHEMERAL_FILES:
@@ -279,11 +272,11 @@ def submit_script(**kwargs):
         job.status = WooeyJob.COMPLETED if return_code == 0 else WooeyJob.FAILED
         job.update_realtime(delete=True)
     except Exception:
-        stderr = "{}\n{}".format(stderr, traceback.format_exc())
+        stderr += "{}\n{}".format(stderr, traceback.format_exc())
         job.status = WooeyJob.ERROR
 
-    job.stdout = "\n".join(stdout)
-    job.stderr = "\n".join(stderr)
+    job.stdout = stdout
+    job.stderr = stderr
     job.save()
 
     return (stdout, stderr)

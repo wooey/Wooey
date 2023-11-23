@@ -268,10 +268,13 @@ class WooeyJob(models.Model):
                     param.recreate()
                     param.save()
         self.status = self.SUBMITTED
+        rerun = kwargs.pop("rerun", False)
+        if rerun:
+            self.command = ""
         self.save()
-        task_kwargs = {"wooey_job": self.pk, "rerun": kwargs.pop("rerun", False)}
+        task_kwargs = {"wooey_job": self.pk, "rerun": rerun}
 
-        if task_kwargs.get("rerun"):
+        if rerun:
             utils.purge_output(job=self)
         if wooey_settings.WOOEY_CELERY:
             transaction.on_commit(lambda: tasks.submit_script.delay(**task_kwargs))

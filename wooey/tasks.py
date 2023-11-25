@@ -249,11 +249,11 @@ def submit_script(**kwargs):
                     try:
                         zip.write(path, arcname=archive_name)
                     except Exception:
-                        stderr.append("{}\n{}".format(stderr, traceback.format_exc()))
+                        stderr += "{}\n{}".format(stderr, traceback.format_exc())
             try:
                 zip.close()
             except Exception:
-                stderr.append("{}\n{}".format(stderr, traceback.format_exc()))
+                stderr += "{}\n{}".format(stderr, traceback.format_exc())
 
             # save all the files generated as well to our default storage for ephemeral storage setups
             if wooey_settings.WOOEY_EPHEMERAL_FILES:

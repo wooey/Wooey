@@ -137,6 +137,46 @@ def run_and_stream_command(command, cwd=None, job=None, stdout="", stderr=""):
     return (stdout, stderr, return_code)
 
 
+def setup_venv(virtual_environment, job, stdout, stderr):
+    venv_binary_namespace = os.path.join(
+        virtual_environment.venv_directory,
+        "".join(x for x in virtual_environment.python_binary if x.isalnum()),
+    )
+    venv_path = os.path.join(venv_binary_namespace, virtual_environment.name)
+    os.makedirs(venv_binary_namespace, exist_ok=True)
+    if not os.path.exists(venv_path):
+        venv_command = [
+            virtual_environment.python_binary,
+            "-m",
+            "venv",
+            venv_path,
+        ]
+        (stdout, stderr, return_code) = run_and_stream_command(
+            venv_command, cwd=None, job=job, stdout=stdout, stderr=stderr
+        )
+        if return_code:
+            raise Exception("VirtualEnv setup failed.")
+    venv_executable = os.path.join(venv_path, "bin", "python")
+    with tempfile.NamedTemporaryFile(
+        mode="w", prefix="requirements", suffix=".txt"
+    ) as reqs_txt:
+        reqs_txt.write(virtual_environment.requirements)
+        reqs_txt.flush()
+        os.fsync(reqs_txt.fileno())
+        venv_command = [
+            venv_executable,
+            "-m",
+            "pip",
+            "install",
+            "-r",
+            reqs_txt.name,
+        ]
+        (stdout, stderr, return_code,) = run_and_stream_command(
+            venv_command, cwd=None, job=job, stdout=stdout, stderr=stderr
+        )
+    return (venv_executable, stdout, stderr, return_code)
+
+
 @celery_app.task()
 def submit_script(**kwargs):
     job_id = kwargs.pop("wooey_job")
@@ -150,42 +190,9 @@ def submit_script(**kwargs):
     try:
         virtual_environment = job.script_version.script.virtual_environment
         if virtual_environment:
-            venv_binary_namespace = os.path.join(
-                virtual_environment.venv_directory,
-                "".join(x for x in virtual_environment.python_binary if x.isalnum()),
+            (venv_executable, stdout, stderr, return_code) = setup_venv(
+                virtual_environment, job, stdout, stderr
             )
-            venv_path = os.path.join(venv_binary_namespace, virtual_environment.name)
-            os.makedirs(venv_binary_namespace, exist_ok=True)
-            if not os.path.exists(venv_path):
-                venv_command = [
-                    virtual_environment.python_binary,
-                    "-m",
-                    "venv",
-                    venv_path,
-                ]
-                (stdout, stderr, return_code,) = run_and_stream_command(
-                    venv_command, cwd=None, job=job, stdout=stdout, stderr=stderr
-                )
-                if return_code:
-                    raise Exception("VirtualEnv setup failed.")
-            venv_executable = os.path.join(venv_path, "bin", "python")
-            with tempfile.NamedTemporaryFile(
-                mode="w", prefix="requirements", suffix=".txt"
-            ) as reqs_txt:
-                reqs_txt.write(virtual_environment.requirements)
-                reqs_txt.flush()
-                os.fsync(reqs_txt.fileno())
-                venv_command = [
-                    venv_executable,
-                    "-m",
-                    "pip",
-                    "install",
-                    "-r",
-                    reqs_txt.name,
-                ]
-                (stdout, stderr, return_code,) = run_and_stream_command(
-                    venv_command, cwd=None, job=job, stdout=stdout, stderr=stderr
-                )
         else:
             venv_executable = None
 

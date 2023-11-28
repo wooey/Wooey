@@ -144,19 +144,27 @@ def setup_venv(virtual_environment, job, stdout, stderr):
     )
     venv_path = os.path.join(venv_binary_namespace, virtual_environment.name)
     os.makedirs(venv_binary_namespace, exist_ok=True)
+    venv_executable = os.path.join(venv_path, "bin", "python")
     if not os.path.exists(venv_path):
         venv_command = [
             virtual_environment.python_binary,
             "-m",
             "venv",
             venv_path,
+            "--without-pip",
+            "--system-site-packages",
         ]
         (stdout, stderr, return_code) = run_and_stream_command(
             venv_command, cwd=None, job=job, stdout=stdout, stderr=stderr
         )
         if return_code:
-            raise Exception("VirtualEnv setup failed.")
-    venv_executable = os.path.join(venv_path, "bin", "python")
+            raise Exception("VirtualEnv setup failed.\n{}\n{}".format(stdout, stderr))
+        pip_setup = [venv_executable, "-m", "pip", "-I", "pip"]
+        (stdout, stderr, return_code) = run_and_stream_command(
+            pip_setup, cwd=None, job=job, stdout=stdout, stderr=stderr
+        )
+        if return_code:
+            raise Exception("Pip setup failed.\n{}\n{}".format(stdout, stderr))
     with tempfile.NamedTemporaryFile(
         mode="w", prefix="requirements", suffix=".txt"
     ) as reqs_txt:
@@ -171,7 +179,7 @@ def setup_venv(virtual_environment, job, stdout, stderr):
             "-r",
             reqs_txt.name,
         ]
-        (stdout, stderr, return_code,) = run_and_stream_command(
+        (stdout, stderr, return_code) = run_and_stream_command(
             venv_command, cwd=None, job=job, stdout=stdout, stderr=stderr
         )
     return (venv_executable, stdout, stderr, return_code)

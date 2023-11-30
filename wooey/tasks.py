@@ -166,22 +166,23 @@ def setup_venv(virtual_environment, job=None, stdout="", stderr=""):
     requirements = virtual_environment.requirements
     if requirements:
         with tempfile.NamedTemporaryFile(
-            mode="w", prefix="requirements", suffix=".txt"
+            mode="w", prefix="requirements", suffix=".txt", delete=False
         ) as reqs_txt:
             reqs_txt.write(requirements)
-            reqs_txt.flush()
-            os.fsync(reqs_txt.fileno())
-            venv_command = [
-                venv_executable,
-                "-m",
-                "pip",
-                "install",
-                "-r",
-                reqs_txt.name,
-            ]
-            (stdout, stderr, return_code) = run_and_stream_command(
-                venv_command, cwd=None, job=job, stdout=stdout, stderr=stderr
-            )
+        venv_command = [
+            venv_executable,
+            "-m",
+            "pip",
+            "install",
+            "-r",
+            reqs_txt.name,
+        ]
+        (stdout, stderr, return_code) = run_and_stream_command(
+            venv_command, cwd=None, job=job, stdout=stdout, stderr=stderr
+        )
+        if return_code:
+            raise Exception("Requirements setup failed.\n{}\n{}".format(stdout, stderr))
+        os.remove(reqs_txt.name)
     return (venv_executable, stdout, stderr, return_code)
 
 

@@ -202,6 +202,10 @@ def submit_script(**kwargs):
             (venv_executable, stdout, stderr, return_code) = setup_venv(
                 virtual_environment, job, stdout, stderr
             )
+            if return_code:
+                raise Exception(
+                    "Virtual env setup failed.\n{}\n{}".format(stdout, stderr)
+                )
         else:
             venv_executable = None
 
@@ -290,7 +294,6 @@ def submit_script(**kwargs):
     except Exception:
         stderr += "{}\n{}".format(stderr, traceback.format_exc())
         job.status = WooeyJob.ERROR
-
     job.stdout = stdout
     job.stderr = stderr
     job.save()

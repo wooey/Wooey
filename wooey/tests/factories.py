@@ -105,12 +105,15 @@ class VirtualEnvFactory(factory.DjangoModelFactory):
     venv_directory = tempfile.gettempdir()
 
 
-def generate_script(script_path, script_name=None):
+def generate_script(script_path, script_name=None, ignore_bad_imports=False):
     new_file = test_utils.save_script_path(script_path)
     from ..backend import utils
 
     res = utils.add_wooey_script(
-        script_name=script_name, script_path=new_file, group=None
+        script_name=script_name,
+        script_path=new_file,
+        group=None,
+        ignore_bad_imports=ignore_bad_imports,
     )
     return res["script"]
 

@@ -3,15 +3,18 @@ import shutil
 import subprocess
 from unittest import mock
 
-from django.test import TestCase
+from django.test import TransactionTestCase
 
 from wooey import settings as wooey_settings
+from wooey.backend.utils import create_wooey_job
+from wooey.models import WooeyJob
 from wooey.tasks import setup_venv
 
-from .factories import VirtualEnvFactory
+from . import config
+from .factories import VirtualEnvFactory, generate_script
 
 
-class TestVirtualEnvironments(TestCase):
+class TestVirtualEnvironments(TransactionTestCase):
     def setUp(self):
         super().setUp()
         self.venv = VirtualEnvFactory()
@@ -51,11 +54,36 @@ class TestVirtualEnvironments(TestCase):
         venv = self.venv
         venv.requirements = "flask"
         venv.save()
-        print("venv setup", setup_venv(venv))
         binary = venv.get_venv_python_binary()
         results = subprocess.run(
             [binary, "-m" "pip", "freeze", "--local"], capture_output=True
         )
         packages = results.stdout.decode().lower()
-        print("packages are", packages)
         self.assertIn("flask", packages)
+
+    def test_job_can_run_in_venv(self):
+        # For this, we install a package that is only in the venv (pandas) and make sure it runs
+        pandas_script_path = os.path.join(
+            config.WOOEY_TEST_SCRIPTS, "venv_pandas_test.py"
+        )
+        pandas_script_version = generate_script(
+            pandas_script_path,
+            script_name="pandas-test",
+            ignore_bad_imports=True,
+        )
+        pandas_script = pandas_script_version.script
+        venv = self.venv
+        venv.requirements = "pandas"
+        venv.save()
+        pandas_script.virtual_environment = venv
+        pandas_script.save()
+        job = create_wooey_job(
+            script_version_pk=pandas_script_version.pk,
+            data={
+                "job_name": "abc",
+            },
+        )
+        self.assertEqual(job.status, WooeyJob.SUBMITTED)
+        job = job.submit_to_celery()
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.COMPLETED)

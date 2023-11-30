@@ -5,6 +5,7 @@ from unittest import mock
 
 from django.test import TestCase
 
+from wooey import settings as wooey_settings
 from wooey.tasks import setup_venv
 
 from .factories import VirtualEnvFactory
@@ -35,18 +36,26 @@ class TestVirtualEnvironments(TestCase):
     def test_installs_pip(self):
         venv = self.venv
         setup_venv(venv)
-        self.assertTrue(
-            os.path.exists(os.path.join(venv.get_install_path(), "bin", "pip"))
-        )
+        if wooey_settings.IS_WINDOWS:
+            self.assertTrue(
+                os.path.exists(
+                    os.path.join(venv.get_install_path(), "Scripts", "pip.exe")
+                )
+            )
+        else:
+            self.assertTrue(
+                os.path.exists(os.path.join(venv.get_install_path(), "bin", "pip"))
+            )
 
     def test_installs_requirements(self):
         venv = self.venv
         venv.requirements = "flask"
         venv.save()
-        setup_venv(venv)
+        print("venv setup", setup_venv(venv))
         binary = venv.get_venv_python_binary()
         results = subprocess.run(
             [binary, "-m" "pip", "freeze", "--local"], capture_output=True
         )
         packages = results.stdout.decode().lower()
+        print("packages are", packages)
         self.assertIn("flask", packages)

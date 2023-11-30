@@ -759,10 +759,12 @@ class VirtualEnvironment(models.Model):
         verbose_name_plural = _("virtual environments")
 
     def get_venv_python_binary(self):
+        if wooey_settings.IS_WINDOWS:
+            print(os.listdir(os.path.join(self.get_install_path(), "Scripts")))
         return os.path.join(
             self.get_install_path(),
             "Scripts" if wooey_settings.IS_WINDOWS else "bin",
-            "python",
+            "python.exe" if wooey_settings.IS_WINDOWS else "python",
         )
 
     def get_install_path(self, ensure_exists=False):

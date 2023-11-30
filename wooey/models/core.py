@@ -732,10 +732,26 @@ class WooeyFile(models.Model):
 
 
 class VirtualEnvironment(models.Model):
-    name = models.CharField(max_length=25)
-    python_binary = models.CharField(max_length=1024)
-    requirements = models.TextField(null=True, blank=True)
-    venv_directory = models.CharField(max_length=1024)
+    name = models.CharField(
+        max_length=25, help_text=_("The name of the virtual environment.")
+    )
+    python_binary = models.CharField(
+        max_length=1024,
+        help_text=_(
+            'The binary to use for creating the virtual environment. Should be in your path (e.g. "python3" or "/usr/bin/python3")'
+        ),
+    )
+    requirements = models.TextField(
+        null=True,
+        blank=True,
+        help_text=_(
+            'A list of requirements for the virtualenv. This gets passed directly to "pip install -r".'
+        ),
+    )
+    venv_directory = models.CharField(
+        max_length=1024,
+        help_text=_("The directory to place the virtual environment under."),
+    )
 
     class Meta:
         app_label = "wooey"

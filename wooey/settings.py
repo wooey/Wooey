@@ -1,5 +1,6 @@
 __author__ = "chris"
 
+import os
 import tempfile
 
 from django.conf import settings
@@ -13,6 +14,8 @@ celery_app = app.app_or_default()
 def get(key, default):
     return getattr(settings, key, default)
 
+
+IS_WINDOWS = os.name == "nt"
 
 # AUTH based settings
 WOOEY_ALLOW_ANONYMOUS = get("WOOEY_ALLOW_ANONYMOUS", True)

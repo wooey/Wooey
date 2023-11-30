@@ -761,7 +761,7 @@ class VirtualEnvironment(models.Model):
     def get_venv_python_binary(self):
         return os.path.join(
             self.get_install_path(),
-            "bin",
+            "Scripts" if wooey_settings.IS_WINDOWS else "bin",
             "python",
         )
 

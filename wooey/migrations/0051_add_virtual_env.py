@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ),
                 ("name", models.CharField(max_length=25)),
                 ("python_binary", models.CharField(max_length=1024)),
-                ("requirements", models.TextField()),
+                ("requirements", models.TextField(null=True, blank=True)),
                 ("venv_directory", models.CharField(max_length=1024)),
             ],
             options={

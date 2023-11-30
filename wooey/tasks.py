@@ -117,7 +117,7 @@ def run_and_stream_command(command, cwd=None, job=None, stdout="", stderr=""):
         stderr = update_from_output_queue(qerr, stderr)
 
         # If there are changes, update the db
-        if (stdout, stderr) != prev_std:
+        if job is not None and (stdout, stderr) != prev_std:
             job.update_realtime(stdout=stdout, stderr=stderr)
             prev_std = (stdout, stderr)
 
@@ -137,14 +137,11 @@ def run_and_stream_command(command, cwd=None, job=None, stdout="", stderr=""):
     return (stdout, stderr, return_code)
 
 
-def setup_venv(virtual_environment, job, stdout, stderr):
-    venv_binary_namespace = os.path.join(
-        virtual_environment.venv_directory,
-        "".join(x for x in virtual_environment.python_binary if x.isalnum()),
-    )
-    venv_path = os.path.join(venv_binary_namespace, virtual_environment.name)
-    os.makedirs(venv_binary_namespace, exist_ok=True)
-    venv_executable = os.path.join(venv_path, "bin", "python")
+def setup_venv(virtual_environment, job=None, stdout="", stderr=""):
+    venv_path = virtual_environment.get_install_path()
+    venv_executable = virtual_environment.get_venv_python_binary()
+    return_code = 0
+
     if not os.path.exists(venv_path):
         venv_command = [
             virtual_environment.python_binary,
@@ -157,31 +154,34 @@ def setup_venv(virtual_environment, job, stdout, stderr):
         (stdout, stderr, return_code) = run_and_stream_command(
             venv_command, cwd=None, job=job, stdout=stdout, stderr=stderr
         )
+
         if return_code:
             raise Exception("VirtualEnv setup failed.\n{}\n{}".format(stdout, stderr))
-        pip_setup = [venv_executable, "-m", "pip", "-I", "pip"]
+        pip_setup = [venv_executable, "-m", "pip", "install", "-I", "pip"]
         (stdout, stderr, return_code) = run_and_stream_command(
             pip_setup, cwd=None, job=job, stdout=stdout, stderr=stderr
         )
         if return_code:
             raise Exception("Pip setup failed.\n{}\n{}".format(stdout, stderr))
-    with tempfile.NamedTemporaryFile(
-        mode="w", prefix="requirements", suffix=".txt"
-    ) as reqs_txt:
-        reqs_txt.write(virtual_environment.requirements)
-        reqs_txt.flush()
-        os.fsync(reqs_txt.fileno())
-        venv_command = [
-            venv_executable,
-            "-m",
-            "pip",
-            "install",
-            "-r",
-            reqs_txt.name,
-        ]
-        (stdout, stderr, return_code) = run_and_stream_command(
-            venv_command, cwd=None, job=job, stdout=stdout, stderr=stderr
-        )
+    requirements = virtual_environment.requirements
+    if requirements:
+        with tempfile.NamedTemporaryFile(
+            mode="w", prefix="requirements", suffix=".txt"
+        ) as reqs_txt:
+            reqs_txt.write(requirements)
+            reqs_txt.flush()
+            os.fsync(reqs_txt.fileno())
+            venv_command = [
+                venv_executable,
+                "-m",
+                "pip",
+                "install",
+                "-r",
+                reqs_txt.name,
+            ]
+            (stdout, stderr, return_code) = run_and_stream_command(
+                venv_command, cwd=None, job=job, stdout=stdout, stderr=stderr
+            )
     return (venv_executable, stdout, stderr, return_code)
 
 

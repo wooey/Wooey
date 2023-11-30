@@ -734,13 +734,30 @@ class WooeyFile(models.Model):
 class VirtualEnvironment(models.Model):
     name = models.CharField(max_length=25)
     python_binary = models.CharField(max_length=1024)
-    requirements = models.TextField()
+    requirements = models.TextField(null=True, blank=True)
     venv_directory = models.CharField(max_length=1024)
 
     class Meta:
         app_label = "wooey"
         verbose_name = _("virtual environment")
         verbose_name_plural = _("virtual environments")
+
+    def get_venv_python_binary(self):
+        return os.path.join(
+            self.get_install_path(),
+            "bin",
+            "python",
+        )
+
+    def get_install_path(self, ensure_exists=False):
+        path = os.path.join(
+            self.venv_directory,
+            "".join(x for x in self.python_binary if x.isalnum()),
+            self.name,
+        )
+        if ensure_exists:
+            os.makedirs(path, exist_ok=True)
+        return path
 
     def __str__(self):
         return self.name

@@ -6,15 +6,16 @@ WOOEY_ALLOW_ANONYMOUS = True
 
 WOOEY_ENABLE_API_KEYS = True
 
-## Celery related options
+WOOEY_REALTIME_CACHE = "default"
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://redis:6379",
+    }
+}
 
+## Celery related options
 WOOEY_CELERY = True
-broker_url = "amqp://guest@rabbit"
-task_track_started = True
-worker_send_task_events = True
-imports = ("wooey.tasks",)
-task_serializer = "json"
-task_acks_late = True
 
 # the directory for uploads (physical directory)
 MEDIA_ROOT = os.path.join(BASE_DIR, "user_uploads")  # noqa: F405

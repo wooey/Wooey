@@ -97,7 +97,9 @@ def script_version_postsave(instance, created, **kwargs):
         not skip_script(instance) or getattr(instance, "_script_upgrade", False)
     ):
         res = utils.add_wooey_script(
-            script_version=instance, group=instance.script.script_group
+            script_version=instance,
+            group=instance.script.script_group,
+            ignore_bad_imports=instance.script.ignore_bad_imports,
         )
         instance._script_upgrade = False
         instance._script_cl_creation = False

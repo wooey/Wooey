@@ -90,9 +90,13 @@ def purge_output(job=None):
             user_file.delete()
 
 
-def get_job_commands(job=None):
+def get_job_commands(job=None, executable=None):
     script_version = job.script_version
-    com = [sys.executable] if sys.executable else []
+    com = (
+        [executable]
+        if executable is not None
+        else ([sys.executable] if sys.executable else [])
+    )
     com.extend([script_version.get_script_path()])
 
     parameters = job.get_parameters()
@@ -330,7 +334,9 @@ def add_wooey_script(
     group=None,
     script_name=None,
     set_default_version=True,
+    ignore_bad_imports=False,
 ):
+
     # There is a class called 'Script' which contains the general information about a script. However, that is not where the file details
     # of the script lie. That is the ScriptVersion model. This allows the end user to tag a script as a favorite/etc. and set
     # information such as script descriptions/names that do not constantly need to be updated with every version change. Thus,
@@ -444,7 +450,11 @@ def add_wooey_script(
     basename, extension = os.path.splitext(script)
     filename = os.path.split(basename)[1]
 
-    parser = Parser(script_name=filename, script_path=local_storage.path(local_file))
+    parser = Parser(
+        script_name=filename,
+        script_path=local_storage.path(local_file),
+        ignore_bad_imports=ignore_bad_imports,
+    )
     if not parser.valid:
         return {
             "valid": False,
@@ -470,6 +480,7 @@ def add_wooey_script(
         script_kwargs = {
             "script_group": script_group,
             "script_name": script_name or script_schema["name"],
+            "ignore_bad_imports": ignore_bad_imports,
         }
         version_kwargs = {
             "script_version": version_string,

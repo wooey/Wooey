@@ -1,4 +1,4 @@
-FROM python:3.7
+FROM python:3.11
 
 ARG HOST_USER=1000
 ENV HOST_USER=${HOST_USER}
@@ -14,7 +14,7 @@ ENV BUILD_DIR=${BUILD_DIR}
 WORKDIR ${BUILD_DIR}
 RUN chown wooey:wooey ${BUILD_DIR}
 
-RUN pip install docker psycopg2
+RUN pip install docker psycopg2 redis
 
 COPY --chown=wooey:wooey setup.py MANIFEST.in Makefile README.md ${BUILD_DIR}/
 COPY --chown=wooey:wooey scripts ${BUILD_DIR}/scripts

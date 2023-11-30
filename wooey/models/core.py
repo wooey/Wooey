@@ -59,6 +59,12 @@ class Script(models.Model):
     script_order = models.PositiveSmallIntegerField(default=1)
     is_active = models.BooleanField(default=True)
     user_groups = models.ManyToManyField(Group, blank=True)
+    ignore_bad_imports = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Ignore bad imports when adding scripts. This is useful if a script is under a virtual environment."
+        ),
+    )
 
     execute_full_path = models.BooleanField(
         default=True
@@ -69,6 +75,9 @@ class Script(models.Model):
         null=True,
         help_text="By default save to the script name,"
         " this will change the output folder.",
+    )
+    virtual_environment = models.ForeignKey(
+        "VirtualEnvironment", on_delete=models.SET_NULL, null=True, blank=True
     )
 
     created_date = models.DateTimeField(auto_now_add=True)
@@ -259,10 +268,13 @@ class WooeyJob(models.Model):
                     param.recreate()
                     param.save()
         self.status = self.SUBMITTED
+        rerun = kwargs.pop("rerun", False)
+        if rerun:
+            self.command = ""
         self.save()
-        task_kwargs = {"wooey_job": self.pk, "rerun": kwargs.pop("rerun", False)}
+        task_kwargs = {"wooey_job": self.pk, "rerun": rerun}
 
-        if task_kwargs.get("rerun"):
+        if rerun:
             utils.purge_output(job=self)
         if wooey_settings.WOOEY_CELERY:
             transaction.on_commit(lambda: tasks.submit_script.delay(**task_kwargs))
@@ -717,3 +729,51 @@ class WooeyFile(models.Model):
 
     def __str__(self):
         return self.filepath.name
+
+
+class VirtualEnvironment(models.Model):
+    name = models.CharField(
+        max_length=25, help_text=_("The name of the virtual environment.")
+    )
+    python_binary = models.CharField(
+        max_length=1024,
+        help_text=_(
+            'The binary to use for creating the virtual environment. Should be in your path (e.g. "python3" or "/usr/bin/python3")'
+        ),
+    )
+    requirements = models.TextField(
+        null=True,
+        blank=True,
+        help_text=_(
+            'A list of requirements for the virtualenv. This gets passed directly to "pip install -r".'
+        ),
+    )
+    venv_directory = models.CharField(
+        max_length=1024,
+        help_text=_("The directory to place the virtual environment under."),
+    )
+
+    class Meta:
+        app_label = "wooey"
+        verbose_name = _("virtual environment")
+        verbose_name_plural = _("virtual environments")
+
+    def get_venv_python_binary(self):
+        return os.path.join(
+            self.get_install_path(),
+            "Scripts" if wooey_settings.IS_WINDOWS else "bin",
+            "python.exe" if wooey_settings.IS_WINDOWS else "python",
+        )
+
+    def get_install_path(self, ensure_exists=False):
+        path = os.path.join(
+            self.venv_directory,
+            "".join(x for x in self.python_binary if x.isalnum()),
+            self.name,
+        )
+        if ensure_exists:
+            os.makedirs(path, exist_ok=True)
+        return path
+
+    def __str__(self):
+        return self.name

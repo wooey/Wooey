@@ -12,6 +12,7 @@ services:
       - 8081:8080
     depends_on:
       - rabbit
+      - redis
       - db
       - celery
     command: ./run-server
@@ -22,6 +23,7 @@ services:
       service: common
     depends_on:
       - rabbit
+      - redis
       - db
     command: watchmedo auto-restart --directory=$BUILD_DIR/wooey --recursive --ignore-patterns="*.pyc" -- celery -A $WOOEY_PROJECT worker -c 4 -B -l debug -s schedule
 
@@ -38,3 +40,6 @@ services:
       POSTGRES_USER: wooey
       POSTGRES_PASSWORD: wooey
       POSTGRES_DB: wooey
+
+  redis:
+    image: redis:7.2.3

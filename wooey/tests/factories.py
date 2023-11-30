@@ -1,7 +1,18 @@
+import sys
+import tempfile
+
 import factory
 from django.contrib.auth import get_user_model
 
-from ..models import APIKey, Script, ScriptGroup, WooeyJob, WooeyProfile, WooeyWidget
+from ..models import (
+    APIKey,
+    Script,
+    ScriptGroup,
+    VirtualEnvironment,
+    WooeyJob,
+    WooeyProfile,
+    WooeyWidget,
+)
 from . import utils as test_utils
 
 
@@ -85,12 +96,24 @@ class WooeyWidgetFactory(factory.DjangoModelFactory):
     name = "test widget"
 
 
-def generate_script(script_path, script_name=None):
+class VirtualEnvFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = VirtualEnvironment
+
+    name = factory.Sequence(lambda n: "venv_%d" % n)
+    python_binary = sys.executable
+    venv_directory = tempfile.gettempdir()
+
+
+def generate_script(script_path, script_name=None, ignore_bad_imports=False):
     new_file = test_utils.save_script_path(script_path)
     from ..backend import utils
 
     res = utils.add_wooey_script(
-        script_name=script_name, script_path=new_file, group=None
+        script_name=script_name,
+        script_path=new_file,
+        group=None,
+        ignore_bad_imports=ignore_bad_imports,
     )
     return res["script"]
 

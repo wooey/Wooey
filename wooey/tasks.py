@@ -93,6 +93,99 @@ def get_latest_script(script_version):
     return False
 
 
+def run_and_stream_command(command, cwd=None, job=None, stdout="", stderr=""):
+    proc = subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=cwd,
+        bufsize=0,
+    )
+
+    # We need to use subprocesses to capture the IO, otherwise they will block one another
+    # i.e. a check against stderr will sit waiting on stderr before returning
+    # we use Queues to communicate
+    qout, qerr = Queue(), Queue()
+    pout = output_monitor_queue(qout, proc.stdout)
+    perr = output_monitor_queue(qerr, proc.stderr)
+
+    prev_std = (stdout, stderr)
+
+    def check_output(job, stdout, stderr, prev_std):
+        # Check for updates from either (non-blocking)
+        stdout = update_from_output_queue(qout, stdout)
+        stderr = update_from_output_queue(qerr, stderr)
+
+        # If there are changes, update the db
+        if job is not None and (stdout, stderr) != prev_std:
+            job.update_realtime(stdout=stdout, stderr=stderr)
+            prev_std = (stdout, stderr)
+
+        return stdout, stderr, prev_std
+
+    # Loop until the process is complete + both stdout/stderr have EOFd
+    while proc.poll() is None or pout.is_alive() or perr.is_alive():
+        stdout, stderr, prev_std = check_output(job, stdout, stderr, prev_std)
+
+    # Catch any remaining output
+    try:
+        proc.stdout.flush()
+    except ValueError:  # Handle if stdout is closed
+        pass
+    stdout, stderr, prev_std = check_output(job, stdout, stderr, prev_std)
+    return_code = proc.returncode
+    return (stdout, stderr, return_code)
+
+
+def setup_venv(virtual_environment, job=None, stdout="", stderr=""):
+    venv_path = virtual_environment.get_install_path()
+    venv_executable = virtual_environment.get_venv_python_binary()
+    return_code = 0
+
+    if not os.path.exists(venv_path):
+        venv_command = [
+            virtual_environment.python_binary,
+            "-m",
+            "venv",
+            venv_path,
+            "--without-pip",
+            "--system-site-packages",
+        ]
+        (stdout, stderr, return_code) = run_and_stream_command(
+            venv_command, cwd=None, job=job, stdout=stdout, stderr=stderr
+        )
+
+        if return_code:
+            raise Exception("VirtualEnv setup failed.\n{}\n{}".format(stdout, stderr))
+        pip_setup = [venv_executable, "-m", "pip", "install", "-I", "pip"]
+        (stdout, stderr, return_code) = run_and_stream_command(
+            pip_setup, cwd=None, job=job, stdout=stdout, stderr=stderr
+        )
+        if return_code:
+            raise Exception("Pip setup failed.\n{}\n{}".format(stdout, stderr))
+    requirements = virtual_environment.requirements
+    if requirements:
+        with tempfile.NamedTemporaryFile(
+            mode="w", prefix="requirements", suffix=".txt", delete=False
+        ) as reqs_txt:
+            reqs_txt.write(requirements)
+        venv_command = [
+            venv_executable,
+            "-m",
+            "pip",
+            "install",
+            "-r",
+            reqs_txt.name,
+        ]
+        (stdout, stderr, return_code) = run_and_stream_command(
+            venv_command, cwd=None, job=job, stdout=stdout, stderr=stderr
+        )
+        if return_code:
+            raise Exception("Requirements setup failed.\n{}\n{}".format(stdout, stderr))
+        os.remove(reqs_txt.name)
+    return (venv_executable, stdout, stderr, return_code)
+
+
 @celery_app.task()
 def submit_script(**kwargs):
     job_id = kwargs.pop("wooey_job")
@@ -100,10 +193,23 @@ def submit_script(**kwargs):
     from .models import WooeyJob
 
     job = WooeyJob.objects.get(pk=job_id)
+    job.update_realtime(delete=True)
     stdout, stderr = "", ""
 
     try:
-        command = utils.get_job_commands(job=job)
+        virtual_environment = job.script_version.script.virtual_environment
+        if virtual_environment:
+            (venv_executable, stdout, stderr, return_code) = setup_venv(
+                virtual_environment, job, stdout, stderr
+            )
+            if return_code:
+                raise Exception(
+                    "Virtual env setup failed.\n{}\n{}".format(stdout, stderr)
+                )
+        else:
+            venv_executable = None
+
+        command = utils.get_job_commands(job=job, executable=venv_executable)
         if resubmit:
             # clone ourselves, setting pk=None seems hackish but it works
             job.pk = None
@@ -124,46 +230,9 @@ def submit_script(**kwargs):
         job.status = WooeyJob.RUNNING
         job.save()
 
-        proc = subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            cwd=abscwd,
-            bufsize=0,
+        stdout, stderr, return_code = run_and_stream_command(
+            command, abscwd, job, stdout, stderr
         )
-
-        # We need to use subprocesses to capture the IO, otherwise they will block one another
-        # i.e. a check against stderr will sit waiting on stderr before returning
-        # we use Queues to communicate
-        qout, qerr = Queue(), Queue()
-        pout = output_monitor_queue(qout, proc.stdout)
-        perr = output_monitor_queue(qerr, proc.stderr)
-
-        prev_std = None
-
-        def check_output(job, stdout, stderr, prev_std):
-            # Check for updates from either (non-blocking)
-            stdout = update_from_output_queue(qout, stdout)
-            stderr = update_from_output_queue(qerr, stderr)
-
-            # If there are changes, update the db
-            if (stdout, stderr) != prev_std:
-                job.update_realtime(stdout=stdout, stderr=stderr)
-                prev_std = (stdout, stderr)
-
-            return stdout, stderr, prev_std
-
-        # Loop until the process is complete + both stdout/stderr have EOFd
-        while proc.poll() is None or pout.is_alive() or perr.is_alive():
-            stdout, stderr, prev_std = check_output(job, stdout, stderr, prev_std)
-
-        # Catch any remaining output
-        try:
-            proc.stdout.flush()
-        except ValueError:  # Handle if stdout is closed
-            pass
-        stdout, stderr, prev_std = check_output(job, stdout, stderr, prev_std)
-        return_code = proc.returncode
 
         # fetch the job again in case the database connection was lost during the job or something else changed.
         job = WooeyJob.objects.get(pk=job_id)
@@ -200,11 +269,11 @@ def submit_script(**kwargs):
                     try:
                         zip.write(path, arcname=archive_name)
                     except Exception:
-                        stderr = "{}\n{}".format(stderr, traceback.format_exc())
+                        stderr += "{}\n{}".format(stderr, traceback.format_exc())
             try:
                 zip.close()
             except Exception:
-                stderr = "{}\n{}".format(stderr, traceback.format_exc())
+                stderr += "{}\n{}".format(stderr, traceback.format_exc())
 
             # save all the files generated as well to our default storage for ephemeral storage setups
             if wooey_settings.WOOEY_EPHEMERAL_FILES:
@@ -223,9 +292,8 @@ def submit_script(**kwargs):
         job.status = WooeyJob.COMPLETED if return_code == 0 else WooeyJob.FAILED
         job.update_realtime(delete=True)
     except Exception:
-        stderr = "{}\n{}".format(stderr, traceback.format_exc())
+        stderr += "{}\n{}".format(stderr, traceback.format_exc())
         job.status = WooeyJob.ERROR
-
     job.stdout = stdout
     job.stderr = stderr
     job.save()

@@ -19,17 +19,17 @@ msgstr ""
 msgid ""
 "Ignore bad imports when adding scripts. This is useful if a script is under "
 "a virtual environment."
-msgstr ""
+msgstr "이 스립트를 추가할 때 잘못된 import을 무시합니다. 가상환경(virtual environment)에서 스크립트를 실행할 때 유용합니다."
 
 #: api/jobs.py:29 api/jobs.py:73
 #, fuzzy
 #| msgid "You are not permitted to access this script."
 msgid "You are not permitted to access this job."
-msgstr "이 스크립트에 대한 권한이 없습니다."
+msgstr "이 작업에 대한 권한이 없습니다."
 
 #: api/scripts.py:101
 msgid "Unable to find script."
-msgstr ""
+msgstr "스크립트를 찾을 수 없습니다."
 
 #: api/scripts.py:175 views/views.py:99 views/views.py:132
 msgid "You are not permitted to access this script."
@@ -65,11 +65,11 @@ msgstr "중국어"
 
 #: conf/project_template/settings/wooey_settings.py:17
 msgid "Korean"
-msgstr ""
+msgstr "한국어"
 
 #: conf/project_template/settings/wooey_settings.py:18
 msgid "Spanish"
-msgstr ""
+msgstr "스페인어"
 
 #: models/core.py:42
 msgid "script group"
@@ -117,7 +117,7 @@ msgstr "오류"
 
 #: models/core.py:221
 msgid "Running"
-msgstr "진행중"
+msgstr "실행중"
 
 #: models/core.py:222 templates/wooey/jobs/job_list.html:22
 msgid "Submitted"
@@ -152,15 +152,15 @@ msgstr ""
 
 #: models/core.py:430
 msgid "The python type expected by the script (e.g. boolean, integer, file)."
-msgstr ""
+msgstr "파이썬 변수 타입 (예시: boolean, integer, file)."
 
 #: models/core.py:436
 msgid "help"
-msgstr ""
+msgstr "도움말"
 
 #: models/core.py:443
 msgid "The order the parameter appears to the user."
-msgstr ""
+msgstr "변수가 사용자에게 표시되는 순서"
 
 #: models/core.py:448
 msgid "script parameter"
@@ -188,31 +188,31 @@ msgstr "wooey 파일"
 
 #: models/core.py:736
 msgid "The name of the virtual environment."
-msgstr ""
+msgstr "가상환경(virtual environment) 이름"
 
 #: models/core.py:741
 msgid ""
 "The binary to use for creating the virtual environment. Should be in your "
 "path (e.g. \"python3\" or \"/usr/bin/python3\")"
-msgstr ""
+msgstr "가상환경(virtual environment)을 만들 때 사용할 바이너리. (예시: \"python3\" or \"/usr/bin/python3\")"
 
 #: models/core.py:748
 msgid ""
 "A list of requirements for the virtualenv. This gets passed directly to "
 "\"pip install -r\"."
-msgstr ""
+msgstr "ㄱ가상환경(virtual environment)에 설치할 패키지 리스트. \"pip install -r\"로 전달됩니다."
 
 #: models/core.py:753
 msgid "The directory to place the virtual environment under."
-msgstr ""
+msgstr "가상환경(virtual environment)을 만들 디렉토리"
 
 #: models/core.py:758
 msgid "virtual environment"
-msgstr ""
+msgstr "가상환경(virtual environment)"
 
 #: models/core.py:759
 msgid "virtual environments"
-msgstr ""
+msgstr "가상환경(virtual environment)"
 
 #: models/favorite.py:31
 msgid "favorite"
@@ -296,11 +296,11 @@ msgstr "로그아웃"
 
 #: templates/wooey/base.html:123 templates/wooey/home.html:32
 msgid "Search for scripts..."
-msgstr "스크립트 검색 중..."
+msgstr "스크립트 검색..."
 
 #: templates/wooey/base.html:329
 msgid "View Details"
-msgstr "자세히 알아보기"
+msgstr "자세히 보기"
 
 #: templates/wooey/jobs/job_list.html:9
 #, fuzzy, python-format
@@ -399,7 +399,7 @@ msgstr "복제"
 
 #: templates/wooey/jobs/job_view.html:83
 msgid "Clone Job to Previous Script Versions"
-msgstr "이전 버전의 스크립트의 작업을 복제"
+msgstr "작업을 이전 버전의 스크립트로 복제"
 
 #: templates/wooey/jobs/job_view.html:86
 msgid "Clone job using previous script version"
@@ -407,7 +407,7 @@ msgstr "이전 버전의 스크립트의 작업을 복제"
 
 #: templates/wooey/jobs/job_view.html:89
 msgid "Clone using version job ran with"
-msgstr "다음 버전의 작업을 복제"
+msgstr "작업이 실행된 버전을 사용하여 복제"
 
 #: templates/wooey/jobs/job_view.html:95
 #: templates/wooey/scripts/script_panel.html:24
@@ -421,7 +421,7 @@ msgstr "버전 %(version)"
 #, fuzzy, python-format
 #| msgid "Iteration %(iteration)s"
 msgid "Iteration %(iteration)s"
-msgstr "%(iteration) 되풀이 하기 "
+msgstr "%(iteration)번째 실행"
 
 #: templates/wooey/jobs/job_view.html:112
 msgid "Stop"
@@ -494,7 +494,7 @@ msgid ""
 "Anyone with this link will be able to view your data — only share with "
 "people you trust!"
 msgstr ""
-"당신의 데이터가 보여집니다. 믿을 수 있는 사람에게만 링크를 공유 하세요."
+"이 링크를 통해 누구나 당신의 데이터를 볼 수 있습니다. 신뢰하는 사람에게만 링크를 공유 하세요."
 
 #: templates/wooey/modals/resubmit_modal.html:4
 msgid "Resubmission Complete"
@@ -514,7 +514,7 @@ msgstr "결과 다운로드"
 
 #: templates/wooey/preview/base.html:8
 msgid "Pin in scrapbook"
-msgstr "모음집의 Pin"
+msgstr "작업 모음집에 고정"
 
 #: templates/wooey/preview/base.html:16
 #, fuzzy, python-format
@@ -559,33 +559,33 @@ msgstr "직원"
 
 #: templates/wooey/profile/profile.html:48
 msgid "API Keys"
-msgstr ""
+msgstr "API 키"
 
 #: templates/wooey/profile/profile.html:53
 msgid "Create API Key"
-msgstr ""
+msgstr "API 키 생성"
 
 #: templates/wooey/profile/profile.html:73
 msgid "API Key Actions"
-msgstr ""
+msgstr "API 키 동작"
 
 #: templates/wooey/profile/profile.html:74
 #: templates/wooey/profile/profile.html:142
 msgid "Deactivate"
-msgstr ""
+msgstr "비활성화"
 
 #: templates/wooey/profile/profile.html:74
 #: templates/wooey/profile/profile.html:142
 msgid "Activate"
-msgstr ""
+msgstr "활성화"
 
 #: templates/wooey/profile/profile.html:88
 msgid "Create new API Key"
-msgstr ""
+msgstr "새로운 API 키 생성"
 
 #: templates/wooey/profile/profile.html:93
 msgid "API Key Name"
-msgstr ""
+msgstr "API 키 이름"
 
 #: templates/wooey/profile/profile.html:94
 msgid "work laptop..."
@@ -593,7 +593,7 @@ msgstr ""
 
 #: templates/wooey/profile/profile.html:103
 msgid "Create Key"
-msgstr ""
+msgstr "API 키 생성"
 
 #: templates/wooey/profile/profile.html:141
 msgid "True"
@@ -609,7 +609,7 @@ msgstr ""
 #: templates/wooey/registration/register.html:10
 #: templates/wooey/registration/register.html:12
 msgid "Username"
-msgstr "유저 이름"
+msgstr "유저명"
 
 #: templates/wooey/registration/login.html:19
 #: templates/wooey/registration/login.html:21
@@ -634,7 +634,7 @@ msgstr "회원 등록"
 #: templates/wooey/registration/register.html:37
 #: templates/wooey/registration/register.html:39
 msgid "Password (again)"
-msgstr "암호 (다시입력)"
+msgstr "암호 (재입력)"
 
 #: templates/wooey/scripts/script_view.html:32
 msgid "Documentation"
@@ -660,11 +660,11 @@ msgstr "작업 이름"
 
 #: templates/wooey/scripts/script_view.html:138
 msgid "Job Description"
-msgstr "작업에 대한 설명"
+msgstr "작업 설명"
 
 #: templates/wooey/scripts/script_view.html:139
 msgid "Enter job description here..."
-msgstr "작업에 대한 자세한 내용을 입력하세요."
+msgstr "작업 설명을 입력하세요..."
 
 #: templates/wooey/scripts/script_view.html:147
 msgid "Submit"
@@ -680,7 +680,7 @@ msgstr "암호가 일치 하지 않습니다."
 
 #: views/authentication.py:33
 msgid "Reserved username."
-msgstr "이미 사용중인 유저이름"
+msgstr "사용할 수 없는 유저이름입니다."
 
 #: views/authentication.py:35
 msgid "Please enter your email address."
@@ -688,7 +688,7 @@ msgstr "이메일 주소를 입력하세요."
 
 #: views/authentication.py:74
 msgid "You have entered an invalid username or password."
-msgstr "올바르지 않은 유저이름 혹은 암호를 입력했습니다."
+msgstr "올바르지 않은 유저명 혹은 암호를 입력했습니다."
 
 #: views/wooey_celery.py:184
 msgid "Unknown Command"

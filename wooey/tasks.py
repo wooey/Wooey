@@ -11,6 +11,7 @@ from threading import Thread
 from django.utils.text import get_valid_filename
 from django.core.files import File
 from django.conf import settings
+from django.utils.translation import gettext_lazy as _
 
 from celery import app
 from celery.schedules import crontab
@@ -143,6 +144,7 @@ def setup_venv(virtual_environment, job=None, stdout="", stderr=""):
     return_code = 0
 
     if not os.path.exists(venv_path):
+        stdout += _("Setting up Virtual Environment\n########\n")
         venv_command = [
             virtual_environment.python_binary,
             "-m",
@@ -156,13 +158,22 @@ def setup_venv(virtual_environment, job=None, stdout="", stderr=""):
         )
 
         if return_code:
-            raise Exception("VirtualEnv setup failed.\n{}\n{}".format(stdout, stderr))
+            raise Exception(
+                _("VirtualEnv setup failed.\n{stdout}\n{stderr}").format(
+                    stdout=stdout, stderr=stderr
+                )
+            )
         pip_setup = [venv_executable, "-m", "pip", "install", "-I", "pip"]
+        stdout += _("Installing Pip\n########\n")
         (stdout, stderr, return_code) = run_and_stream_command(
             pip_setup, cwd=None, job=job, stdout=stdout, stderr=stderr
         )
         if return_code:
-            raise Exception("Pip setup failed.\n{}\n{}".format(stdout, stderr))
+            raise Exception(
+                _("Pip setup failed.\n{stdout}\n{stderr}").format(
+                    stdout=stdout, stderr=stderr
+                )
+            )
     requirements = virtual_environment.requirements
     if requirements:
         with tempfile.NamedTemporaryFile(
@@ -177,12 +188,18 @@ def setup_venv(virtual_environment, job=None, stdout="", stderr=""):
             "-r",
             reqs_txt.name,
         ]
+        stdout += _("Installing Requirements\n########\n")
         (stdout, stderr, return_code) = run_and_stream_command(
             venv_command, cwd=None, job=job, stdout=stdout, stderr=stderr
         )
         if return_code:
-            raise Exception("Requirements setup failed.\n{}\n{}".format(stdout, stderr))
+            raise Exception(
+                _("Requirements setup failed.\n{stdout}\n{stderr}").format(
+                    stdout=stdout, stderr=stderr
+                )
+            )
         os.remove(reqs_txt.name)
+    stdout += _("Virtual Environment Setup Complete\n########\n")
     return (venv_executable, stdout, stderr, return_code)
 
 

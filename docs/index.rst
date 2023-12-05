@@ -36,6 +36,7 @@ Getting Started
    configuration
    running_wooey
    scripts
+   venv_setup
    wooey_ui
    api
    api_keys

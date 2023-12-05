@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-01-28 16:51+0000\n"
+"POT-Creation-Date: 2023-11-30 23:54+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,141 +18,295 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: backend/utils.py:319
+#: api/forms.py:19 models/core.py:65
+msgid ""
+"Ignore bad imports when adding scripts. This is useful if a script is under "
+"a virtual environment."
+msgstr ""
+
+#: api/jobs.py:29 api/jobs.py:73
+#, fuzzy
+#| msgid "You are not permitted to access this script."
+msgid "You are not permitted to access this job."
+msgstr "このスクリプトにアクセスする許可がありません。"
+
+#: api/scripts.py:101
+msgid "Unable to find script."
+msgstr ""
+
+#: api/scripts.py:175 views/views.py:99 views/views.py:132
+msgid "You are not permitted to access this script."
+msgstr "このスクリプトにアクセスする許可がありません。"
+
+#: backend/utils.py:677
 msgid "You are not permitted to use this script"
 msgstr "このスクリプトを実行する許可がありません"
 
-#: models/core.py:51
+#: conf/project_template/settings/wooey_settings.py:11
+#, fuzzy
+#| msgid "Permalink"
+msgid "German"
+msgstr "パーマリンク"
+
+#: conf/project_template/settings/wooey_settings.py:12
+msgid "English"
+msgstr ""
+
+#: conf/project_template/settings/wooey_settings.py:13
+msgid "French"
+msgstr ""
+
+#: conf/project_template/settings/wooey_settings.py:14
+msgid "Japanese"
+msgstr ""
+
+#: conf/project_template/settings/wooey_settings.py:15
+msgid "Dutch"
+msgstr ""
+
+#: conf/project_template/settings/wooey_settings.py:16
+msgid "Simplified Chinese"
+msgstr ""
+
+#: conf/project_template/settings/wooey_settings.py:17
+msgid "Korean"
+msgstr ""
+
+#: conf/project_template/settings/wooey_settings.py:18
+msgid "Spanish"
+msgstr ""
+
+#: models/core.py:42
 msgid "script group"
 msgstr "スクリプトグループ"
 
-#: models/core.py:52
+#: models/core.py:43
 msgid "script groups"
 msgstr "スクリプトグループ"
 
-#: models/core.py:80
+#: models/core.py:88
 msgid "script"
 msgstr "スクリプト"
 
-#: models/core.py:81
+#: models/core.py:89
 msgid "scripts"
 msgstr "スクリプト"
 
-#: models/core.py:118
+#: models/core.py:153
+msgid "This script already exists!"
+msgstr ""
+
+#: models/core.py:158
 msgid "script version"
 msgstr "スクリプトのバージョン"
 
-#: models/core.py:119
+#: models/core.py:159
 msgid "script versions"
 msgstr "スクリプトのバージョン"
 
-#: models/core.py:152 templates/wooey/jobs/job_list.html.py:22
-msgid "Submitted"
-msgstr "登録済"
-
-#: models/core.py:153
-msgid "Running"
-msgstr "実行中"
-
-#: models/core.py:154
+#: models/core.py:217
 msgid "Completed"
 msgstr "完了"
 
-#: models/core.py:155
+#: models/core.py:218
 msgid "Deleted"
 msgstr "削除済"
 
-#: models/core.py:168
+#: models/core.py:219 templates/wooey/jobs/job_view.html:144
+#, fuzzy
+#| msgid "Failure"
+msgid "Failed"
+msgstr "失敗"
+
+#: models/core.py:220 templates/wooey/jobs/job_view.html:145
+msgid "Error"
+msgstr ""
+
+#: models/core.py:221
+msgid "Running"
+msgstr "実行中"
+
+#: models/core.py:222 templates/wooey/jobs/job_list.html:22
+msgid "Submitted"
+msgstr "登録済"
+
+#: models/core.py:234
+msgid "You are not authenticated to view this job."
+msgstr "このジョブを閲覧する権限がありません。"
+
+#: models/core.py:239
 msgid "wooey job"
 msgstr "wooeyジョブ"
 
-#: models/core.py:169
+#: models/core.py:240
 msgid "wooey jobs"
 msgstr "wooeyジョブ"
 
-#: models/core.py:241
+#: models/core.py:378
 msgid "script parameter group"
 msgstr "スクリプト引数グループ"
 
-#: models/core.py:242
+#: models/core.py:379
 msgid "script parameter groups"
 msgstr "スクリプト引数グループ"
 
-#: models/core.py:272
+#: models/core.py:422
+msgid ""
+"Collapse separate inputs to a given argument to a single input (ie: --arg 1 "
+"--arg 2 becomes --arg 1 2)"
+msgstr ""
+
+#: models/core.py:430
+msgid "The python type expected by the script (e.g. boolean, integer, file)."
+msgstr ""
+
+#: models/core.py:436
+msgid "help"
+msgstr ""
+
+#: models/core.py:443
+msgid "The order the parameter appears to the user."
+msgstr ""
+
+#: models/core.py:448
 msgid "script parameter"
 msgstr "スクリプト引数"
 
-#: models/core.py:273 models/core.py:334
+#: models/core.py:449 models/core.py:516
 msgid "script parameters"
 msgstr "スクリプト引数"
 
-#: models/core.py:340
+#: models/core.py:522
 msgid "FILE NOT FOUND"
 msgstr "ファイルが見つかりません"
 
-#: models/core.py:342
+#: models/core.py:524
 msgid "File outside of project"
 msgstr "プロジェクト外のファイル"
 
-#: models/core.py:495
+#: models/core.py:727
 msgid "wooey file"
 msgstr "wooeyファイル"
 
-#: models/core.py:496
+#: models/core.py:728
 msgid "wooey files"
 msgstr "wooeyファイル"
 
-#: models/favorite.py:30
+#: models/core.py:736
+msgid "The name of the virtual environment."
+msgstr ""
+
+#: models/core.py:741
+msgid ""
+"The binary to use for creating the virtual environment. Should be in your "
+"path (e.g. \"python3\" or \"/usr/bin/python3\")"
+msgstr ""
+
+#: models/core.py:748
+msgid ""
+"A list of requirements for the virtualenv. This gets passed directly to "
+"\"pip install -r\"."
+msgstr ""
+
+#: models/core.py:753
+msgid "The directory to place the virtual environment under."
+msgstr ""
+
+#: models/core.py:758
+msgid "virtual environment"
+msgstr ""
+
+#: models/core.py:759
+msgid "virtual environments"
+msgstr ""
+
+#: models/favorite.py:31
 msgid "favorite"
 msgstr "お気に入り"
 
-#: models/favorite.py:31
+#: models/favorite.py:32
 msgid "favorites"
 msgstr "お気に入り"
 
-#: settings.py:20
+#: models/widgets.py:9
+msgid "Widget Name"
+msgstr ""
+
+#: models/widgets.py:13
+msgid ""
+"Widget class to use (e.g. django.forms.TextInput, defaults to Form Field on "
+"Script Parameter model if blank)."
+msgstr ""
+
+#: models/widgets.py:19
+msgid "Input Widget Extra Attributes"
+msgstr ""
+
+#: models/widgets.py:21
+msgid ""
+"Extra attributes to the input field. The extra attributes MUST be specified "
+"like key=\"value\" (e.g. type=\"date\")."
+msgstr ""
+
+#: models/widgets.py:28
+msgid "Input Widget Class name(s)"
+msgstr ""
+
+#: models/widgets.py:29
+msgid "The class name(s) for the input field."
+msgstr ""
+
+#: models/widgets.py:35
+msgid "Input Widget Extra Properties"
+msgstr ""
+
+#: models/widgets.py:36
+msgid "Additional properties to append to the input field."
+msgstr ""
+
+#: settings.py:35
 msgid "Scripts"
 msgstr "スクリプト"
 
-#: settings.py:21
+#: settings.py:44
 msgid "Wooey!"
 msgstr "Wooey!"
 
-#: settings.py:22
+#: settings.py:45
 msgid "A web UI for Python scripts"
 msgstr "PythonスクリプトのWeb UI"
 
-#: templates/wooey/base.html:377
+#: templates/wooey/base.html:46
 msgid "Toggle navigation"
 msgstr "ナビゲーションの切り替え"
 
-#: templates/wooey/base.html:389
+#: templates/wooey/base.html:58
 msgid "Queue"
 msgstr "キュー"
 
-#: templates/wooey/base.html:399
+#: templates/wooey/base.html:67
 msgid "Jobs"
 msgstr "ジョブ"
 
-#: templates/wooey/base.html:408
+#: templates/wooey/base.html:75
 msgid "Results"
 msgstr "結果"
 
-#: templates/wooey/base.html:417
+#: templates/wooey/base.html:101
 msgid "Scrapbook"
 msgstr "スクラップブック"
 
-#: templates/wooey/base.html:421
+#: templates/wooey/base.html:105
 msgid "Logout"
 msgstr "ログアウト"
 
-#: templates/wooey/base.html:439 templates/wooey/home.html.py:32
+#: templates/wooey/base.html:123 templates/wooey/home.html:32
 msgid "Search for scripts..."
 msgstr "スクリプトを検索…"
 
-#: templates/wooey/base.html:647
-msgid "More..."
-msgstr "もっと見る…"
+#: templates/wooey/base.html:329
+msgid "View Details"
+msgstr ""
 
 #: templates/wooey/jobs/job_list.html:9
 #, python-format
@@ -171,28 +325,32 @@ msgstr "スクリプト"
 msgid "Status"
 msgstr "ステータス"
 
-#: templates/wooey/jobs/job_list.html:38
-#: templates/wooey/jobs/job_view.html:117 views/wooey_celery.py:27
+#: templates/wooey/jobs/job_list.html:38 templates/wooey/jobs/job_view.html:142
+#: views/wooey_celery.py:25
 msgid "Success"
 msgstr "成功"
 
-#: templates/wooey/jobs/job_list.html:40
-#: templates/wooey/jobs/job_view.html:119 views/wooey_celery.py:28
+#: templates/wooey/jobs/job_list.html:40 templates/wooey/jobs/job_view.html:141
+#: views/wooey_celery.py:27
 msgid "Executing"
 msgstr "実行中"
 
-#: templates/wooey/jobs/job_list.html:42
-#: templates/wooey/jobs/job_view.html:121 views/wooey_celery.py:29
+#: templates/wooey/jobs/job_list.html:42 templates/wooey/jobs/job_view.html:140
+#: views/wooey_celery.py:29
 msgid "Queued"
 msgstr "予約"
 
-#: templates/wooey/jobs/job_list.html:44
-#: templates/wooey/jobs/job_view.html:123 views/wooey_celery.py:30
+#: templates/wooey/jobs/job_list.html:44 templates/wooey/jobs/job_view.html:143
+#: views/wooey_celery.py:30
 msgid "Halted"
 msgstr "中止"
 
-#: templates/wooey/jobs/job_list.html:46
-#: templates/wooey/jobs/job_view.html:125 views/wooey_celery.py:32
+#: templates/wooey/jobs/job_list.html:46 views/wooey_celery.py:31
+msgid "Failure"
+msgstr "失敗"
+
+#: templates/wooey/jobs/job_list.html:48 templates/wooey/jobs/job_view.html:139
+#: views/wooey_celery.py:32
 msgid "Waiting"
 msgstr "待機中"
 
@@ -201,97 +359,122 @@ msgstr "待機中"
 msgid "Job # %(job_id)s"
 msgstr "ジョブ # %(job_id)s"
 
-#: templates/wooey/jobs/job_view.html:40
+#: templates/wooey/jobs/job_view.html:42
 msgid "Download"
 msgstr "ダウンロード"
 
-#: templates/wooey/jobs/job_view.html:44 templates/wooey/jobs/job_view.html:61
+#: templates/wooey/jobs/job_view.html:46 templates/wooey/jobs/job_view.html:63
 msgid "Toggle Dropdown"
 msgstr "ドロップダウンの切り替え"
 
-#: templates/wooey/jobs/job_view.html:57
+#: templates/wooey/jobs/job_view.html:59
 msgid "Share"
 msgstr "シェア"
 
-#: templates/wooey/jobs/job_view.html:65
+#: templates/wooey/jobs/job_view.html:68
 msgid "Permalink"
 msgstr "パーマリンク"
 
-#: templates/wooey/jobs/job_view.html:67
+#: templates/wooey/jobs/job_view.html:72
 #, python-format
 msgid "Wooey Job #%(job_id)s is %(job_status)s"
 msgstr "Wooey ジョブ #%(job_id)s が %(job_status)s"
 
-#: templates/wooey/jobs/job_view.html:67
+#: templates/wooey/jobs/job_view.html:72
 #, python-format
 msgid ""
-"You can see the result and any outputs at the following link:%%0D%%0A"
-"%(permalink)s"
+"You can see the result and any outputs at the following link:"
+"%%0D%%0A%(permalink)s"
 msgstr ""
-"次のリンクですべての結果と出力を見ることができます:%%0D%%0A"
-"%(permalink)s"
+"次のリンクですべての結果と出力を見ることができます:%%0D%%0A%(permalink)s"
 
-#: templates/wooey/jobs/job_view.html:67
+#: templates/wooey/jobs/job_view.html:72
 #: templates/wooey/registration/register.html:19
 #: templates/wooey/registration/register.html:21
 msgid "Email"
 msgstr "メールアドレス"
 
-#: templates/wooey/jobs/job_view.html:82
-msgid "Stop"
-msgstr "停止"
-
-#: templates/wooey/jobs/job_view.html:86
-msgid "Re-run"
-msgstr "再実行"
-
-#: templates/wooey/jobs/job_view.html:90
-msgid "Resubmit"
-msgstr "再登録"
-
-#: templates/wooey/jobs/job_view.html:93
+#: templates/wooey/jobs/job_view.html:79
 msgid "Clone"
 msgstr "複製"
 
-#: templates/wooey/jobs/job_view.html:97
+#: templates/wooey/jobs/job_view.html:83
+msgid "Clone Job to Previous Script Versions"
+msgstr ""
+
+#: templates/wooey/jobs/job_view.html:86
+msgid "Clone job using previous script version"
+msgstr ""
+
+#: templates/wooey/jobs/job_view.html:89
+msgid "Clone using version job ran with"
+msgstr ""
+
+#: templates/wooey/jobs/job_view.html:95
+#: templates/wooey/scripts/script_panel.html:24
+#, python-format
+msgid "Version %(version)s"
+msgstr "バージョン %(version)s"
+
+#: templates/wooey/jobs/job_view.html:98
+#: templates/wooey/scripts/script_panel.html:27
+#, python-format
+msgid "Iteration %(iteration)s"
+msgstr "イテレーション %(iteration)s"
+
+#: templates/wooey/jobs/job_view.html:112
+msgid "Stop"
+msgstr "停止"
+
+#: templates/wooey/jobs/job_view.html:115
+msgid "Re-run"
+msgstr "再実行"
+
+#: templates/wooey/jobs/job_view.html:118
+msgid "Resubmit"
+msgstr "再登録"
+
+#: templates/wooey/jobs/job_view.html:122
+#: templates/wooey/profile/profile.html:75
 msgid "Delete"
 msgstr "削除"
 
-#: templates/wooey/jobs/job_view.html:110
+#: templates/wooey/jobs/job_view.html:135
 msgid "Priority 1"
 msgstr "優先度 1"
 
-#: templates/wooey/jobs/job_view.html:111
+#: templates/wooey/jobs/job_view.html:136
 #, python-format
 msgid "Submitted %(job_submission_date)s ago by %(job_user)s"
 msgstr "%(job_submission_date)s前に%(job_user)sが登録"
 
-#: templates/wooey/jobs/job_view.html:112
+#: templates/wooey/jobs/job_view.html:137
 #, python-format
 msgid "Updated %(job_last_modified_date)s ago"
 msgstr "%(job_last_modified_date)s前に更新"
 
-#: templates/wooey/jobs/job_view.html:151
+#: templates/wooey/jobs/job_view.html:168
 msgid "Console"
 msgstr "コンソール"
 
-#: templates/wooey/jobs/job_view.html:172
+#: templates/wooey/jobs/job_view.html:181
 msgid "All Files"
 msgstr "すべてのファイル"
 
-#: templates/wooey/jobs/job_view.html:178
+#: templates/wooey/jobs/job_view.html:188
 msgid "Filename"
 msgstr "ファイル名"
 
-#: templates/wooey/jobs/job_view.html:179
+#: templates/wooey/jobs/job_view.html:189
 msgid "Parameter"
 msgstr "引数"
 
-#: templates/wooey/jobs/job_view.html:182
+#: templates/wooey/jobs/job_view.html:192
 msgid "Size"
 msgstr "サイズ"
 
 #: templates/wooey/modals/base_modal.html:13
+#: templates/wooey/profile/profile.html:102
 msgid "Close"
 msgstr "閉じる"
 
@@ -308,8 +491,8 @@ msgid ""
 "Anyone with this link will be able to view your data — only share with "
 "people you trust!"
 msgstr ""
-"誰でもこのリンクからあなたのデータを見ることができます"
-" — 信用する人にのみシェアしてください！"
+"誰でもこのリンクからあなたのデータを見ることができます — 信用する人にのみシェ"
+"アしてください！"
 
 #: templates/wooey/modals/resubmit_modal.html:4
 msgid "Resubmission Complete"
@@ -332,36 +515,91 @@ msgid "Pin in scrapbook"
 msgstr "スクラップブックに保存"
 
 #: templates/wooey/preview/base.html:16
-#, python-format
+#, fuzzy, python-format
+#| msgid ""
+#| "\n"
+#| "                Output from <a href=\"%(result_url)s\">%(job_name)s</a> "
+#| "job <a href=\"%(celery_results_url)s\">#%(job_id)s</a>\n"
+#| "                "
 msgid ""
 "\n"
-"                Output from <a href=\"%(result_url)s\">%(job_name)s</a> job "
-"<a href=\"%(celery_results_url)s\">#%(job_id)s</a>\n"
-"                "
+"                        Output from <a href=\"%(result_url)s\">%(job_name)s</"
+"a> job <a href=\"%(celery_results_url)s\">#%(job_id)s</a>\n"
+"                    "
 msgstr ""
 "\n"
-"                <a href=\"%(result_url)s\">%(job_name)s</a> ジョブ "
-"<a href=\"%(celery_results_url)s\">#%(job_id)s</a> からの出力\n"
+"                <a href=\"%(result_url)s\">%(job_name)s</a> ジョブ <a "
+"href=\"%(celery_results_url)s\">#%(job_id)s</a> からの出力\n"
 "                "
 
-#: templates/wooey/profile/profile.html:21
-#, python-format
+#: templates/wooey/profile/profile.html:27
+#, fuzzy, python-format
+#| msgid ""
+#| "\n"
+#| "    Joined %(join_date)s ago\n"
+#| "    "
 msgid ""
 "\n"
-"    Joined %(join_date)s ago\n"
-"    "
+"          Joined %(join_date)s ago\n"
+"        "
 msgstr ""
 "\n"
 "    %(join_date)s前に参加\n"
 "    "
 
-#: templates/wooey/profile/profile.html:25
+#: templates/wooey/profile/profile.html:31
 msgid "Superuser"
 msgstr "スーパーユーザー"
 
-#: templates/wooey/profile/profile.html:29
+#: templates/wooey/profile/profile.html:35
 msgid "Staff"
 msgstr "スタッフ"
+
+#: templates/wooey/profile/profile.html:48
+msgid "API Keys"
+msgstr ""
+
+#: templates/wooey/profile/profile.html:53
+msgid "Create API Key"
+msgstr ""
+
+#: templates/wooey/profile/profile.html:73
+msgid "API Key Actions"
+msgstr ""
+
+#: templates/wooey/profile/profile.html:74
+#: templates/wooey/profile/profile.html:142
+msgid "Deactivate"
+msgstr ""
+
+#: templates/wooey/profile/profile.html:74
+#: templates/wooey/profile/profile.html:142
+msgid "Activate"
+msgstr ""
+
+#: templates/wooey/profile/profile.html:88
+msgid "Create new API Key"
+msgstr ""
+
+#: templates/wooey/profile/profile.html:93
+msgid "API Key Name"
+msgstr ""
+
+#: templates/wooey/profile/profile.html:94
+msgid "work laptop..."
+msgstr ""
+
+#: templates/wooey/profile/profile.html:103
+msgid "Create Key"
+msgstr ""
+
+#: templates/wooey/profile/profile.html:141
+msgid "True"
+msgstr ""
+
+#: templates/wooey/profile/profile.html:141
+msgid "False"
+msgstr ""
 
 #: templates/wooey/registration/login.html:10
 #: templates/wooey/registration/login.html:12
@@ -396,46 +634,43 @@ msgstr "登録"
 msgid "Password (again)"
 msgstr "パスワード（確認用）"
 
-#: templates/wooey/scripts/script_panel.html:24
-#, python-format
-msgid "Version %(version)s"
-msgstr "バージョン %(version)s"
-
-#: templates/wooey/scripts/script_panel.html:27
-#, python-format
-msgid "Iteration %(iteration)s"
-msgstr "イテレーション %(iteration)s"
-
-#: templates/wooey/scripts/script_view.html:23
+#: templates/wooey/scripts/script_view.html:32
 msgid "Documentation"
 msgstr "ドキュメント"
 
-#: templates/wooey/scripts/script_view.html:36
+#: templates/wooey/scripts/script_view.html:50
+#: templates/wooey/scripts/script_view.html:59
+#, fuzzy
+#| msgid "script parameters"
+msgid "Main Parser Parameters"
+msgstr "スクリプト引数"
+
+#: templates/wooey/scripts/script_view.html:69
 msgid "Settings"
 msgstr "設定"
 
-#: templates/wooey/scripts/script_view.html:84
+#: templates/wooey/scripts/script_view.html:127
 msgid "Metadata"
 msgstr "メタデータ"
 
-#: templates/wooey/scripts/script_view.html:89
-#: templates/wooey/scripts/script_view.html:90
+#: templates/wooey/scripts/script_view.html:134
+#: templates/wooey/scripts/script_view.html:135
 msgid "Job Name"
 msgstr "ジョブの名称"
 
-#: templates/wooey/scripts/script_view.html:93
+#: templates/wooey/scripts/script_view.html:138
 msgid "Job Description"
 msgstr "ジョブの説明"
 
-#: templates/wooey/scripts/script_view.html:94
+#: templates/wooey/scripts/script_view.html:139
 msgid "Enter job description here..."
 msgstr "ジョブの説明を入力してください…"
 
-#: templates/wooey/scripts/script_view.html:102
+#: templates/wooey/scripts/script_view.html:147
 msgid "Submit"
 msgstr "登録"
 
-#: templates/wooey/scripts/script_view.html:125
+#: templates/wooey/scripts/script_view.html:193
 msgid "No more choices may be added for this selection"
 msgstr "これ以上登録できません"
 
@@ -451,27 +686,17 @@ msgstr "ユーザー名がすでに使われています。"
 msgid "Please enter your email address."
 msgstr "メールアドレスを入力してください。"
 
-#: views/authentication.py:66
+#: views/authentication.py:74
 msgid "You have entered an invalid username or password."
 msgstr "不正なユーザー名またはパスワードです。"
 
-#: views/views.py:59
-#, python-format
-msgid "No %(verbose_name)s found matching the query"
-msgstr "クエリに一致する%(verbose_name)sが見つかりません"
-
-#: views/views.py:89 views/views.py:134
-msgid "You are not permitted to access this script."
-msgstr "このスクリプトにアクセスする許可がありません。"
-
-#: views/wooey_celery.py:31
-msgid "Failure"
-msgstr "失敗"
-
-#: views/wooey_celery.py:137
+#: views/wooey_celery.py:184
 msgid "Unknown Command"
 msgstr "不明なコマンド"
 
-#: views/wooey_celery.py:192
-msgid "You are not authenticated to view this job."
-msgstr "このジョブを閲覧する権限がありません。"
+#~ msgid "More..."
+#~ msgstr "もっと見る…"
+
+#, python-format
+#~ msgid "No %(verbose_name)s found matching the query"
+#~ msgstr "クエリに一致する%(verbose_name)sが見つかりません"

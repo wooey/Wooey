@@ -18,11 +18,13 @@ To add a virtual environment, click the Add button and a form will be rendered f
 
 The fields are:
 
-*name* What to call the virtual environment. Virtual environments can be reused across scripts if desired.
-*python binary* The path to a python executable to create and use for running the virtual environment
-*requirements* This is equivalent to the requirements.txt file for defining packages to install
-*Venv directory* Where to store the virtual environment. The default location for this can be defined via the `WOOEY_VIRTUAL_ENVIRONMENT_DIRECTORY`
-setting. If not defined, this defaults to the system temporary directory folder.
+* **name** What to call the virtual environment. Virtual environments can be reused across scripts if desired.
+
+* **python binary** The path to a python executable to create and use for running the virtual environment
+
+* **requirements** This is equivalent to the requirements.txt file for defining packages to install
+
+* **Venv directory** Where to store the virtual environment. The default location for this can be defined via the `WOOEY_VIRTUAL_ENVIRONMENT_DIRECTORY` setting. If not defined, this defaults to the system temporary directory folder.
 
 Lastly, to add the virtual environment to a script, from the script admin view, choose the virtual environment to run
 the script in:

@@ -56,7 +56,7 @@
               <ul class="dropdown-menu">
                 {% for parser_info, parser_groups in form.parsers.items %}
                   {% with parser_pk=parser_info.0 parser_name=parser_info.1 %}
-                    <li class="{% if forloop.first %}active{% endif %}"><a data-toggle="tab" data-parser-pk="{{ parser_pk }}" href="#parsergroup-{{ parser_pk }}">{% if not parser_name %}{% trans "Main Parser Parameters" %}{% else %}{{ parser_name|title }}{% endif %}</a></li>
+                    <li class="{% if forloop.first %}active{% endif %}"><a data-toggle="tab" data-parser-pk="{{ parser_pk }}" data-parser-name="{{ parser_name }}" href="#parsergroup-{{ parser_pk }}">{% if not parser_name %}{% trans "Main Parser Parameters" %}{% else %}{{ parser_name|title }}{% endif %}</a></li>
                     {% if forloop.first %}
                       <li role="separator" class="divider"></li>
                     {% endif %}
@@ -263,7 +263,10 @@
           selectWooeyParser($('div[id^=parsergroup-]'))
         }
 
-        var $initial_parser = $("a[data-parser-pk=" + $wooey_parser.val() + "]");
+        // Set initial subparser if present in url params.
+        const urlParams = new URLSearchParams(window.location.search);
+        const subparser = urlParams.get('__subparser');
+        var $initial_parser = $("a[data-parser-name=" + subparser + "]");
         if ($initial_parser.length) {
           $initial_parser.click();
         }

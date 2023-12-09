@@ -73,6 +73,17 @@ class WooeyScriptBase(DetailView):
                 "script_version", "script_iteration"
             ).last()
 
+        # Set parameter initial values by parsing the URL parameters
+        # and matching them to the script parameters.
+        for param in script_version.get_parameters():
+            if param.script_param in self.request.GET:
+                value = (
+                    self.request.GET.getlist(param.script_param)
+                    if param.multiple_choice
+                    else self.request.GET.get(param.script_param)
+                )
+                initial[param.form_slug] = value
+
         context["form"] = utils.get_form_groups(
             script_version=script_version,
             initial_dict=initial,

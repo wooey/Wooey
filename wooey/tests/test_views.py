@@ -278,6 +278,114 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         d = load_JSON_dict(response.content)
         self.assertTrue(d["valid"], d)
 
+    def test_url_parameters_positional(self):
+        script_version = self.command_order_script
+        url = reverse("wooey:wooey_script", kwargs={"slug": script_version.script.slug})
+        request = self.factory.get(
+            url,
+            data={
+                "link": "abc",
+            },
+        )
+        request.user = AnonymousUser()
+        response = self.script_view_func(
+            request,
+            pk=script_version.script.pk,
+        )
+        self.assertEqual(response.status_code, 200)
+
+        context = response.resolve_context(response.context_data)
+        parser = list(context["form"]["parsers"].keys())[0]
+        self.assertEqual(
+            context["form"]["parsers"][parser][0]["form"]
+            .fields[f"{parser[0]}-link"]
+            .initial,
+            "abc",
+        )
+
+    def test_url_parameters_optional(self):
+        script_version = self.translate_script
+        url = reverse("wooey:wooey_script", kwargs={"slug": script_version.script.slug})
+        request = self.factory.get(
+            url,
+            data={
+                "sequence": "abc",
+            },
+        )
+        request.user = AnonymousUser()
+        response = self.script_view_func(
+            request,
+            pk=script_version.script.pk,
+        )
+        self.assertEqual(response.status_code, 200)
+
+        context = response.resolve_context(response.context_data)
+        parser = list(context["form"]["parsers"].keys())[0]
+        self.assertEqual(
+            context["form"]["parsers"][parser][0]["form"]
+            .fields[f"{parser[0]}-sequence"]
+            .initial,
+            "abc",
+        )
+
+    def test_url_parameters_multi_choice(self):
+        script_version = self.choice_script
+        url = reverse("wooey:wooey_script", kwargs={"slug": script_version.script.slug})
+        request = self.factory.get(
+            url,
+            data={
+                "one_choice": "0",
+                "two_choices": ["0", "1"],
+            },
+        )
+        request.user = AnonymousUser()
+        response = self.script_view_func(
+            request,
+            pk=script_version.script.pk,
+        )
+        self.assertEqual(response.status_code, 200)
+
+        context = response.resolve_context(response.context_data)
+        parser = list(context["form"]["parsers"].keys())[0]
+        self.assertEqual(
+            context["form"]["parsers"][parser][1]["form"]
+            .fields[f"{parser[0]}-one_choice"]
+            .initial,
+            "0",
+        )
+        self.assertEqual(
+            context["form"]["parsers"][parser][1]["form"]
+            .fields[f"{parser[0]}-two_choices"]
+            .initial,
+            ["0", "1"],
+        )
+
+    def test_url_parameters_subparser(self):
+        script_version = self.subparser_script
+        url = reverse("wooey:wooey_script", kwargs={"slug": script_version.script.slug})
+        request = self.factory.get(url, data={"test_arg": "3.3", "sp1": "2"})
+        request.user = AnonymousUser()
+        response = self.script_view_func(
+            request,
+            pk=script_version.script.pk,
+        )
+        self.assertEqual(response.status_code, 200)
+
+        context = response.resolve_context(response.context_data)
+        main_parser, subparser1, subparser2 = list(context["form"]["parsers"].keys())
+        self.assertEqual(
+            context["form"]["parsers"][main_parser][0]["form"]
+            .fields[f"{main_parser[0]}-test_arg"]
+            .initial,
+            "3.3",
+        )
+        self.assertEqual(
+            context["form"]["parsers"][subparser1][0]["form"]
+            .fields[f"{subparser1[0]}-sp1"]
+            .initial,
+            "2",
+        )
+
     def test_job_view_permissions(self):
         # Make sure users cannot see jobs from other users
         job = factories.generate_job(self.translate_script)

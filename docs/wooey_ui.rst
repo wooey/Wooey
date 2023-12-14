@@ -43,3 +43,27 @@ to parse this information), updates to the script version will result in a new
 version being created. If a command line library doesn't support versioning
 or the version has not been updated in a script, the Script Iteration counter
 will be incremented.
+
+Using URL parameters to pre-populate script parameters
+------------------------------------------------------
+
+Wooey supports pre-populating script parameters via URL parameters. This is
+useful for providing a link to a script with some parameters already set. The
+following rules apply.
+
+* URL parameters are specified as :code:`?parameter=value`
+* Multiple parameters may be specified by separating them with :code:`&`.
+  For example, :code:`?parameter1=value1&parameter2=value2`.
+* Parameters are specified by the name used in the script, **but in snake case**.
+  For example, a parameter named :code:`--my-parameter` would be specified as
+  :code:`?my_parameter=value`.
+* If a parameter is a flag, passing any value will set the flag. For example,
+  :code:`?my_flag=1` or :code:`?my_flag=true` will set the flag.
+* If a parameter accepts multiple values (:code:`nargs`), the values are specified
+  by passing the parameter multiple times. For example, :code:`?my_parameter=1&my_parameter=2`
+  will set the parameter to have two values filled out: :code:`1` and :code:`2`.
+  If a parameter does not support multiple values and multiple values are passed,
+  the last value will be used.
+* If the script has subparsers, the :code:`__subparser` parameter is used to specify
+  the subparser to use. For example, :code:`?__subparser=mysubparser` will select the
+  subparser named :code:`mysubparser`.

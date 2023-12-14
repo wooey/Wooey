@@ -59,6 +59,12 @@ class ScriptTearDown(object):
 
 class ScriptFactoryMixin(ScriptTearDown, object):
     def setUp(self):
+        self.command_order_script_path = os.path.join(
+            config.WOOEY_TEST_SCRIPTS, "command_order.py"
+        )
+        self.command_order_script = factories.generate_script(
+            self.command_order_script_path
+        )
         self.translate_script_path = os.path.join(
             config.WOOEY_TEST_SCRIPTS, "translate.py"
         )

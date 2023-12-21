@@ -20,8 +20,6 @@ idna==3.4
     # via requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==6.6.0
-    # via sphinx
 jinja2==3.1.2
     # via sphinx
 markupsafe==2.1.2
@@ -30,7 +28,7 @@ packaging==23.1
     # via sphinx
 pygments==2.15.1
     # via sphinx
-requests==2.29.0
+requests==2.31.0
     # via sphinx
 snowballstemmer==2.2.0
     # via sphinx
@@ -57,5 +55,3 @@ sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
 urllib3==1.26.15
     # via requests
-zipp==3.15.0
-    # via importlib-metadata

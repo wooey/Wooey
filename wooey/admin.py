@@ -3,9 +3,13 @@ import os
 import sys
 
 from django.contrib.admin import ModelAdmin, site, TabularInline
+from django.contrib import messages
+from django.utils.safestring import mark_safe
+from django.utils.translation import gettext_lazy as _
 
 from wooey import settings as wooey_settings
 
+from .errors import ParserError
 from .models import (
     Script,
     ScriptVersion,
@@ -44,7 +48,24 @@ class ScriptAdmin(ModelAdmin):
                 if not obj.id:
                     obj.created_by = request.user
                 obj.modified_by = request.user
-        formset.save()
+        try:
+            formset.save()
+        except ParserError as e:
+            message = [_("Unable to parse script.")]
+            if not form.data.get("ignore_bad_imports"):
+                message.append(
+                    (
+                        _(
+                            "If using a virtual environment, consider enabling Ignore Bad Imports"
+                        )
+                    )
+                )
+            message.append(e)
+            messages.add_message(
+                request,
+                messages.ERROR,
+                mark_safe("<br/>".join(str(i).replace("\n", "<br/>") for i in message)),
+            )
 
 
 class ParameterAdmin(ModelAdmin):

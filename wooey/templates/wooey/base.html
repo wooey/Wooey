@@ -102,7 +102,7 @@
                             </li>
 
                             <li><a href="{% url 'wooey:profile_home' %}"><span class="glyphicon glyphicon-user"> </span> {{ request.user.username }}</a></li>
-                            <li><a href="{% url 'admin:logout' %}?next={{ request.path }}">{% trans "Logout" %}</a></li>
+                            <li><a href="{% url 'logout' %}?next={{ request.path }}">{% trans "Logout" %}</a></li>
                         {% else %}
                             <li>{% include "wooey/registration/login_header.html" %}</li>
                         {% endif %}

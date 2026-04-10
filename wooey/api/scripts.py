@@ -184,6 +184,20 @@ def submit_script(request, slug=None):
 @require_http_methods(["POST"])
 @requires_login
 def add_or_update_script(request):
+    if not request.user.is_staff:
+        return JsonResponse(
+            {
+                "valid": False,
+                "errors": {
+                    "__all__": [
+                        force_str(
+                            _("You do not have permission to upload scripts.")
+                        )
+                    ]
+                },
+            },
+            status=403,
+        )
     submitted_data = request.POST.dict()
     files = request.FILES
 

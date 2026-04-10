@@ -10,11 +10,11 @@ from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-from .. import models
-from ..backend import utils
-from .forms import AddScriptForm, SubmitForm
-from ..utils import requires_login
+from .. import errors, models
 from .. import settings as wooey_settings
+from ..backend import utils
+from ..utils import requires_login
+from .forms import AddScriptForm, SubmitForm
 
 
 def create_argparser(script_version):
@@ -190,9 +190,7 @@ def add_or_update_script(request):
                 "valid": False,
                 "errors": {
                     "__all__": [
-                        force_str(
-                            _("You do not have permission to upload scripts.")
-                        )
+                        force_str(_("You do not have permission to upload scripts."))
                     ]
                 },
             },
@@ -245,4 +243,4 @@ def add_or_update_script(request):
             output["is_default"] = results["script"].default_version
         response.append(output)
 
-    return JsonResponse(response, safe=False)
+    return JsonResponse(response, safe=False, encoder=errors.WooeyJSONEncoder)

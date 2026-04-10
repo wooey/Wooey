@@ -5,15 +5,20 @@ from django.test import Client, TransactionTestCase
 from django.urls import reverse
 
 from ..models import WooeyJob
-
-from . import mixins, factories
+from . import factories, mixins
 
 
 class ApiTestMixin(object):
     def setUp(self):
-        api_key = factories.APIKeyFactory()
-        self.client = Client(HTTP_AUTHORIZATION="Bearer {}".format(api_key._api_key))
+        self.api_key = factories.APIKeyFactory()
+        self.client = Client(
+            HTTP_AUTHORIZATION="Bearer {}".format(self.api_key._api_key)
+        )
         return super().setUp()
+
+    def make_staff(self):
+        self.api_key.profile.user.is_staff = True
+        self.api_key.profile.user.save()
 
 
 class TestJobStatus(mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTestCase):
@@ -60,7 +65,7 @@ class TestJobDetails(
 
 
 class TestScriptAddition(mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTestCase):
-    def test_can_add_new_scripts(self):
+    def test_only_staff_can_add_new_scripts(self):
         payload = {
             "group": "test group",
             "translate-script": open(self.translate_script_path, "rb"),
@@ -70,11 +75,17 @@ class TestScriptAddition(mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTes
             reverse("wooey:api_add_or_update_script"),
             data=payload,
         )
+        self.make_staff()
+        response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data=payload,
+        )
         data = response.json()
         self.assertEqual(data[0]["script"], "translate-script")
         self.assertEqual(data[1]["script"], "choice-script")
 
     def test_can_update_existing_script(self):
+        self.make_staff()
         payload = {
             "group": "test group",
             "update-script": open(self.version1_script_path, "rb"),
@@ -102,6 +113,7 @@ class TestScriptAddition(mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTes
         self.assertEqual(data[0]["is_default"], True)
 
     def test_can_disable_default_update(self):
+        self.make_staff()
         payload = {
             "group": "test group 2",
             "update-script": open(self.version1_script_path, "rb"),
@@ -134,6 +146,7 @@ class TestScriptSubmission(
     mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTestCase
 ):
     def test_defaults_to_latest_script(self):
+        self.make_staff()
         payload = {
             "group": "test group 2",
             "update-script": open(self.version1_script_path, "rb"),
@@ -165,6 +178,7 @@ class TestScriptSubmission(
         self.assertEqual(job.script_version.script_iteration, 2)
 
     def test_can_specify_version(self):
+        self.make_staff()
         payload = {
             "group": "test group 2",
             "update-script": open(self.version1_script_path, "rb"),

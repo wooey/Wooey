@@ -1,6 +1,7 @@
 from __future__ import absolute_import
-import json
+
 import errno
+import json
 import os
 import re
 import sys
@@ -12,21 +13,21 @@ from contextlib import contextmanager
 from io import open
 from itertools import chain
 from operator import itemgetter
-from pkg_resources import parse_version
 
 from clinto.parser import Parser
 from clinto.parsers.constants import SPECIFY_EVERY_PARAM
 from django.conf import settings
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
-from django.db import transaction
-from django.db.utils import OperationalError
-from django.core.files.storage import default_storage
 from django.core.files import File
+from django.core.files.storage import default_storage
+from django.db import transaction
+from django.db.models import Q
+from django.db.utils import OperationalError
 from django.forms import FileField
 from django.http import QueryDict
 from django.utils.datastructures import MultiValueDict
 from django.utils.translation import gettext_lazy as _
-from django.db.models import Q
+from pkg_resources import parse_version
 
 from .. import errors
 from .. import settings as wooey_settings
@@ -150,10 +151,10 @@ def create_wooey_job(
     user=None, script_version_pk=None, script_parser_pk=None, data=None
 ):
     from ..models import (
-        WooeyJob,
         ScriptParameter,
         ScriptParameters,
         ScriptVersion,
+        WooeyJob,
     )
 
     script_version = ScriptVersion.objects.select_related("script").get(
@@ -344,9 +345,9 @@ def add_wooey_script(
     from ..models import (
         Script,
         ScriptGroup,
-        ScriptParser,
         ScriptParameter,
         ScriptParameterGroup,
+        ScriptParser,
         ScriptVersion,
     )
 
@@ -796,7 +797,7 @@ def test_fastx(filepath):
 
 def create_job_fileinfo(job):
     parameters = job.get_parameters()
-    from ..models import WooeyFile, UserFile
+    from ..models import UserFile, WooeyFile
 
     # first, create a reference to things the script explicitly created that is a parameter
     files = []

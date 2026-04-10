@@ -5,11 +5,12 @@ repos:
       - id: check-yaml
       - id: end-of-file-fixer
       - id: trailing-whitespace
-        exclude: setup.cfg
-  - repo: https://github.com/psf/black
-    rev: 26.3.1
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.10
     hooks:
-      - id: black
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
   - repo: https://github.com/biomejs/pre-commit
     rev: v2.4.11
     hooks:
@@ -18,10 +19,6 @@ repos:
     rev: "3.0.11"
     hooks:
       - id: djhtml
-  - repo: https://github.com/pycqa/flake8
-    rev: "7.3.0"
-    hooks:
-      - id: flake8
 
 default_language_version:
   python: python3.14

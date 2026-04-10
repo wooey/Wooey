@@ -57,7 +57,7 @@ class TestVirtualEnvironments(TransactionTestCase):
         setup_venv(venv)
         binary = venv.get_venv_python_binary()
         results = subprocess.run(
-            [binary, "-m" "pip", "freeze", "--local"], capture_output=True
+            [binary, "-mpip", "freeze", "--local"], capture_output=True
         )
         packages = results.stdout.decode().lower()
         self.assertIn("flask", packages)

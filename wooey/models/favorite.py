@@ -6,7 +6,6 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Favorite(models.Model):
-
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name="favorites",

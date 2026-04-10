@@ -24,4 +24,4 @@ repos:
       - id: flake8
 
 default_language_version:
-  python: python3.9
+  python: python3.14

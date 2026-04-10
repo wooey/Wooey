@@ -112,6 +112,19 @@ the `AWS_QUERYSTRING_AUTH` settings from `False` to `True` to comply with recent
 what names need to be remapped. In `wooey_celery_app.py`, you should remove the `namespace=CELERY` line
 after making appropiate changes.
 
+10) Django 5 uses the ``STORAGES`` setting instead of ``DEFAULT_FILE_STORAGE`` and
+``STATICFILES_STORAGE``. If you are using ``WOOEY_EPHEMERAL_FILES = True`` or an S3-backed
+storage backend, move your storage configuration to ``STORAGES`` or Django will fall back
+to the default ``FileSystemStorage``.
+
+  .. code-block:: python
+
+    STORAGES = {
+        "default": {"BACKEND": "wooey.wooeystorage.CachedS3Boto3Storage"},
+        "staticfiles": {"BACKEND": "wooey.wooeystorage.CachedS3Boto3Storage"},
+    }
+    WOOEY_EPHEMERAL_FILES = True
+
 0.9.11 To 0.10
 --------------
 

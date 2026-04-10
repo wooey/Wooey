@@ -219,7 +219,7 @@ class TestCustomWidgets(TestCase):
             input_attributes='attr1="custom1" attr2="custom2"',
             input_class="custom-class",
         )
-        self.assertEquals(
+        self.assertEqual(
             widget.widget_attributes,
             {
                 "custom-property": True,

@@ -8,21 +8,16 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        # Up to date compatibility matrix
-        # https://docs.djangoproject.com/en/dev/faq/install/#what-python-version-can-i-use-with-django
-        python-version: [3.7, 3.8, 3.9, "3.10", "3.11"]
+        # Django/Python compatibility matrix as documented in Django 5.2 FAQ.
+        # https://docs.djangoproject.com/en/5.2/faq/install/#what-python-version-can-i-use-with-django
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         os: [ubuntu-latest, windows-latest]
-        django-version: ["3.2", "4.2"]
+        django-version: ["4.2", "5.2"]
         exclude:
-          # These 2 windows python versions do not ship the json sqlite3 extension we need
-          - os: windows-latest
-            python-version: 3.7
-          - os: windows-latest
-            python-version: 3.8
-          - python-version: 3.11
-            django-version: 3.2
-          - python-version: 3.7
-            django-version: 4.2
+          - python-version: "3.13"
+            django-version: "4.2"
+          - python-version: "3.14"
+            django-version: "4.2"
 
     steps:
       - uses: actions/checkout@v3

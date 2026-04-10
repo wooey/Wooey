@@ -3,7 +3,7 @@ testenv:
 
 test:
 	pytest --cov=wooey --cov-branch tests/*
-	coverage run --append --branch --source=wooey -m django test --settings=wooey.test_settings wooey.tests
+	python -m coverage run --append --branch --source=wooey -m django test --settings=wooey.test_settings wooey.tests
 	python -m coverage report --omit='*migrations*','*wooey_scripts*','*tests/scripts*','*conf/*'
 	python -m coverage xml --omit='*migrations*','*wooey_scripts*','*tests/scripts*','*conf/*'
 
@@ -28,12 +28,11 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .pytest_cache
 
 dist: clean ## builds source and wheel package
-	python setup.py sdist
-	python setup.py bdist_wheel
+	python -m build
 	ls -l dist
 
 release/major release/minor release/patch release/rc:
-	bump2version $(@F)
+	bumpversion bump $(@F)
 	git push
 	git push --tags
 

@@ -8,7 +8,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.9]
+        python-version: [3.14]
         os: [ubuntu-latest]
 
     steps:
@@ -17,9 +17,9 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install pre-commit
+      - name: Install prek
         run: |
-          python -m pip install pre-commit
-      - name: Check pre-commit
+          python -m pip install prek
+      - name: Check prek
         run: |
-          pre-commit run -a
+          prek run -a

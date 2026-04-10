@@ -1,0 +1,99 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wooey"
+version = "0.13.3"
+description = "A Django app which creates a web GUI and task interface for argparse scripts"
+readme = "README.md"
+requires-python = ">=3.10.0"
+authors = [
+    { name = "Chris Mitchell", email = "chris.mit7@gmail.com" },
+    { name = "Martin Fitzpatrick", email = "martin.fitzpatrick@gmail.com" },
+]
+dependencies = [
+    "celery>=4,<6",
+    "clinto>=0.6.0",
+    "Django>=4.2,<6",
+    "django-autoslug",
+    "django-storages",
+    "eventlet>=0.22.1 ; platform_system == 'Windows'",
+    "filetype",
+    "importlib-metadata<5.0 ; python_version <= '3.7'",
+    "packaging",
+    "pypiwin32 ; platform_system == 'Windows' and python_version > '3.4'",
+]
+classifiers = [
+    "Environment :: Web Environment",
+    "Framework :: Django",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+]
+
+[project.urls]
+Homepage = "https://github.com/wooey/wooey"
+
+[project.optional-dependencies]
+dev = [
+    "boto3",
+    "build",
+    "coverage",
+    "factory-boy < 3.0.0",
+    "mock",
+    "pytest",
+    "pytest-cov",
+    "sphinx",
+    "watchdog[watchmedo]",
+]
+
+[project.scripts]
+wooify = "wooey.backend.command_line:bootstrap"
+
+[tool.setuptools]
+include-package-data = true
+script-files = ["scripts/wooify"]
+
+[tool.setuptools.packages.find]
+include = ["tests*", "wooey*"]
+namespaces = false
+
+[tool.bumpversion]
+current_version = "0.13.3"
+commit = true
+tag = true
+parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)(rc(?P<rc>\\d+))?"
+serialize = [
+    "{major}.{minor}.{patch}rc{rc}",
+    "{major}.{minor}.{patch}",
+]
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = '^version = "{current_version}"$'
+replace = 'version = "{new_version}"'
+regex = true
+
+[tool.ruff]
+target-version = "py314"
+line-length = 88
+force-exclude = true
+extend-exclude = [
+    "wooey/migrations/*",
+    "wooey/tests/scripts/*",
+]
+
+[tool.ruff.lint]
+ignore = [
+    "E731",
+    "F841",
+]

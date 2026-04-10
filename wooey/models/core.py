@@ -381,9 +381,11 @@ class ScriptParameterGroup(models.Model):
     def __str__(self):
         script_version = self.script_version.first()
         return "{}: {}".format(
-            script_version.script.script_name
-            if script_version
-            else "No Script Assigned",
+            (
+                script_version.script.script_name
+                if script_version
+                else "No Script Assigned"
+            ),
             self.group_name,
         )
 
@@ -395,9 +397,11 @@ class ScriptParser(models.Model):
     def __str__(self):
         script_version = self.script_version.first()
         return "{}: {}".format(
-            script_version.script.script_name
-            if script_version
-            else "No Script Assigned",
+            (
+                script_version.script.script_name
+                if script_version
+                else "No Script Assigned"
+            ),
             self.name,
         )
 

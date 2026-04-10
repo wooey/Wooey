@@ -149,7 +149,6 @@ class WooeyScriptBase(DetailView):
 
 
 class WooeyScriptJSON(WooeyScriptBase):
-
     # FIXME: the form data is returned as form objects so can be passed to templates
     # this render_fn allows us to pass the return through a stringify method for JSON
     @staticmethod
@@ -165,7 +164,6 @@ class WooeyScriptJSON(WooeyScriptBase):
 
 
 class WooeyScriptView(WooeyScriptBase):
-
     template_name = "wooey/scripts/script_view.html"
 
     def post(self, *args, **kwargs):
@@ -269,7 +267,6 @@ class WooeyScrapbookView(TemplateView):
 
 
 class WooeySearchBase(View):
-
     model = None
     search_fields = []
 
@@ -286,7 +283,6 @@ class WooeySearchBase(View):
 
 
 class WooeyScriptSearchBase(WooeySearchBase):
-
     model = Script
     search_fields = ["script_name", "script_description"]
 

@@ -1,27 +1,24 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.3.0
+    rev: v6.0.0
     hooks:
       - id: check-yaml
       - id: end-of-file-fixer
       - id: trailing-whitespace
-        exclude: setup.cfg
-  - repo: https://github.com/psf/black
-    rev: 22.10.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.10
     hooks:
-      - id: black
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v2.7.1"
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+  - repo: https://github.com/biomejs/pre-commit
+    rev: v2.4.11
     hooks:
-      - id: prettier
+      - id: biome-format
   - repo: https://github.com/rtts/djhtml
-    rev: "3.0.6"
+    rev: "3.0.11"
     hooks:
       - id: djhtml
-  - repo: https://github.com/pycqa/flake8
-    rev: "6.0.0"
-    hooks:
-      - id: flake8
 
 default_language_version:
-  python: python3.9
+  python: python3.14

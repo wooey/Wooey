@@ -153,7 +153,7 @@ def setup_venv(virtual_environment, job=None, stdout="", stderr=""):
             "--without-pip",
             "--system-site-packages",
         ]
-        (stdout, stderr, return_code) = run_and_stream_command(
+        stdout, stderr, return_code = run_and_stream_command(
             venv_command, cwd=None, job=job, stdout=stdout, stderr=stderr
         )
 
@@ -165,7 +165,7 @@ def setup_venv(virtual_environment, job=None, stdout="", stderr=""):
             )
         pip_setup = [venv_executable, "-m", "pip", "install", "-I", "pip"]
         stdout += _("Installing Pip\n########\n")
-        (stdout, stderr, return_code) = run_and_stream_command(
+        stdout, stderr, return_code = run_and_stream_command(
             pip_setup, cwd=None, job=job, stdout=stdout, stderr=stderr
         )
         if return_code:
@@ -189,7 +189,7 @@ def setup_venv(virtual_environment, job=None, stdout="", stderr=""):
             reqs_txt.name,
         ]
         stdout += _("Installing Requirements\n########\n")
-        (stdout, stderr, return_code) = run_and_stream_command(
+        stdout, stderr, return_code = run_and_stream_command(
             venv_command, cwd=None, job=job, stdout=stdout, stderr=stderr
         )
         if return_code:
@@ -216,7 +216,7 @@ def submit_script(**kwargs):
     try:
         virtual_environment = job.script_version.script.virtual_environment
         if virtual_environment:
-            (venv_executable, stdout, stderr, return_code) = setup_venv(
+            venv_executable, stdout, stderr, return_code = setup_venv(
                 virtual_environment, job, stdout, stderr
             )
             if return_code:

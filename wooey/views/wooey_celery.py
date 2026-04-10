@@ -189,7 +189,6 @@ def celery_task_command(request):
 
 
 class JobBase(DetailView):
-
     model = WooeyJob
 
     def get_object(self):
@@ -220,7 +219,6 @@ class JobBase(DetailView):
             or (user is not None and user.is_superuser)
             or ("uuid" in self.kwargs)
         ):
-
             out_files = get_file_previews(wooey_job)
             all = out_files.pop("all", [])
             archives = out_files.pop("archives", [])

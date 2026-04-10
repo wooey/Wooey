@@ -247,7 +247,7 @@ class FormTestCase(
             "form"
         ].fields[choice_param.form_slug]
         self.assertTrue(isinstance(field.widget, TextInput))
-        self.assertEquals(
+        self.assertEqual(
             field.widget.attrs,
             {
                 "custom-property": True,

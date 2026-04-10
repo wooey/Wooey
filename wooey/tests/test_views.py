@@ -21,7 +21,6 @@ from .. import views as wooey_views
 from .. import models
 from .. import settings
 
-
 User = get_user_model()
 
 

@@ -87,9 +87,7 @@ def main():
             minor_rows = multi[multi.index.get_level_values(major_index) == major_val][
                 seaborn_map.data2d.columns
             ]
-            major_row = major_dat.loc[
-                major_val,
-            ][seaborn_map.data2d.columns]
+            major_row = major_dat.loc[major_val,][seaborn_map.data2d.columns]
             merged_dat.append(major_row)
             merged_dat = merged_dat.append(major_row).append(minor_rows)
         merged_map = sns.clustermap(merged_dat, row_cluster=False, col_cluster=False)

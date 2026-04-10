@@ -16,7 +16,7 @@ RUN chown wooey:wooey ${BUILD_DIR}
 
 RUN pip install docker psycopg2 redis
 
-COPY --chown=wooey:wooey setup.py MANIFEST.in Makefile README.md ${BUILD_DIR}/
+COPY --chown=wooey:wooey pyproject.toml MANIFEST.in Makefile README.md ${BUILD_DIR}/
 COPY --chown=wooey:wooey scripts ${BUILD_DIR}/scripts
 COPY --chown=wooey:wooey wooey ${BUILD_DIR}/wooey
 COPY --chown=wooey:wooey tests ${BUILD_DIR}/tests

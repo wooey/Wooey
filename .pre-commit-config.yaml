@@ -13,7 +13,7 @@ repos:
   - repo: https://github.com/biomejs/pre-commit
     rev: v2.4.11
     hooks:
-      - id: biome-check
+      - id: biome-format
   - repo: https://github.com/rtts/djhtml
     rev: "3.0.11"
     hooks:

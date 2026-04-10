@@ -4,7 +4,7 @@ import os
 import shlex
 from itertools import groupby
 
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.utils.encoding import force_str
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
@@ -184,6 +184,8 @@ def submit_script(request, slug=None):
 @require_http_methods(["POST"])
 @requires_login
 def add_or_update_script(request):
+    if not request.user.is_staff:
+        return HttpResponse('Must be staff to upload scripts.', status=403)
     submitted_data = request.POST.dict()
     files = request.FILES
 

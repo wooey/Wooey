@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import errno
+import filetype
 import json
 import os
 import re
@@ -27,7 +28,7 @@ from django.forms import FileField
 from django.http import QueryDict
 from django.utils.datastructures import MultiValueDict
 from django.utils.translation import gettext_lazy as _
-from pkg_resources import parse_version
+from packaging.version import parse as parse_version
 
 from .. import errors
 from .. import settings as wooey_settings
@@ -59,7 +60,11 @@ def flatten(value):
 
 def get_storage(local=True):
     if wooey_settings.WOOEY_EPHEMERAL_FILES:
-        storage = default_storage.local_storage if local else default_storage
+        storage = (
+            getattr(default_storage, "local_storage", None) or default_storage
+            if local
+            else default_storage
+        )
     else:
         storage = default_storage
     return storage
@@ -725,9 +730,8 @@ def get_file_info(filepath):
 
 
 def test_image(filepath):
-    import imghdr
-
-    return imghdr.what(filepath) is not None, None
+    kind = filetype.guess(filepath)
+    return bool(kind and kind.mime.startswith("image/")), None
 
 
 def test_delimited(filepath):

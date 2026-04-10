@@ -6,5 +6,10 @@ Settings for this can be seen in the user\_settings.py, which give you a
 starting point for a non-local server. In short, you need to change your
 storage settings like such:
 
-STATICFILES\_STORAGE = DEFAULT\_FILE\_STORAGE =
-'wooey.wooeystorage.CachedS3BotoStorage' WOOEY\_EPHEMERAL\_FILES = True
+::
+
+    STORAGES = {
+        "default": {"BACKEND": "wooey.wooeystorage.CachedS3Boto3Storage"},
+        "staticfiles": {"BACKEND": "wooey.wooeystorage.CachedS3Boto3Storage"},
+    }
+    WOOEY_EPHEMERAL_FILES = True

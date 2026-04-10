@@ -84,9 +84,10 @@ WOOEY_FILE_DIR = "wooey_test"
 WOOEY_ENABLE_API_KEYS = True
 
 if os.environ.get("WOOEY_TEST_S3"):
-    STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = (
-        "wooey.wooeystorage.CachedS3BotoStorage"
-    )
+    STORAGES = {
+        "default": {"BACKEND": "wooey.wooeystorage.CachedS3Boto3Storage"},
+        "staticfiles": {"BACKEND": "wooey.wooeystorage.CachedS3Boto3Storage"},
+    }
     from boto.s3.connection import VHostCallingFormat
 
     INSTALLED_APPS += ("storages",)
@@ -119,4 +120,7 @@ if os.environ.get("WOOEY_TEST_S3"):
     MEDIA_URL = "/user-uploads/"
 
 else:
-    STATICFILES_STORAGE = DEFAULT_FILE_STORAGE = "wooey.wooeystorage.FakeRemoteStorage"
+    STORAGES = {
+        "default": {"BACKEND": "wooey.wooeystorage.FakeRemoteStorage"},
+        "staticfiles": {"BACKEND": "wooey.wooeystorage.FakeRemoteStorage"},
+    }

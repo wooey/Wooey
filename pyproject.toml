@@ -15,11 +15,13 @@ authors = [
 dependencies = [
     "celery>=4,<6",
     "clinto>=0.6.0",
-    "Django>=4,<7",
+    "Django>=4.2,<6",
     "django-autoslug",
     "django-storages",
     "eventlet>=0.22.1 ; platform_system == 'Windows'",
+    "filetype",
     "importlib-metadata<5.0 ; python_version <= '3.7'",
+    "packaging",
     "pypiwin32 ; platform_system == 'Windows' and python_version > '3.4'",
 ]
 classifiers = [

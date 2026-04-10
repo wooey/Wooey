@@ -7,7 +7,7 @@ name = "wooey"
 version = "0.13.3"
 description = "A Django app which creates a web GUI and task interface for argparse scripts"
 readme = "README.md"
-requires-python = ">=3.11.0"
+requires-python = ">=3.10.0"
 authors = [
     { name = "Chris Mitchell", email = "chris.mit7@gmail.com" },
     { name = "Martin Fitzpatrick", email = "martin.fitzpatrick@gmail.com" },

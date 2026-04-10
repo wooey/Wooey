@@ -19,6 +19,7 @@ INSTALLED_APPS += ("kombu.transport.filesystem",)
 # http://docs.celeryproject.org/en/latest/getting-started/brokers/
 broker_url = "filesystem://"
 
+
 # This function exists just to ensure the filesystem has the correct folders
 def ensure_path(path):
     try:

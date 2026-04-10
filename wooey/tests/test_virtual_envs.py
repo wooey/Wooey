@@ -24,12 +24,12 @@ class TestVirtualEnvironments(TransactionTestCase):
 
     def test_sets_up_virtual_env(self):
         venv = self.venv
-        (venv_executable, stdout, stderr, return_code) = setup_venv(venv)
+        venv_executable, stdout, stderr, return_code = setup_venv(venv)
         self.assertTrue(os.path.exists(venv_executable))
 
     def test_reuses_virtual_env(self):
         venv = self.venv
-        (venv_executable, stdout, stderr, return_code) = setup_venv(venv)
+        venv_executable, stdout, stderr, return_code = setup_venv(venv)
         self.assertTrue(os.path.exists(venv_executable))
         with mock.patch("wooey.tasks.run_and_stream_command") as command_runner:
             command_runner.return_value = ("stdout", "stderr", 0)

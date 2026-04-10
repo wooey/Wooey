@@ -4,7 +4,6 @@ from django.utils import timezone
 
 from ..utils import generate_hash, get_api_key
 
-
 __all__ = ["WooeyProfile", "APIKey"]
 
 

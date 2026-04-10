@@ -1007,13 +1007,15 @@ def get_grouped_file_previews(files):
             "id": file_info.id,
             "object": file_info,
             "name": file_info.filename,
-            "preview": json.loads(system_file.filepreview)
-            if system_file.filepreview
-            else None,
+            "preview": (
+                json.loads(system_file.filepreview) if system_file.filepreview else None
+            ),
             "url": get_storage(local=False).url(system_file.filepath.name),
-            "slug": file_info.parameter.parameter.script_param
-            if file_info.parameter
-            else None,
+            "slug": (
+                file_info.parameter.parameter.script_param
+                if file_info.parameter
+                else None
+            ),
             "basename": os.path.basename(system_file.filepath.name),
             "filetype": system_file.filetype,
             "size_bytes": system_file.size_bytes,

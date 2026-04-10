@@ -9,7 +9,6 @@ from .utils import (
     get_subparser_form_slug,
 )
 
-
 # TODO: Track down where file handles are not being closed. This is not a problem on Linux/Mac, but is on Windows
 # and likely reflects being careless somewhere as opposed to Windows being a PITA
 try:

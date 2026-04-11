@@ -4,6 +4,7 @@ from django.test import TransactionTestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils.datastructures import MultiValueDict
 
+from ..api.forms import AddScriptForm, ScriptPatchForm
 from ..backend import utils
 from ..forms import (
     WooeyForm,
@@ -17,6 +18,18 @@ from . import (
     mixins,
     utils as test_utils,
 )
+
+
+class ApiFormTestCase(TransactionTestCase):
+    def test_script_patch_form_leaves_omitted_metadata_unset(self):
+        form = ScriptPatchForm({"script_description": "updated"})
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data, {"script_description": "updated"})
+
+    def test_add_script_form_leaves_optional_metadata_unset(self):
+        form = AddScriptForm({"group": "custom group"})
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data, {"group": "custom group"})
 
 
 class FormTestCase(

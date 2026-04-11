@@ -115,6 +115,35 @@ class TestScriptAddition(mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTes
         self.assertEqual(data[0]["iteration"], 2)
         self.assertEqual(data[0]["is_default"], True)
 
+    def test_update_existing_script_preserves_group_and_import_flags_when_omitted(self):
+        self.make_staff()
+        create_response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data={
+                "group": "custom update group",
+                "ignore_bad_imports": True,
+                "update-script": open(self.version1_script_path, "rb"),
+            },
+        )
+        create_data = create_response.json()
+        script = models.Script.objects.get(pk=create_data[0]["id"])
+
+        update_response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data={
+                "update-script": open(self.version2_script_path, "rb"),
+            },
+        )
+        update_data = update_response.json()
+
+        script.refresh_from_db()
+        self.assertEqual(update_data[0]["id"], script.id)
+        self.assertEqual(script.script_group.group_name, "custom update group")
+        self.assertTrue(script.ignore_bad_imports)
+        self.assertEqual(
+            models.Script.objects.filter(script_name="update-script").count(), 1
+        )
+
     def test_can_disable_default_update(self):
         self.make_staff()
         payload = {
@@ -319,6 +348,39 @@ class TestScriptManagementApi(
         self.assertTrue(script.ignore_bad_imports)
         self.assertFalse(script.execute_full_path)
         self.assertEqual(script.save_path, "updated/output")
+
+    def test_patch_script_does_not_apply_defaults_to_omitted_fields(self):
+        self.make_staff()
+        script = self.translate_script.script
+        script.script_order = 9
+        script.is_active = False
+        script.ignore_bad_imports = True
+        script.execute_full_path = False
+        script.save()
+
+        response = self.client.generic(
+            "PATCH",
+            reverse(
+                "wooey:api_patch_script",
+                kwargs={"slug": script.slug},
+            ),
+            data=json.dumps(
+                {
+                    "script_description": "only the description should change",
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        script.refresh_from_db()
+        self.assertEqual(
+            script.script_description, "only the description should change"
+        )
+        self.assertEqual(script.script_order, 9)
+        self.assertFalse(script.is_active)
+        self.assertTrue(script.ignore_bad_imports)
+        self.assertFalse(script.execute_full_path)
 
     def test_can_switch_default_script_version(self):
         self.make_staff()

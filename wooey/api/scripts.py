@@ -180,38 +180,38 @@ def _serialize_script(script, include_versions=False):
     return data
 
 
-def _update_script_metadata(script, cleaned_data, provided_fields):
+def _update_script_metadata(script, updates):
     changed = False
 
-    if "script_name" in provided_fields:
-        script.script_name = cleaned_data["script_name"]
+    if "script_name" in updates:
+        script.script_name = updates["script_name"]
         changed = True
-    if "group" in provided_fields:
-        group_name = cleaned_data["group"] or wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP
+    if "group" in updates:
+        group_name = updates["group"] or wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP
         script.script_group, _ = models.ScriptGroup.objects.get_or_create(
             group_name=group_name
         )
         changed = True
-    if "script_description" in provided_fields:
-        script.script_description = cleaned_data["script_description"]
+    if "script_description" in updates:
+        script.script_description = updates["script_description"]
         changed = True
-    if "documentation" in provided_fields:
-        script.documentation = cleaned_data["documentation"]
+    if "documentation" in updates:
+        script.documentation = updates["documentation"]
         changed = True
-    if "script_order" in provided_fields:
-        script.script_order = cleaned_data["script_order"]
+    if "script_order" in updates:
+        script.script_order = updates["script_order"]
         changed = True
-    if "is_active" in provided_fields:
-        script.is_active = cleaned_data["is_active"]
+    if "is_active" in updates:
+        script.is_active = updates["is_active"]
         changed = True
-    if "ignore_bad_imports" in provided_fields:
-        script.ignore_bad_imports = cleaned_data["ignore_bad_imports"]
+    if "ignore_bad_imports" in updates:
+        script.ignore_bad_imports = updates["ignore_bad_imports"]
         changed = True
-    if "execute_full_path" in provided_fields:
-        script.execute_full_path = cleaned_data["execute_full_path"]
+    if "execute_full_path" in updates:
+        script.execute_full_path = updates["execute_full_path"]
         changed = True
-    if "save_path" in provided_fields:
-        script.save_path = cleaned_data["save_path"] or None
+    if "save_path" in updates:
+        script.save_path = updates["save_path"] or None
         changed = True
 
     if changed:
@@ -276,12 +276,11 @@ def patch_script(request, slug):
     if error:
         return error
 
-    submitted_data = _get_submitted_data(request)
-    form = ScriptPatchForm(submitted_data)
+    form = ScriptPatchForm(_get_submitted_data(request))
     if not form.is_valid():
         return JsonResponse({"valid": False, "errors": form.errors}, status=400)
 
-    _update_script_metadata(script, form.cleaned_data, set(submitted_data))
+    _update_script_metadata(script, form.cleaned_data)
     _update_script_audit(script, request.user)
     return JsonResponse({"valid": True, "script": _serialize_script(script, True)})
 
@@ -308,13 +307,14 @@ def patch_script_version(request, slug, version_id):
             status=404,
         )
 
-    submitted_data = _get_submitted_data(request)
-    form = ScriptVersionPatchForm(submitted_data)
+    form = ScriptVersionPatchForm(_get_submitted_data(request))
     if not form.is_valid():
         return JsonResponse({"valid": False, "errors": form.errors}, status=400)
 
-    make_default = form.cleaned_data["default_version"]
-    if "default_version" in submitted_data:
+    updates = form.cleaned_data
+
+    if "default_version" in updates:
+        make_default = updates["default_version"]
         if make_default:
             if not script_version.is_active:
                 return JsonResponse(
@@ -338,10 +338,7 @@ def patch_script_version(request, slug, version_id):
             script_version.default_version = True
             script_version.save()
         else:
-            disabling_version = (
-                "is_active" in submitted_data
-                and form.cleaned_data["is_active"] is False
-            )
+            disabling_version = "is_active" in updates and updates["is_active"] is False
             other_defaults = models.ScriptVersion.objects.filter(
                 script=script_version.script, default_version=True, is_active=True
             ).exclude(pk=script_version.pk)
@@ -360,8 +357,8 @@ def patch_script_version(request, slug, version_id):
             script_version.default_version = False
             script_version.save()
 
-    if "is_active" in submitted_data:
-        is_active = form.cleaned_data["is_active"]
+    if "is_active" in updates:
+        is_active = updates["is_active"]
         script_version.is_active = is_active
         if not is_active:
             script_version.default_version = False
@@ -497,10 +494,9 @@ def submit_script(request, slug=None):
 def add_or_update_script(request):
     if not request.user.is_staff:
         return _staff_required_response()
-    submitted_data = _get_submitted_data(request)
     files = request.FILES
 
-    form = AddScriptForm(submitted_data)
+    form = AddScriptForm(_get_submitted_data(request))
     if not form.is_valid():
         return JsonResponse({"valid": False, "errors": form.errors}, status=400)
     if not files:
@@ -513,17 +509,11 @@ def add_or_update_script(request):
         )
 
     data = form.cleaned_data
-    group = data["group"] or wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP
-    metadata_fields = {
-        "group",
-        "script_description",
-        "documentation",
-        "script_order",
-        "is_active",
-        "ignore_bad_imports",
-        "execute_full_path",
-        "save_path",
-    }.intersection(set(submitted_data))
+    group = data.get("group")
+    set_default_version = data.get("default", True)
+    ignore_bad_imports = data.get("ignore_bad_imports")
+    metadata_updates = dict(data)
+    metadata_updates.pop("default", None)
 
     response = []
 
@@ -547,8 +537,8 @@ def add_or_update_script(request):
             "script_path": script_path,
             "group": group,
             "script_name": script_name,
-            "set_default_version": data["default"],
-            "ignore_bad_imports": data["ignore_bad_imports"],
+            "set_default_version": set_default_version,
+            "ignore_bad_imports": ignore_bad_imports,
         }
         results = utils.add_wooey_script(**add_kwargs)
         output = {
@@ -558,7 +548,7 @@ def add_or_update_script(request):
         }
         if results["valid"]:
             script = results["script"].script
-            _update_script_metadata(script, data, metadata_fields)
+            _update_script_metadata(script, metadata_updates)
             _update_script_audit(script, request.user)
             _update_script_version_audit(results["script"], request.user)
             results["script"].refresh_from_db()

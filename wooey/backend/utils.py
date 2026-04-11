@@ -340,7 +340,7 @@ def add_wooey_script(
     group=None,
     script_name=None,
     set_default_version=True,
-    ignore_bad_imports=False,
+    ignore_bad_imports=None,
 ):
 
     # There is a class called 'Script' which contains the general information about a script. However, that is not where the file details
@@ -366,6 +366,23 @@ def add_wooey_script(
         if script_version
         else os.path.basename(os.path.splitext(script_path)[0])
     )
+    existing_script = None
+    if script_version is None:
+        existing_scripts = Script.objects.filter(script_name=script_name).order_by("pk")
+        if isinstance(group, ScriptGroup):
+            group = group.group_name
+        if group is not None:
+            existing_scripts = existing_scripts.filter(script_group__group_name=group)
+        if ignore_bad_imports is not None:
+            existing_scripts = existing_scripts.filter(
+                ignore_bad_imports=ignore_bad_imports
+            )
+        existing_script = existing_scripts.first()
+        if existing_script is not None:
+            if group is None and existing_script.script_group_id:
+                group = existing_script.script_group.group_name
+            if ignore_bad_imports is None:
+                ignore_bad_imports = existing_script.ignore_bad_imports
     with get_storage_object(script_path) as so:
         checksum = get_checksum(buff=so.read())
     existing_version = None
@@ -449,10 +466,10 @@ def add_wooey_script(
                 local_file = local_handle.name
         with get_storage_object(local_file, local=True) as so:
             script = so.path
-    if isinstance(group, ScriptGroup):
-        group = group.group_name
     if group is None:
         group = "Wooey Scripts"
+    if ignore_bad_imports is None:
+        ignore_bad_imports = False
     basename, extension = os.path.splitext(script)
     filename = os.path.split(basename)[1]
 

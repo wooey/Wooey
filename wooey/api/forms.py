@@ -2,6 +2,16 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 
 
+class SubmittedFieldsForm(forms.Form):
+    def clean(self):
+        cleaned_data = super(SubmittedFieldsForm, self).clean()
+        return {
+            field_name: value
+            for field_name, value in cleaned_data.items()
+            if field_name in self.data
+        }
+
+
 class SubmitForm(forms.Form):
     job_name = forms.CharField()
     job_description = forms.CharField(required=False)
@@ -10,13 +20,13 @@ class SubmitForm(forms.Form):
     command = forms.CharField(required=False)
 
 
-class ScriptMetadataForm(forms.Form):
+class ScriptMetadataForm(SubmittedFieldsForm):
     group = forms.CharField(required=False)
     script_description = forms.CharField(required=False)
     documentation = forms.CharField(required=False)
     script_order = forms.IntegerField(required=False, min_value=1)
     is_active = forms.NullBooleanField(required=False)
-    ignore_bad_imports = forms.BooleanField(
+    ignore_bad_imports = forms.NullBooleanField(
         required=False,
         help_text=_(
             "Ignore bad imports when adding scripts. This is useful if a script is under a virtual environment."
@@ -25,34 +35,9 @@ class ScriptMetadataForm(forms.Form):
     execute_full_path = forms.NullBooleanField(required=False)
     save_path = forms.CharField(required=False)
 
-    def clean_script_order(self):
-        if self.cleaned_data["script_order"] is None:
-            return 1
-        return self.cleaned_data["script_order"]
-
-    def clean_is_active(self):
-        if self.cleaned_data["is_active"] is None:
-            return True
-        return self.cleaned_data["is_active"]
-
-    def clean_execute_full_path(self):
-        if self.cleaned_data["execute_full_path"] is None:
-            return True
-        return self.cleaned_data["execute_full_path"]
-
-    def clean_ignore_bad_imports(self):
-        if self.cleaned_data["ignore_bad_imports"] is None:
-            return False
-        return self.cleaned_data["ignore_bad_imports"]
-
 
 class AddScriptForm(ScriptMetadataForm):
     default = forms.NullBooleanField(required=False)
-
-    def clean_default(self):
-        if self.cleaned_data["default"] is None:
-            return True
-        return self.cleaned_data["default"]
 
 
 class ScriptPatchForm(ScriptMetadataForm):
@@ -65,7 +50,7 @@ class ScriptPatchForm(ScriptMetadataForm):
         return value
 
 
-class ScriptVersionPatchForm(forms.Form):
+class ScriptVersionPatchForm(SubmittedFieldsForm):
     default_version = forms.NullBooleanField(required=False)
     is_active = forms.NullBooleanField(required=False)
 

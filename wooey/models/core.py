@@ -1,20 +1,21 @@
 from __future__ import absolute_import, print_function, unicode_literals
-import os
+
 import importlib
 import json
+import os
 import uuid
 from io import IOBase
 
 from autoslug import AutoSlugField
 from celery import states
-from django.db import models, transaction
 from django.conf import settings
+from django.contrib.auth.models import Group, User
 from django.core.cache import caches as django_cache
 from django.core.exceptions import SuspiciousFileOperation
-from django.contrib.auth.models import Group, User
-from django.utils.translation import gettext_lazy as _
+from django.db import models, transaction
 from django.urls import reverse
 from django.utils.text import get_valid_filename
+from django.utils.translation import gettext_lazy as _
 
 from .. import settings as wooey_settings
 from ..backend import utils
@@ -101,6 +102,7 @@ class Script(models.Model):
         app_label = "wooey"
         verbose_name = _("script")
         verbose_name_plural = _("scripts")
+        ordering = ["script_order", "id"]
 
     def __str__(self):
         return self.script_name

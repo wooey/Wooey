@@ -20,6 +20,7 @@ from ..models import (
     UserFile,
     Favorite,
     ScriptVersion,
+    VirtualEnvironment,
     WooeyProfile,
 )
 from .. import settings as wooey_settings
@@ -268,6 +269,9 @@ class ScriptEditorView(TemplateView):
             ScriptGroup.objects.order_by("group_name").values_list(
                 "group_name", flat=True
             )
+        )
+        ctx["virtual_environments"] = list(
+            VirtualEnvironment.objects.order_by("name", "pk").values("id", "name")
         )
         return ctx
 

@@ -68,6 +68,12 @@
               <p class="help-block">{% trans "Markdown is supported here and this content is shown on the script page." %}</p>
             </div>
 
+            <div class="form-group">
+              <label for="script-order">{% trans "Script Order" %}</label>
+              <input type="number" class="form-control" id="script-order" min="1" value="1">
+              <p class="help-block">{% trans "This is part of the sort order for scripts within a group. A lower number appears first." %}</p>
+            </div>
+
             <div class="checkbox">
               <label>
                 <input type="checkbox" id="script-active" checked>
@@ -80,6 +86,7 @@
                 <input type="checkbox" id="script-ignore-bad-imports">
                 {% trans "Ignore bad imports" %}
               </label>
+              <p class="help-block">{% trans "Script addition will not fail if the server cannot find an import. This is commonly enabled when using virtual environments." %}</p>
             </div>
 
             <div class="checkbox">
@@ -353,6 +360,7 @@
         group: getGroupValue(),
         script_description: $('#script-description').val(),
         documentation: $('#script-documentation').val(),
+        script_order: $('#script-order').val(),
         is_active: $('#script-active').is(':checked'),
         ignore_bad_imports: $('#script-ignore-bad-imports').is(':checked'),
         execute_full_path: $('#script-execute-full-path').is(':checked'),
@@ -375,6 +383,7 @@
       setGroupValue(script.group || '');
       $('#script-description').val(script.script_description || '');
       $('#script-documentation').val(script.documentation || '');
+      $('#script-order').val(script.script_order || 1);
       setCheckbox('#script-active', script.is_active);
       setCheckbox('#script-ignore-bad-imports', script.ignore_bad_imports);
       setCheckbox('#script-execute-full-path', script.execute_full_path);

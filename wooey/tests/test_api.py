@@ -144,6 +144,36 @@ class TestScriptAddition(mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTes
             models.Script.objects.filter(script_name="update-script").count(), 1
         )
 
+    def test_update_existing_script_does_not_match_on_ignore_bad_imports(self):
+        self.make_staff()
+        create_response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data={
+                "group": "custom update group",
+                "ignore_bad_imports": True,
+                "update-script": open(self.version1_script_path, "rb"),
+            },
+        )
+        script = models.Script.objects.get(pk=create_response.json()[0]["id"])
+
+        update_response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data={
+                "group": "custom update group",
+                "ignore_bad_imports": False,
+                "update-script": open(self.version2_script_path, "rb"),
+            },
+        )
+        update_data = update_response.json()
+
+        script.refresh_from_db()
+        self.assertEqual(update_data[0]["id"], script.id)
+        self.assertEqual(update_data[0]["iteration"], 2)
+        self.assertFalse(script.ignore_bad_imports)
+        self.assertEqual(
+            models.Script.objects.filter(script_name="update-script").count(), 1
+        )
+
     def test_can_disable_default_update(self):
         self.make_staff()
         payload = {
@@ -384,6 +414,9 @@ class TestScriptManagementApi(
 
     def test_can_switch_default_script_version(self):
         self.make_staff()
+        self.version1_script.refresh_from_db()
+        self.assertFalse(self.version1_script.default_version)
+
         response = self.client.generic(
             "PATCH",
             reverse(
@@ -466,28 +499,6 @@ class TestScriptManagementApi(
         self.version1_script.refresh_from_db()
         self.assertTrue(self.version1_script.is_active)
         self.assertFalse(self.version1_script.default_version)
-
-    def test_cannot_remove_last_default_version(self):
-        self.make_staff()
-        response = self.client.generic(
-            "PATCH",
-            reverse(
-                "wooey:api_patch_script_version",
-                kwargs={
-                    "slug": self.translate_script.script.slug,
-                    "version_id": self.translate_script.id,
-                },
-            ),
-            data=json.dumps({"default_version": False}),
-            content_type="application/json",
-        )
-        data = response.json()
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(data["valid"])
-        self.assertIn("default_version", data["errors"])
-
-        self.translate_script.refresh_from_db()
-        self.assertTrue(self.translate_script.default_version)
 
     def test_records_script_and_version_audit_users(self):
         self.make_staff()

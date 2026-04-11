@@ -373,10 +373,6 @@ def add_wooey_script(
             group = group.group_name
         if group is not None:
             existing_scripts = existing_scripts.filter(script_group__group_name=group)
-        if ignore_bad_imports is not None:
-            existing_scripts = existing_scripts.filter(
-                ignore_bad_imports=ignore_bad_imports
-            )
         existing_script = existing_scripts.first()
         if existing_script is not None:
             if group is None and existing_script.script_group_id:
@@ -503,7 +499,6 @@ def add_wooey_script(
         script_kwargs = {
             "script_group": script_group,
             "script_name": script_name or script_schema["name"],
-            "ignore_bad_imports": ignore_bad_imports,
         }
         version_kwargs = {
             "script_version": version_string,
@@ -515,7 +510,12 @@ def add_wooey_script(
         script_created = Script.objects.filter(**script_kwargs).count() == 0
         if script_created:
             # we are creating it, add the description if we can
-            script_kwargs.update({"script_description": script_schema["description"]})
+            script_kwargs.update(
+                {
+                    "script_description": script_schema["description"],
+                    "ignore_bad_imports": ignore_bad_imports,
+                }
+            )
             wooey_script = Script(**script_kwargs)
             wooey_script._script_cl_creation = True
             wooey_script.save()

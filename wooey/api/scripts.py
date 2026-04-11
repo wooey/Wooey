@@ -14,7 +14,14 @@ from .. import errors, models
 from .. import settings as wooey_settings
 from ..backend import utils
 from ..utils import requires_login
-from .forms import AddScriptForm, ScriptPatchForm, ScriptVersionPatchForm, SubmitForm
+from .forms import (
+    AddScriptForm,
+    ScriptPatchForm,
+    ScriptVersionPatchForm,
+    SubmitForm,
+    VirtualEnvironmentCreateForm,
+    VirtualEnvironmentPatchForm,
+)
 
 
 def create_argparser(script_version):
@@ -94,7 +101,12 @@ def _get_submitted_data(request):
 
 def _get_script_or_error(slug):
     try:
-        return models.Script.objects.select_related("script_group").get(slug=slug), None
+        return (
+            models.Script.objects.select_related(
+                "script_group", "virtual_environment"
+            ).get(slug=slug),
+            None,
+        )
     except models.Script.DoesNotExist:
         return None, JsonResponse(
             {
@@ -120,6 +132,17 @@ def _serialize_script_version(script_version):
         "created_by": _serialize_user(script_version.created_by),
         "modified_date": script_version.modified_date,
         "modified_by": _serialize_user(script_version.modified_by),
+    }
+
+
+def _serialize_virtual_environment(virtual_environment):
+    return {
+        "id": virtual_environment.id,
+        "name": virtual_environment.name,
+        "python_binary": virtual_environment.python_binary,
+        "requirements": virtual_environment.requirements or "",
+        "venv_directory": virtual_environment.venv_directory,
+        "install_path": virtual_environment.get_install_path(),
     }
 
 
@@ -158,6 +181,10 @@ def _serialize_script(script, include_versions=False):
         "script_name": script.script_name,
         "group": script.script_group.group_name if script.script_group else "",
         "group_slug": script.script_group.slug if script.script_group else "",
+        "virtual_environment_id": script.virtual_environment_id,
+        "virtual_environment_name": (
+            script.virtual_environment.name if script.virtual_environment else ""
+        ),
         "script_description": script.script_description or "",
         "documentation": script.documentation or "",
         "script_order": script.script_order,
@@ -192,6 +219,9 @@ def _update_script_metadata(script, updates):
             group_name=group_name
         )
         changed = True
+    if "virtual_environment" in updates:
+        script.virtual_environment = updates["virtual_environment"]
+        changed = True
     if "script_description" in updates:
         script.script_description = updates["script_description"]
         changed = True
@@ -220,6 +250,26 @@ def _update_script_metadata(script, updates):
     return script
 
 
+def _get_virtual_environment_or_error(virtual_environment_id):
+    try:
+        return (
+            models.VirtualEnvironment.objects.get(pk=virtual_environment_id),
+            None,
+        )
+    except models.VirtualEnvironment.DoesNotExist:
+        return None, JsonResponse(
+            {
+                "valid": False,
+                "errors": {
+                    "virtual_environment": [
+                        force_str(_("Unable to find virtual environment."))
+                    ]
+                },
+            },
+            status=404,
+        )
+
+
 def _update_script_audit(script, user):
     if script.created_by_id is None:
         script.created_by = user
@@ -242,12 +292,80 @@ def list_scripts(request):
         return _staff_required_response()
 
     scripts = (
-        models.Script.objects.select_related("script_group")
+        models.Script.objects.select_related("script_group", "virtual_environment")
         .prefetch_related("script_version")
         .order_by("script_name", "pk")
     )
     return JsonResponse(
         {"valid": True, "scripts": [_serialize_script(script) for script in scripts]}
+    )
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+@requires_login
+def list_virtual_environments(request):
+    if not request.user.is_staff:
+        return _staff_required_response()
+
+    virtual_environments = models.VirtualEnvironment.objects.order_by("name", "pk")
+    return JsonResponse(
+        {
+            "valid": True,
+            "virtual_environments": [
+                _serialize_virtual_environment(virtual_environment)
+                for virtual_environment in virtual_environments
+            ],
+        }
+    )
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@requires_login
+def create_virtual_environment(request):
+    if not request.user.is_staff:
+        return _staff_required_response()
+
+    form = VirtualEnvironmentCreateForm(_get_submitted_data(request))
+    if not form.is_valid():
+        return JsonResponse({"valid": False, "errors": form.errors}, status=400)
+
+    virtual_environment = models.VirtualEnvironment.objects.create(**form.cleaned_data)
+    return JsonResponse(
+        {
+            "valid": True,
+            "virtual_environment": _serialize_virtual_environment(virtual_environment),
+        }
+    )
+
+
+@csrf_exempt
+@require_http_methods(["PATCH"])
+@requires_login
+def patch_virtual_environment(request, virtual_environment_id):
+    if not request.user.is_staff:
+        return _staff_required_response()
+
+    virtual_environment, error = _get_virtual_environment_or_error(
+        virtual_environment_id
+    )
+    if error:
+        return error
+
+    form = VirtualEnvironmentPatchForm(_get_submitted_data(request))
+    if not form.is_valid():
+        return JsonResponse({"valid": False, "errors": form.errors}, status=400)
+
+    for field_name, value in form.cleaned_data.items():
+        setattr(virtual_environment, field_name, value)
+    virtual_environment.save()
+
+    return JsonResponse(
+        {
+            "valid": True,
+            "virtual_environment": _serialize_virtual_environment(virtual_environment),
+        }
     )
 
 
@@ -393,15 +511,14 @@ def submit_script(request, slug=None):
     version = data["version"]
     iteration = data["iteration"]
     command = data["command"]
-    qs = models.ScriptVersion.objects.filter(script__slug=slug)
+    qs = models.ScriptVersion.objects.filter(script__slug=slug, is_active=True)
     if not version and not iteration:
-        qs = qs.filter(default_version=True, is_active=True)
+        qs = qs.filter(default_version=True)
     else:
         if version:
             qs = qs.filter(script_version=version)
         if iteration:
             qs = qs.filter(script_iteration=iteration)
-        qs = qs.filter(is_active=True)
     try:
         script_version = qs.get()
     except models.ScriptVersion.DoesNotExist:

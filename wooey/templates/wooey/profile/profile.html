@@ -45,11 +45,17 @@
         <div class="row">
           <div class="col-md-2">
             <ul class="nav nav-pills nav-stacked" role="tablist">
-              <li role="presentation" class="active"><a href="#api_keys" data-toggle="tab" role="tab">{% trans "API Keys" %}</a></li>
+              {% if can_manage_scripts %}
+                <li role="presentation" class="active"><a href="#script_management" data-toggle="tab" role="tab">{% trans "Scripts" %}</a></li>
+              {% endif %}
+              <li role="presentation"{% if not can_manage_scripts %} class="active"{% endif %}><a href="#api_keys" data-toggle="tab" role="tab">{% trans "API Keys" %}</a></li>
             </ul>
           </div>
           <div class="col-md-10 tab-content">
-            <div role="tabpanel" class="tab-pane active" id="api_keys">
+            {% if can_manage_scripts %}
+              {% include "wooey/profile/script_management.html" %}
+            {% endif %}
+            <div role="tabpanel" class="tab-pane{% if not can_manage_scripts %} active{% endif %}" id="api_keys">
               <button type="button" class="btn btn-default" data-toggle="modal" onclick="showApiKeyModal()">{% trans "Create API Key" %}</button>
               <br />
               <table id="api-key-table" class="table">
@@ -68,7 +74,7 @@
                       <td>{{ key.name }}</td>
                       <td class="key-active">{{ key.active }}</td>
                       <td>{{ key.created_date|date:"N d, Y - G:i:s" }}</td>
-                      <td>{{ key.last_use|date:"N d, Y - G:i:s" }}</td>
+                      <td>{{ key.last_used|date:"N d, Y - G:i:s" }}</td>
                       <td>
                         <div class="btn-group" role="group" aria-label="{% trans "API Key Actions" %}">
                           <button type="button" class="btn btn-default api-key-toggle" onclick="toggleApiKey({{ key.id }})">{% if key.active %}{% trans "Deactivate" %}{% else %}{% trans "Activate" %}{% endif %}</button>
@@ -119,13 +125,52 @@
 {% block inline_js %}
   {{ block.super }}
   <script type="text/javascript">
+    function escapeHtml(value) {
+      return $('<div />').text(value == null ? '' : value).html();
+    }
+
+    function flattenErrors(errors) {
+      if (!errors) {
+        return [];
+      }
+      if (typeof errors === 'string') {
+        return [errors];
+      }
+      if ($.isArray(errors)) {
+        return errors;
+      }
+
+      var messages = [];
+      $.each(errors, function(key, value) {
+        var values = $.isArray(value) ? value : [value];
+        $.each(values, function(_, message) {
+          messages.push(message);
+        });
+      });
+      return messages;
+    }
+
     function createApiKey() {
       $.post("{% url "wooey:create_api_key" %}", {name: $('#api-key-name').val()}, function(data){
         $("#create-api-key-modal .modal-body > form").addClass('hidden');
         $("#create-api-key").addClass('hidden');
         $("#create-api-key-modal .modal-body > div").removeClass('hidden');
         $('#new-api-key').html(data.api_key);
-        $('#api-key-table > tbody').append(`<tr><td>${data.id}</td><td>${data.name}</td><td>True</td><td></td><td></td><td></td></tr>`)
+        $('#api-key-table > tbody').append(`
+          <tr>
+            <td data-key-id="${data.id}">${data.id}</td>
+            <td>${escapeHtml(data.name)}</td>
+            <td class="key-active">{% trans "True" %}</td>
+            <td></td>
+            <td></td>
+            <td>
+              <div class="btn-group" role="group" aria-label="{% trans "API Key Actions" %}">
+                <button type="button" class="btn btn-default api-key-toggle" onclick="toggleApiKey(${data.id})">{% trans "Deactivate" %}</button>
+                <button type="button" class="btn btn-danger" onclick="deleteApiKey(${data.id})">{% trans "Delete" %}</button>
+              </div>
+            </td>
+          </tr>
+        `);
       })
     }
 
@@ -151,7 +196,170 @@
           $(`td[data-key-id=${id}]`).parent().addClass('deleted');
           $(`td[data-key-id=${id}]`).parent().find('*').attr('disabled', true)
         }
-      })
+      });
     }
+
+    {% if can_manage_scripts %}
+      var scriptEditorUrlTemplate = "{% url "wooey:profile_script_editor" slug="__slug__" %}";
+      var scriptPatchUrlTemplate = "{% url "wooey:api_patch_script" slug="__slug__" %}";
+      var scriptLabels = {
+        healthy: "{% trans "Healthy" %}",
+        attention: "{% trans "Needs Attention" %}",
+        disabled: "{% trans "Disabled" %}",
+        missing: "{% trans "Missing" %}",
+        open: "{% trans "Open" %}",
+        enable: "{% trans "Enable" %}",
+        disable: "{% trans "Disable" %}",
+        enableSuccess: "{% trans "The script was re-enabled." %}",
+        disableSuccess: "{% trans "The script was disabled." %}",
+        noScripts: "{% trans "No scripts are available yet." %}",
+        loadingError: "{% trans "Unable to load script management data." %}",
+        updateError: "{% trans "Unable to update this script." %}",
+        ungrouped: "{% trans "Ungrouped" %}",
+      };
+
+      function getScriptEditorUrl(slug) {
+        return scriptEditorUrlTemplate.replace('__slug__', slug);
+      }
+
+      function getScriptPatchUrl(slug) {
+        return scriptPatchUrlTemplate.replace('__slug__', slug);
+      }
+
+      function renderScriptManagementAlert(level, errors) {
+        var messages = flattenErrors(errors);
+        if (!messages.length) {
+          $('#script-management-alert').empty();
+          return;
+        }
+
+        var items = $.map(messages, function(message) {
+          return `<li>${escapeHtml(message)}</li>`;
+        }).join('');
+
+        $('#script-management-alert').html(`
+          <div class="alert alert-${level}">
+            <ul class="list-unstyled">${items}</ul>
+          </div>
+        `);
+      }
+
+      function formatScriptVersion(version) {
+        return `v${version.script_version}.${version.script_iteration}`;
+      }
+
+      function renderScriptManagementTable(scripts) {
+        var $tbody = $('#script-management-table tbody');
+        if (!scripts.length) {
+          $tbody.html(`<tr><td colspan="6" class="text-muted">${escapeHtml(scriptLabels.noScripts)}</td></tr>`);
+          return;
+        }
+
+        var rows = $.map(scripts, function(script) {
+          var issues = script.issues || [];
+          var defaultVersion = script.default_version
+            ? escapeHtml(formatScriptVersion(script.default_version))
+            : `<span class="text-danger">${escapeHtml(scriptLabels.missing)}</span>`;
+          var status = !script.is_active
+            ? `<span class="label label-default">${escapeHtml(scriptLabels.disabled)}</span>`
+            : issues.length
+            ? `<span class="label label-danger">${escapeHtml(scriptLabels.attention)}</span>`
+            : `<span class="label label-success">${escapeHtml(scriptLabels.healthy)}</span>`;
+          var issueSummary = issues.length
+            ? `<div class="script-issue-summary">${escapeHtml(issues.join(' '))}</div>`
+            : '';
+          var editorUrl = getScriptEditorUrl(script.slug);
+          var toggleActionLabel = script.is_active ? scriptLabels.disable : scriptLabels.enable;
+          var toggleActionClass = script.is_active ? 'btn-warning disable-managed-script' : 'btn-default enable-managed-script';
+
+          return `
+            <tr class="script-management-row" data-href="${editorUrl}">
+              <td>${escapeHtml(script.script_name)}</td>
+              <td>${escapeHtml(script.group || scriptLabels.ungrouped)}</td>
+              <td>${defaultVersion}</td>
+              <td>${escapeHtml(script.versions_count)}</td>
+              <td>${status}${issueSummary}</td>
+              <td>
+                <div class="btn-group" role="group" aria-label="{% trans "Script Actions" %}">
+                  <a class="btn btn-default btn-xs" href="${editorUrl}">
+                    ${escapeHtml(scriptLabels.open)}
+                  </a>
+                  <button
+                    type="button"
+                    class="btn btn-xs ${toggleActionClass}"
+                    data-script-slug="${script.slug}">
+                    ${escapeHtml(toggleActionLabel)}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        $tbody.html(rows);
+      }
+
+      function loadScriptManagement(successMessage) {
+        $.getJSON("{% url "wooey:api_list_scripts" %}", function(data) {
+          if (successMessage) {
+            renderScriptManagementAlert('success', [successMessage]);
+          } else {
+            renderScriptManagementAlert('danger', []);
+          }
+          renderScriptManagementTable(data.scripts || []);
+        }).fail(function(xhr) {
+          var data = xhr.responseJSON || {};
+          renderScriptManagementAlert('danger', data.errors || [scriptLabels.loadingError]);
+        });
+      }
+
+      function patchManagedScript(slug, payload, successMessage) {
+        $.ajax({
+          url: getScriptPatchUrl(slug),
+          type: 'PATCH',
+          data: JSON.stringify(payload),
+          contentType: 'application/json',
+          success: function() {
+            loadScriptManagement(successMessage);
+          },
+          error: function(xhr) {
+            var data = xhr.responseJSON || {};
+            renderScriptManagementAlert('danger', data.errors || [scriptLabels.updateError]);
+          }
+        });
+      }
+
+      $(document).on('click', '.script-management-row', function(event) {
+        if ($(event.target).closest('a, button').length) {
+          return;
+        }
+        window.location = $(this).data('href');
+      });
+
+      $(document).on('click', '.disable-managed-script', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        patchManagedScript($(this).data('script-slug'), { is_active: false }, scriptLabels.disableSuccess);
+      });
+
+      $(document).on('click', '.enable-managed-script', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        patchManagedScript($(this).data('script-slug'), { is_active: true }, scriptLabels.enableSuccess);
+      });
+    {% endif %}
+
+    $(document).ready(function() {
+      if (window.location.hash) {
+        var $tab = $('.nav-pills a[href="' + window.location.hash + '"]');
+        if ($tab.length) {
+          $tab.tab('show');
+        }
+      }
+
+      {% if can_manage_scripts %}
+        loadScriptManagement();
+      {% endif %}
+    });
   </script>
 {% endblock inline_js %}

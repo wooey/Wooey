@@ -291,12 +291,12 @@ def get_current_scripts():
 
     # get the scripts with default version
     scripts = ScriptVersion.objects.select_related("script").filter(
-        default_version=True
+        default_version=True, is_active=True
     )
     # scripts we need to figure out the default version for some reason
-    non_default_scripts = ScriptVersion.objects.filter(default_version=False).exclude(
-        script__in=[i.script for i in scripts]
-    )
+    non_default_scripts = ScriptVersion.objects.filter(
+        default_version=False, is_active=True
+    ).exclude(script__in=[i.script for i in scripts])
     script_versions = defaultdict(list)
     for sv in non_default_scripts:
         try:

@@ -4,7 +4,7 @@ import os
 import shlex
 from itertools import groupby
 
-from django.http import JsonResponse
+from django.http import JsonResponse, QueryDict
 from django.utils.encoding import force_str
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
@@ -14,7 +14,7 @@ from .. import errors, models
 from .. import settings as wooey_settings
 from ..backend import utils
 from ..utils import requires_login
-from .forms import AddScriptForm, SubmitForm
+from .forms import AddScriptForm, ScriptPatchForm, ScriptVersionPatchForm, SubmitForm
 
 
 def create_argparser(script_version):
@@ -68,6 +68,316 @@ def create_argparser(script_version):
     return parser
 
 
+def _staff_required_response():
+    return JsonResponse(
+        {
+            "valid": False,
+            "errors": {
+                "__all__": [
+                    force_str(_("You do not have permission to manage scripts."))
+                ]
+            },
+        },
+        status=403,
+    )
+
+
+def _get_submitted_data(request):
+    content_type = request.headers.get("Content-Type", "").lower()
+    if "application/json" in content_type:
+        body = request.body.decode("utf-8") if request.body else "{}"
+        return json.loads(body or "{}")
+    if request.method == "PATCH":
+        return QueryDict(request.body).dict()
+    return request.POST.dict()
+
+
+def _get_script_or_error(slug):
+    try:
+        return models.Script.objects.select_related("script_group").get(slug=slug), None
+    except models.Script.DoesNotExist:
+        return None, JsonResponse(
+            {
+                "valid": False,
+                "errors": {"script": [force_str(_("Unable to find script."))]},
+            },
+            status=404,
+        )
+
+
+def _serialize_script_version(script_version):
+    return {
+        "id": script_version.id,
+        "script_version": script_version.script_version,
+        "script_iteration": script_version.script_iteration,
+        "is_active": script_version.is_active,
+        "default_version": script_version.default_version,
+        "checksum": script_version.checksum,
+        "script_path": script_version.script_path.name,
+        "script_url": script_version.script_path.url,
+        "script_filename": os.path.basename(script_version.script_path.name),
+        "created_date": script_version.created_date,
+        "created_by": _serialize_user(script_version.created_by),
+        "modified_date": script_version.modified_date,
+        "modified_by": _serialize_user(script_version.modified_by),
+    }
+
+
+def _get_script_issues(script):
+    issues = []
+    version_count = script.script_version.count()
+    active_versions = script.script_version.filter(is_active=True)
+    default_versions = active_versions.filter(default_version=True).count()
+
+    if version_count == 0:
+        issues.append(force_str(_("This script does not have any script versions.")))
+    elif active_versions.count() == 0:
+        issues.append(
+            force_str(_("This script does not have any active script versions."))
+        )
+    if version_count and default_versions == 0:
+        issues.append(force_str(_("This script does not have a default version.")))
+    elif default_versions > 1:
+        issues.append(force_str(_("This script has multiple default versions.")))
+
+    return issues
+
+
+def _serialize_user(user):
+    if not user:
+        return ""
+    return user.get_full_name() or user.username
+
+
+def _serialize_script(script, include_versions=False):
+    versions_qs = script.script_version.all().order_by("-created_date", "-pk")
+    default_version = versions_qs.filter(default_version=True, is_active=True).first()
+    data = {
+        "id": script.id,
+        "slug": script.slug,
+        "script_name": script.script_name,
+        "group": script.script_group.group_name if script.script_group else "",
+        "group_slug": script.script_group.slug if script.script_group else "",
+        "script_description": script.script_description or "",
+        "documentation": script.documentation or "",
+        "script_order": script.script_order,
+        "is_active": script.is_active,
+        "ignore_bad_imports": script.ignore_bad_imports,
+        "execute_full_path": script.execute_full_path,
+        "save_path": script.save_path or "",
+        "created_date": script.created_date,
+        "created_by": _serialize_user(script.created_by),
+        "modified_date": script.modified_date,
+        "modified_by": _serialize_user(script.modified_by),
+        "versions_count": versions_qs.count(),
+        "issues": _get_script_issues(script),
+        "default_version": (
+            _serialize_script_version(default_version) if default_version else None
+        ),
+    }
+    if include_versions:
+        data["versions"] = [_serialize_script_version(i) for i in versions_qs]
+    return data
+
+
+def _update_script_metadata(script, cleaned_data, provided_fields):
+    changed = False
+
+    if "script_name" in provided_fields:
+        script.script_name = cleaned_data["script_name"]
+        changed = True
+    if "group" in provided_fields:
+        group_name = cleaned_data["group"] or wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP
+        script.script_group, _ = models.ScriptGroup.objects.get_or_create(
+            group_name=group_name
+        )
+        changed = True
+    if "script_description" in provided_fields:
+        script.script_description = cleaned_data["script_description"]
+        changed = True
+    if "documentation" in provided_fields:
+        script.documentation = cleaned_data["documentation"]
+        changed = True
+    if "script_order" in provided_fields:
+        script.script_order = cleaned_data["script_order"]
+        changed = True
+    if "is_active" in provided_fields:
+        script.is_active = cleaned_data["is_active"]
+        changed = True
+    if "ignore_bad_imports" in provided_fields:
+        script.ignore_bad_imports = cleaned_data["ignore_bad_imports"]
+        changed = True
+    if "execute_full_path" in provided_fields:
+        script.execute_full_path = cleaned_data["execute_full_path"]
+        changed = True
+    if "save_path" in provided_fields:
+        script.save_path = cleaned_data["save_path"] or None
+        changed = True
+
+    if changed:
+        script.save()
+
+    return script
+
+
+def _update_script_audit(script, user):
+    if script.created_by_id is None:
+        script.created_by = user
+    script.modified_by = user
+    script.save(update_fields=["created_by", "modified_by", "modified_date"])
+
+
+def _update_script_version_audit(script_version, user):
+    if script_version.created_by_id is None:
+        script_version.created_by = user
+    script_version.modified_by = user
+    script_version.save(update_fields=["created_by", "modified_by", "modified_date"])
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+@requires_login
+def list_scripts(request):
+    if not request.user.is_staff:
+        return _staff_required_response()
+
+    scripts = (
+        models.Script.objects.select_related("script_group")
+        .prefetch_related("script_version")
+        .order_by("script_name", "pk")
+    )
+    return JsonResponse(
+        {"valid": True, "scripts": [_serialize_script(script) for script in scripts]}
+    )
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+@requires_login
+def script_detail(request, slug):
+    if not request.user.is_staff:
+        return _staff_required_response()
+
+    script, error = _get_script_or_error(slug)
+    if error:
+        return error
+
+    return JsonResponse({"valid": True, "script": _serialize_script(script, True)})
+
+
+@csrf_exempt
+@require_http_methods(["PATCH"])
+@requires_login
+def patch_script(request, slug):
+    if not request.user.is_staff:
+        return _staff_required_response()
+
+    script, error = _get_script_or_error(slug)
+    if error:
+        return error
+
+    submitted_data = _get_submitted_data(request)
+    form = ScriptPatchForm(submitted_data)
+    if not form.is_valid():
+        return JsonResponse({"valid": False, "errors": form.errors}, status=400)
+
+    _update_script_metadata(script, form.cleaned_data, set(submitted_data))
+    _update_script_audit(script, request.user)
+    return JsonResponse({"valid": True, "script": _serialize_script(script, True)})
+
+
+@csrf_exempt
+@require_http_methods(["PATCH"])
+@requires_login
+def patch_script_version(request, slug, version_id):
+    if not request.user.is_staff:
+        return _staff_required_response()
+
+    try:
+        script_version = models.ScriptVersion.objects.select_related("script").get(
+            pk=version_id, script__slug=slug
+        )
+    except models.ScriptVersion.DoesNotExist:
+        return JsonResponse(
+            {
+                "valid": False,
+                "errors": {
+                    "script_version": [force_str(_("Unable to find script version."))]
+                },
+            },
+            status=404,
+        )
+
+    submitted_data = _get_submitted_data(request)
+    form = ScriptVersionPatchForm(submitted_data)
+    if not form.is_valid():
+        return JsonResponse({"valid": False, "errors": form.errors}, status=400)
+
+    make_default = form.cleaned_data["default_version"]
+    if "default_version" in submitted_data:
+        if make_default:
+            if not script_version.is_active:
+                return JsonResponse(
+                    {
+                        "valid": False,
+                        "errors": {
+                            "default_version": [
+                                force_str(
+                                    _(
+                                        "A disabled script version cannot be set as default."
+                                    )
+                                )
+                            ]
+                        },
+                    },
+                    status=400,
+                )
+            models.ScriptVersion.objects.filter(script=script_version.script).exclude(
+                pk=script_version.pk
+            ).update(default_version=False)
+            script_version.default_version = True
+            script_version.save()
+        else:
+            disabling_version = (
+                "is_active" in submitted_data
+                and form.cleaned_data["is_active"] is False
+            )
+            other_defaults = models.ScriptVersion.objects.filter(
+                script=script_version.script, default_version=True, is_active=True
+            ).exclude(pk=script_version.pk)
+            if not other_defaults.exists() and not disabling_version:
+                return JsonResponse(
+                    {
+                        "valid": False,
+                        "errors": {
+                            "default_version": [
+                                force_str(_("A script must have a default version."))
+                            ]
+                        },
+                    },
+                    status=400,
+                )
+            script_version.default_version = False
+            script_version.save()
+
+    if "is_active" in submitted_data:
+        is_active = form.cleaned_data["is_active"]
+        script_version.is_active = is_active
+        if not is_active:
+            script_version.default_version = False
+        script_version.save()
+
+    _update_script_version_audit(script_version, request.user)
+    _update_script_audit(script_version.script, request.user)
+    return JsonResponse(
+        {
+            "valid": True,
+            "version": _serialize_script_version(script_version),
+            "script": _serialize_script(script_version.script, True),
+        }
+    )
+
+
 @csrf_exempt
 @require_http_methods(["POST"])
 @requires_login
@@ -88,12 +398,13 @@ def submit_script(request, slug=None):
     command = data["command"]
     qs = models.ScriptVersion.objects.filter(script__slug=slug)
     if not version and not iteration:
-        qs = qs.filter(default_version=True)
+        qs = qs.filter(default_version=True, is_active=True)
     else:
         if version:
             qs = qs.filter(script_version=version)
         if iteration:
             qs = qs.filter(script_iteration=iteration)
+        qs = qs.filter(is_active=True)
     try:
         script_version = qs.get()
     except models.ScriptVersion.DoesNotExist:
@@ -185,26 +496,34 @@ def submit_script(request, slug=None):
 @requires_login
 def add_or_update_script(request):
     if not request.user.is_staff:
-        return JsonResponse(
-            {
-                "valid": False,
-                "errors": {
-                    "__all__": [
-                        force_str(_("You do not have permission to upload scripts."))
-                    ]
-                },
-            },
-            status=403,
-        )
-    submitted_data = request.POST.dict()
+        return _staff_required_response()
+    submitted_data = _get_submitted_data(request)
     files = request.FILES
 
     form = AddScriptForm(submitted_data)
     if not form.is_valid():
-        return JsonResponse({"valid": False, "errors": form.errors})
+        return JsonResponse({"valid": False, "errors": form.errors}, status=400)
+    if not files:
+        return JsonResponse(
+            {
+                "valid": False,
+                "errors": {"script_file": [force_str(_("A script file is required."))]},
+            },
+            status=400,
+        )
 
     data = form.cleaned_data
     group = data["group"] or wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP
+    metadata_fields = {
+        "group",
+        "script_description",
+        "documentation",
+        "script_order",
+        "is_active",
+        "ignore_bad_imports",
+        "execute_full_path",
+        "save_path",
+    }.intersection(set(submitted_data))
 
     response = []
 
@@ -238,9 +557,16 @@ def add_or_update_script(request):
             "errors": results["errors"],
         }
         if results["valid"]:
+            script = results["script"].script
+            _update_script_metadata(script, data, metadata_fields)
+            _update_script_audit(script, request.user)
+            _update_script_version_audit(results["script"], request.user)
+            results["script"].refresh_from_db()
             output["version"] = results["script"].script_version
             output["iteration"] = results["script"].script_iteration
             output["is_default"] = results["script"].default_version
+            output["id"] = script.id
+            output["slug"] = script.slug
         response.append(output)
 
     return JsonResponse(response, safe=False, encoder=errors.WooeyJSONEncoder)

@@ -3,6 +3,73 @@
 	background: white;
 }
 
+.profile-panel-actions {
+	margin-bottom: 20px;
+}
+
+.profile-panel-title {
+	margin-top: 0;
+}
+
+.script-management-row {
+	cursor: pointer;
+}
+
+.script-issue-summary {
+	margin-top: 6px;
+	font-size: 12px;
+	color: #a94442;
+}
+
+.script-editor-back-link {
+	margin-bottom: 0;
+}
+
+.script-editor-layout {
+	margin-bottom: 20px;
+}
+
+.script-audit-metadata {
+	margin: 20px 0;
+	padding-top: 15px;
+	border-top: 1px solid #e5e5e5;
+}
+
+.script-audit-metadata h4 {
+	margin-top: 0;
+	margin-bottom: 12px;
+}
+
+.script-audit-metadata dt,
+.script-audit-metadata dd {
+	padding-bottom: 6px;
+}
+
+.script-version-upload {
+	margin-bottom: 20px;
+	padding-bottom: 15px;
+	border-bottom: 1px solid #e5e5e5;
+}
+
+.script-version-upload h4 {
+	margin-top: 0;
+	margin-bottom: 12px;
+}
+
+.script-version-upload .form-inline .form-group,
+.script-version-upload .form-inline .checkbox {
+	margin-right: 12px;
+	margin-bottom: 10px;
+}
+
+.script-version-row.text-muted a {
+	color: #777;
+}
+
+.script-version-actions {
+	white-space: nowrap;
+}
+
 #api-key-table tr.deleted {
 	background: grey;
 	text-decoration: line-through;

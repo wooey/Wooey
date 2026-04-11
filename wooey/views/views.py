@@ -3,7 +3,8 @@ from collections import defaultdict
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from django.http import JsonResponse
+from django.core.exceptions import PermissionDenied
+from django.http import Http404, JsonResponse
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.encoding import force_str
@@ -15,6 +16,7 @@ from ..models import (
     APIKey,
     WooeyJob,
     Script,
+    ScriptGroup,
     UserFile,
     Favorite,
     ScriptVersion,
@@ -62,12 +64,18 @@ class WooeyScriptBase(DetailView):
             script=self.object,
         )
         if not (version or iteration):
-            script_version = script_version.get(default_version=True)
+            script_version = script_version.filter(
+                default_version=True, is_active=True
+            ).first()
+            if script_version is None:
+                raise Http404(force_str(_("A script version must be selected.")))
         else:
             if version:
                 script_version = script_version.filter(script_version=version)
             if iteration:
                 script_version = script_version.filter(script_iteration=iteration)
+
+            script_version = script_version.filter(is_active=True)
 
             script_version = script_version.order_by(
                 "script_version", "script_iteration"
@@ -239,7 +247,28 @@ class WooeyProfileView(TemplateView):
                 ]
 
         ctx["is_logged_in_user"] = is_logged_in_user
+        ctx["can_manage_scripts"] = is_logged_in_user and self.request.user.is_staff
 
+        return ctx
+
+
+class ScriptEditorView(TemplateView):
+    template_name = "wooey/profile/script_editor.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated or not request.user.is_staff:
+            raise PermissionDenied
+        return super(ScriptEditorView, self).dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ctx = super(ScriptEditorView, self).get_context_data(**kwargs)
+        ctx["script_slug"] = self.kwargs.get("slug")
+        ctx["is_new_script"] = "slug" not in self.kwargs
+        ctx["script_groups"] = list(
+            ScriptGroup.objects.order_by("group_name").values_list(
+                "group_name", flat=True
+            )
+        )
         return ctx
 
 

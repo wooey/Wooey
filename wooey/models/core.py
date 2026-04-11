@@ -82,6 +82,20 @@ class Script(models.Model):
 
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        User,
+        related_name="created_script_set",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    modified_by = models.ForeignKey(
+        User,
+        related_name="modified_script_set",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         app_label = "wooey"
@@ -96,7 +110,11 @@ class Script(models.Model):
 
     @property
     def latest_version(self):
-        return self.script_version.get(default_version=True)
+        return self.script_version.get(default_version=True, is_active=True)
+
+    @property
+    def has_active_default_version(self):
+        return self.script_version.filter(default_version=True, is_active=True).exists()
 
     def clean(self):
         if self.script_group is None:
@@ -114,7 +132,9 @@ class Script(models.Model):
             self.script_group = group
 
     def get_previous_versions(self):
-        return self.script_version.all().order_by("script_version", "script_iteration")
+        return self.script_version.filter(is_active=True).order_by(
+            "script_version", "script_iteration"
+        )
 
 
 class ScriptVersion(models.Model):
@@ -125,6 +145,7 @@ class ScriptVersion(models.Model):
     )
     script_iteration = models.PositiveSmallIntegerField(default=1)
     script_path = models.FileField()
+    is_active = models.BooleanField(default=True)
     default_version = models.BooleanField(default=False)
     script = models.ForeignKey(
         "Script", related_name="script_version", on_delete=models.CASCADE

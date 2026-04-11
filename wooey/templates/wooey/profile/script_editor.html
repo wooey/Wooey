@@ -1,0 +1,649 @@
+{% extends "wooey/base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block center_content_class %}col-lg-10 col-lg-offset-1 col-md-12 col-xs-12{% endblock center_content_class %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static "wooey/css/profile.css" %}"/>
+{% endblock extra_css %}
+
+{% block center_content %}
+  <div class="page-header">
+    <h1 id="script-editor-title">
+      {% if is_new_script %}
+        {% trans "New Script" %}
+      {% else %}
+        {% trans "Script Editor" %}
+      {% endif %}
+    </h1>
+    <p class="script-editor-back-link">
+      <a href="{% url "wooey:profile_home" %}#script_management">{% trans "Back to script management" %}</a>
+    </p>
+  </div>
+
+  <div id="script-editor-alert"></div>
+  <div id="script-editor-issues"></div>
+
+  <div class="row script-editor-layout">
+    <div class="col-md-4">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">{% trans "Script Details" %}</h3>
+        </div>
+        <div class="panel-body">
+          <form id="script-details-form">
+            <div class="form-group">
+              <label for="script-name">{% trans "Script Name" %}</label>
+              <input type="text" class="form-control" id="script-name">
+            </div>
+
+            <div class="form-group">
+              <label for="script-group-select">{% trans "Group" %}</label>
+              <select class="form-control" id="script-group-select">
+                <option value="">{% trans "Default group" %}</option>
+                {% for group_name in script_groups %}
+                  <option value="{{ group_name }}">{{ group_name }}</option>
+                {% endfor %}
+                <option value="__new__">{% trans "Create new group..." %}</option>
+              </select>
+              <p class="help-block">{% trans "Choose an existing group or create a new one." %}</p>
+            </div>
+
+            <div class="form-group hidden" id="script-group-new-wrapper">
+              <label for="script-group-new">{% trans "New Group Name" %}</label>
+              <input type="text" class="form-control" id="script-group-new">
+            </div>
+
+            <div class="form-group">
+              <label for="script-description">{% trans "Description" %}</label>
+              <textarea class="form-control" id="script-description" rows="3"></textarea>
+              <p class="help-block">{% trans "This description is shown on the main scripts page." %}</p>
+            </div>
+
+            <div class="form-group">
+              <label for="script-documentation">{% trans "Documentation" %}</label>
+              <textarea class="form-control" id="script-documentation" rows="6"></textarea>
+              <p class="help-block">{% trans "Markdown is supported here and this content is shown on the script page." %}</p>
+            </div>
+
+            <div class="checkbox">
+              <label>
+                <input type="checkbox" id="script-active" checked>
+                {% trans "Script is active" %}
+              </label>
+            </div>
+
+            <div class="checkbox">
+              <label>
+                <input type="checkbox" id="script-ignore-bad-imports">
+                {% trans "Ignore bad imports" %}
+              </label>
+            </div>
+
+            <div class="checkbox">
+              <label>
+                <input type="checkbox" id="script-execute-full-path" checked>
+                {% trans "Execute using the full script path" %}
+              </label>
+            </div>
+
+            <div id="script-audit-metadata" class="script-audit-metadata hidden">
+              <h4>{% trans "History" %}</h4>
+              <dl class="dl-horizontal">
+                <dt>{% trans "Created by" %}</dt>
+                <dd id="script-created-by"></dd>
+                <dt>{% trans "Created on" %}</dt>
+                <dd id="script-created-date"></dd>
+                <dt>{% trans "Last edited by" %}</dt>
+                <dd id="script-modified-by"></dd>
+                <dt>{% trans "Last edited on" %}</dt>
+                <dd id="script-modified-date"></dd>
+              </dl>
+            </div>
+
+            {% if is_new_script %}
+              <hr />
+              <div class="form-group">
+                <label for="new-script-file">{% trans "Initial Script File" %}</label>
+                <input type="file" id="new-script-file" class="form-control">
+              </div>
+              <div class="checkbox">
+                <label>
+                  <input type="checkbox" id="new-script-default-version" checked>
+                  {% trans "Make the uploaded version the default version" %}
+                </label>
+              </div>
+            {% endif %}
+
+            <button type="button" class="btn btn-primary" id="save-script-details">
+              {% if is_new_script %}
+                {% trans "Create Script" %}
+              {% else %}
+                {% trans "Save Details" %}
+              {% endif %}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-8">
+      <div id="new-script-version-placeholder"{% if not is_new_script %} class="hidden"{% endif %}>
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h3 class="panel-title">{% trans "Script Versions" %}</h3>
+          </div>
+          <div class="panel-body">
+            <p class="text-muted">{% trans "Create the script first, then you can review and manage script versions here." %}</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="existing-script-sections"{% if is_new_script %} class="hidden"{% endif %}>
+        <div class="panel panel-default">
+          <div class="panel-heading clearfix">
+            <h3 class="panel-title pull-left">{% trans "Script Versions" %}</h3>
+            <span class="pull-right text-muted" id="script-default-version-summary"></span>
+          </div>
+          <div class="panel-body">
+            <div class="script-version-upload">
+              <h4>{% trans "Upload New Version" %}</h4>
+              <form id="upload-script-version-form" class="form-inline">
+                <div class="form-group">
+                  <label class="sr-only" for="upload-script-version-file">{% trans "Script File" %}</label>
+                  <input type="file" id="upload-script-version-file" class="form-control">
+                </div>
+                <div class="checkbox">
+                  <label>
+                    <input type="checkbox" id="upload-script-version-default" checked>
+                    {% trans "Make default" %}
+                  </label>
+                </div>
+                <button type="button" class="btn btn-default" id="upload-script-version">
+                  {% trans "Upload Version" %}
+                </button>
+              </form>
+            </div>
+
+            <div class="table-responsive">
+              <table id="script-version-table" class="table table-striped table-hover">
+                <thead>
+                  <tr>
+                    <th>{% trans "Version" %}</th>
+                    <th>{% trans "Iteration" %}</th>
+                    <th>{% trans "Active" %}</th>
+                    <th>{% trans "Default" %}</th>
+                    <th>{% trans "File" %}</th>
+                    <th>{% trans "Uploaded By" %}</th>
+                    <th>{% trans "Updated" %}</th>
+                    <th>{% trans "Actions" %}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="8" class="text-muted">{% trans "Loading versions..." %}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock center_content %}
+
+{% block inline_js %}
+  {{ block.super }}
+  <script type="text/javascript">
+    var isNewScript = {% if is_new_script %}true{% else %}false{% endif %};
+    var scriptSlug = {% if script_slug %}"{{ script_slug|escapejs }}"{% else %}null{% endif %};
+    var currentScript = null;
+    var scriptEditorUrlTemplate = "{% url "wooey:profile_script_editor" slug="__slug__" %}";
+    var scriptApi = {
+      addOrUpdate: "{% url "wooey:api_add_or_update_script" %}",
+      detailTemplate: "{% url "wooey:api_script_detail" slug="__slug__" %}",
+      patchTemplate: "{% url "wooey:api_patch_script" slug="__slug__" %}",
+      versionPatchTemplate: "{% url "wooey:api_patch_script_version" slug="__slug__" version_id=999999 %}",
+    };
+    var editorLabels = {
+      defaultVersionPrefix: "{% trans "Default Version" %}",
+      missingDefaultVersion: "{% trans "No default version is set." %}",
+      missingVersions: "{% trans "This script does not have any versions yet." %}",
+      loadingScriptError: "{% trans "Unable to load this script." %}",
+      saveScriptSuccess: "{% trans "Script details were saved." %}",
+      saveVersionSuccess: "{% trans "Script version settings were saved." %}",
+      uploadVersionSuccess: "{% trans "A new script version was uploaded." %}",
+      createScriptError: "{% trans "Unable to create this script." %}",
+      uploadRequired: "{% trans "A script file is required." %}",
+      nameRequired: "{% trans "A script name is required." %}",
+      newGroupRequired: "{% trans "Please enter a new group name." %}",
+      unknownValue: "{% trans "Unknown" %}",
+      setDefault: "{% trans "Set Default" %}",
+      enable: "{% trans "Enable" %}",
+      disable: "{% trans "Disable" %}",
+      disabled: "{% trans "Disabled" %}",
+      yes: "{% trans "Yes" %}",
+      no: "{% trans "No" %}",
+    };
+
+    function escapeHtml(value) {
+      return $('<div />').text(value == null ? '' : value).html();
+    }
+
+    function flattenErrors(errors) {
+      if (!errors) {
+        return [];
+      }
+      if (typeof errors === 'string') {
+        return [errors];
+      }
+      if ($.isArray(errors)) {
+        return errors;
+      }
+
+      var messages = [];
+      $.each(errors, function(key, value) {
+        var values = $.isArray(value) ? value : [value];
+        $.each(values, function(_, message) {
+          messages.push(message);
+        });
+      });
+      return messages;
+    }
+
+    function renderAlert(selector, level, errors) {
+      var messages = flattenErrors(errors);
+      if (!messages.length) {
+        $(selector).empty();
+        return;
+      }
+
+      var items = $.map(messages, function(message) {
+        return `<li>${escapeHtml(message)}</li>`;
+      }).join('');
+
+      $(selector).html(`
+        <div class="alert alert-${level}">
+          <ul class="list-unstyled">${items}</ul>
+        </div>
+      `);
+    }
+
+    function getScriptDetailUrl(slug) {
+      return scriptApi.detailTemplate.replace('__slug__', slug);
+    }
+
+    function getScriptPatchUrl(slug) {
+      return scriptApi.patchTemplate.replace('__slug__', slug);
+    }
+
+    function getScriptVersionPatchUrl(slug, versionId) {
+      return scriptApi.versionPatchTemplate
+        .replace('__slug__', slug)
+        .replace('999999', versionId);
+    }
+
+    function getScriptEditorUrl(slug) {
+      return scriptEditorUrlTemplate.replace('__slug__', slug);
+    }
+
+    function setCheckbox(selector, value) {
+      $(selector).prop('checked', !!value);
+    }
+
+    function toggleNewGroupInput() {
+      var show = $('#script-group-select').val() === '__new__';
+      $('#script-group-new-wrapper').toggleClass('hidden', !show);
+      if (!show) {
+        $('#script-group-new').val('');
+      }
+    }
+
+    function ensureGroupOption(groupName) {
+      if (!groupName) {
+        return;
+      }
+      var exists = $('#script-group-select option').filter(function() {
+        return $(this).val() === groupName;
+      }).length > 0;
+
+      if (!exists) {
+        $('<option />', { value: groupName, text: groupName }).insertBefore(
+          $('#script-group-select option[value="__new__"]')
+        );
+      }
+    }
+
+    function setGroupValue(groupName) {
+      if (!groupName) {
+        $('#script-group-select').val('');
+        $('#script-group-new').val('');
+        toggleNewGroupInput();
+        return;
+      }
+
+      ensureGroupOption(groupName);
+      var hasOption = $('#script-group-select option').filter(function() {
+        return $(this).val() === groupName;
+      }).length > 0;
+
+      if (hasOption) {
+        $('#script-group-select').val(groupName);
+        $('#script-group-new').val('');
+      } else {
+        $('#script-group-select').val('__new__');
+        $('#script-group-new').val(groupName);
+      }
+      toggleNewGroupInput();
+    }
+
+    function getGroupValue() {
+      if ($('#script-group-select').val() === '__new__') {
+        return $('#script-group-new').val();
+      }
+      return $('#script-group-select').val();
+    }
+
+    function getScriptPayload() {
+      return {
+        script_name: $('#script-name').val(),
+        group: getGroupValue(),
+        script_description: $('#script-description').val(),
+        documentation: $('#script-documentation').val(),
+        is_active: $('#script-active').is(':checked'),
+        ignore_bad_imports: $('#script-ignore-bad-imports').is(':checked'),
+        execute_full_path: $('#script-execute-full-path').is(':checked'),
+      };
+    }
+
+    function formatAuditValue(value) {
+      return value ? value : editorLabels.unknownValue;
+    }
+
+    function formatVersionDisplay(version) {
+      if (!version) {
+        return '';
+      }
+      return `v${version.script_version}.${version.script_iteration}`;
+    }
+
+    function fillScriptForm(script) {
+      $('#script-name').val(script.script_name || '');
+      setGroupValue(script.group || '');
+      $('#script-description').val(script.script_description || '');
+      $('#script-documentation').val(script.documentation || '');
+      setCheckbox('#script-active', script.is_active);
+      setCheckbox('#script-ignore-bad-imports', script.ignore_bad_imports);
+      setCheckbox('#script-execute-full-path', script.execute_full_path);
+    }
+
+    function renderScriptAudit(script) {
+      $('#script-created-by').text(formatAuditValue(script.created_by));
+      $('#script-created-date').text(formatAuditValue(script.created_date));
+      $('#script-modified-by').text(formatAuditValue(script.modified_by));
+      $('#script-modified-date').text(formatAuditValue(script.modified_date));
+      $('#script-audit-metadata').removeClass('hidden');
+    }
+
+    function renderScriptIssues(script) {
+      renderAlert('#script-editor-issues', 'warning', script.issues || []);
+    }
+
+    function updateDefaultVersionSummary(script) {
+      if (!script.default_version) {
+        $('#script-default-version-summary').text(editorLabels.missingDefaultVersion);
+        return;
+      }
+
+      $('#script-default-version-summary').text(
+        `${editorLabels.defaultVersionPrefix}: ${formatVersionDisplay(script.default_version)}`
+      );
+    }
+
+    function findVersion(versionId) {
+      var match = null;
+      $.each((currentScript && currentScript.versions) || [], function(_, version) {
+        if (String(version.id) === String(versionId)) {
+          match = version;
+          return false;
+        }
+      });
+      return match;
+    }
+
+    function renderVersionTable(script) {
+      var versions = script.versions || [];
+      var $tbody = $('#script-version-table tbody');
+
+      if (!versions.length) {
+        $tbody.html(`<tr><td colspan="8" class="text-muted">${escapeHtml(editorLabels.missingVersions)}</td></tr>`);
+        return;
+      }
+
+      var rows = $.map(versions, function(version) {
+        var toggleActionClass = version.is_active ? 'disable-script-version' : 'enable-script-version';
+        var toggleActionLabel = version.is_active ? editorLabels.disable : editorLabels.enable;
+        var toggleActionButtonClass = version.is_active ? 'btn-warning' : 'btn-default';
+        var actions = `
+          <div class="btn-group script-version-actions" role="group">
+            <button
+              type="button"
+              class="btn btn-default btn-xs set-default-script-version"
+              data-version-id="${version.id}"
+              ${version.default_version || !version.is_active ? 'disabled' : ''}>
+              ${escapeHtml(editorLabels.setDefault)}
+            </button>
+            <button
+              type="button"
+              class="btn ${toggleActionButtonClass} btn-xs ${toggleActionClass}"
+              data-version-id="${version.id}"
+              >
+              ${escapeHtml(toggleActionLabel)}
+            </button>
+          </div>
+        `;
+
+        return `
+          <tr class="script-version-row${version.is_active ? '' : ' text-muted'}" data-version-id="${version.id}">
+            <td>${escapeHtml(version.script_version)}</td>
+            <td>${escapeHtml(version.script_iteration)}</td>
+            <td>${escapeHtml(version.is_active ? editorLabels.yes : editorLabels.no)}</td>
+            <td>${escapeHtml(version.default_version ? editorLabels.yes : editorLabels.no)}</td>
+            <td><a href="${escapeHtml(version.script_url)}" download="${escapeHtml(version.script_filename)}">${escapeHtml(version.script_filename)}</a></td>
+            <td>${escapeHtml(formatAuditValue(version.created_by))}</td>
+            <td>${escapeHtml(version.modified_date)}</td>
+            <td>${actions}</td>
+          </tr>
+        `;
+      }).join('');
+
+      $tbody.html(rows);
+    }
+
+    function renderScript(script) {
+      currentScript = script;
+      scriptSlug = script.slug;
+      ensureGroupOption(script.group || '');
+      $('#script-editor-title').text(script.script_name || "{% trans "Script Editor" %}");
+      fillScriptForm(script);
+      renderScriptAudit(script);
+      renderScriptIssues(script);
+      updateDefaultVersionSummary(script);
+      renderVersionTable(script);
+      $('#existing-script-sections').removeClass('hidden');
+      $('#new-script-version-placeholder').addClass('hidden');
+    }
+
+    function loadScript() {
+      if (!scriptSlug) {
+        return;
+      }
+
+      $.getJSON(getScriptDetailUrl(scriptSlug), function(data) {
+        renderAlert('#script-editor-alert', 'danger', []);
+        renderScript(data.script);
+      }).fail(function(xhr) {
+        var data = xhr.responseJSON || {};
+        renderAlert('#script-editor-alert', 'danger', data.errors || [editorLabels.loadingScriptError]);
+      });
+    }
+
+    function createScript() {
+      var payload = getScriptPayload();
+      var scriptFile = $('#new-script-file')[0].files[0];
+      var scriptName = $.trim(payload.script_name);
+
+      if (!scriptName) {
+        renderAlert('#script-editor-alert', 'danger', [editorLabels.nameRequired]);
+        return;
+      }
+      if ($('#script-group-select').val() === '__new__' && !$.trim($('#script-group-new').val())) {
+        renderAlert('#script-editor-alert', 'danger', [editorLabels.newGroupRequired]);
+        return;
+      }
+      if (!scriptFile) {
+        renderAlert('#script-editor-alert', 'danger', [editorLabels.uploadRequired]);
+        return;
+      }
+
+      var formData = new FormData();
+      $.each(payload, function(key, value) {
+        formData.append(key, value);
+      });
+      formData.append('default', $('#new-script-default-version').is(':checked'));
+      formData.append(scriptName, scriptFile);
+
+      $.ajax({
+        url: scriptApi.addOrUpdate,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(data) {
+          var result = data[0] || {};
+          if (!result.success) {
+            renderAlert('#script-editor-alert', 'danger', result.errors || []);
+            return;
+          }
+
+          window.location = getScriptEditorUrl(result.slug);
+        },
+        error: function(xhr) {
+          var data = xhr.responseJSON || {};
+          renderAlert('#script-editor-alert', 'danger', data.errors || [editorLabels.createScriptError]);
+        }
+      });
+    }
+
+    function saveScriptDetails() {
+      if ($('#script-group-select').val() === '__new__' && !$.trim($('#script-group-new').val())) {
+        renderAlert('#script-editor-alert', 'danger', [editorLabels.newGroupRequired]);
+        return;
+      }
+
+      if (isNewScript) {
+        createScript();
+        return;
+      }
+
+      $.ajax({
+        url: getScriptPatchUrl(scriptSlug),
+        type: 'PATCH',
+        data: JSON.stringify(getScriptPayload()),
+        contentType: 'application/json',
+        success: function(data) {
+          renderScript(data.script);
+          renderAlert('#script-editor-alert', 'success', [editorLabels.saveScriptSuccess]);
+        },
+        error: function(xhr) {
+          var data = xhr.responseJSON || {};
+          renderAlert('#script-editor-alert', 'danger', data.errors || []);
+        }
+      });
+    }
+
+    function patchScriptVersion(versionId, payload) {
+      $.ajax({
+        url: getScriptVersionPatchUrl(scriptSlug, versionId),
+        type: 'PATCH',
+        data: JSON.stringify(payload),
+        contentType: 'application/json',
+        success: function(data) {
+          renderScript(data.script);
+          renderAlert('#script-editor-alert', 'success', [editorLabels.saveVersionSuccess]);
+        },
+        error: function(xhr) {
+          var data = xhr.responseJSON || {};
+          renderAlert('#script-editor-alert', 'danger', data.errors || []);
+        }
+      });
+    }
+
+    function uploadScriptVersion() {
+      if (!currentScript) {
+        return;
+      }
+
+      var scriptFile = $('#upload-script-version-file')[0].files[0];
+      if (!scriptFile) {
+        renderAlert('#script-editor-alert', 'danger', [editorLabels.uploadRequired]);
+        return;
+      }
+
+      var formData = new FormData();
+      formData.append('group', currentScript.group || '');
+      formData.append('ignore_bad_imports', currentScript.ignore_bad_imports);
+      formData.append('default', $('#upload-script-version-default').is(':checked'));
+      formData.append(currentScript.script_name, scriptFile);
+
+      $.ajax({
+        url: scriptApi.addOrUpdate,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(data) {
+          var result = data[0] || {};
+          if (!result.success) {
+            renderAlert('#script-editor-alert', 'danger', result.errors || []);
+            return;
+          }
+
+          $('#upload-script-version-file').val('');
+          loadScript();
+          renderAlert('#script-editor-alert', 'success', [editorLabels.uploadVersionSuccess]);
+        },
+        error: function(xhr) {
+          var data = xhr.responseJSON || {};
+          renderAlert('#script-editor-alert', 'danger', data.errors || []);
+        }
+      });
+    }
+
+    $(document).on('click', '.set-default-script-version', function() {
+      patchScriptVersion($(this).data('version-id'), { default_version: true });
+    });
+
+    $(document).on('click', '.disable-script-version', function() {
+      patchScriptVersion($(this).data('version-id'), { is_active: false });
+    });
+
+    $(document).on('click', '.enable-script-version', function() {
+      patchScriptVersion($(this).data('version-id'), { is_active: true });
+    });
+
+    $('#script-group-select').on('change', toggleNewGroupInput);
+    $('#save-script-details').on('click', saveScriptDetails);
+    $('#upload-script-version').on('click', uploadScriptVersion);
+
+    $(document).ready(function() {
+      toggleNewGroupInput();
+      if (!isNewScript) {
+        loadScript();
+      }
+    });
+  </script>
+{% endblock inline_js %}

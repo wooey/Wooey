@@ -33,9 +33,9 @@ services:
       - 15672:15672
 
   db:
-    image: postgres:13.10
+    image: postgres:18.3
     volumes:
-      - wooey_db:/var/lib/postgresql/data
+      - wooey_db:/var/lib/postgresql
     environment:
       POSTGRES_USER: wooey
       POSTGRES_PASSWORD: wooey

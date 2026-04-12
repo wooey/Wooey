@@ -23,10 +23,12 @@ from django.conf import settings
 from django.core.exceptions import (
     MultipleObjectsReturned,
     ObjectDoesNotExist,
+    SuspiciousFileOperation,
     ValidationError,
 )
 from django.core.files import File
 from django.core.files.storage import default_storage
+from django.core.files.utils import validate_file_name
 from django.db import transaction
 from django.db.models import Q
 from django.db.utils import OperationalError
@@ -76,26 +78,7 @@ def get_storage(local=True):
     return storage
 
 
-def normalize_path_parts(path):
-    normalized = path.strip()
-    if os.path.altsep:
-        normalized = normalized.replace(os.path.altsep, os.path.sep)
-    normalized = os.path.normpath(normalized)
-    return [
-        part for part in normalized.split(os.path.sep) if part and part != os.curdir
-    ]
-
-
-def find_path_subsequence(parts, expected_parts):
-    if not expected_parts or len(parts) < len(expected_parts):
-        return None
-    for index in range(len(parts) - len(expected_parts) + 1):
-        if parts[index : index + len(expected_parts)] == expected_parts:
-            return index
-    return None
-
-
-def normalize_user_file_reference(value):
+def normalize_storage_name_reference(value, storage):
     if not isinstance(value, str):
         raise ValidationError(_("Invalid file reference."))
 
@@ -103,57 +86,69 @@ def normalize_user_file_reference(value):
     if not raw_value:
         raise ValidationError(_("Invalid file reference."))
 
-    if os.path.expanduser(raw_value) != raw_value:
-        raise ValidationError(_("Invalid file reference."))
-
-    drive, tail = os.path.splitdrive(raw_value)
-    if drive and not os.path.isabs(raw_value):
-        raise ValidationError(_("Invalid file reference."))
-
-    allowed_parts = normalize_path_parts(wooey_settings.WOOEY_FILE_DIR)
-    if not allowed_parts:
-        raise ValidationError(_("Invalid file reference."))
-
-    if os.path.isabs(raw_value):
-        media_root = os.path.realpath(settings.MEDIA_ROOT)
-        candidate = os.path.realpath(raw_value)
-        try:
-            inside_media_root = (
-                os.path.commonpath([candidate, media_root]) == media_root
-            )
-        except ValueError:
-            inside_media_root = False
-        if not inside_media_root:
+    try:
+        normalized = validate_file_name(
+            raw_value.replace("\\", "/"), allow_relative_path=True
+        )
+    except SuspiciousFileOperation:
+        if not os.path.isabs(raw_value):
             raise ValidationError(_("Invalid file reference."))
-        parts = normalize_path_parts(os.path.relpath(candidate, media_root))
-    else:
-        parts = normalize_path_parts(raw_value)
+        return None
 
-    if not parts:
-        raise ValidationError(_("Invalid file reference."))
-    if any(part == os.pardir for part in parts):
-        raise ValidationError(_("Invalid file reference."))
+    return posixpath.normpath(storage.generate_filename(normalized).replace("\\", "/"))
 
-    allowed_root_index = find_path_subsequence(parts, allowed_parts)
-    if allowed_root_index is None:
-        raise ValidationError(_("Invalid file reference."))
 
-    return posixpath.join(*parts[allowed_root_index:])
+def storage_reference_matches(raw_value, stored_name, storage):
+    raw_value = raw_value.strip()
+    if not raw_value:
+        return False
+
+    if raw_value == stored_name or raw_value.replace("\\", "/") == stored_name:
+        return True
+
+    try:
+        storage_path = storage.path(stored_name)
+    except Exception:
+        return False
+
+    return os.path.normcase(os.path.normpath(raw_value)) == os.path.normcase(
+        os.path.normpath(storage_path)
+    )
 
 
 def get_authorized_user_file_reference(value, user=None):
     from ..models import UserFile
 
-    normalized = normalize_user_file_reference(value)
+    storage = get_storage(local=False)
     lookup_user = user if user is not None else AnonymousUser()
-    user_files = UserFile.objects.select_related("job").filter(
-        system_file__filepath=normalized
-    )
-    if not user_files.exists():
+    raw_value = value.strip() if isinstance(value, str) else value
+    basename = posixpath.basename(str(raw_value).replace("\\", "/"))
+
+    user_files = UserFile.objects.select_related("job", "system_file")
+    if basename and basename not in {".", ".."}:
+        user_files = user_files.filter(filename=basename)
+
+    matching_files = []
+    normalized_name = normalize_storage_name_reference(value, storage)
+    if normalized_name is not None:
+        matching_files.extend(
+            user_files.filter(system_file__filepath=normalized_name).distinct()
+        )
+
+    if not matching_files:
+        matching_files = [
+            i
+            for i in user_files
+            if storage_reference_matches(
+                str(raw_value), i.system_file.filepath.name, storage
+            )
+        ]
+
+    if not matching_files:
         raise ValidationError(_("Referenced file could not be found."))
-    if not any(i.job.can_user_view(lookup_user) for i in user_files):
+    if not any(i.job.can_user_view(lookup_user) for i in matching_files):
         raise ValidationError(_("You are not permitted to access this file."))
-    return normalized
+    return matching_files[0].system_file.filepath.name
 
 
 def purge_output(job=None):

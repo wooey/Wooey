@@ -4,6 +4,7 @@ import errno
 import filetype
 import json
 import os
+import posixpath
 import re
 import sys
 import traceback
@@ -75,6 +76,25 @@ def get_storage(local=True):
     return storage
 
 
+def normalize_path_parts(path):
+    normalized = path.strip()
+    if os.path.altsep:
+        normalized = normalized.replace(os.path.altsep, os.path.sep)
+    normalized = os.path.normpath(normalized)
+    return [
+        part for part in normalized.split(os.path.sep) if part and part != os.curdir
+    ]
+
+
+def find_path_subsequence(parts, expected_parts):
+    if not expected_parts or len(parts) < len(expected_parts):
+        return None
+    for index in range(len(parts) - len(expected_parts) + 1):
+        if parts[index : index + len(expected_parts)] == expected_parts:
+            return index
+    return None
+
+
 def normalize_user_file_reference(value):
     if not isinstance(value, str):
         raise ValidationError(_("Invalid file reference."))
@@ -83,9 +103,18 @@ def normalize_user_file_reference(value):
     if not raw_value:
         raise ValidationError(_("Invalid file reference."))
 
-    allowed_root = wooey_settings.WOOEY_FILE_DIR.strip("/").replace("\\", "/")
+    if os.path.expanduser(raw_value) != raw_value:
+        raise ValidationError(_("Invalid file reference."))
 
-    if os.path.isabs(raw_value) or re.match(r"^[A-Za-z]:[\\/]", raw_value):
+    drive, tail = os.path.splitdrive(raw_value)
+    if drive and not os.path.isabs(raw_value):
+        raise ValidationError(_("Invalid file reference."))
+
+    allowed_parts = normalize_path_parts(wooey_settings.WOOEY_FILE_DIR)
+    if not allowed_parts:
+        raise ValidationError(_("Invalid file reference."))
+
+    if os.path.isabs(raw_value):
         media_root = os.path.realpath(settings.MEDIA_ROOT)
         candidate = os.path.realpath(raw_value)
         try:
@@ -96,31 +125,20 @@ def normalize_user_file_reference(value):
             inside_media_root = False
         if not inside_media_root:
             raise ValidationError(_("Invalid file reference."))
-        normalized = os.path.relpath(candidate, media_root).replace("\\", "/")
-        allowed_root_index = normalized.find("/{}/".format(allowed_root))
-        if allowed_root_index >= 0:
-            normalized = normalized[allowed_root_index + 1 :]
-        elif normalized.endswith("/{}".format(allowed_root)):
-            normalized = allowed_root
+        parts = normalize_path_parts(os.path.relpath(candidate, media_root))
     else:
-        normalized = raw_value.replace("\\", "/")
+        parts = normalize_path_parts(raw_value)
 
-    if normalized.startswith(("~", "/")):
-        raise ValidationError(_("Invalid file reference."))
-
-    parts = [part for part in normalized.split("/") if part and part != "."]
     if not parts:
         raise ValidationError(_("Invalid file reference."))
-    if any(part == ".." or part.startswith("~") for part in parts):
+    if any(part == os.pardir for part in parts):
         raise ValidationError(_("Invalid file reference."))
 
-    normalized = "/".join(parts)
-    if normalized != allowed_root and not normalized.startswith(
-        "{}/".format(allowed_root)
-    ):
+    allowed_root_index = find_path_subsequence(parts, allowed_parts)
+    if allowed_root_index is None:
         raise ValidationError(_("Invalid file reference."))
 
-    return normalized
+    return posixpath.join(*parts[allowed_root_index:])
 
 
 def get_authorized_user_file_reference(value, user=None):

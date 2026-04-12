@@ -550,6 +550,22 @@ class TestApiKeyViews(TestCase):
     def setUp(self):
         self.request = RequestFactory()
 
+    def test_requires_authentication_with_json_response(self):
+        url = reverse("wooey:create_api_key")
+        request = self.request.post(url, data={"name": "test-key"})
+        request.user = AnonymousUser()
+
+        response = wooey_views.create_api_key(request)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            json.loads(response.content.decode("utf-8")),
+            {
+                "valid": False,
+                "errors": {"__all__": ["Must be authenticated to use this method."]},
+            },
+        )
+
     def test_can_create_api_key(self):
         url = reverse("wooey:create_api_key")
         request = self.request.post(url, data={"name": "test-key"})
@@ -637,6 +653,18 @@ class TestProfileView(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.context_data["is_new_script"])
         self.assertEqual(response.context_data["script_slug"], "test-script")
+        self.assertEqual(
+            response.context_data["virtual_environment_defaults"]["python_binary"],
+            settings.WOOEY_VIRTUAL_ENVIRONMENT_PYTHON_BINARY,
+        )
+        self.assertEqual(
+            response.context_data["virtual_environment_defaults"]["venv_directory"],
+            settings.WOOEY_VIRTUAL_ENVIRONMENT_DIRECTORY,
+        )
+        self.assertEqual(
+            response.context_data["virtual_environment_help_texts"]["python_binary"],
+            models.VirtualEnvironment._meta.get_field("python_binary").help_text,
+        )
 
     def test_non_staff_cannot_view_script_editor(self):
         request_factory = RequestFactory()

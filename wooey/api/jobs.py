@@ -5,7 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from .. import models
-from ..utils import requires_login
+from .utils import requires_login
 
 
 @csrf_exempt

@@ -26,6 +26,22 @@ from ..models import (
 from .. import settings as wooey_settings
 
 
+def _get_virtual_environment_editor_context():
+    help_text_fields = ("name", "python_binary", "requirements", "venv_directory")
+    return {
+        "virtual_environment_defaults": {
+            "python_binary": VirtualEnvironment.get_default_python_binary(),
+            "venv_directory": VirtualEnvironment.get_default_venv_directory(),
+        },
+        "virtual_environment_help_texts": {
+            field_name: force_str(
+                VirtualEnvironment._meta.get_field(field_name).help_text
+            )
+            for field_name in help_text_fields
+        },
+    }
+
+
 class WooeyScriptBase(DetailView):
     model = Script
     slug_field = "slug"
@@ -249,6 +265,8 @@ class WooeyProfileView(TemplateView):
 
         ctx["is_logged_in_user"] = is_logged_in_user
         ctx["can_manage_scripts"] = is_logged_in_user and self.request.user.is_staff
+        if ctx["can_manage_scripts"]:
+            ctx.update(_get_virtual_environment_editor_context())
 
         return ctx
 
@@ -273,6 +291,7 @@ class ScriptEditorView(TemplateView):
         ctx["virtual_environments"] = list(
             VirtualEnvironment.objects.order_by("name", "pk").values("id", "name")
         )
+        ctx.update(_get_virtual_environment_editor_context())
         return ctx
 
 

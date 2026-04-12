@@ -1,6 +1,7 @@
 __author__ = "chris"
 
 import os
+import sys
 import tempfile
 
 from django.conf import settings
@@ -45,6 +46,9 @@ WOOEY_SITE_NAME = get("WOOEY_SITE_NAME", _("Wooey!"))
 WOOEY_SITE_TAG = get("WOOEY_SITE_TAG", _("A web UI for Python scripts"))
 
 # Virtual Environment Settings
+WOOEY_VIRTUAL_ENVIRONMENT_PYTHON_BINARY = get(
+    "WOOEY_VIRTUAL_ENVIRONMENT_PYTHON_BINARY", sys.executable
+)
 WOOEY_VIRTUAL_ENVIRONMENT_DIRECTORY = get(
     "WOOEY_VIRTUAL_ENVIRONMENT_DIRECTORY", tempfile.gettempdir()
 )

@@ -785,6 +785,14 @@ class VirtualEnvironment(models.Model):
         verbose_name = _("virtual environment")
         verbose_name_plural = _("virtual environments")
 
+    @classmethod
+    def get_default_python_binary(cls):
+        return wooey_settings.WOOEY_VIRTUAL_ENVIRONMENT_PYTHON_BINARY
+
+    @classmethod
+    def get_default_venv_directory(cls):
+        return wooey_settings.WOOEY_VIRTUAL_ENVIRONMENT_DIRECTORY
+
     def get_venv_python_binary(self):
         return os.path.join(
             self.get_install_path(),

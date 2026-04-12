@@ -1,10 +1,7 @@
 from __future__ import absolute_import
 import os
-import sys
 
 from django.contrib.admin import ModelAdmin, site, TabularInline
-
-from wooey import settings as wooey_settings
 
 from .models import (
     Script,
@@ -130,8 +127,8 @@ class FileAdmin(ModelAdmin):
 class VirtualEnvironmentAdmin(ModelAdmin):
     def get_changeform_initial_data(self, request):
         return {
-            "python_binary": sys.executable,
-            "venv_directory": wooey_settings.WOOEY_VIRTUAL_ENVIRONMENT_DIRECTORY,
+            "python_binary": VirtualEnvironment.get_default_python_binary(),
+            "venv_directory": VirtualEnvironment.get_default_venv_directory(),
         }
 
 

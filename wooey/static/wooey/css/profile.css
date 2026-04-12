@@ -11,7 +11,8 @@
 	margin-top: 0;
 }
 
-.script-management-row {
+.script-management-row,
+.virtual-environment-row {
 	cursor: pointer;
 }
 

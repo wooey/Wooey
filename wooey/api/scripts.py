@@ -4,7 +4,7 @@ import os
 import shlex
 from itertools import groupby
 
-from django.http import JsonResponse, QueryDict
+from django.http import JsonResponse
 from django.utils.encoding import force_str
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
@@ -13,15 +13,13 @@ from django.views.decorators.http import require_http_methods
 from .. import errors, models
 from .. import settings as wooey_settings
 from ..backend import utils
-from ..utils import requires_login
 from .forms import (
     AddScriptForm,
     ScriptPatchForm,
     ScriptVersionPatchForm,
     SubmitForm,
-    VirtualEnvironmentCreateForm,
-    VirtualEnvironmentPatchForm,
 )
+from .utils import get_submitted_data, requires_login, requires_staff
 
 
 def create_argparser(script_version):
@@ -75,30 +73,6 @@ def create_argparser(script_version):
     return parser
 
 
-def _staff_required_response():
-    return JsonResponse(
-        {
-            "valid": False,
-            "errors": {
-                "__all__": [
-                    force_str(_("You do not have permission to manage scripts."))
-                ]
-            },
-        },
-        status=403,
-    )
-
-
-def _get_submitted_data(request):
-    content_type = request.headers.get("Content-Type", "").lower()
-    if "application/json" in content_type:
-        body = request.body.decode("utf-8") if request.body else "{}"
-        return json.loads(body or "{}")
-    if request.method == "PATCH":
-        return QueryDict(request.body).dict()
-    return request.POST.dict()
-
-
 def _get_script_or_error(slug):
     try:
         return (
@@ -132,17 +106,6 @@ def _serialize_script_version(script_version):
         "created_by": _serialize_user(script_version.created_by),
         "modified_date": script_version.modified_date,
         "modified_by": _serialize_user(script_version.modified_by),
-    }
-
-
-def _serialize_virtual_environment(virtual_environment):
-    return {
-        "id": virtual_environment.id,
-        "name": virtual_environment.name,
-        "python_binary": virtual_environment.python_binary,
-        "requirements": virtual_environment.requirements or "",
-        "venv_directory": virtual_environment.venv_directory,
-        "install_path": virtual_environment.get_install_path(),
     }
 
 
@@ -250,26 +213,6 @@ def _update_script_metadata(script, updates):
     return script
 
 
-def _get_virtual_environment_or_error(virtual_environment_id):
-    try:
-        return (
-            models.VirtualEnvironment.objects.get(pk=virtual_environment_id),
-            None,
-        )
-    except models.VirtualEnvironment.DoesNotExist:
-        return None, JsonResponse(
-            {
-                "valid": False,
-                "errors": {
-                    "virtual_environment": [
-                        force_str(_("Unable to find virtual environment."))
-                    ]
-                },
-            },
-            status=404,
-        )
-
-
 def _update_script_audit(script, user):
     if script.created_by_id is None:
         script.created_by = user
@@ -286,11 +229,8 @@ def _update_script_version_audit(script_version, user):
 
 @csrf_exempt
 @require_http_methods(["GET"])
-@requires_login
+@requires_staff
 def list_scripts(request):
-    if not request.user.is_staff:
-        return _staff_required_response()
-
     scripts = (
         models.Script.objects.select_related("script_group", "virtual_environment")
         .prefetch_related("script_version")
@@ -303,79 +243,8 @@ def list_scripts(request):
 
 @csrf_exempt
 @require_http_methods(["GET"])
-@requires_login
-def list_virtual_environments(request):
-    if not request.user.is_staff:
-        return _staff_required_response()
-
-    virtual_environments = models.VirtualEnvironment.objects.order_by("name", "pk")
-    return JsonResponse(
-        {
-            "valid": True,
-            "virtual_environments": [
-                _serialize_virtual_environment(virtual_environment)
-                for virtual_environment in virtual_environments
-            ],
-        }
-    )
-
-
-@csrf_exempt
-@require_http_methods(["POST"])
-@requires_login
-def create_virtual_environment(request):
-    if not request.user.is_staff:
-        return _staff_required_response()
-
-    form = VirtualEnvironmentCreateForm(_get_submitted_data(request))
-    if not form.is_valid():
-        return JsonResponse({"valid": False, "errors": form.errors}, status=400)
-
-    virtual_environment = models.VirtualEnvironment.objects.create(**form.cleaned_data)
-    return JsonResponse(
-        {
-            "valid": True,
-            "virtual_environment": _serialize_virtual_environment(virtual_environment),
-        }
-    )
-
-
-@csrf_exempt
-@require_http_methods(["PATCH"])
-@requires_login
-def patch_virtual_environment(request, virtual_environment_id):
-    if not request.user.is_staff:
-        return _staff_required_response()
-
-    virtual_environment, error = _get_virtual_environment_or_error(
-        virtual_environment_id
-    )
-    if error:
-        return error
-
-    form = VirtualEnvironmentPatchForm(_get_submitted_data(request))
-    if not form.is_valid():
-        return JsonResponse({"valid": False, "errors": form.errors}, status=400)
-
-    for field_name, value in form.cleaned_data.items():
-        setattr(virtual_environment, field_name, value)
-    virtual_environment.save()
-
-    return JsonResponse(
-        {
-            "valid": True,
-            "virtual_environment": _serialize_virtual_environment(virtual_environment),
-        }
-    )
-
-
-@csrf_exempt
-@require_http_methods(["GET"])
-@requires_login
+@requires_staff
 def script_detail(request, slug):
-    if not request.user.is_staff:
-        return _staff_required_response()
-
     script, error = _get_script_or_error(slug)
     if error:
         return error
@@ -385,16 +254,13 @@ def script_detail(request, slug):
 
 @csrf_exempt
 @require_http_methods(["PATCH"])
-@requires_login
+@requires_staff
 def patch_script(request, slug):
-    if not request.user.is_staff:
-        return _staff_required_response()
-
     script, error = _get_script_or_error(slug)
     if error:
         return error
 
-    form = ScriptPatchForm(_get_submitted_data(request))
+    form = ScriptPatchForm(get_submitted_data(request))
     if not form.is_valid():
         return JsonResponse({"valid": False, "errors": form.errors}, status=400)
 
@@ -405,11 +271,8 @@ def patch_script(request, slug):
 
 @csrf_exempt
 @require_http_methods(["PATCH"])
-@requires_login
+@requires_staff
 def patch_script_version(request, slug, version_id):
-    if not request.user.is_staff:
-        return _staff_required_response()
-
     try:
         script_version = models.ScriptVersion.objects.select_related("script").get(
             pk=version_id, script__slug=slug
@@ -425,7 +288,7 @@ def patch_script_version(request, slug, version_id):
             status=404,
         )
 
-    form = ScriptVersionPatchForm(_get_submitted_data(request))
+    form = ScriptVersionPatchForm(get_submitted_data(request))
     if not form.is_valid():
         return JsonResponse({"valid": False, "errors": form.errors}, status=400)
 
@@ -607,13 +470,11 @@ def submit_script(request, slug=None):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-@requires_login
+@requires_staff
 def add_or_update_script(request):
-    if not request.user.is_staff:
-        return _staff_required_response()
     files = request.FILES
 
-    form = AddScriptForm(_get_submitted_data(request))
+    form = AddScriptForm(get_submitted_data(request))
     if not form.is_valid():
         return JsonResponse({"valid": False, "errors": form.errors}, status=400)
     if not files:

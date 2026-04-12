@@ -57,6 +57,25 @@
             </div>
 
             <div class="form-group">
+              <label for="script-virtual-environment-select">{% trans "Virtual Environment" %}</label>
+              <div class="input-group">
+                <select class="form-control" id="script-virtual-environment-select">
+                  <option value="">{% trans "No virtual environment" %}</option>
+                  {% for virtual_environment in virtual_environments %}
+                    <option value="{{ virtual_environment.id }}">{{ virtual_environment.name }}</option>
+                  {% endfor %}
+                  <option value="__new__">{% trans "Create new virtual environment..." %}</option>
+                </select>
+                <span class="input-group-btn">
+                  <button type="button" class="btn btn-default" id="refresh-script-virtual-environments">
+                    {% trans "Refresh" %}
+                  </button>
+                </span>
+              </div>
+              <p class="help-block">{% trans "Choose an existing virtual environment for this script. Selecting create new opens virtual environment management in a new tab." %}</p>
+            </div>
+
+            <div class="form-group">
               <label for="script-description">{% trans "Description" %}</label>
               <textarea class="form-control" id="script-description" rows="3"></textarea>
               <p class="help-block">{% trans "This description is shown on the main scripts page." %}</p>
@@ -208,12 +227,17 @@
     var isNewScript = {% if is_new_script %}true{% else %}false{% endif %};
     var scriptSlug = {% if script_slug %}"{{ script_slug|escapejs }}"{% else %}null{% endif %};
     var currentScript = null;
+    var previousVirtualEnvironmentValue = '';
+    var virtualEnvironmentManagementUrl = "{% url "wooey:profile_home" %}#virtual_environments";
     var scriptEditorUrlTemplate = "{% url "wooey:profile_script_editor" slug="__slug__" %}";
     var scriptApi = {
       addOrUpdate: "{% url "wooey:api_add_or_update_script" %}",
       detailTemplate: "{% url "wooey:api_script_detail" slug="__slug__" %}",
       patchTemplate: "{% url "wooey:api_patch_script" slug="__slug__" %}",
       versionPatchTemplate: "{% url "wooey:api_patch_script_version" slug="__slug__" version_id=999999 %}",
+    };
+    var virtualEnvironmentApi = {
+      list: "{% url "wooey:api_list_virtual_environments" %}",
     };
     var editorLabels = {
       defaultVersionPrefix: "{% trans "Default Version" %}",
@@ -228,6 +252,9 @@
       nameRequired: "{% trans "A script name is required." %}",
       newGroupRequired: "{% trans "Please enter a new group name." %}",
       unknownValue: "{% trans "Unknown" %}",
+      noVirtualEnvironment: "{% trans "No virtual environment" %}",
+      createNewVirtualEnvironment: "{% trans "Create new virtual environment..." %}",
+      refreshVirtualEnvironmentsError: "{% trans "Unable to refresh virtual environments." %}",
       setDefault: "{% trans "Set Default" %}",
       enable: "{% trans "Enable" %}",
       disable: "{% trans "Disable" %}",
@@ -354,10 +381,67 @@
       return $('#script-group-select').val();
     }
 
+    function setVirtualEnvironmentValue(virtualEnvironmentId) {
+      previousVirtualEnvironmentValue = virtualEnvironmentId
+        ? String(virtualEnvironmentId)
+        : '';
+      $('#script-virtual-environment-select').val(previousVirtualEnvironmentValue);
+    }
+
+    function getVirtualEnvironmentValue() {
+      var value = $('#script-virtual-environment-select').val();
+      return value === '__new__' ? previousVirtualEnvironmentValue : value;
+    }
+
+    function renderVirtualEnvironmentOptions(virtualEnvironments, selectedValue) {
+      var options = [
+        `<option value="">${escapeHtml(editorLabels.noVirtualEnvironment)}</option>`
+      ];
+
+      $.each(virtualEnvironments || [], function(_, virtualEnvironment) {
+        options.push(
+          `<option value="${escapeHtml(String(virtualEnvironment.id))}">${escapeHtml(virtualEnvironment.name)}</option>`
+        );
+      });
+
+      options.push(
+        `<option value="__new__">${escapeHtml(editorLabels.createNewVirtualEnvironment)}</option>`
+      );
+
+      $('#script-virtual-environment-select').html(options.join(''));
+      setVirtualEnvironmentValue(selectedValue);
+      if (
+        selectedValue &&
+        $('#script-virtual-environment-select').find(`option[value="${selectedValue}"]`).length === 0
+      ) {
+        setVirtualEnvironmentValue('');
+      }
+    }
+
+    function refreshVirtualEnvironmentOptions() {
+      var selectedValue = getVirtualEnvironmentValue();
+      var $refreshButton = $('#refresh-script-virtual-environments');
+      $refreshButton.prop('disabled', true);
+
+      $.getJSON(virtualEnvironmentApi.list, function(data) {
+        renderVirtualEnvironmentOptions(data.virtual_environments || [], selectedValue);
+      }).fail(function(xhr) {
+        var data = xhr.responseJSON || {};
+        renderAlert(
+          '#script-editor-alert',
+          'danger',
+          data.errors || [editorLabels.refreshVirtualEnvironmentsError]
+        );
+      }).always(function() {
+        $refreshButton.prop('disabled', false);
+      });
+    }
+
     function getScriptPayload() {
       return {
         script_name: $('#script-name').val(),
         group: getGroupValue(),
+        virtual_environment: getVirtualEnvironmentValue(),
         script_description: $('#script-description').val(),
         documentation: $('#script-documentation').val(),
         script_order: $('#script-order').val(),
@@ -381,6 +465,7 @@
     function fillScriptForm(script) {
       $('#script-name').val(script.script_name || '');
       setGroupValue(script.group || '');
+      setVirtualEnvironmentValue(script.virtual_environment_id);
       $('#script-description').val(script.script_description || '');
       $('#script-documentation').val(script.documentation || '');
       $('#script-order').val(script.script_order || 1);
@@ -645,6 +730,16 @@
     });
 
     $('#script-group-select').on('change', toggleNewGroupInput);
+    $('#script-virtual-environment-select').on('change', function() {
+      var value = $(this).val();
+      if (value === '__new__') {
+        window.open(virtualEnvironmentManagementUrl, '_blank', 'noopener');
+        $(this).val(previousVirtualEnvironmentValue);
+        return;
+      }
+      previousVirtualEnvironmentValue = value;
+    });
+    $('#refresh-script-virtual-environments').on('click', refreshVirtualEnvironmentOptions);
     $('#save-script-details').on('click', saveScriptDetails);
     $('#upload-script-version').on('click', uploadScriptVersion);
 

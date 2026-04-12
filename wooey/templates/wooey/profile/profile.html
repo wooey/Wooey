@@ -201,6 +201,18 @@
       });
     }
 
+    function updateProfileTabHash(hash) {
+      if (!hash || hash.charAt(0) !== '#') {
+        return;
+      }
+
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', hash);
+      } else {
+        window.location.hash = hash;
+      }
+    }
+
     {% if can_manage_scripts %}
       var scriptEditorUrlTemplate = "{% url "wooey:profile_script_editor" slug="__slug__" %}";
       var scriptPatchUrlTemplate = "{% url "wooey:api_patch_script" slug="__slug__" %}";
@@ -208,6 +220,16 @@
       var virtualEnvironmentApi = {
         list: "{% url "wooey:api_list_virtual_environments" %}",
         create: "{% url "wooey:api_create_virtual_environment" %}",
+      };
+      var virtualEnvironmentDefaults = {
+        python_binary: "{{ virtual_environment_defaults.python_binary|escapejs }}",
+        venv_directory: "{{ virtual_environment_defaults.venv_directory|escapejs }}",
+      };
+      var virtualEnvironmentHelpText = {
+        name: "{{ virtual_environment_help_texts.name|escapejs }}",
+        python_binary: "{{ virtual_environment_help_texts.python_binary|escapejs }}",
+        requirements: "{{ virtual_environment_help_texts.requirements|escapejs }}",
+        venv_directory: "{{ virtual_environment_help_texts.venv_directory|escapejs }}",
       };
       var scriptLabels = {
         healthy: "{% trans "Healthy" %}",
@@ -389,8 +411,8 @@
           {
             id: null,
             name: '',
-            python_binary: 'python3',
-            venv_directory: '',
+            python_binary: virtualEnvironmentDefaults.python_binary,
+            venv_directory: virtualEnvironmentDefaults.venv_directory,
             requirements: '',
             install_path: '',
           },
@@ -426,22 +448,26 @@
                       <div class="form-group">
                         <label>{% trans "Name" %}</label>
                         <input type="text" class="form-control virtual-environment-name-input" value="${escapeHtml(virtualEnvironment.name)}">
+                        <p class="help-block">${escapeHtml(virtualEnvironmentHelpText.name)}</p>
                       </div>
                     </div>
                     <div class="col-md-6">
                       <div class="form-group">
                         <label>{% trans "Python Binary" %}</label>
                         <input type="text" class="form-control virtual-environment-python-binary-input" value="${escapeHtml(virtualEnvironment.python_binary)}">
+                        <p class="help-block">${escapeHtml(virtualEnvironmentHelpText.python_binary)}</p>
                       </div>
                     </div>
                   </div>
                   <div class="form-group">
                     <label>{% trans "Environment Directory" %}</label>
                     <input type="text" class="form-control virtual-environment-directory-input" value="${escapeHtml(virtualEnvironment.venv_directory)}">
+                    <p class="help-block">${escapeHtml(virtualEnvironmentHelpText.venv_directory)}</p>
                   </div>
                   <div class="form-group">
                     <label>{% trans "Requirements" %}</label>
                     <textarea class="form-control virtual-environment-requirements-input" rows="5">${escapeHtml(virtualEnvironment.requirements)}</textarea>
+                    <p class="help-block">${escapeHtml(virtualEnvironmentHelpText.requirements)}</p>
                   </div>
                   ${installPath}
                   <div class="btn-group" role="group" aria-label="{% trans "Virtual Environment Actions" %}">
@@ -575,7 +601,16 @@
         if ($(event.target).closest('button, input, textarea, select, a, label').length) {
           return;
         }
-        var virtualEnvironment = findVirtualEnvironment($(this).data('virtual-environment-id'));
+        var virtualEnvironmentId = $(this).data('virtual-environment-id');
+        if (
+          activeVirtualEnvironmentEditor &&
+          String(activeVirtualEnvironmentEditor.id) === String(virtualEnvironmentId)
+        ) {
+          closeVirtualEnvironmentEditor();
+          return;
+        }
+
+        var virtualEnvironment = findVirtualEnvironment(virtualEnvironmentId);
         if (virtualEnvironment) {
           openVirtualEnvironmentEditor(virtualEnvironment);
         }
@@ -600,7 +635,16 @@
         if ($tab.length) {
           $tab.tab('show');
         }
+      } else {
+        var $activeTab = $('.nav-pills li.active a[data-toggle="tab"]').first();
+        if ($activeTab.length) {
+          updateProfileTabHash($activeTab.attr('href'));
+        }
       }
+
+      $('.nav-pills a[data-toggle="tab"]').on('shown.bs.tab', function(event) {
+        updateProfileTabHash($(event.target).attr('href'));
+      });
 
       {% if can_manage_scripts %}
         loadScriptManagement();

@@ -262,6 +262,18 @@ class TestScriptAddition(mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTes
 class TestScriptManagementApi(
     mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTestCase
 ):
+    def test_management_endpoints_require_authentication(self):
+        response = Client().get(reverse("wooey:api_list_scripts"))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.json(),
+            {
+                "valid": False,
+                "errors": {"__all__": ["Must be authenticated to use this method."]},
+            },
+        )
+
     def test_management_endpoints_require_staff(self):
         list_response = self.client.get(reverse("wooey:api_list_scripts"))
         detail_response = self.client.get(
@@ -553,6 +565,81 @@ class TestScriptManagementApi(
         detail = detail_response.json()["script"]
         self.assertEqual(detail["created_by"], self.api_key.profile.user.username)
         self.assertEqual(detail["modified_by"], other_key.profile.user.username)
+
+
+class TestVirtualEnvironmentManagementApi(ApiTestMixin, TransactionTestCase):
+    def test_virtual_environment_endpoints_require_staff(self):
+        virtual_environment = factories.VirtualEnvFactory()
+
+        list_response = self.client.get(reverse("wooey:api_list_virtual_environments"))
+        create_response = self.client.post(
+            reverse("wooey:api_create_virtual_environment"),
+            data={
+                "name": "new-venv",
+                "python_binary": "/usr/bin/python3",
+                "venv_directory": "/tmp",
+            },
+        )
+        patch_response = self.client.generic(
+            "PATCH",
+            reverse(
+                "wooey:api_patch_virtual_environment",
+                kwargs={"virtual_environment_id": virtual_environment.id},
+            ),
+            data=json.dumps({"name": "updated-venv"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(list_response.status_code, 403)
+        self.assertEqual(create_response.status_code, 403)
+        self.assertEqual(patch_response.status_code, 403)
+
+    def test_can_create_list_and_patch_virtual_environments(self):
+        self.make_staff()
+
+        create_response = self.client.post(
+            reverse("wooey:api_create_virtual_environment"),
+            data={
+                "name": "new-venv",
+                "python_binary": "/usr/bin/python3",
+                "requirements": "django\ncelery",
+                "venv_directory": "/tmp",
+            },
+        )
+        self.assertEqual(create_response.status_code, 200)
+        virtual_environment_id = create_response.json()["virtual_environment"]["id"]
+
+        list_response = self.client.get(reverse("wooey:api_list_virtual_environments"))
+        self.assertEqual(list_response.status_code, 200)
+        listed_virtual_environment = next(
+            virtual_environment
+            for virtual_environment in list_response.json()["virtual_environments"]
+            if virtual_environment["id"] == virtual_environment_id
+        )
+        self.assertEqual(listed_virtual_environment["name"], "new-venv")
+        self.assertEqual(listed_virtual_environment["requirements"], "django\ncelery")
+
+        patch_response = self.client.generic(
+            "PATCH",
+            reverse(
+                "wooey:api_patch_virtual_environment",
+                kwargs={"virtual_environment_id": virtual_environment_id},
+            ),
+            data=json.dumps(
+                {
+                    "name": "updated-venv",
+                    "python_binary": "/usr/bin/python3.11",
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(patch_response.status_code, 200)
+
+        virtual_environment = models.VirtualEnvironment.objects.get(
+            pk=virtual_environment_id
+        )
+        self.assertEqual(virtual_environment.name, "updated-venv")
+        self.assertEqual(virtual_environment.python_binary, "/usr/bin/python3.11")
 
 
 class TestScriptSubmission(

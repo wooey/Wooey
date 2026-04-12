@@ -140,7 +140,9 @@ class WooeyScriptBase(DetailView):
         form = utils.get_master_form(
             pk=int(post["wooey_type"]), parser=int(post.get("wooey_parser", 0))
         )
-        utils.validate_form(form=form, data=post, files=request.FILES)
+        utils.validate_form(
+            form=form, data=post, files=request.FILES, user=request.user
+        )
 
         if not form.errors:
             version_pk = form.cleaned_data.get("wooey_type")

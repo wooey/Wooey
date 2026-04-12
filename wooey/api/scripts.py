@@ -171,44 +171,44 @@ def _serialize_script(script, include_versions=False):
 
 
 def _update_script_metadata(script, updates):
-    changed = False
+    updated_fields = []
 
     if "script_name" in updates:
         script.script_name = updates["script_name"]
-        changed = True
+        updated_fields.append("script_name")
     if "group" in updates:
         group_name = updates["group"] or wooey_settings.WOOEY_DEFAULT_SCRIPT_GROUP
         script.script_group, _ = models.ScriptGroup.objects.get_or_create(
             group_name=group_name
         )
-        changed = True
+        updated_fields.append("script_group")
     if "virtual_environment" in updates:
         script.virtual_environment = updates["virtual_environment"]
-        changed = True
+        updated_fields.append("virtual_environment")
     if "script_description" in updates:
         script.script_description = updates["script_description"]
-        changed = True
+        updated_fields.append("script_description")
     if "documentation" in updates:
         script.documentation = updates["documentation"]
-        changed = True
+        updated_fields.append("documentation")
     if "script_order" in updates:
         script.script_order = updates["script_order"]
-        changed = True
+        updated_fields.append("script_order")
     if "is_active" in updates:
         script.is_active = updates["is_active"]
-        changed = True
+        updated_fields.append("is_active")
     if "ignore_bad_imports" in updates:
         script.ignore_bad_imports = updates["ignore_bad_imports"]
-        changed = True
+        updated_fields.append("ignore_bad_imports")
     if "execute_full_path" in updates:
         script.execute_full_path = updates["execute_full_path"]
-        changed = True
+        updated_fields.append("execute_full_path")
     if "save_path" in updates:
         script.save_path = updates["save_path"] or None
-        changed = True
+        updated_fields.append("save_path")
 
-    if changed:
-        script.save()
+    if updated_fields:
+        script.save(update_fields=updated_fields)
 
     return script
 
@@ -441,7 +441,9 @@ def submit_script(request, slug=None):
                         files.setlist(form_slug, files.pop(form_value))
                         wooey_form_data[form_slug] = [""]
 
-            utils.validate_form(form=form, data=wooey_form_data, files=files)
+            utils.validate_form(
+                form=form, data=wooey_form_data, files=files, user=request.user
+            )
 
             if not form.errors:
                 job = utils.create_wooey_job(

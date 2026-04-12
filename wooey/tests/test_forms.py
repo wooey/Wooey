@@ -1,5 +1,6 @@
 import os
 
+from django.contrib.auth.models import AnonymousUser
 from django.test import TransactionTestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils.datastructures import MultiValueDict
@@ -302,3 +303,94 @@ class FormTestCase(
         self.assertIn(sp2_slug, form.fields)
         self.assertNotIn(sp1_slug, form.fields)
         self.assertIn(test_arg_slug, form.fields)
+
+    def test_validate_form_rejects_path_escape_in_file_reference(self):
+        script_version = self.choice_script
+        file_slug = test_utils.get_subparser_form_slug(
+            script_version, "multiple_file_choices"
+        )
+        form = utils.get_master_form(script_version=script_version)
+        qdict = self.get_mvdict(
+            {
+                file_slug: ["../outside.txt"],
+                "wooey_type": [script_version.pk],
+                "job_name": ["abc"],
+            }
+        )
+
+        utils.validate_form(form=form, data=qdict, user=AnonymousUser())
+
+        self.assertFalse(form.is_valid())
+        self.assertIn(file_slug, form.errors)
+
+    def test_validate_form_rejects_unauthorized_file_reference(self):
+        script_version = self.choice_script
+        file_slug = test_utils.get_subparser_form_slug(
+            script_version, "multiple_file_choices"
+        )
+        owner = factories.UserFactory(username="owner")
+        attacker = factories.UserFactory(username="attacker")
+        uploaded_file = SimpleUploadedFile("secret.txt", b"secret-data")
+        job = utils.create_wooey_job(
+            user=owner,
+            script_version_pk=script_version.pk,
+            data={
+                file_slug: [uploaded_file],
+                "job_name": "owner-job",
+                "wooey_type": script_version.pk,
+            },
+        )
+        stored_file = next(
+            i.value.name
+            for i in job.get_parameters()
+            if i.parameter.form_slug == file_slug
+        )
+
+        form = utils.get_master_form(script_version=script_version)
+        qdict = self.get_mvdict(
+            {
+                file_slug: [stored_file],
+                "wooey_type": [script_version.pk],
+                "job_name": ["attacker-job"],
+            }
+        )
+
+        utils.validate_form(form=form, data=qdict, user=attacker)
+
+        self.assertFalse(form.is_valid())
+        self.assertIn(file_slug, form.errors)
+
+    def test_validate_form_allows_authorized_file_reference(self):
+        script_version = self.choice_script
+        file_slug = test_utils.get_subparser_form_slug(
+            script_version, "multiple_file_choices"
+        )
+        owner = factories.UserFactory(username="owner-allowed")
+        uploaded_file = SimpleUploadedFile("owned.txt", b"owned-data")
+        job = utils.create_wooey_job(
+            user=owner,
+            script_version_pk=script_version.pk,
+            data={
+                file_slug: [uploaded_file],
+                "job_name": "owner-job",
+                "wooey_type": script_version.pk,
+            },
+        )
+        stored_file = next(
+            i.value.name
+            for i in job.get_parameters()
+            if i.parameter.form_slug == file_slug
+        )
+
+        form = utils.get_master_form(script_version=script_version)
+        qdict = self.get_mvdict(
+            {
+                file_slug: [stored_file],
+                "wooey_type": [script_version.pk],
+                "job_name": ["owner-clone"],
+            }
+        )
+
+        utils.validate_form(form=form, data=qdict, user=owner)
+
+        self.assertTrue(form.is_valid(), form.errors)

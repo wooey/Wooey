@@ -17,8 +17,13 @@ from operator import itemgetter
 
 from clinto.parser import Parser
 from clinto.parsers.constants import SPECIFY_EVERY_PARAM
+from django.contrib.auth.models import AnonymousUser
 from django.conf import settings
-from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
+from django.core.exceptions import (
+    MultipleObjectsReturned,
+    ObjectDoesNotExist,
+    ValidationError,
+)
 from django.core.files import File
 from django.core.files.storage import default_storage
 from django.db import transaction
@@ -68,6 +73,69 @@ def get_storage(local=True):
     else:
         storage = default_storage
     return storage
+
+
+def normalize_user_file_reference(value):
+    if not isinstance(value, str):
+        raise ValidationError(_("Invalid file reference."))
+
+    raw_value = value.strip()
+    if not raw_value:
+        raise ValidationError(_("Invalid file reference."))
+
+    allowed_root = wooey_settings.WOOEY_FILE_DIR.strip("/").replace("\\", "/")
+
+    if os.path.isabs(raw_value) or re.match(r"^[A-Za-z]:[\\/]", raw_value):
+        media_root = os.path.realpath(settings.MEDIA_ROOT)
+        candidate = os.path.realpath(raw_value)
+        try:
+            inside_media_root = (
+                os.path.commonpath([candidate, media_root]) == media_root
+            )
+        except ValueError:
+            inside_media_root = False
+        if not inside_media_root:
+            raise ValidationError(_("Invalid file reference."))
+        normalized = os.path.relpath(candidate, media_root).replace("\\", "/")
+        allowed_root_index = normalized.find("/{}/".format(allowed_root))
+        if allowed_root_index >= 0:
+            normalized = normalized[allowed_root_index + 1 :]
+        elif normalized.endswith("/{}".format(allowed_root)):
+            normalized = allowed_root
+    else:
+        normalized = raw_value.replace("\\", "/")
+
+    if normalized.startswith(("~", "/")):
+        raise ValidationError(_("Invalid file reference."))
+
+    parts = [part for part in normalized.split("/") if part and part != "."]
+    if not parts:
+        raise ValidationError(_("Invalid file reference."))
+    if any(part == ".." or part.startswith("~") for part in parts):
+        raise ValidationError(_("Invalid file reference."))
+
+    normalized = "/".join(parts)
+    if normalized != allowed_root and not normalized.startswith(
+        "{}/".format(allowed_root)
+    ):
+        raise ValidationError(_("Invalid file reference."))
+
+    return normalized
+
+
+def get_authorized_user_file_reference(value, user=None):
+    from ..models import UserFile
+
+    normalized = normalize_user_file_reference(value)
+    lookup_user = user if user is not None else AnonymousUser()
+    user_files = UserFile.objects.select_related("job").filter(
+        system_file__filepath=normalized
+    )
+    if not user_files.exists():
+        raise ValidationError(_("Referenced file could not be found."))
+    if not any(i.job.can_user_view(lookup_user) for i in user_files):
+        raise ValidationError(_("You are not permitted to access this file."))
+    return normalized
 
 
 def purge_output(job=None):
@@ -228,10 +296,11 @@ def get_form_groups(script_version=None, initial_dict=None, render_fn=None):
     )
 
 
-def validate_form(form=None, data=None, files=None):
+def validate_form(form=None, data=None, files=None, user=None):
+    files = files if files is not None else {}
     form.add_wooey_fields()
     form.data = data if data is not None else {}
-    form.files = files if files is not None else {}
+    form.files = files
     form.is_bound = True
     form.full_clean()
 
@@ -260,8 +329,22 @@ def validate_form(form=None, data=None, files=None):
                 ):
                     # this is a previously set field, so a cloned job
                     if new_value is not None:
-                        cleaned_values.append(get_storage(local=False).open(new_value))
-                    to_delete.append(field)
+                        try:
+                            file_reference = get_authorized_user_file_reference(
+                                new_value, user=user
+                            )
+                            cleaned_values.append(
+                                get_storage(local=False).open(file_reference)
+                            )
+                        except (IOError, ValidationError) as exc:
+                            form.add_error(
+                                field,
+                                exc.messages[0]
+                                if isinstance(exc, ValidationError)
+                                else _("Referenced file could not be found."),
+                            )
+                    if cleaned_values:
+                        to_delete.append(field)
             if cleaned_values:
                 form.cleaned_data[field] = cleaned_values
     for field in to_delete:

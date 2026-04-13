@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+
 import os
 import subprocess
 import sys
@@ -9,18 +10,17 @@ import zipfile
 from datetime import timedelta
 from threading import Thread
 
-from django.utils.text import get_valid_filename
-from django.core.files import File
-from django.conf import settings
-from django.db.models import F
-from django.utils.translation import gettext_lazy as _
-
 from celery import app
 from celery.schedules import crontab
 from celery.signals import worker_process_init
+from django.conf import settings
+from django.core.files import File
+from django.db.models import F
+from django.utils.text import get_valid_filename
+from django.utils.translation import gettext_lazy as _
 
-from .backend import utils
 from . import settings as wooey_settings
+from .backend import utils
 
 try:
     from Queue import Empty, Queue
@@ -349,6 +349,7 @@ def submit_script(**kwargs):
 @celery_app.task()
 def cleanup_wooey_jobs(**kwargs):
     from django.utils import timezone
+
     from .models import WooeyJob
 
     cleanup_settings = wooey_settings.WOOEY_JOB_EXPIRATION
@@ -363,11 +364,6 @@ def cleanup_wooey_jobs(**kwargs):
         WooeyJob.objects.filter(
             user__isnull=False, created_date__lte=now - user_settings
         ).delete()
-
-
-@celery_app.task()
-def cleanup_dead_jobs():
-    return cleanup_stuck_jobs()
 
 
 def _extract_task_ids(worker_info):
@@ -394,6 +390,7 @@ def cleanup_stuck_jobs():
     This cleans up jobs that are stuck in limbo between Wooey and the task broker.
     """
     from django.utils import timezone
+
     from .models import WooeyJob
 
     inspect = celery_app.control.inspect()

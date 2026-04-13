@@ -29,14 +29,24 @@ the *Main Parser Parameter* button. To select and parameterize a given
 subparser, the subparser command and its parameters are available by
 selecting it via the dropdown menu.
 
+Staff/Admin profile tools
+-------------------------
+
+Users marked as staff/admin in Django have additional profile tabs for
+``Scripts`` and ``Virtual Environments``. These tabs provide the web interface
+for uploading scripts, editing their metadata, managing versions, and defining
+virtual environments for script execution. See :doc:`scripts` and
+:doc:`venv_setup` for the full workflow.
+
 Running previous versions of a script
 -------------------------------------
 
-Previously uploaded scripts are kept in Wooey, providing a mechanism for
-to evaluate script changes and give end-users an opportunity to provide
-feedback. In the admin interface, there is an option to set a script version
-as the *default* version to use, but previous versions are accessible from
-the main UI via the black down array next to the script name. There are 2
+Previously uploaded scripts are kept in Wooey, providing a mechanism to
+evaluate script changes and give end-users an opportunity to provide
+feedback. Staff/admin users can set the *default* version from the script
+editor in the profile ``Scripts`` tab, while previous versions remain
+accessible from the main UI via the black down array next to the script name.
+There are 2
 deliniations specified here -- the *Script Version*, and the *Script Iteration*.
 If a command line generating tool supports versioning (and Wooey is able
 to parse this information), updates to the script version will result in a new

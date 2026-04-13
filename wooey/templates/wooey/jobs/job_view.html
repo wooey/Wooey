@@ -272,7 +272,7 @@
                             $stdoutConsole = $('#console-stdout');
                         }
                         if ($commandText.text().length == 0){
-                            $commandText.html(data['command']);
+                            $commandText.text(data['command']);
                         }
                         $stdoutConsole.text(data['stdout']);
                         $('#console-stderr').text(data['stderr']);

@@ -1,20 +1,21 @@
 from __future__ import absolute_import, print_function, unicode_literals
-import os
+
 import importlib
 import json
+import os
 import uuid
 from io import IOBase
 
 from autoslug import AutoSlugField
 from celery import states
-from django.db import models, transaction
 from django.conf import settings
+from django.contrib.auth.models import Group, User
 from django.core.cache import caches as django_cache
 from django.core.exceptions import SuspiciousFileOperation
-from django.contrib.auth.models import Group, User
-from django.utils.translation import gettext_lazy as _
+from django.db import models, transaction
 from django.urls import reverse
 from django.utils.text import get_valid_filename
+from django.utils.translation import gettext_lazy as _
 
 from .. import settings as wooey_settings
 from ..backend import utils
@@ -82,11 +83,26 @@ class Script(models.Model):
 
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        User,
+        related_name="created_script_set",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    modified_by = models.ForeignKey(
+        User,
+        related_name="modified_script_set",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         app_label = "wooey"
         verbose_name = _("script")
         verbose_name_plural = _("scripts")
+        ordering = ["script_order", "id"]
 
     def __str__(self):
         return self.script_name
@@ -96,7 +112,11 @@ class Script(models.Model):
 
     @property
     def latest_version(self):
-        return self.script_version.get(default_version=True)
+        return self.script_version.get(default_version=True, is_active=True)
+
+    @property
+    def has_active_default_version(self):
+        return self.script_version.filter(default_version=True, is_active=True).exists()
 
     def clean(self):
         if self.script_group is None:
@@ -114,7 +134,9 @@ class Script(models.Model):
             self.script_group = group
 
     def get_previous_versions(self):
-        return self.script_version.all().order_by("script_version", "script_iteration")
+        return self.script_version.filter(is_active=True).order_by(
+            "script_version", "script_iteration"
+        )
 
 
 class ScriptVersion(models.Model):
@@ -125,6 +147,7 @@ class ScriptVersion(models.Model):
     )
     script_iteration = models.PositiveSmallIntegerField(default=1)
     script_path = models.FileField()
+    is_active = models.BooleanField(default=True)
     default_version = models.BooleanField(default=False)
     script = models.ForeignKey(
         "Script", related_name="script_version", on_delete=models.CASCADE
@@ -761,6 +784,14 @@ class VirtualEnvironment(models.Model):
         app_label = "wooey"
         verbose_name = _("virtual environment")
         verbose_name_plural = _("virtual environments")
+
+    @classmethod
+    def get_default_python_binary(cls):
+        return wooey_settings.WOOEY_VIRTUAL_ENVIRONMENT_PYTHON_BINARY
+
+    @classmethod
+    def get_default_venv_directory(cls):
+        return wooey_settings.WOOEY_VIRTUAL_ENVIRONMENT_DIRECTORY
 
     def get_venv_python_binary(self):
         return os.path.join(

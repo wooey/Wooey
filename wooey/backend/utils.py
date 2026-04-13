@@ -4,6 +4,7 @@ import errno
 import filetype
 import json
 import os
+import posixpath
 import re
 import sys
 import traceback
@@ -17,10 +18,17 @@ from operator import itemgetter
 
 from clinto.parser import Parser
 from clinto.parsers.constants import SPECIFY_EVERY_PARAM
+from django.contrib.auth.models import AnonymousUser
 from django.conf import settings
-from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
+from django.core.exceptions import (
+    MultipleObjectsReturned,
+    ObjectDoesNotExist,
+    SuspiciousFileOperation,
+    ValidationError,
+)
 from django.core.files import File
 from django.core.files.storage import default_storage
+from django.core.files.utils import validate_file_name
 from django.db import transaction
 from django.db.models import Q
 from django.db.utils import OperationalError
@@ -68,6 +76,79 @@ def get_storage(local=True):
     else:
         storage = default_storage
     return storage
+
+
+def normalize_storage_name_reference(value, storage):
+    if not isinstance(value, str):
+        raise ValidationError(_("Invalid file reference."))
+
+    raw_value = value.strip()
+    if not raw_value:
+        raise ValidationError(_("Invalid file reference."))
+
+    try:
+        normalized = validate_file_name(
+            raw_value.replace("\\", "/"), allow_relative_path=True
+        )
+    except SuspiciousFileOperation:
+        if not os.path.isabs(raw_value):
+            raise ValidationError(_("Invalid file reference."))
+        return None
+
+    return posixpath.normpath(storage.generate_filename(normalized).replace("\\", "/"))
+
+
+def storage_reference_matches(raw_value, stored_name, storage):
+    raw_value = raw_value.strip()
+    if not raw_value:
+        return False
+
+    if raw_value == stored_name or raw_value.replace("\\", "/") == stored_name:
+        return True
+
+    try:
+        storage_path = storage.path(stored_name)
+    except Exception:
+        return False
+
+    return os.path.normcase(os.path.normpath(raw_value)) == os.path.normcase(
+        os.path.normpath(storage_path)
+    )
+
+
+def get_authorized_user_file_reference(value, user=None):
+    from ..models import UserFile
+
+    storage = get_storage(local=False)
+    lookup_user = user if user is not None else AnonymousUser()
+    raw_value = value.strip() if isinstance(value, str) else value
+    basename = posixpath.basename(str(raw_value).replace("\\", "/"))
+
+    user_files = UserFile.objects.select_related("job", "system_file")
+    if basename and basename not in {".", ".."}:
+        user_files = user_files.filter(filename=basename)
+
+    matching_files = []
+    normalized_name = normalize_storage_name_reference(value, storage)
+    if normalized_name is not None:
+        matching_files.extend(
+            user_files.filter(system_file__filepath=normalized_name).distinct()
+        )
+
+    if not matching_files:
+        matching_files = [
+            i
+            for i in user_files
+            if storage_reference_matches(
+                str(raw_value), i.system_file.filepath.name, storage
+            )
+        ]
+
+    if not matching_files:
+        raise ValidationError(_("Referenced file could not be found."))
+    if not any(i.job.can_user_view(lookup_user) for i in matching_files):
+        raise ValidationError(_("You are not permitted to access this file."))
+    return matching_files[0].system_file.filepath.name
 
 
 def purge_output(job=None):
@@ -228,10 +309,11 @@ def get_form_groups(script_version=None, initial_dict=None, render_fn=None):
     )
 
 
-def validate_form(form=None, data=None, files=None):
+def validate_form(form=None, data=None, files=None, user=None):
+    files = files if files is not None else {}
     form.add_wooey_fields()
     form.data = data if data is not None else {}
-    form.files = files if files is not None else {}
+    form.files = files
     form.is_bound = True
     form.full_clean()
 
@@ -260,8 +342,22 @@ def validate_form(form=None, data=None, files=None):
                 ):
                     # this is a previously set field, so a cloned job
                     if new_value is not None:
-                        cleaned_values.append(get_storage(local=False).open(new_value))
-                    to_delete.append(field)
+                        try:
+                            file_reference = get_authorized_user_file_reference(
+                                new_value, user=user
+                            )
+                            cleaned_values.append(
+                                get_storage(local=False).open(file_reference)
+                            )
+                        except (IOError, ValidationError) as exc:
+                            form.add_error(
+                                field,
+                                exc.messages[0]
+                                if isinstance(exc, ValidationError)
+                                else _("Referenced file could not be found."),
+                            )
+                    if cleaned_values:
+                        to_delete.append(field)
             if cleaned_values:
                 form.cleaned_data[field] = cleaned_values
     for field in to_delete:
@@ -291,12 +387,12 @@ def get_current_scripts():
 
     # get the scripts with default version
     scripts = ScriptVersion.objects.select_related("script").filter(
-        default_version=True
+        default_version=True, is_active=True
     )
     # scripts we need to figure out the default version for some reason
-    non_default_scripts = ScriptVersion.objects.filter(default_version=False).exclude(
-        script__in=[i.script for i in scripts]
-    )
+    non_default_scripts = ScriptVersion.objects.filter(
+        default_version=False, is_active=True
+    ).exclude(script__in=[i.script for i in scripts])
     script_versions = defaultdict(list)
     for sv in non_default_scripts:
         try:
@@ -340,7 +436,7 @@ def add_wooey_script(
     group=None,
     script_name=None,
     set_default_version=True,
-    ignore_bad_imports=False,
+    ignore_bad_imports=None,
 ):
 
     # There is a class called 'Script' which contains the general information about a script. However, that is not where the file details
@@ -366,6 +462,19 @@ def add_wooey_script(
         if script_version
         else os.path.basename(os.path.splitext(script_path)[0])
     )
+    existing_script = None
+    if script_version is None:
+        existing_scripts = Script.objects.filter(script_name=script_name).order_by("pk")
+        if isinstance(group, ScriptGroup):
+            group = group.group_name
+        if group is not None:
+            existing_scripts = existing_scripts.filter(script_group__group_name=group)
+        existing_script = existing_scripts.first()
+        if existing_script is not None:
+            if group is None and existing_script.script_group_id:
+                group = existing_script.script_group.group_name
+            if ignore_bad_imports is None:
+                ignore_bad_imports = existing_script.ignore_bad_imports
     with get_storage_object(script_path) as so:
         checksum = get_checksum(buff=so.read())
     existing_version = None
@@ -449,10 +558,10 @@ def add_wooey_script(
                 local_file = local_handle.name
         with get_storage_object(local_file, local=True) as so:
             script = so.path
-    if isinstance(group, ScriptGroup):
-        group = group.group_name
     if group is None:
         group = "Wooey Scripts"
+    if ignore_bad_imports is None:
+        ignore_bad_imports = False
     basename, extension = os.path.splitext(script)
     filename = os.path.split(basename)[1]
 
@@ -486,7 +595,6 @@ def add_wooey_script(
         script_kwargs = {
             "script_group": script_group,
             "script_name": script_name or script_schema["name"],
-            "ignore_bad_imports": ignore_bad_imports,
         }
         version_kwargs = {
             "script_version": version_string,
@@ -498,7 +606,12 @@ def add_wooey_script(
         script_created = Script.objects.filter(**script_kwargs).count() == 0
         if script_created:
             # we are creating it, add the description if we can
-            script_kwargs.update({"script_description": script_schema["description"]})
+            script_kwargs.update(
+                {
+                    "script_description": script_schema["description"],
+                    "ignore_bad_imports": ignore_bad_imports,
+                }
+            )
             wooey_script = Script(**script_kwargs)
             wooey_script._script_cl_creation = True
             wooey_script.save()

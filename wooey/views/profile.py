@@ -1,9 +1,9 @@
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
 
+from ..api.utils import requires_login
 from ..forms import APIKeyForm
 from ..models import APIKey, WooeyProfile
-from ..utils import requires_login
 
 
 @require_http_methods(["POST"])

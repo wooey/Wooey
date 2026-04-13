@@ -45,11 +45,19 @@
         <div class="row">
           <div class="col-md-2">
             <ul class="nav nav-pills nav-stacked" role="tablist">
-              <li role="presentation" class="active"><a href="#api_keys" data-toggle="tab" role="tab">{% trans "API Keys" %}</a></li>
+              {% if can_manage_scripts %}
+                <li role="presentation" class="active"><a href="#script_management" data-toggle="tab" role="tab">{% trans "Scripts" %}</a></li>
+                <li role="presentation"><a href="#virtual_environments" data-toggle="tab" role="tab">{% trans "Virtual Environments" %}</a></li>
+              {% endif %}
+              <li role="presentation"{% if not can_manage_scripts %} class="active"{% endif %}><a href="#api_keys" data-toggle="tab" role="tab">{% trans "API Keys" %}</a></li>
             </ul>
           </div>
           <div class="col-md-10 tab-content">
-            <div role="tabpanel" class="tab-pane active" id="api_keys">
+            {% if can_manage_scripts %}
+              {% include "wooey/profile/script_management.html" %}
+              {% include "wooey/profile/virtual_environment_management.html" %}
+            {% endif %}
+            <div role="tabpanel" class="tab-pane{% if not can_manage_scripts %} active{% endif %}" id="api_keys">
               <button type="button" class="btn btn-default" data-toggle="modal" onclick="showApiKeyModal()">{% trans "Create API Key" %}</button>
               <br />
               <table id="api-key-table" class="table">
@@ -68,7 +76,7 @@
                       <td>{{ key.name }}</td>
                       <td class="key-active">{{ key.active }}</td>
                       <td>{{ key.created_date|date:"N d, Y - G:i:s" }}</td>
-                      <td>{{ key.last_use|date:"N d, Y - G:i:s" }}</td>
+                      <td>{{ key.last_used|date:"N d, Y - G:i:s" }}</td>
                       <td>
                         <div class="btn-group" role="group" aria-label="{% trans "API Key Actions" %}">
                           <button type="button" class="btn btn-default api-key-toggle" onclick="toggleApiKey({{ key.id }})">{% if key.active %}{% trans "Deactivate" %}{% else %}{% trans "Activate" %}{% endif %}</button>
@@ -119,13 +127,52 @@
 {% block inline_js %}
   {{ block.super }}
   <script type="text/javascript">
+    function escapeHtml(value) {
+      return $('<div />').text(value == null ? '' : value).html();
+    }
+
+    function flattenErrors(errors) {
+      if (!errors) {
+        return [];
+      }
+      if (typeof errors === 'string') {
+        return [errors];
+      }
+      if ($.isArray(errors)) {
+        return errors;
+      }
+
+      var messages = [];
+      $.each(errors, function(key, value) {
+        var values = $.isArray(value) ? value : [value];
+        $.each(values, function(_, message) {
+          messages.push(message);
+        });
+      });
+      return messages;
+    }
+
     function createApiKey() {
       $.post("{% url "wooey:create_api_key" %}", {name: $('#api-key-name').val()}, function(data){
         $("#create-api-key-modal .modal-body > form").addClass('hidden');
         $("#create-api-key").addClass('hidden');
         $("#create-api-key-modal .modal-body > div").removeClass('hidden');
-        $('#new-api-key').html(data.api_key);
-        $('#api-key-table > tbody').append(`<tr><td>${data.id}</td><td>${data.name}</td><td>True</td><td></td><td></td><td></td></tr>`)
+        $('#new-api-key').text(data.api_key);
+        $('#api-key-table > tbody').append(`
+          <tr>
+            <td data-key-id="${data.id}">${data.id}</td>
+            <td>${escapeHtml(data.name)}</td>
+            <td class="key-active">{% trans "True" %}</td>
+            <td></td>
+            <td></td>
+            <td>
+              <div class="btn-group" role="group" aria-label="{% trans "API Key Actions" %}">
+                <button type="button" class="btn btn-default api-key-toggle" onclick="toggleApiKey(${data.id})">{% trans "Deactivate" %}</button>
+                <button type="button" class="btn btn-danger" onclick="deleteApiKey(${data.id})">{% trans "Delete" %}</button>
+              </div>
+            </td>
+          </tr>
+        `);
       })
     }
 
@@ -151,7 +198,458 @@
           $(`td[data-key-id=${id}]`).parent().addClass('deleted');
           $(`td[data-key-id=${id}]`).parent().find('*').attr('disabled', true)
         }
-      })
+      });
     }
+
+    function updateProfileTabHash(hash) {
+      if (!hash || hash.charAt(0) !== '#') {
+        return;
+      }
+
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', hash);
+      } else {
+        window.location.hash = hash;
+      }
+    }
+
+    {% if can_manage_scripts %}
+      var scriptEditorUrlTemplate = "{% url "wooey:profile_script_editor" slug="__slug__" %}";
+      var scriptPatchUrlTemplate = "{% url "wooey:api_patch_script" slug="__slug__" %}";
+      var virtualEnvironmentPatchUrlTemplate = "{% url "wooey:api_patch_virtual_environment" virtual_environment_id=999999 %}";
+      var virtualEnvironmentApi = {
+        list: "{% url "wooey:api_list_virtual_environments" %}",
+        create: "{% url "wooey:api_create_virtual_environment" %}",
+      };
+      var virtualEnvironmentDefaults = {
+        python_binary: "{{ virtual_environment_defaults.python_binary|escapejs }}",
+        venv_directory: "{{ virtual_environment_defaults.venv_directory|escapejs }}",
+      };
+      var virtualEnvironmentHelpText = {
+        name: "{{ virtual_environment_help_texts.name|escapejs }}",
+        python_binary: "{{ virtual_environment_help_texts.python_binary|escapejs }}",
+        requirements: "{{ virtual_environment_help_texts.requirements|escapejs }}",
+        venv_directory: "{{ virtual_environment_help_texts.venv_directory|escapejs }}",
+      };
+      var scriptLabels = {
+        healthy: "{% trans "Healthy" %}",
+        attention: "{% trans "Needs Attention" %}",
+        disabled: "{% trans "Disabled" %}",
+        missing: "{% trans "Missing" %}",
+        open: "{% trans "Open" %}",
+        enable: "{% trans "Enable" %}",
+        disable: "{% trans "Disable" %}",
+        enableSuccess: "{% trans "The script was re-enabled." %}",
+        disableSuccess: "{% trans "The script was disabled." %}",
+        noScripts: "{% trans "No scripts are available yet." %}",
+        loadingError: "{% trans "Unable to load script management data." %}",
+        updateError: "{% trans "Unable to update this script." %}",
+        ungrouped: "{% trans "Ungrouped" %}",
+      };
+      var virtualEnvironmentLabels = {
+        noVirtualEnvironments: "{% trans "No virtual environments are available yet." %}",
+        loadingError: "{% trans "Unable to load virtual environments." %}",
+        createError: "{% trans "Unable to create this virtual environment." %}",
+        updateError: "{% trans "Unable to update this virtual environment." %}",
+        createSuccess: "{% trans "The virtual environment was created." %}",
+        updateSuccess: "{% trans "The virtual environment was saved." %}",
+        noRequirements: "{% trans "None" %}",
+        newVirtualEnvironment: "{% trans "New Virtual Environment" %}",
+        save: "{% trans "Save" %}",
+        cancel: "{% trans "Cancel" %}",
+        installPath: "{% trans "Install Path" %}",
+      };
+      var currentVirtualEnvironments = [];
+      var activeVirtualEnvironmentEditor = null;
+
+      function getScriptEditorUrl(slug) {
+        return scriptEditorUrlTemplate.replace('__slug__', slug);
+      }
+
+      function getScriptPatchUrl(slug) {
+        return scriptPatchUrlTemplate.replace('__slug__', slug);
+      }
+
+      function getVirtualEnvironmentPatchUrl(virtualEnvironmentId) {
+        return virtualEnvironmentPatchUrlTemplate.replace('999999', virtualEnvironmentId);
+      }
+
+      function renderScriptManagementAlert(level, errors) {
+        var messages = flattenErrors(errors);
+        if (!messages.length) {
+          $('#script-management-alert').empty();
+          return;
+        }
+
+        var items = $.map(messages, function(message) {
+          return `<li>${escapeHtml(message)}</li>`;
+        }).join('');
+
+        $('#script-management-alert').html(`
+          <div class="alert alert-${level}">
+            <ul class="list-unstyled">${items}</ul>
+          </div>
+        `);
+      }
+
+      function formatScriptVersion(version) {
+        return `v${version.script_version}.${version.script_iteration}`;
+      }
+
+      function renderScriptManagementTable(scripts) {
+        var $tbody = $('#script-management-table tbody');
+        if (!scripts.length) {
+          $tbody.html(`<tr><td colspan="6" class="text-muted">${escapeHtml(scriptLabels.noScripts)}</td></tr>`);
+          return;
+        }
+
+        var rows = $.map(scripts, function(script) {
+          var issues = script.issues || [];
+          var defaultVersion = script.default_version
+            ? escapeHtml(formatScriptVersion(script.default_version))
+            : `<span class="text-danger">${escapeHtml(scriptLabels.missing)}</span>`;
+          var status = !script.is_active
+            ? `<span class="label label-default">${escapeHtml(scriptLabels.disabled)}</span>`
+            : issues.length
+            ? `<span class="label label-danger">${escapeHtml(scriptLabels.attention)}</span>`
+            : `<span class="label label-success">${escapeHtml(scriptLabels.healthy)}</span>`;
+          var issueSummary = issues.length
+            ? `<div class="script-issue-summary">${escapeHtml(issues.join(' '))}</div>`
+            : '';
+          var editorUrl = getScriptEditorUrl(script.slug);
+          var toggleActionLabel = script.is_active ? scriptLabels.disable : scriptLabels.enable;
+          var toggleActionClass = script.is_active ? 'btn-warning disable-managed-script' : 'btn-default enable-managed-script';
+
+          return `
+            <tr class="script-management-row" data-href="${editorUrl}">
+              <td>${escapeHtml(script.script_name)}</td>
+              <td>${escapeHtml(script.group || scriptLabels.ungrouped)}</td>
+              <td>${defaultVersion}</td>
+              <td>${escapeHtml(script.versions_count)}</td>
+              <td>${status}${issueSummary}</td>
+              <td>
+                <div class="btn-group" role="group" aria-label="{% trans "Script Actions" %}">
+                  <a class="btn btn-default btn-xs" href="${editorUrl}">
+                    ${escapeHtml(scriptLabels.open)}
+                  </a>
+                  <button
+                    type="button"
+                    class="btn btn-xs ${toggleActionClass}"
+                    data-script-slug="${script.slug}">
+                    ${escapeHtml(toggleActionLabel)}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        $tbody.html(rows);
+      }
+
+      function loadScriptManagement(successMessage) {
+        $.getJSON("{% url "wooey:api_list_scripts" %}", function(data) {
+          if (successMessage) {
+            renderScriptManagementAlert('success', [successMessage]);
+          } else {
+            renderScriptManagementAlert('danger', []);
+          }
+          renderScriptManagementTable(data.scripts || []);
+        }).fail(function(xhr) {
+          var data = xhr.responseJSON || {};
+          renderScriptManagementAlert('danger', data.errors || [scriptLabels.loadingError]);
+        });
+      }
+
+      function patchManagedScript(slug, payload, successMessage) {
+        $.ajax({
+          url: getScriptPatchUrl(slug),
+          type: 'PATCH',
+          data: JSON.stringify(payload),
+          contentType: 'application/json',
+          success: function() {
+            loadScriptManagement(successMessage);
+          },
+          error: function(xhr) {
+            var data = xhr.responseJSON || {};
+            renderScriptManagementAlert('danger', data.errors || [scriptLabels.updateError]);
+          }
+        });
+      }
+
+      function renderVirtualEnvironmentManagementAlert(level, errors) {
+        var messages = flattenErrors(errors);
+        if (!messages.length) {
+          $('#virtual-environment-management-alert').empty();
+          return;
+        }
+
+        var items = $.map(messages, function(message) {
+          return `<li>${escapeHtml(message)}</li>`;
+        }).join('');
+
+        $('#virtual-environment-management-alert').html(`
+          <div class="alert alert-${level}">
+            <ul class="list-unstyled">${items}</ul>
+          </div>
+        `);
+      }
+
+      function findVirtualEnvironment(virtualEnvironmentId) {
+        var match = null;
+        $.each(currentVirtualEnvironments, function(_, virtualEnvironment) {
+          if (String(virtualEnvironment.id) === String(virtualEnvironmentId)) {
+            match = virtualEnvironment;
+            return false;
+          }
+        });
+        return match;
+      }
+
+      function openVirtualEnvironmentEditor(virtualEnvironment) {
+        activeVirtualEnvironmentEditor = $.extend(
+          {
+            id: null,
+            name: '',
+            python_binary: virtualEnvironmentDefaults.python_binary,
+            venv_directory: virtualEnvironmentDefaults.venv_directory,
+            requirements: '',
+            install_path: '',
+          },
+          virtualEnvironment || {}
+        );
+        renderVirtualEnvironmentTable(currentVirtualEnvironments);
+      }
+
+      function closeVirtualEnvironmentEditor() {
+        activeVirtualEnvironmentEditor = null;
+        renderVirtualEnvironmentTable(currentVirtualEnvironments);
+      }
+
+      function formatVirtualEnvironmentRequirements(requirements) {
+        if (!requirements) {
+          return `<span class="text-muted">${escapeHtml(virtualEnvironmentLabels.noRequirements)}</span>`;
+        }
+        return escapeHtml(requirements).replace(/\n/g, '<br>');
+      }
+
+      function renderVirtualEnvironmentEditorRow(virtualEnvironment) {
+        var installPath = virtualEnvironment.install_path
+          ? `<p class="text-muted virtual-environment-install-path"><strong>${escapeHtml(virtualEnvironmentLabels.installPath)}:</strong> ${escapeHtml(virtualEnvironment.install_path)}</p>`
+          : '';
+
+        return `
+          <tr class="virtual-environment-editor-row" data-virtual-environment-id="${virtualEnvironment.id || ''}">
+            <td colspan="4">
+              <div class="panel panel-default virtual-environment-editor-panel">
+                <div class="panel-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label>{% trans "Name" %}</label>
+                        <input type="text" class="form-control virtual-environment-name-input" value="${escapeHtml(virtualEnvironment.name)}">
+                        <p class="help-block">${escapeHtml(virtualEnvironmentHelpText.name)}</p>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label>{% trans "Python Binary" %}</label>
+                        <input type="text" class="form-control virtual-environment-python-binary-input" value="${escapeHtml(virtualEnvironment.python_binary)}">
+                        <p class="help-block">${escapeHtml(virtualEnvironmentHelpText.python_binary)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>{% trans "Environment Directory" %}</label>
+                    <input type="text" class="form-control virtual-environment-directory-input" value="${escapeHtml(virtualEnvironment.venv_directory)}">
+                    <p class="help-block">${escapeHtml(virtualEnvironmentHelpText.venv_directory)}</p>
+                  </div>
+                  <div class="form-group">
+                    <label>{% trans "Requirements" %}</label>
+                    <textarea class="form-control virtual-environment-requirements-input" rows="5">${escapeHtml(virtualEnvironment.requirements)}</textarea>
+                    <p class="help-block">${escapeHtml(virtualEnvironmentHelpText.requirements)}</p>
+                  </div>
+                  ${installPath}
+                  <div class="btn-group" role="group" aria-label="{% trans "Virtual Environment Actions" %}">
+                    <button type="button" class="btn btn-primary save-virtual-environment">${escapeHtml(virtualEnvironmentLabels.save)}</button>
+                    <button type="button" class="btn btn-default cancel-virtual-environment-edit">${escapeHtml(virtualEnvironmentLabels.cancel)}</button>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+
+      function renderVirtualEnvironmentTable(virtualEnvironments) {
+        currentVirtualEnvironments = virtualEnvironments || [];
+        var $tbody = $('#virtual-environment-management-table tbody');
+        var rows = [];
+
+        if (activeVirtualEnvironmentEditor && !activeVirtualEnvironmentEditor.id) {
+          rows.push(renderVirtualEnvironmentEditorRow(activeVirtualEnvironmentEditor));
+        }
+
+        $.each(currentVirtualEnvironments, function(_, virtualEnvironment) {
+          rows.push(`
+            <tr class="virtual-environment-row" data-virtual-environment-id="${virtualEnvironment.id}">
+              <td>${escapeHtml(virtualEnvironment.name)}</td>
+              <td>${escapeHtml(virtualEnvironment.python_binary)}</td>
+              <td>${escapeHtml(virtualEnvironment.venv_directory)}</td>
+              <td>${formatVirtualEnvironmentRequirements(virtualEnvironment.requirements)}</td>
+            </tr>
+          `);
+
+          if (
+            activeVirtualEnvironmentEditor &&
+            String(activeVirtualEnvironmentEditor.id) === String(virtualEnvironment.id)
+          ) {
+            rows.push(renderVirtualEnvironmentEditorRow(activeVirtualEnvironmentEditor));
+          }
+        });
+
+        if (!rows.length) {
+          rows.push(`<tr><td colspan="4" class="text-muted">${escapeHtml(virtualEnvironmentLabels.noVirtualEnvironments)}</td></tr>`);
+        }
+
+        $tbody.html(rows.join(''));
+      }
+
+      function loadVirtualEnvironments(successMessage) {
+        $.getJSON(virtualEnvironmentApi.list, function(data) {
+          if (successMessage) {
+            renderVirtualEnvironmentManagementAlert('success', [successMessage]);
+          } else {
+            renderVirtualEnvironmentManagementAlert('danger', []);
+          }
+          activeVirtualEnvironmentEditor = null;
+          renderVirtualEnvironmentTable(data.virtual_environments || []);
+        }).fail(function(xhr) {
+          var data = xhr.responseJSON || {};
+          renderVirtualEnvironmentManagementAlert('danger', data.errors || [virtualEnvironmentLabels.loadingError]);
+        });
+      }
+
+      function getVirtualEnvironmentEditorPayload() {
+        var $editor = $('.virtual-environment-editor-row').first();
+        return {
+          name: $editor.find('.virtual-environment-name-input').val(),
+          python_binary: $editor.find('.virtual-environment-python-binary-input').val(),
+          venv_directory: $editor.find('.virtual-environment-directory-input').val(),
+          requirements: $editor.find('.virtual-environment-requirements-input').val(),
+        };
+      }
+
+      function saveVirtualEnvironment() {
+        var $editor = $('.virtual-environment-editor-row').first();
+        if (!$editor.length) {
+          return;
+        }
+
+        var virtualEnvironmentId = $editor.data('virtual-environment-id');
+        var payload = getVirtualEnvironmentEditorPayload();
+        var requestOptions = {
+          data: JSON.stringify(payload),
+          contentType: 'application/json',
+        };
+
+        if (virtualEnvironmentId) {
+          requestOptions.url = getVirtualEnvironmentPatchUrl(virtualEnvironmentId);
+          requestOptions.type = 'PATCH';
+          requestOptions.success = function() {
+            loadVirtualEnvironments(virtualEnvironmentLabels.updateSuccess);
+          };
+          requestOptions.error = function(xhr) {
+            var data = xhr.responseJSON || {};
+            renderVirtualEnvironmentManagementAlert('danger', data.errors || [virtualEnvironmentLabels.updateError]);
+          };
+        } else {
+          requestOptions.url = virtualEnvironmentApi.create;
+          requestOptions.type = 'POST';
+          requestOptions.success = function() {
+            loadVirtualEnvironments(virtualEnvironmentLabels.createSuccess);
+          };
+          requestOptions.error = function(xhr) {
+            var data = xhr.responseJSON || {};
+            renderVirtualEnvironmentManagementAlert('danger', data.errors || [virtualEnvironmentLabels.createError]);
+          };
+        }
+
+        $.ajax(requestOptions);
+      }
+
+      $(document).on('click', '.script-management-row', function(event) {
+        if ($(event.target).closest('a, button').length) {
+          return;
+        }
+        window.location = $(this).data('href');
+      });
+
+      $(document).on('click', '.disable-managed-script', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        patchManagedScript($(this).data('script-slug'), { is_active: false }, scriptLabels.disableSuccess);
+      });
+
+      $(document).on('click', '.enable-managed-script', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        patchManagedScript($(this).data('script-slug'), { is_active: true }, scriptLabels.enableSuccess);
+      });
+
+      $(document).on('click', '.virtual-environment-row', function(event) {
+        if ($(event.target).closest('button, input, textarea, select, a, label').length) {
+          return;
+        }
+        var virtualEnvironmentId = $(this).data('virtual-environment-id');
+        if (
+          activeVirtualEnvironmentEditor &&
+          String(activeVirtualEnvironmentEditor.id) === String(virtualEnvironmentId)
+        ) {
+          closeVirtualEnvironmentEditor();
+          return;
+        }
+
+        var virtualEnvironment = findVirtualEnvironment(virtualEnvironmentId);
+        if (virtualEnvironment) {
+          openVirtualEnvironmentEditor(virtualEnvironment);
+        }
+      });
+
+      $(document).on('click', '#create-virtual-environment', function() {
+        openVirtualEnvironmentEditor(null);
+      });
+
+      $(document).on('click', '.save-virtual-environment', function() {
+        saveVirtualEnvironment();
+      });
+
+      $(document).on('click', '.cancel-virtual-environment-edit', function() {
+        closeVirtualEnvironmentEditor();
+      });
+    {% endif %}
+
+    $(document).ready(function() {
+      if (window.location.hash) {
+        var $tab = $('.nav-pills a[href="' + window.location.hash + '"]');
+        if ($tab.length) {
+          $tab.tab('show');
+        }
+      } else {
+        var $activeTab = $('.nav-pills li.active a[data-toggle="tab"]').first();
+        if ($activeTab.length) {
+          updateProfileTabHash($activeTab.attr('href'));
+        }
+      }
+
+      $('.nav-pills a[data-toggle="tab"]').on('shown.bs.tab', function(event) {
+        updateProfileTabHash($(event.target).attr('href'));
+      });
+
+      {% if can_manage_scripts %}
+        loadScriptManagement();
+        loadVirtualEnvironments();
+      {% endif %}
+    });
   </script>
 {% endblock inline_js %}

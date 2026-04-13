@@ -1,9 +1,12 @@
+import json
 import os
 from io import BytesIO
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TransactionTestCase
 from django.urls import reverse
 
+from .. import models
 from ..models import WooeyJob
 from . import factories, mixins
 
@@ -112,6 +115,35 @@ class TestScriptAddition(mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTes
         self.assertEqual(data[0]["iteration"], 2)
         self.assertEqual(data[0]["is_default"], True)
 
+    def test_update_existing_script_preserves_group_and_import_flags_when_omitted(self):
+        self.make_staff()
+        create_response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data={
+                "group": "custom update group",
+                "ignore_bad_imports": True,
+                "update-script": open(self.version1_script_path, "rb"),
+            },
+        )
+        create_data = create_response.json()
+        script = models.Script.objects.get(pk=create_data[0]["id"])
+
+        update_response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data={
+                "update-script": open(self.version2_script_path, "rb"),
+            },
+        )
+        update_data = update_response.json()
+
+        script.refresh_from_db()
+        self.assertEqual(update_data[0]["id"], script.id)
+        self.assertEqual(script.script_group.group_name, "custom update group")
+        self.assertTrue(script.ignore_bad_imports)
+        self.assertEqual(
+            models.Script.objects.filter(script_name="update-script").count(), 1
+        )
+
     def test_can_disable_default_update(self):
         self.make_staff()
         payload = {
@@ -141,10 +173,465 @@ class TestScriptAddition(mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTes
         self.assertEqual(data[0]["iteration"], 2)
         self.assertEqual(data[0]["is_default"], False)
 
+    def test_requires_a_script_file(self):
+        self.make_staff()
+        response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data={"group": "test group"},
+        )
+        data = response.json()
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(data["valid"])
+        self.assertIn("script_file", data["errors"])
+
+    def test_reports_parser_errors(self):
+        self.make_staff()
+        response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data={
+                "group": "test group",
+                "broken-script": SimpleUploadedFile(
+                    "broken.py",
+                    b"def broken(:\n",
+                    content_type="text/x-python",
+                ),
+            },
+        )
+        data = response.json()
+        self.assertFalse(data[0]["success"])
+        self.assertIn("ParserError", data[0]["errors"])
+
+    def test_can_apply_script_metadata_during_upload(self):
+        self.make_staff()
+        response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data={
+                "group": "custom group",
+                "script_description": "custom description",
+                "documentation": "custom docs",
+                "script_order": 5,
+                "is_active": False,
+                "ignore_bad_imports": True,
+                "execute_full_path": False,
+                "save_path": "custom/output/path",
+                "metadata-script": open(self.translate_script_path, "rb"),
+            },
+        )
+        data = response.json()
+        script = models.Script.objects.get(pk=data[0]["id"])
+        self.assertEqual(script.script_group.group_name, "custom group")
+        self.assertEqual(script.script_description, "custom description")
+        self.assertEqual(script.documentation, "custom docs")
+        self.assertEqual(script.script_order, 5)
+        self.assertFalse(script.is_active)
+        self.assertTrue(script.ignore_bad_imports)
+        self.assertFalse(script.execute_full_path)
+        self.assertEqual(script.save_path, "custom/output/path")
+
+
+class TestScriptManagementApi(
+    mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTestCase
+):
+    def test_management_endpoints_require_authentication(self):
+        response = Client().get(reverse("wooey:api_list_scripts"))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.json(),
+            {
+                "valid": False,
+                "errors": {"__all__": ["Must be authenticated to use this method."]},
+            },
+        )
+
+    def test_management_endpoints_require_staff(self):
+        list_response = self.client.get(reverse("wooey:api_list_scripts"))
+        detail_response = self.client.get(
+            reverse(
+                "wooey:api_script_detail",
+                kwargs={"slug": self.translate_script.script.slug},
+            )
+        )
+        patch_response = self.client.generic(
+            "PATCH",
+            reverse(
+                "wooey:api_patch_script",
+                kwargs={"slug": self.translate_script.script.slug},
+            ),
+            data=json.dumps({"script_name": "updated"}),
+            content_type="application/json",
+        )
+        version_patch_response = self.client.generic(
+            "PATCH",
+            reverse(
+                "wooey:api_patch_script_version",
+                kwargs={
+                    "slug": self.translate_script.script.slug,
+                    "version_id": self.translate_script.id,
+                },
+            ),
+            data=json.dumps({"default_version": True}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(list_response.status_code, 403)
+        self.assertEqual(detail_response.status_code, 403)
+        self.assertEqual(patch_response.status_code, 403)
+        self.assertEqual(version_patch_response.status_code, 403)
+
+    def test_can_list_scripts_and_report_missing_default_versions(self):
+        self.make_staff()
+        models.ScriptVersion.objects.filter(script=self.translate_script.script).update(
+            default_version=False
+        )
+
+        response = self.client.get(reverse("wooey:api_list_scripts"))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        translate_data = next(
+            i for i in data["scripts"] if i["slug"] == self.translate_script.script.slug
+        )
+        self.assertEqual(
+            translate_data["script_name"], self.translate_script.script.script_name
+        )
+        self.assertIn("default version", " ".join(translate_data["issues"]).lower())
+
+    def test_can_get_script_detail(self):
+        self.make_staff()
+        response = self.client.get(
+            reverse(
+                "wooey:api_script_detail",
+                kwargs={"slug": self.version1_script.script.slug},
+            )
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()["script"]
+        self.assertEqual(data["script_name"], self.version1_script.script.script_name)
+        self.assertEqual(len(data["versions"]), 2)
+
+    def test_script_detail_includes_version_download_url(self):
+        self.make_staff()
+        response = self.client.get(
+            reverse(
+                "wooey:api_script_detail",
+                kwargs={"slug": self.translate_script.script.slug},
+            )
+        )
+        data = response.json()["script"]
+        self.assertTrue(data["versions"][0]["script_url"])
+        self.assertIn(
+            data["versions"][0]["script_filename"], data["versions"][0]["script_path"]
+        )
+
+    def test_can_patch_script(self):
+        self.make_staff()
+        response = self.client.generic(
+            "PATCH",
+            reverse(
+                "wooey:api_patch_script",
+                kwargs={"slug": self.translate_script.script.slug},
+            ),
+            data=json.dumps(
+                {
+                    "script_name": "updated script name",
+                    "group": "updated group",
+                    "script_description": "updated description",
+                    "documentation": "updated docs",
+                    "script_order": 7,
+                    "is_active": False,
+                    "ignore_bad_imports": True,
+                    "execute_full_path": False,
+                    "save_path": "updated/output",
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        script = self.translate_script.script
+        script.refresh_from_db()
+        self.assertEqual(script.script_name, "updated script name")
+        self.assertEqual(script.script_group.group_name, "updated group")
+        self.assertEqual(script.script_description, "updated description")
+        self.assertEqual(script.documentation, "updated docs")
+        self.assertEqual(script.script_order, 7)
+        self.assertFalse(script.is_active)
+        self.assertTrue(script.ignore_bad_imports)
+        self.assertFalse(script.execute_full_path)
+        self.assertEqual(script.save_path, "updated/output")
+
+    def test_patch_script_does_not_apply_defaults_to_omitted_fields(self):
+        self.make_staff()
+        script = self.translate_script.script
+        script.script_order = 9
+        script.is_active = False
+        script.ignore_bad_imports = True
+        script.execute_full_path = False
+        script.save()
+
+        response = self.client.generic(
+            "PATCH",
+            reverse(
+                "wooey:api_patch_script",
+                kwargs={"slug": script.slug},
+            ),
+            data=json.dumps(
+                {
+                    "script_description": "only the description should change",
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        script.refresh_from_db()
+        self.assertEqual(
+            script.script_description, "only the description should change"
+        )
+        self.assertEqual(script.script_order, 9)
+        self.assertFalse(script.is_active)
+        self.assertTrue(script.ignore_bad_imports)
+        self.assertFalse(script.execute_full_path)
+
+    def test_can_switch_default_script_version(self):
+        self.make_staff()
+        self.version1_script.refresh_from_db()
+        self.assertFalse(self.version1_script.default_version)
+
+        response = self.client.generic(
+            "PATCH",
+            reverse(
+                "wooey:api_patch_script_version",
+                kwargs={
+                    "slug": self.version1_script.script.slug,
+                    "version_id": self.version1_script.id,
+                },
+            ),
+            data=json.dumps({"default_version": True}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        self.version1_script.refresh_from_db()
+        self.version2_script.refresh_from_db()
+        self.assertTrue(self.version1_script.default_version)
+        self.assertFalse(self.version2_script.default_version)
+
+    def test_can_disable_non_default_script_version(self):
+        self.make_staff()
+        response = self.client.generic(
+            "PATCH",
+            reverse(
+                "wooey:api_patch_script_version",
+                kwargs={
+                    "slug": self.version1_script.script.slug,
+                    "version_id": self.version1_script.id,
+                },
+            ),
+            data=json.dumps({"is_active": False}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        self.version1_script.refresh_from_db()
+        self.assertFalse(self.version1_script.is_active)
+        self.assertFalse(self.version1_script.default_version)
+
+    def test_can_disable_default_script_version(self):
+        self.make_staff()
+        response = self.client.generic(
+            "PATCH",
+            reverse(
+                "wooey:api_patch_script_version",
+                kwargs={
+                    "slug": self.version2_script.script.slug,
+                    "version_id": self.version2_script.id,
+                },
+            ),
+            data=json.dumps({"is_active": False}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        self.version2_script.refresh_from_db()
+        self.assertFalse(self.version2_script.is_active)
+        self.assertFalse(self.version2_script.default_version)
+
+    def test_can_reenable_disabled_script_version(self):
+        self.make_staff()
+        self.version1_script.is_active = False
+        self.version1_script.default_version = False
+        self.version1_script.save()
+
+        response = self.client.generic(
+            "PATCH",
+            reverse(
+                "wooey:api_patch_script_version",
+                kwargs={
+                    "slug": self.version1_script.script.slug,
+                    "version_id": self.version1_script.id,
+                },
+            ),
+            data=json.dumps({"is_active": True}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        self.version1_script.refresh_from_db()
+        self.assertTrue(self.version1_script.is_active)
+        self.assertFalse(self.version1_script.default_version)
+
+    def test_records_script_and_version_audit_users(self):
+        self.make_staff()
+        response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data={
+                "group": "audit group",
+                "audit-script": open(self.translate_script_path, "rb"),
+            },
+        )
+        data = response.json()
+        slug = data[0]["slug"]
+
+        detail_response = self.client.get(
+            reverse("wooey:api_script_detail", kwargs={"slug": slug})
+        )
+        detail = detail_response.json()["script"]
+        username = self.api_key.profile.user.username
+
+        self.assertEqual(detail["created_by"], username)
+        self.assertEqual(detail["modified_by"], username)
+        self.assertEqual(detail["versions"][0]["created_by"], username)
+        self.assertEqual(detail["versions"][0]["modified_by"], username)
+
+    def test_patch_script_updates_last_modified_user(self):
+        self.make_staff()
+        upload_response = self.client.post(
+            reverse("wooey:api_add_or_update_script"),
+            data={
+                "group": "audit group",
+                "audited-script": open(self.translate_script_path, "rb"),
+            },
+        )
+        slug = upload_response.json()[0]["slug"]
+
+        other_key = factories.APIKeyFactory(profile__user__username="editor-user")
+        other_key.profile.user.is_staff = True
+        other_key.profile.user.save()
+        other_client = Client(HTTP_AUTHORIZATION="Bearer {}".format(other_key._api_key))
+
+        patch_response = other_client.generic(
+            "PATCH",
+            reverse("wooey:api_patch_script", kwargs={"slug": slug}),
+            data=json.dumps({"script_description": "updated by another staff user"}),
+            content_type="application/json",
+        )
+        self.assertEqual(patch_response.status_code, 200)
+
+        detail_response = other_client.get(
+            reverse("wooey:api_script_detail", kwargs={"slug": slug})
+        )
+        detail = detail_response.json()["script"]
+        self.assertEqual(detail["created_by"], self.api_key.profile.user.username)
+        self.assertEqual(detail["modified_by"], other_key.profile.user.username)
+
+
+class TestVirtualEnvironmentManagementApi(ApiTestMixin, TransactionTestCase):
+    def test_virtual_environment_endpoints_require_staff(self):
+        virtual_environment = factories.VirtualEnvFactory()
+
+        list_response = self.client.get(reverse("wooey:api_list_virtual_environments"))
+        create_response = self.client.post(
+            reverse("wooey:api_create_virtual_environment"),
+            data={
+                "name": "new-venv",
+                "python_binary": "/usr/bin/python3",
+                "venv_directory": "/tmp",
+            },
+        )
+        patch_response = self.client.generic(
+            "PATCH",
+            reverse(
+                "wooey:api_patch_virtual_environment",
+                kwargs={"virtual_environment_id": virtual_environment.id},
+            ),
+            data=json.dumps({"name": "updated-venv"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(list_response.status_code, 403)
+        self.assertEqual(create_response.status_code, 403)
+        self.assertEqual(patch_response.status_code, 403)
+
+    def test_can_create_list_and_patch_virtual_environments(self):
+        self.make_staff()
+
+        create_response = self.client.post(
+            reverse("wooey:api_create_virtual_environment"),
+            data={
+                "name": "new-venv",
+                "python_binary": "/usr/bin/python3",
+                "requirements": "django\ncelery",
+                "venv_directory": "/tmp",
+            },
+        )
+        self.assertEqual(create_response.status_code, 200)
+        virtual_environment_id = create_response.json()["virtual_environment"]["id"]
+
+        list_response = self.client.get(reverse("wooey:api_list_virtual_environments"))
+        self.assertEqual(list_response.status_code, 200)
+        listed_virtual_environment = next(
+            virtual_environment
+            for virtual_environment in list_response.json()["virtual_environments"]
+            if virtual_environment["id"] == virtual_environment_id
+        )
+        self.assertEqual(listed_virtual_environment["name"], "new-venv")
+        self.assertEqual(listed_virtual_environment["requirements"], "django\ncelery")
+
+        patch_response = self.client.generic(
+            "PATCH",
+            reverse(
+                "wooey:api_patch_virtual_environment",
+                kwargs={"virtual_environment_id": virtual_environment_id},
+            ),
+            data=json.dumps(
+                {
+                    "name": "updated-venv",
+                    "python_binary": "/usr/bin/python3.11",
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(patch_response.status_code, 200)
+
+        virtual_environment = models.VirtualEnvironment.objects.get(
+            pk=virtual_environment_id
+        )
+        self.assertEqual(virtual_environment.name, "updated-venv")
+        self.assertEqual(virtual_environment.python_binary, "/usr/bin/python3.11")
+
 
 class TestScriptSubmission(
     mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTestCase
 ):
+    def test_disabled_version_cannot_be_submitted(self):
+        self.make_staff()
+        self.version1_script.is_active = False
+        self.version1_script.save()
+        payload = {
+            "job_name": "test",
+            "iteration": 1,
+            "command": "--one 1",
+        }
+        response = self.client.post(
+            reverse("wooey:api_submit_script", kwargs={"slug": "version_test"}),
+            data=payload,
+            content_type="application/json",
+        )
+        data = response.json()
+        self.assertFalse(data["valid"])
+
     def test_defaults_to_latest_script(self):
         self.make_staff()
         payload = {

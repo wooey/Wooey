@@ -6,6 +6,7 @@ from django.test import TestCase, RequestFactory
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.urls import reverse
 
@@ -277,6 +278,43 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         d = load_JSON_dict(response.content)
         self.assertTrue(d["valid"], d)
 
+    def test_root_script_view_requires_explicit_version_without_active_default(self):
+        script = self.version2_script.script
+        models.ScriptVersion.objects.filter(script=script).update(default_version=False)
+
+        url = reverse("wooey:wooey_script", kwargs={"slug": script.slug})
+        request = self.factory.get(url)
+        request.user = AnonymousUser()
+
+        with self.assertRaises(Http404):
+            self.script_view_func(request, pk=script.pk)
+
+    def test_explicit_script_version_still_loads_without_active_default(self):
+        script_version = self.version1_script
+        models.ScriptVersion.objects.filter(script=script_version.script).update(
+            default_version=False
+        )
+
+        url = reverse(
+            "wooey:wooey_script",
+            kwargs={
+                "slug": script_version.script.slug,
+                "script_version": script_version.script_version,
+                "script_iteration": script_version.script_iteration,
+            },
+        )
+        request = self.factory.get(url)
+        request.user = AnonymousUser()
+
+        response = self.script_view_func(
+            request,
+            pk=script_version.script.pk,
+            slug=script_version.script.slug,
+            script_version=script_version.script_version,
+            script_iteration=script_version.script_iteration,
+        )
+        self.assertEqual(response.status_code, 200)
+
     def test_url_parameters_positional(self):
         script_version = self.command_order_script
         url = reverse("wooey:wooey_script", kwargs={"slug": script_version.script.slug})
@@ -512,6 +550,22 @@ class TestApiKeyViews(TestCase):
     def setUp(self):
         self.request = RequestFactory()
 
+    def test_requires_authentication_with_json_response(self):
+        url = reverse("wooey:create_api_key")
+        request = self.request.post(url, data={"name": "test-key"})
+        request.user = AnonymousUser()
+
+        response = wooey_views.create_api_key(request)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            json.loads(response.content.decode("utf-8")),
+            {
+                "valid": False,
+                "errors": {"__all__": ["Must be authenticated to use this method."]},
+            },
+        )
+
     def test_can_create_api_key(self):
         url = reverse("wooey:create_api_key")
         request = self.request.post(url, data={"name": "test-key"})
@@ -579,6 +633,52 @@ class TestProfileView(TestCase):
         view = wooey_views.WooeyProfileView.as_view()
         response = view(request, username=user.username)
         self.assertTrue(response.context_data["is_logged_in_user"])
+
+    def test_staff_can_view_script_editor(self):
+        request_factory = RequestFactory()
+        user = factories.UserFactory()
+        user.is_staff = True
+        user.save()
+
+        request = request_factory.get(
+            reverse(
+                "wooey:profile_script_editor",
+                kwargs={"slug": "test-script"},
+            )
+        )
+        request.user = user
+
+        response = wooey_views.ScriptEditorView.as_view()(request, slug="test-script")
+        response.render()
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context_data["is_new_script"])
+        self.assertEqual(response.context_data["script_slug"], "test-script")
+        self.assertEqual(
+            response.context_data["virtual_environment_defaults"]["python_binary"],
+            settings.WOOEY_VIRTUAL_ENVIRONMENT_PYTHON_BINARY,
+        )
+        self.assertEqual(
+            response.context_data["virtual_environment_defaults"]["venv_directory"],
+            settings.WOOEY_VIRTUAL_ENVIRONMENT_DIRECTORY,
+        )
+        self.assertEqual(
+            response.context_data["virtual_environment_help_texts"]["python_binary"],
+            models.VirtualEnvironment._meta.get_field("python_binary").help_text,
+        )
+
+    def test_non_staff_cannot_view_script_editor(self):
+        request_factory = RequestFactory()
+        user = factories.UserFactory()
+        request = request_factory.get(
+            reverse(
+                "wooey:profile_script_editor",
+                kwargs={"slug": "test-script"},
+            )
+        )
+        request.user = user
+
+        with self.assertRaises(PermissionDenied):
+            wooey_views.ScriptEditorView.as_view()(request, slug="test-script")
 
 
 class TestHomeView(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):

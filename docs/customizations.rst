@@ -22,3 +22,8 @@ the widget to utilize for a given parameter can be set by associating a given
 WooeyWidget with a Script Parameter:
 
 .. image:: img/wooey_widget_parameters.png
+
+.. toctree::
+   :hidden:
+
+   script_parameters_admin

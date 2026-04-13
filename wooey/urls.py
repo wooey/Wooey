@@ -60,6 +60,41 @@ wooey_patterns = [
         name="api_add_or_update_script",
     ),
     re_path(
+        r"^api/scripts/v1/list/$",
+        api.list_scripts,
+        name="api_list_scripts",
+    ),
+    re_path(
+        r"^api/virtual-environments/v1/list/$",
+        api.list_virtual_environments,
+        name="api_list_virtual_environments",
+    ),
+    re_path(
+        r"^api/virtual-environments/v1/create/$",
+        api.create_virtual_environment,
+        name="api_create_virtual_environment",
+    ),
+    re_path(
+        r"^api/virtual-environments/v1/(?P<virtual_environment_id>\d+)/patch/$",
+        api.patch_virtual_environment,
+        name="api_patch_virtual_environment",
+    ),
+    re_path(
+        r"^api/scripts/v1/(?P<slug>[a-zA-Z0-9\-\_]+)/$",
+        api.script_detail,
+        name="api_script_detail",
+    ),
+    re_path(
+        r"^api/scripts/v1/(?P<slug>[a-zA-Z0-9\-\_]+)/patch/$",
+        api.patch_script,
+        name="api_patch_script",
+    ),
+    re_path(
+        r"^api/scripts/v1/(?P<slug>[a-zA-Z0-9\-\_]+)/versions/(?P<version_id>\d+)/patch/$",
+        api.patch_script_version,
+        name="api_patch_script_version",
+    ),
+    re_path(
         r"^api/jobs/v1/(?P<job_id>[a-zA-Z0-9\-\_]+)/status/$",
         api.job_status,
         name="api_job_status",
@@ -115,6 +150,16 @@ wooey_patterns = [
         name="wooey_search_script_jsonhtml",
     ),
     re_path(r"^profile/$", views.WooeyProfileView.as_view(), name="profile_home"),
+    re_path(
+        r"^profile/scripts/new/$",
+        views.ScriptEditorView.as_view(),
+        name="profile_script_new",
+    ),
+    re_path(
+        r"^profile/scripts/(?P<slug>[a-zA-Z0-9\-\_]+)/$",
+        views.ScriptEditorView.as_view(),
+        name="profile_script_editor",
+    ),
     re_path(
         r"^profile/(?P<username>[a-zA-Z0-9\-]+)$",
         views.WooeyProfileView.as_view(),

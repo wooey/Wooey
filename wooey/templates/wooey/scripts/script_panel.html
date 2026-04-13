@@ -11,7 +11,11 @@
                     <div class="panel-heading">
 
                         {% if script.is_active and group_show == True %}
-                            <a href="{% url 'wooey:wooey_script' slug=script.slug %}">{{ script.script_name }}</a>
+                            {% if script.has_active_default_version %}
+                                <a href="{% url 'wooey:wooey_script' slug=script.slug %}">{{ script.script_name }}</a>
+                            {% else %}
+                                {{ script.script_name }}
+                            {% endif %}
                             {% with previous_versions=script.get_previous_versions %}
                                 {% if previous_versions %}
                                     <div class="dropdown wooey-script-dropdown">

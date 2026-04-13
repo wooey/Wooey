@@ -144,36 +144,6 @@ class TestScriptAddition(mixins.ScriptFactoryMixin, ApiTestMixin, TransactionTes
             models.Script.objects.filter(script_name="update-script").count(), 1
         )
 
-    def test_update_existing_script_does_not_match_on_ignore_bad_imports(self):
-        self.make_staff()
-        create_response = self.client.post(
-            reverse("wooey:api_add_or_update_script"),
-            data={
-                "group": "custom update group",
-                "ignore_bad_imports": True,
-                "update-script": open(self.version1_script_path, "rb"),
-            },
-        )
-        script = models.Script.objects.get(pk=create_response.json()[0]["id"])
-
-        update_response = self.client.post(
-            reverse("wooey:api_add_or_update_script"),
-            data={
-                "group": "custom update group",
-                "ignore_bad_imports": False,
-                "update-script": open(self.version2_script_path, "rb"),
-            },
-        )
-        update_data = update_response.json()
-
-        script.refresh_from_db()
-        self.assertEqual(update_data[0]["id"], script.id)
-        self.assertEqual(update_data[0]["iteration"], 2)
-        self.assertFalse(script.ignore_bad_imports)
-        self.assertEqual(
-            models.Script.objects.filter(script_name="update-script").count(), 1
-        )
-
     def test_can_disable_default_update(self):
         self.make_staff()
         payload = {

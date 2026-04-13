@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-
 from celery import app, states
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
@@ -12,9 +11,9 @@ from django.utils.encoding import force_str
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView, ListView
 
-from ..models import WooeyJob, UserFile, Favorite
 from .. import settings as wooey_settings
-from ..backend.utils import valid_user, get_file_previews
+from ..backend.utils import get_file_previews, valid_user
+from ..models import Favorite, UserFile, WooeyJob
 
 celery_app = app.app_or_default()
 
@@ -27,8 +26,10 @@ STATE_MAPPER = {
         _("Executing"), "success glyphicon-refresh spinning"
     ),
     states.PENDING: SPANBASE.format(_("Queued"), "glyphicon-time"),
+    WooeyJob.QUEUED: SPANBASE.format(_("Queued"), "glyphicon-time"),
     states.REVOKED: SPANBASE.format(_("Halted"), "danger glyphicon-stop"),
     states.FAILURE: SPANBASE.format(_("Failure"), "danger glyphicon-exclamation-sign"),
+    WooeyJob.RETRY: SPANBASE.format(_("Retrying"), "glyphicon-hourglass"),
     WooeyJob.SUBMITTED: SPANBASE.format(_("Waiting"), "glyphicon-hourglass"),
 }
 
@@ -60,7 +61,10 @@ def generate_job_list(job_query):
 
 def get_global_queue(request):
     jobs = WooeyJob.objects.filter(
-        Q(status=WooeyJob.RUNNING) | Q(status=WooeyJob.SUBMITTED)
+        Q(status=WooeyJob.RUNNING)
+        | Q(status=WooeyJob.QUEUED)
+        | Q(status=WooeyJob.SUBMITTED)
+        | Q(status=WooeyJob.RETRY)
     )
     return jobs.order_by("-created_date")
 
@@ -91,7 +95,9 @@ def get_user_results(request):
     )
     jobs = jobs.exclude(
         Q(status=WooeyJob.RUNNING)
+        | Q(status=WooeyJob.QUEUED)
         | Q(status=WooeyJob.SUBMITTED)
+        | Q(status=WooeyJob.RETRY)
         | Q(status=WooeyJob.DELETED)
     )
     return jobs.order_by("-created_date")

@@ -231,6 +231,8 @@ class WooeyJob(models.Model):
     DELETED = "deleted"
     FAILED = states.FAILURE
     ERROR = "error"
+    QUEUED = "queued"
+    RETRY = states.RETRY
     RUNNING = "running"
     SUBMITTED = "submitted"
 
@@ -241,11 +243,14 @@ class WooeyJob(models.Model):
         (DELETED, _("Deleted")),
         (FAILED, _("Failed")),
         (ERROR, _("Error")),
+        (QUEUED, _("Queued")),
+        (RETRY, _("Retrying")),
         (RUNNING, _("Running")),
         (SUBMITTED, _("Submitted")),
     )
 
     status = models.CharField(max_length=255, default=SUBMITTED, choices=STATUS_CHOICES)
+    retry_count = models.PositiveSmallIntegerField(default=0)
 
     save_path = models.CharField(max_length=255, blank=True, null=True)
     command = models.TextField()
@@ -290,17 +295,24 @@ class WooeyJob(models.Model):
                     param.job = self
                     param.recreate()
                     param.save()
+        self.celery_id = None
+        self.retry_count = 0
         self.status = self.SUBMITTED
         rerun = kwargs.pop("rerun", False)
         if rerun:
             self.command = ""
         self.save()
-        task_kwargs = {"wooey_job": self.pk, "rerun": rerun}
+        job_pk = self.pk
+        task_kwargs = {"wooey_job": job_pk, "rerun": rerun}
 
         if rerun:
             utils.purge_output(job=self)
+
+        def submit_task():
+            tasks.queue_script_job(job_pk, rerun=rerun)
+
         if wooey_settings.WOOEY_CELERY:
-            transaction.on_commit(lambda: tasks.submit_script.delay(**task_kwargs))
+            transaction.on_commit(submit_task)
         else:
             transaction.on_commit(lambda: tasks.submit_script(**task_kwargs))
         return self

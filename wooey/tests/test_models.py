@@ -1,5 +1,6 @@
 import os
 from urllib.parse import quote
+from unittest import mock
 
 from django.contrib.auth.models import AnonymousUser
 from django.test import Client, TestCase, TransactionTestCase
@@ -142,6 +143,31 @@ class TestJob(
             for fileinfo in files:
                 response = Client().get(self.get_local_url(fileinfo))
                 self.assertEqual(response.status_code, 200)
+
+    def test_celery_submission_transitions_to_queued(self):
+        from .. import settings as wooey_settings
+        from ..backend import utils
+
+        original_celery = wooey_settings.WOOEY_CELERY
+        self.addCleanup(setattr, wooey_settings, "WOOEY_CELERY", original_celery)
+        wooey_settings.WOOEY_CELERY = True
+
+        sequence_slug = test_utils.get_subparser_form_slug(
+            self.translate_script, "sequence"
+        )
+        out_slug = test_utils.get_subparser_form_slug(self.translate_script, "out")
+        job = utils.create_wooey_job(
+            script_version_pk=self.translate_script.pk,
+            data={"job_name": "queued", sequence_slug: "aaa", out_slug: "abc"},
+        )
+
+        with mock.patch("wooey.tasks.submit_script.delay") as delay_mock:
+            delay_mock.return_value = mock.Mock(id="queued-task-id")
+            job.submit_to_celery()
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, models.WooeyJob.QUEUED)
+        self.assertEqual(job.celery_id, "queued-task-id")
 
     def test_file_sharing(self):
         # this tests whether a file uploaded by one job will be referenced by a second job instead of being duplicated

@@ -3,6 +3,7 @@ __author__ = "chris"
 import os
 import sys
 import tempfile
+from datetime import timedelta
 
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
@@ -37,6 +38,9 @@ WOOEY_DEFAULT_SCRIPT_GROUP = get("WOOEY_DEFAULT_SCRIPT_GROUP", _("Scripts"))
 WOOEY_EPHEMERAL_FILES = get("WOOEY_EPHEMERAL_FILES", False)
 WOOEY_FILE_DIR = get("WOOEY_FILE_DIR", "wooey_files")
 WOOEY_JOB_EXPIRATION = get("WOOEY_JOB_EXPIRATION", {"anonymous": None, "users": None})
+WOOEY_JOB_QUEUE_TIMEOUT = get("WOOEY_JOB_QUEUE_TIMEOUT", timedelta(hours=24))
+WOOEY_JOB_RESUBMIT_TIMEOUT = get("WOOEY_JOB_RESUBMIT_TIMEOUT", timedelta(hours=1))
+WOOEY_JOB_RESUBMIT_LIMIT = get("WOOEY_JOB_RESUBMIT_LIMIT", 3)
 WOOEY_REALTIME_CACHE = get("WOOEY_REALTIME_CACHE", None)
 WOOEY_SCRIPT_DIR = get("WOOEY_SCRIPT_DIR", "wooey_scripts")
 

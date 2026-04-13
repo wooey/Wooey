@@ -56,6 +56,18 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         d = json.loads(response.content.decode("utf-8"))
         self.assertEqual(1, d["totals"]["global"])
 
+        job.status = models.WooeyJob.QUEUED
+        job.save()
+        response = wooey_celery.all_queues_json(request)
+        d = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(1, d["totals"]["global"])
+
+        job.status = models.WooeyJob.RETRY
+        job.save()
+        response = wooey_celery.all_queues_json(request)
+        d = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(1, d["totals"]["global"])
+
         job.user = self.user
         job.status = models.WooeyJob.RUNNING
         job.save()

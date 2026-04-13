@@ -1,8 +1,15 @@
 Adding & Managing Scripts
 =========================
 
-Scripts may be added in two ways, through the Django admin interface as
-well as through the *addscript* command in manage.py.
+Scripts may be added in two ways:
+
+* through the staff/admin script management interface in the Wooey profile page
+* through the *addscript* command in ``manage.py``
+
+The profile UI is the recommended place to manage scripts day to day. Only
+staff/admin users can access the script management interface, the script editor,
+or the script-management API endpoints. In Django terms this is any user with
+``is_staff=True``, including superusers.
 
 Script Guidelines
 -----------------
@@ -36,14 +43,44 @@ defining your argparse instance inside the
 ``if __name__ == "__main__"`` block
 
 
-The admin Interface
--------------------
+The Script Management Interface
+-------------------------------
 
-Within the django admin interface, scripts may be added to through the
-'scripts' model. Here, the user permissions may be set, as well as
-cosmetic features such as the script's display name, description (if
-provided, otherwise the script name and description will be
-automatically populated by the description from argparse if available).
+Staff/admin users can open their Wooey profile and use the ``Scripts`` tab to
+review all uploaded scripts, see the current default version for each one, and
+quickly spot problems such as missing active versions.
+
+.. image:: img/script_management_interface.png
+
+From this table, staff/admin users can:
+
+* open the script editor for a script
+* add a new script
+* enable or disable a script
+* see the script group, default version, version count, and overall status
+
+
+Editing Scripts and Versions
+----------------------------
+
+Selecting ``Open`` in the ``Scripts`` tab, or clicking a script row, opens the
+script editor.
+
+.. image:: img/script_editor_interface.png
+
+The script editor combines script metadata and version management in one place.
+Staff/admin users can:
+
+* update the script name, group, description, documentation, display order, and
+  active state
+* assign a virtual environment to the script
+* enable ``ignore_bad_imports`` when a script depends on packages that only
+  exist inside its selected virtual environment
+* upload a new version of a script and optionally make it the default
+  immediately
+* switch the default version among active script versions
+* enable or disable individual script versions while keeping the upload history
+  visible in the UI
 
 The command line
 ----------------
@@ -58,8 +95,8 @@ Script Organization
 -------------------
 
 Scripts can be viewed at the root url of Wooey. The ordering of scripts,
-and groupings of scripts can be altered by changing the 'Script order'
-or 'Group order' options within the admin.
+and groupings of scripts can be altered by changing the ``Script order`` or the
+script group in the script editor.
 
 Script Permissions
 ------------------
@@ -68,14 +105,16 @@ Scripts and script groups can be relegated to certain groups of users.
 The 'user groups' option, if set, will restrict script usage to users
 within selected groups.
 
-Scripts and groups may also be shutoff to all users by unchecked the
-'script/group active' option.
+Scripts and groups may also be shut off to all users by unchecking the
+``script/group active`` option.
+
+These advanced permission settings still live in the Django admin.
 
 Deleting Scripts
 ----------------
 
-Scripts may be deleted from the admin interface. When deleting a script,
-all related objects, such as previously run jobs, will also be deleted.
+Scripts may still be deleted from the Django admin interface. When deleting a
+script, all related objects, such as previously run jobs, will also be deleted.
 
 Other Script Runners
 --------------------

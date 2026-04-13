@@ -28,7 +28,7 @@ and requires modifying several files listed in later steps.
 
 2) The minimum supported Python version is 3.7. For supporting scripts written
 in older versions of Python, one approach is to create a docker wrapper, such
-as in :ref:`docker_scripts`.
+as in :doc:`docker_scripts`.
 
 3) The function ugettext_lazy has been removed in Django 3.2 as the unicode/string
 representation is no longer relevant in python3. Thus, all uses of this should be

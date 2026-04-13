@@ -1,17 +1,17 @@
 Configuration on DigitalOcean
-==========================
+=============================
 
 How to get Wooey up and running on a DO box. I followed these instructions on a Ubuntu 14.04 LTS box. For security purposes we want it to be running only on HTTPS.
 
 Download Wooey
----------------
+--------------
 
 Download and install Wooey, by any of the standard methods. For this tutorial this was run in the home directory i.e. /home/user/
 
 This means manage.py will be in /home/user/ProjectName
 
 Install Nginx & uWSGI
-----------------
+---------------------
 
 Next we need to install Nginx, which will make setting up SSL easy and uWSGI which is how Django and Nginx talk.
 
@@ -22,7 +22,7 @@ uWSGI you can install with `pip`.
 
 
 Getting Wooey to listen on Port 80
--------------------
+----------------------------------
 
 You could at this point have Wooey listen to port 80 (assuming it's open) with the following command, run from the folder containing manage.py:
 
@@ -35,7 +35,7 @@ But this leaves us wildly insecure, because all our passwords will be transmitte
 
 
 Getting Wooey to talk to Nginx & uWSGI
----------------------
+--------------------------------------
 
 We will basically follow the tutorial `here
 <http://uwsgi-docs.readthedocs.io/en/latest/tutorials/Django_and_nginx.html>`_. If you installed Wooey in a virtualenv from the get go, then follow all those steps, if not you can ignore that set:
@@ -75,7 +75,7 @@ If you want to use a file socket, I then created an empty file in the Wooey proj
 At this point we should now have Wooey running on Port 80 through Nginx.
 
 Forcing SSL with Nginx
----------------------
+----------------------
 
 I have forced SSL with the following settings. (I think I might be running two SSL redirects, one on the Nginx side and one on the Django side which is never necessary because Nginx comes first, any clarification would be welcome, however for those following along:)
 
@@ -174,7 +174,7 @@ Here's an example of what my final Nginx setup file in `/etc/nginx/sites-availab
 
 
 Running Celery in the background
----------------------
+--------------------------------
 
 All this other set-up means you then can't use honcho to run celery, because it doesn't seem to like (that's a technical term) the uWSGI command which means instead, you have to run it as a background process. This however just seems to work...
 

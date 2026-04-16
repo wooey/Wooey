@@ -498,13 +498,9 @@ def add_or_update_script(request):
     response = []
 
     for script_name, script_file in files.items():
-        script_path = utils.default_storage.save(
-            os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, script_file.name),
-            script_file,
-        )
         if wooey_settings.WOOEY_EPHEMERAL_FILES:
-            # save it locally as well (the default_storage will default to the remote store)
-            script_file.seek(0)
+            # save it locally as well (the default_storage will default to the remote store). Do this before saving it remotely
+            # as there are bugs in some of the storage transfer libraries (s3) that close files automatically
             local_storage = utils.get_storage(local=True)
             local_storage.save(
                 os.path.join(
@@ -513,6 +509,12 @@ def add_or_update_script(request):
                 ),
                 script_file,
             )
+            script_file.seek(0)
+
+        script_path = utils.default_storage.save(
+            os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, script_file.name),
+            script_file,
+        )
         add_kwargs = {
             "script_path": script_path,
             "group": group,

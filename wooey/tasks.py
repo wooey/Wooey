@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+
 import os
 import subprocess
 import sys
@@ -6,19 +7,20 @@ import tarfile
 import tempfile
 import traceback
 import zipfile
+from datetime import timedelta
 from threading import Thread
-
-from django.utils.text import get_valid_filename
-from django.core.files import File
-from django.conf import settings
-from django.utils.translation import gettext_lazy as _
 
 from celery import app
 from celery.schedules import crontab
 from celery.signals import worker_process_init
+from django.conf import settings
+from django.core.files import File
+from django.db.models import F
+from django.utils.text import get_valid_filename
+from django.utils.translation import gettext_lazy as _
 
-from .backend import utils
 from . import settings as wooey_settings
+from .backend import utils
 
 try:
     from Queue import Empty, Queue
@@ -28,6 +30,32 @@ except ImportError:
 ON_POSIX = "posix" in sys.builtin_module_names
 
 celery_app = app.app_or_default()
+
+
+def revoke_job_task(task_id):
+    if task_id:
+        celery_app.control.revoke(task_id)
+
+
+def queue_script_job(
+    job_id, rerun=False, increment_retry_count=False, revoke_existing=False
+):
+    from .models import WooeyJob
+
+    job = WooeyJob.objects.get(pk=job_id)
+    if revoke_existing:
+        revoke_job_task(job.celery_id)
+        WooeyJob.objects.filter(pk=job_id).update(celery_id=None)
+
+    async_result = submit_script.delay(wooey_job=job_id, rerun=rerun)
+    update_kwargs = {
+        "celery_id": async_result.id,
+        "status": WooeyJob.QUEUED,
+    }
+    if increment_retry_count:
+        update_kwargs["retry_count"] = F("retry_count") + 1
+    WooeyJob.objects.filter(pk=job_id).update(**update_kwargs)
+    return async_result
 
 
 def enqueue_output(out, q):
@@ -321,6 +349,7 @@ def submit_script(**kwargs):
 @celery_app.task()
 def cleanup_wooey_jobs(**kwargs):
     from django.utils import timezone
+
     from .models import WooeyJob
 
     cleanup_settings = wooey_settings.WOOEY_JOB_EXPIRATION
@@ -337,36 +366,125 @@ def cleanup_wooey_jobs(**kwargs):
         ).delete()
 
 
+def _extract_task_ids(worker_info):
+    task_ids = set()
+    if not worker_info:
+        return task_ids
+
+    for tasks in worker_info.values():
+        for task in tasks or []:
+            request = task.get("request")
+            if isinstance(request, dict) and request.get("id"):
+                task_ids.add(request["id"])
+                continue
+
+            if task.get("id"):
+                task_ids.add(task["id"])
+
+    return task_ids
+
+
 @celery_app.task()
-def cleanup_dead_jobs():
+def cleanup_stuck_jobs():
     """
-    This cleans up jobs that have been marked as ran, but are not queue'd in celery. It is meant
-    to cleanup jobs that have been lost due to a server crash or some other reason a job is
-    in limbo.
+    This cleans up jobs that are stuck in limbo between Wooey and the task broker.
     """
+    from django.utils import timezone
+
     from .models import WooeyJob
 
-    # Get active tasks from Celery
     inspect = celery_app.control.inspect()
-    worker_info = inspect.active()
+    active_info = inspect.active()
+    reserved_info = inspect.reserved()
+    scheduled_info = inspect.scheduled()
 
-    # If we cannot connect to the workers, we do not know if the tasks are running or not, so
-    # we cannot mark them as dead
-    if not worker_info:
+    # If we cannot connect to the workers, we do not know if the tasks are running or queued.
+    if all(info is None for info in (active_info, reserved_info, scheduled_info)):
         return
 
-    active_tasks = {
-        task["id"] for worker, tasks in worker_info.items() for task in tasks
-    }
+    now = timezone.now()
+    minimum_cleanup_age = timedelta(minutes=10)
+    oldest_cleanup_eligible = now - minimum_cleanup_age
+    active_task_ids = _extract_task_ids(active_info)
+    queued_task_ids = (
+        active_task_ids
+        | _extract_task_ids(reserved_info)
+        | _extract_task_ids(scheduled_info)
+    )
 
-    # find jobs that are marked as running but not present in celery's active tasks
-    active_jobs = WooeyJob.objects.filter(status=WooeyJob.RUNNING)
+    queue_timeout = (
+        wooey_settings.WOOEY_JOB_QUEUE_TIMEOUT
+        if wooey_settings.WOOEY_JOB_QUEUE_TIMEOUT is not None
+        else timedelta(hours=24)
+    )
+    resubmit_timeout = (
+        wooey_settings.WOOEY_JOB_RESUBMIT_TIMEOUT
+        if wooey_settings.WOOEY_JOB_RESUBMIT_TIMEOUT is not None
+        else timedelta(hours=1)
+    )
+    resubmit_limit = (
+        wooey_settings.WOOEY_JOB_RESUBMIT_LIMIT
+        if wooey_settings.WOOEY_JOB_RESUBMIT_LIMIT is not None
+        else 0
+    )
+
+    active_jobs = WooeyJob.objects.filter(
+        status=WooeyJob.RUNNING,
+        created_date__lte=oldest_cleanup_eligible,
+    )
     to_disable = set()
     for job in active_jobs:
-        if job.celery_id not in active_tasks:
+        if job.celery_id not in active_task_ids:
             to_disable.add(job.pk)
 
+    queued_jobs = WooeyJob.objects.filter(
+        status__in=(WooeyJob.SUBMITTED, WooeyJob.RETRY, WooeyJob.QUEUED),
+        created_date__lte=oldest_cleanup_eligible,
+    )
+    jobs_to_resubmit = []
+    jobs_to_mark_queued = set()
+    task_ids_to_revoke = set()
+    for job in queued_jobs:
+        if job.celery_id in active_task_ids:
+            continue
+
+        if job.created_date <= now - queue_timeout:
+            task_ids_to_revoke.add(job.celery_id)
+            to_disable.add(job.pk)
+            continue
+
+        if job.celery_id in queued_task_ids:
+            if job.status in (WooeyJob.SUBMITTED, WooeyJob.RETRY):
+                jobs_to_mark_queued.add(job.pk)
+            continue
+
+        if job.status == WooeyJob.QUEUED:
+            continue
+
+        if job.modified_date > now - resubmit_timeout:
+            continue
+
+        if job.retry_count >= resubmit_limit:
+            task_ids_to_revoke.add(job.celery_id)
+            to_disable.add(job.pk)
+            continue
+
+        jobs_to_resubmit.append(job.pk)
+
+    for task_id in task_ids_to_revoke:
+        revoke_job_task(task_id)
+
+    WooeyJob.objects.filter(pk__in=jobs_to_mark_queued).update(status=WooeyJob.QUEUED)
     WooeyJob.objects.filter(pk__in=to_disable).update(status=WooeyJob.FAILED)
+
+    for job_id in jobs_to_resubmit:
+        WooeyJob.objects.filter(pk=job_id).update(status=WooeyJob.RETRY)
+        queue_script_job(
+            job_id,
+            rerun=False,
+            increment_retry_count=True,
+            revoke_existing=True,
+        )
 
 
 celery_app.conf.beat_schedule.update(
@@ -375,9 +493,9 @@ celery_app.conf.beat_schedule.update(
             "task": "wooey.tasks.cleanup_wooey_jobs",
             "schedule": crontab(hour=0, minute=0),  # cleanup at midnight each day
         },
-        "cleanup-dead-jobs": {
-            "task": "wooey.tasks.cleanup_dead_jobs",
-            "schedule": crontab(minute="*/10"),  # run every 6 minutes
+        "cleanup-stuck-jobs": {
+            "task": "wooey.tasks.cleanup_stuck_jobs",
+            "schedule": crontab(minute="*/10"),  # run every 10 minutes
         },
     }
 )

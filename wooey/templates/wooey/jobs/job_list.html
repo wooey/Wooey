@@ -38,7 +38,7 @@
                                             <span class="label label-success"><span class="glyphicon glyphicon-ok"></span> {% trans "Success" %}</span>
                                         {% elif job.status == 'running' %}
                                             <span class="label label-success"><span class="glyphicon glyphicon-refresh spinning"></span> {% trans "Executing" %}</span>
-                                        {% elif job.status == 'pending' %}
+                                        {% elif job.status == 'queued' or job.status == 'pending' %}
                                             <span class="label label-default"><span class="glyphicon time"></span> {% trans "Queued" %}</span>
                                         {% elif job.status == 'revoked' %}
                                             <span class="label label-danger"><span class="glyphicon glyphicon-stop"></span> {% trans "Halted" %}</span>

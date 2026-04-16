@@ -498,8 +498,11 @@ def add_or_update_script(request):
     response = []
 
     for script_name, script_file in files.items():
+        save_name = utils.default_storage.get_available_name(
+            os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, script_file.name)
+        )
         script_path = utils.default_storage.save(
-            os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, script_file.name),
+            save_name,
             script_file,
         )
         add_kwargs = {

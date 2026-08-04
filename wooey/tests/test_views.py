@@ -56,6 +56,20 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         d = json.loads(response.content.decode("utf-8"))
         self.assertEqual(1, d["totals"]["global"])
 
+        job.status = models.WooeyJob.QUEUED
+        job.save()
+        response = wooey_celery.all_queues_json(request)
+        d = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(1, d["totals"]["global"])
+
+        job.status = models.WooeyJob.RETRY
+        job.save()
+        response = wooey_celery.all_queues_json(request)
+        d = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(1, d["totals"]["global"])
+        self.assertIn("glyphicon-repeat", d["items"]["global"][0]["status"])
+        self.assertNotIn("glyphicon-hourglass", d["items"]["global"][0]["status"])
+
         job.user = self.user
         job.status = models.WooeyJob.RUNNING
         job.save()
@@ -138,6 +152,48 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         with self.assertRaises(Http404):
             response = view(request, job_id=-1)
             response.render()
+
+    def test_retry_jobs_render_as_active_in_job_list(self):
+        job = factories.generate_job(self.translate_script)
+        job.status = models.WooeyJob.RETRY
+        job.save()
+
+        response = self.client.get(reverse("wooey:global_queue"))
+        content = response.content.decode("utf-8")
+
+        self.assertIn("Retrying", content, "RETRY job should display as Retrying")
+        self.assertIn(
+            "glyphicon-repeat",
+            content,
+            "RETRY job should display the repeat-arrow icon",
+        )
+        self.assertNotIn(
+            "glyphicon-question-sign",
+            content,
+            "RETRY job should not use the unknown-state icon",
+        )
+
+    def test_retry_job_detail_shows_status_and_stop_action(self):
+        job = factories.generate_job(self.translate_script)
+        job.status = models.WooeyJob.RETRY
+        job.save()
+
+        response = self.client.get(
+            reverse("wooey:celery_results", kwargs={"job_id": job.pk})
+        )
+        content = response.content.decode("utf-8")
+
+        self.assertGreaterEqual(content.count("status-retry-toggle"), 2)
+        self.assertRegex(
+            content,
+            r'class="[^"]*status-retry-toggle[^"]*" '
+            r'name="celery-command" value="stop"',
+        )
+        self.assertRegex(
+            content,
+            r'<span class="status-retry-toggle[^>]*>\s*'
+            r'<span class="glyphicon glyphicon-repeat"[^>]*></span>\s*Retrying',
+        )
 
 
 class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):

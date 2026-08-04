@@ -2,22 +2,45 @@ import mock
 import os
 from datetime import timedelta
 
+from celery import states
+from django.core.cache import caches
+from django.db import transaction
 from django.test import TestCase
 
 from wooey import settings as wooey_settings
+from wooey import tasks as wooey_tasks
 from wooey.backend.utils import add_wooey_script
 from wooey.models import (
     WooeyJob,
 )
+from wooey.signals import task_completed
 from wooey.tasks import (
-    cleanup_dead_jobs,
+    cleanup_stuck_jobs,
     get_latest_script,
+    queue_script_job,
+    submit_script,
 )
 
 from . import config, mixins, factories
 
 
+def queue_job(job, **kwargs):
+    return queue_script_job(
+        job.pk,
+        expected_status=job.status,
+        expected_celery_id=job.celery_id,
+        submission_status=kwargs.pop("submission_status", WooeyJob.SUBMITTED),
+        **kwargs,
+    )
+
+
 class TaskTests(mixins.ScriptFactoryMixin, TestCase):
+    def test_legacy_cleanup_task_delegates_to_stuck_job_cleanup(self):
+        with mock.patch("wooey.tasks.cleanup_stuck_jobs") as cleanup_mock:
+            wooey_tasks.cleanup_dead_jobs()
+
+        cleanup_mock.assert_called_once_with()
+
     def test_job_cleanup(self):
         from ..models import WooeyJob
         from ..tasks import cleanup_wooey_jobs
@@ -97,7 +120,354 @@ class TestGetLatestScript(mixins.FileMixin, mixins.ScriptTearDown, TestCase):
         self.assertTrue(get_latest_script(second_version))
 
 
-class TestCleanupDeadJobs(mixins.ScriptFactoryMixin, TestCase):
+class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
+    def test_stale_task_signal_does_not_complete_newer_submission(self):
+        job = factories.generate_job(self.translate_script)
+        WooeyJob.objects.filter(pk=job.pk).update(
+            status=WooeyJob.QUEUED,
+            celery_id="new-task-id",
+        )
+
+        task_completed(
+            sender=submit_script,
+            kwargs={"wooey_job": job.pk},
+            task_id="old-task-id",
+            state=states.SUCCESS,
+        )
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.QUEUED)
+        self.assertEqual(job.celery_id, "new-task-id")
+
+    def test_task_signal_uses_persisted_task_id_without_request_context(self):
+        job = factories.generate_job(self.translate_script)
+        WooeyJob.objects.filter(pk=job.pk).update(
+            status=WooeyJob.RUNNING,
+            celery_id="current-task-id",
+        )
+
+        task_completed(
+            sender=object(),
+            kwargs={"wooey_job": job.pk},
+            task_id="current-task-id",
+            state=states.FAILURE,
+        )
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, states.FAILURE)
+
+    def test_task_signal_does_not_overwrite_user_terminal_state(self):
+        for user_status in (states.REVOKED, WooeyJob.DELETED):
+            with self.subTest(user_status=user_status):
+                job = factories.generate_job(self.translate_script)
+                WooeyJob.objects.filter(pk=job.pk).update(
+                    status=user_status,
+                    celery_id="current-task-id",
+                )
+
+                task_completed(
+                    sender=submit_script,
+                    kwargs={"wooey_job": job.pk},
+                    task_id="current-task-id",
+                    state=states.FAILURE,
+                )
+
+                job.refresh_from_db()
+                self.assertEqual(job.status, user_status)
+
+    def test_rejected_duplicate_signal_does_not_complete_running_job(self):
+        job = factories.generate_job(self.translate_script)
+        WooeyJob.objects.filter(pk=job.pk).update(
+            status=WooeyJob.RUNNING,
+            celery_id="current-task-id",
+        )
+        task_kwargs = {"wooey_job": job.pk}
+
+        with mock.patch(
+            "wooey.tasks.utils.get_job_commands",
+            side_effect=RuntimeError("duplicate task reached script setup"),
+        ) as get_job_commands_mock:
+            result = submit_script.apply(
+                kwargs=task_kwargs,
+                task_id="current-task-id",
+            )
+
+        get_job_commands_mock.assert_not_called()
+        self.assertEqual(result.state, states.SUCCESS)
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.RUNNING)
+
+    def test_task_id_reaches_worker_and_fences_signal(self):
+        job = factories.generate_job(self.translate_script)
+        WooeyJob.objects.filter(pk=job.pk).update(
+            status=WooeyJob.QUEUED,
+            celery_id="queued-task-id",
+        )
+
+        with mock.patch.object(
+            WooeyJob,
+            "update_realtime",
+            side_effect=RuntimeError("failure after task claim"),
+        ):
+            result = submit_script.apply(
+                kwargs={"wooey_job": job.pk, "rerun": False},
+                task_id="queued-task-id",
+            )
+
+        self.assertEqual(result.state, states.FAILURE)
+        job.refresh_from_db()
+        self.assertEqual(job.status, states.FAILURE)
+        self.assertEqual(job.celery_id, result.id)
+
+    def test_stopped_running_job_is_not_finalized_by_worker(self):
+        job = factories.generate_job(self.translate_script)
+        WooeyJob.objects.filter(pk=job.pk).update(
+            status=WooeyJob.QUEUED,
+            celery_id="current-task-id",
+        )
+
+        def stop_job_during_run(*args, **kwargs):
+            WooeyJob.objects.filter(pk=job.pk).update(status=states.REVOKED)
+            return ("output", "", 0)
+
+        with (
+            mock.patch("wooey.tasks.utils.get_job_commands", return_value=["command"]),
+            mock.patch("wooey.tasks.utils.mkdirs"),
+            mock.patch("wooey.tasks.get_latest_script"),
+            mock.patch(
+                "wooey.tasks.run_and_stream_command",
+                side_effect=stop_job_during_run,
+            ),
+            mock.patch("wooey.tasks.os.listdir", return_value=[]),
+            mock.patch("wooey.tasks.utils.create_job_fileinfo") as fileinfo_mock,
+        ):
+            submit_script.apply(
+                kwargs={"wooey_job": job.pk},
+                task_id="current-task-id",
+            )
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, states.REVOKED)
+        fileinfo_mock.assert_not_called()
+
+    def test_stale_realtime_output_does_not_restore_old_task_state(self):
+        original_realtime_cache = wooey_settings.WOOEY_REALTIME_CACHE
+        self.addCleanup(
+            setattr,
+            wooey_settings,
+            "WOOEY_REALTIME_CACHE",
+            original_realtime_cache,
+        )
+        wooey_settings.WOOEY_REALTIME_CACHE = None
+
+        job = factories.generate_job(self.translate_script)
+        job.status = WooeyJob.RUNNING
+        job.celery_id = "old-task-id"
+        job.save()
+        stale_worker_job = WooeyJob.objects.get(pk=job.pk)
+
+        WooeyJob.objects.filter(pk=job.pk).update(
+            status=WooeyJob.QUEUED,
+            celery_id="new-task-id",
+        )
+
+        stale_worker_job.update_realtime(
+            stdout="output from stale task",
+            stderr="error from stale task",
+        )
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.QUEUED)
+        self.assertEqual(job.celery_id, "new-task-id")
+
+    def test_stopped_task_cannot_update_realtime_output(self):
+        original_realtime_cache = wooey_settings.WOOEY_REALTIME_CACHE
+        self.addCleanup(
+            setattr,
+            wooey_settings,
+            "WOOEY_REALTIME_CACHE",
+            original_realtime_cache,
+        )
+        wooey_settings.WOOEY_REALTIME_CACHE = None
+
+        job = factories.generate_job(self.translate_script)
+        WooeyJob.objects.filter(pk=job.pk).update(
+            status=WooeyJob.RUNNING,
+            celery_id="current-task-id",
+            stdout="output before stop",
+        )
+        stopped_worker_job = WooeyJob.objects.get(pk=job.pk)
+        WooeyJob.objects.filter(pk=job.pk).update(status=WooeyJob.REVOKED)
+
+        stopped_worker_job.update_realtime(stdout="output after stop")
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.REVOKED)
+        self.assertEqual(job.stdout, "output before stop")
+
+    def test_stale_cached_output_does_not_leak_into_newer_submission(self):
+        original_realtime_cache = wooey_settings.WOOEY_REALTIME_CACHE
+        self.addCleanup(
+            setattr,
+            wooey_settings,
+            "WOOEY_REALTIME_CACHE",
+            original_realtime_cache,
+        )
+        wooey_settings.WOOEY_REALTIME_CACHE = "default"
+        cache = caches["default"]
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+        job = factories.generate_job(self.translate_script)
+        WooeyJob.objects.filter(pk=job.pk).update(
+            status=WooeyJob.RUNNING,
+            celery_id="old-task-id",
+            stdout="old output",
+        )
+        stale_worker_job = WooeyJob.objects.get(pk=job.pk)
+        original_cache_set = cache.set
+
+        def supersede_before_cache_write(*args, **kwargs):
+            WooeyJob.objects.filter(pk=job.pk).update(
+                status=WooeyJob.QUEUED,
+                celery_id="new-task-id",
+                stdout="new output",
+            )
+            return original_cache_set(*args, **kwargs)
+
+        with mock.patch.object(
+            cache,
+            "set",
+            side_effect=supersede_before_cache_write,
+        ):
+            stale_worker_job.update_realtime(stdout="stale output", stderr="")
+
+        job.refresh_from_db()
+        self.assertEqual(job.get_stdout(), "new output")
+
+    def test_stale_task_does_not_execute_script(self):
+        job = factories.generate_job(self.translate_script)
+
+        with mock.patch("wooey.tasks.submit_script.apply_async") as apply_async_mock:
+            with self.captureOnCommitCallbacks(execute=True):
+                queue_job(job)
+
+        job.refresh_from_db()
+        worker_kwargs = dict(apply_async_mock.call_args.kwargs["kwargs"])
+        dispatched_task_id = apply_async_mock.call_args.kwargs["task_id"]
+
+        WooeyJob.objects.filter(pk=job.pk).update(
+            status=WooeyJob.QUEUED,
+            celery_id="new-task-id",
+        )
+
+        with (
+            mock.patch.object(WooeyJob, "update_realtime") as update_realtime_mock,
+            mock.patch(
+                "wooey.tasks.utils.get_job_commands",
+                side_effect=RuntimeError("stale task reached script setup"),
+            ),
+        ):
+            submit_script.apply(
+                kwargs=worker_kwargs,
+                task_id=dispatched_task_id,
+            )
+
+        update_realtime_mock.assert_not_called()
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.QUEUED)
+        self.assertEqual(job.celery_id, "new-task-id")
+
+    def test_rollback_discards_pending_publish(self):
+        job = factories.generate_job(self.translate_script)
+
+        with mock.patch("wooey.tasks.submit_script.apply_async") as apply_async_mock:
+            with self.captureOnCommitCallbacks(execute=True) as callbacks:
+                with self.assertRaisesRegex(RuntimeError, "roll back"):
+                    with transaction.atomic():
+                        queue_job(job)
+                        raise RuntimeError("roll back")
+
+            self.assertEqual(callbacks, [])
+            apply_async_mock.assert_not_called()
+
+        job.refresh_from_db()
+        self.assertIsNone(job.celery_id)
+
+    def test_records_task_id_before_publishing_after_commit(self):
+        job = factories.generate_job(self.translate_script)
+
+        with mock.patch("wooey.tasks.submit_script.apply_async") as apply_async_mock:
+            with self.captureOnCommitCallbacks(execute=False) as callbacks:
+                celery_id = queue_job(job)
+                job.refresh_from_db()
+                self.assertEqual(job.celery_id, celery_id)
+                self.assertEqual(job.status, WooeyJob.SUBMITTED)
+                apply_async_mock.assert_not_called()
+
+            self.assertEqual(len(callbacks), 1)
+            callbacks[0]()
+
+            apply_async_mock.assert_called_once_with(
+                kwargs={
+                    "wooey_job": job.pk,
+                    "rerun": False,
+                },
+                task_id=celery_id,
+            )
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.QUEUED)
+
+    def test_failed_dispatch_remains_waiting_for_resubmission(self):
+        job = factories.generate_job(self.translate_script)
+
+        with mock.patch(
+            "wooey.tasks.submit_script.apply_async",
+            side_effect=RuntimeError("broker unavailable"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "broker unavailable"):
+                with self.captureOnCommitCallbacks(execute=True):
+                    queue_job(job)
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.SUBMITTED)
+        self.assertIsNotNone(job.celery_id)
+
+    def test_preserves_state_set_by_task_during_dispatch(self):
+        job = factories.generate_job(self.translate_script)
+
+        def complete_job_immediately(*, kwargs, task_id):
+            WooeyJob.objects.filter(pk=kwargs["wooey_job"]).update(
+                status=WooeyJob.COMPLETED
+            )
+
+        with mock.patch(
+            "wooey.tasks.submit_script.apply_async",
+            side_effect=complete_job_immediately,
+        ):
+            with self.captureOnCommitCallbacks(execute=True):
+                queue_job(job)
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.COMPLETED)
+
+
+class TestCleanupStuckJobs(mixins.ScriptFactoryMixin, TestCase):
+    def setUp(self):
+        super(TestCleanupStuckJobs, self).setUp()
+        self.cleanup_grace = wooey_settings.WOOEY_JOB_CLEANUP_GRACE
+        self.queue_timeout = wooey_settings.WOOEY_JOB_QUEUE_TIMEOUT
+        self.resubmit_timeout = wooey_settings.WOOEY_JOB_RESUBMIT_TIMEOUT
+        self.resubmit_limit = wooey_settings.WOOEY_JOB_RESUBMIT_LIMIT
+        self.addCleanup(self.restore_job_settings)
+
+    def restore_job_settings(self):
+        wooey_settings.WOOEY_JOB_CLEANUP_GRACE = self.cleanup_grace
+        wooey_settings.WOOEY_JOB_QUEUE_TIMEOUT = self.queue_timeout
+        wooey_settings.WOOEY_JOB_RESUBMIT_TIMEOUT = self.resubmit_timeout
+        wooey_settings.WOOEY_JOB_RESUBMIT_LIMIT = self.resubmit_limit
+
     def test_handles_unresponsive_workers(self):
         # Ensure that if we cannot connect to celery, we do nothing.
         with mock.patch("wooey.tasks.celery_app.control.inspect") as inspect_mock:
@@ -108,14 +478,66 @@ class TestCleanupDeadJobs(mixins.ScriptFactoryMixin, TestCase):
             inspect_mock.return_value = mock.Mock(
                 active=mock.Mock(
                     return_value=None,
-                )
+                ),
+                reserved=mock.Mock(return_value=None),
+                scheduled=mock.Mock(return_value=None),
             )
-            cleanup_dead_jobs()
+            cleanup_stuck_jobs()
             self.assertEqual(
                 WooeyJob.objects.get(pk=running_job.id).status, WooeyJob.RUNNING
             )
 
-    def test_cleans_up_dead_jobs(self):
+    def test_skips_cleanup_if_any_worker_inspection_is_unavailable(self):
+        from django.utils import timezone
+
+        wooey_settings.WOOEY_JOB_QUEUE_TIMEOUT = timedelta(hours=24)
+        wooey_settings.WOOEY_JOB_RESUBMIT_TIMEOUT = timedelta(hours=1)
+        wooey_settings.WOOEY_JOB_RESUBMIT_LIMIT = 3
+
+        for missing_inspection in ("active", "reserved", "scheduled"):
+            with self.subTest(missing_inspection=missing_inspection):
+                WooeyJob.objects.all().delete()
+                running_job = factories.generate_job(self.translate_script)
+                running_job.status = WooeyJob.RUNNING
+                running_job.celery_id = "running-task-id"
+                running_job.save()
+                waiting_job = factories.generate_job(self.translate_script)
+                waiting_job.celery_id = "waiting-task-id"
+                waiting_job.save()
+                WooeyJob.objects.filter(pk__in=(running_job.pk, waiting_job.pk)).update(
+                    created_date=timezone.now() - timedelta(minutes=15),
+                    submitted_date=timezone.now() - timedelta(minutes=15),
+                    modified_date=timezone.now() - timedelta(hours=2),
+                )
+
+                worker_info = {"active": {}, "reserved": {}, "scheduled": {}}
+                worker_info[missing_inspection] = None
+                inspector = mock.Mock(
+                    active=mock.Mock(return_value=worker_info["active"]),
+                    reserved=mock.Mock(return_value=worker_info["reserved"]),
+                    scheduled=mock.Mock(return_value=worker_info["scheduled"]),
+                )
+
+                with (
+                    mock.patch(
+                        "wooey.tasks.celery_app.control.inspect",
+                        return_value=inspector,
+                    ),
+                    mock.patch("wooey.tasks.celery_app.control.revoke") as revoke_mock,
+                    mock.patch("wooey.tasks.submit_script.apply_async") as delay_mock,
+                ):
+                    cleanup_stuck_jobs()
+
+                revoke_mock.assert_not_called()
+                delay_mock.assert_not_called()
+                running_job.refresh_from_db()
+                waiting_job.refresh_from_db()
+                self.assertEqual(running_job.status, WooeyJob.RUNNING)
+                self.assertEqual(waiting_job.status, WooeyJob.SUBMITTED)
+
+    def test_cleans_up_dead_running_jobs(self):
+        from django.utils import timezone
+
         # Make a job that is running but not active, and a job that is running and active.
         dead_job = factories.generate_job(self.translate_script)
         dead_job.status = WooeyJob.RUNNING
@@ -124,6 +546,11 @@ class TestCleanupDeadJobs(mixins.ScriptFactoryMixin, TestCase):
         active_job.status = WooeyJob.RUNNING
         active_job.celery_id = "celery-id"
         active_job.save()
+        WooeyJob.objects.filter(pk__in=(dead_job.pk, active_job.pk)).update(
+            created_date=timezone.now() - timedelta(minutes=15),
+            submitted_date=timezone.now() - timedelta(minutes=15),
+            modified_date=timezone.now() - timedelta(minutes=15),
+        )
         with mock.patch("wooey.tasks.celery_app.control.inspect") as inspect_mock:
             inspect_mock.return_value = mock.Mock(
                 active=mock.Mock(
@@ -136,7 +563,9 @@ class TestCleanupDeadJobs(mixins.ScriptFactoryMixin, TestCase):
                     },
                 )
             )
-            cleanup_dead_jobs()
+            inspect_mock.return_value.reserved = mock.Mock(return_value={})
+            inspect_mock.return_value.scheduled = mock.Mock(return_value={})
+            cleanup_stuck_jobs()
 
             # Assert the dead job is updated
             self.assertEqual(
@@ -145,3 +574,445 @@ class TestCleanupDeadJobs(mixins.ScriptFactoryMixin, TestCase):
             self.assertEqual(
                 WooeyJob.objects.get(pk=active_job.id).status, WooeyJob.RUNNING
             )
+
+    def test_marks_visible_waiting_jobs_as_queued(self):
+        from django.utils import timezone
+
+        waiting_job = factories.generate_job(self.translate_script)
+        waiting_job.celery_id = "queued-task-id"
+        waiting_job.save()
+        WooeyJob.objects.filter(pk=waiting_job.pk).update(
+            created_date=timezone.now() - timedelta(minutes=15),
+            submitted_date=timezone.now() - timedelta(minutes=15),
+            modified_date=timezone.now() - timedelta(minutes=15),
+        )
+
+        with mock.patch("wooey.tasks.celery_app.control.inspect") as inspect_mock:
+            inspect_mock.return_value = mock.Mock(
+                active=mock.Mock(return_value={}),
+                reserved=mock.Mock(
+                    return_value={"worker-id": [{"id": waiting_job.celery_id}]}
+                ),
+                scheduled=mock.Mock(return_value={}),
+            )
+            cleanup_stuck_jobs()
+
+        self.assertEqual(
+            WooeyJob.objects.get(pk=waiting_job.pk).status, WooeyJob.QUEUED
+        )
+
+    def test_ignores_jobs_younger_than_minimum_cleanup_age(self):
+        from django.utils import timezone
+
+        fresh_running_job = factories.generate_job(self.translate_script)
+        fresh_running_job.status = WooeyJob.RUNNING
+        fresh_running_job.save()
+        fresh_waiting_job = factories.generate_job(self.translate_script)
+        fresh_waiting_job.status = WooeyJob.RETRY
+        fresh_waiting_job.celery_id = "fresh-task-id"
+        fresh_waiting_job.save()
+        WooeyJob.objects.filter(
+            pk__in=(fresh_running_job.pk, fresh_waiting_job.pk)
+        ).update(
+            created_date=timezone.now() - timedelta(minutes=5),
+            submitted_date=timezone.now() - timedelta(minutes=5),
+            modified_date=timezone.now() - timedelta(hours=2),
+        )
+
+        with mock.patch("wooey.tasks.celery_app.control.inspect") as inspect_mock:
+            inspect_mock.return_value = mock.Mock(
+                active=mock.Mock(return_value={}),
+                reserved=mock.Mock(return_value={}),
+                scheduled=mock.Mock(return_value={}),
+            )
+            with mock.patch("wooey.tasks.celery_app.control.revoke") as revoke_mock:
+                with mock.patch("wooey.tasks.submit_script.apply_async") as delay_mock:
+                    cleanup_stuck_jobs()
+                    self.assertFalse(revoke_mock.called)
+                    self.assertFalse(delay_mock.called)
+
+        fresh_running_job.refresh_from_db()
+        fresh_waiting_job.refresh_from_db()
+        self.assertEqual(fresh_running_job.status, WooeyJob.RUNNING)
+        self.assertEqual(fresh_waiting_job.status, WooeyJob.RETRY)
+
+    def test_honors_configured_cleanup_grace(self):
+        from django.utils import timezone
+
+        job = factories.generate_job(self.translate_script)
+        job.status = WooeyJob.RUNNING
+        job.celery_id = "running-task-id"
+        job.save()
+        WooeyJob.objects.filter(pk=job.pk).update(
+            submitted_date=timezone.now() - timedelta(minutes=15),
+        )
+        wooey_settings.WOOEY_JOB_CLEANUP_GRACE = timedelta(minutes=30)
+
+        inspector = mock.Mock(
+            active=mock.Mock(return_value={}),
+            reserved=mock.Mock(return_value={}),
+            scheduled=mock.Mock(return_value={}),
+        )
+        with mock.patch(
+            "wooey.tasks.celery_app.control.inspect",
+            return_value=inspector,
+        ):
+            cleanup_stuck_jobs()
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.RUNNING)
+
+    def test_none_timeouts_disable_queue_failure_and_resubmission(self):
+        from django.utils import timezone
+
+        job = factories.generate_job(self.translate_script)
+        job.celery_id = "waiting-task-id"
+        job.save()
+        WooeyJob.objects.filter(pk=job.pk).update(
+            submitted_date=timezone.now() - timedelta(days=2),
+            modified_date=timezone.now() - timedelta(days=2),
+        )
+        wooey_settings.WOOEY_JOB_QUEUE_TIMEOUT = None
+        wooey_settings.WOOEY_JOB_RESUBMIT_TIMEOUT = None
+
+        inspector = mock.Mock(
+            active=mock.Mock(return_value={}),
+            reserved=mock.Mock(return_value={}),
+            scheduled=mock.Mock(return_value={}),
+        )
+        with (
+            mock.patch(
+                "wooey.tasks.celery_app.control.inspect",
+                return_value=inspector,
+            ),
+            mock.patch("wooey.tasks.celery_app.control.revoke") as revoke_mock,
+            mock.patch("wooey.tasks.submit_script.apply_async") as publish_mock,
+        ):
+            cleanup_stuck_jobs()
+
+        revoke_mock.assert_not_called()
+        publish_mock.assert_not_called()
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.SUBMITTED)
+
+    def test_zero_retry_limit_disables_resubmission(self):
+        from django.utils import timezone
+
+        job = factories.generate_job(self.translate_script)
+        job.celery_id = "waiting-task-id"
+        job.save()
+        WooeyJob.objects.filter(pk=job.pk).update(
+            submitted_date=timezone.now() - timedelta(hours=2),
+            modified_date=timezone.now() - timedelta(hours=2),
+        )
+        wooey_settings.WOOEY_JOB_QUEUE_TIMEOUT = None
+        wooey_settings.WOOEY_JOB_RESUBMIT_TIMEOUT = timedelta(hours=1)
+        wooey_settings.WOOEY_JOB_RESUBMIT_LIMIT = 0
+
+        inspector = mock.Mock(
+            active=mock.Mock(return_value={}),
+            reserved=mock.Mock(return_value={}),
+            scheduled=mock.Mock(return_value={}),
+        )
+        with (
+            mock.patch(
+                "wooey.tasks.celery_app.control.inspect",
+                return_value=inspector,
+            ),
+            mock.patch("wooey.tasks.submit_script.apply_async") as publish_mock,
+        ):
+            cleanup_stuck_jobs()
+
+        publish_mock.assert_not_called()
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.SUBMITTED)
+
+    def test_does_not_resubmit_waiting_job_with_recent_activity(self):
+        from django.utils import timezone
+
+        retry_job = factories.generate_job(self.translate_script)
+        retry_job.status = WooeyJob.RETRY
+        retry_job.celery_id = "active-task-id"
+        retry_job.save()
+        WooeyJob.objects.filter(pk=retry_job.pk).update(
+            created_date=timezone.now() - timedelta(hours=2),
+            submitted_date=timezone.now() - timedelta(hours=2),
+            modified_date=timezone.now() - timedelta(minutes=30),
+        )
+
+        wooey_settings.WOOEY_JOB_QUEUE_TIMEOUT = timedelta(hours=24)
+        wooey_settings.WOOEY_JOB_RESUBMIT_TIMEOUT = timedelta(hours=1)
+        wooey_settings.WOOEY_JOB_RESUBMIT_LIMIT = 3
+
+        inspector = mock.Mock(
+            active=mock.Mock(return_value={}),
+            reserved=mock.Mock(return_value={}),
+            scheduled=mock.Mock(return_value={}),
+        )
+        with (
+            mock.patch(
+                "wooey.tasks.celery_app.control.inspect",
+                return_value=inspector,
+            ),
+            mock.patch("wooey.tasks.celery_app.control.revoke") as revoke_mock,
+            mock.patch("wooey.tasks.submit_script.apply_async") as apply_async_mock,
+        ):
+            cleanup_stuck_jobs()
+
+        revoke_mock.assert_not_called()
+        apply_async_mock.assert_not_called()
+        retry_job.refresh_from_db()
+        self.assertEqual(retry_job.status, WooeyJob.RETRY)
+        self.assertEqual(retry_job.retry_count, 0)
+
+    def test_requeues_stale_waiting_jobs_and_revokes_old_task(self):
+        from django.utils import timezone
+
+        retry_job = factories.generate_job(self.translate_script)
+        retry_job.status = WooeyJob.RETRY
+        retry_job.celery_id = "stale-task-id"
+        retry_job.retry_count = 1
+        retry_job.save()
+        WooeyJob.objects.filter(pk=retry_job.pk).update(
+            created_date=timezone.now() - timedelta(hours=2),
+            submitted_date=timezone.now() - timedelta(hours=2),
+            modified_date=timezone.now() - timedelta(hours=2),
+        )
+
+        wooey_settings.WOOEY_JOB_QUEUE_TIMEOUT = timedelta(hours=24)
+        wooey_settings.WOOEY_JOB_RESUBMIT_TIMEOUT = timedelta(hours=1)
+        wooey_settings.WOOEY_JOB_RESUBMIT_LIMIT = 3
+
+        with mock.patch("wooey.tasks.celery_app.control.inspect") as inspect_mock:
+            inspect_mock.return_value = mock.Mock(
+                active=mock.Mock(return_value={}),
+                reserved=mock.Mock(return_value={}),
+                scheduled=mock.Mock(return_value={}),
+            )
+            with mock.patch("wooey.tasks.celery_app.control.revoke") as revoke_mock:
+                with mock.patch("wooey.tasks.submit_script.apply_async") as delay_mock:
+                    with self.captureOnCommitCallbacks(execute=True):
+                        cleanup_stuck_jobs()
+                    revoke_mock.assert_called_once_with("stale-task-id")
+                    delay_mock.assert_called_once_with(
+                        kwargs={
+                            "wooey_job": retry_job.pk,
+                            "rerun": False,
+                        },
+                        task_id=mock.ANY,
+                    )
+
+        retry_job.refresh_from_db()
+        self.assertEqual(retry_job.status, WooeyJob.QUEUED)
+        self.assertEqual(retry_job.retry_count, 2)
+        self.assertEqual(
+            retry_job.celery_id,
+            delay_mock.call_args.kwargs["task_id"],
+        )
+
+    def test_does_not_overwrite_newer_retry_attempt_selected_by_cleanup(self):
+        from django.utils import timezone
+
+        retry_job = factories.generate_job(self.translate_script)
+        retry_job.status = WooeyJob.RETRY
+        retry_job.celery_id = "stale-task-id"
+        retry_job.retry_count = 1
+        retry_job.save()
+        WooeyJob.objects.filter(pk=retry_job.pk).update(
+            created_date=timezone.now() - timedelta(hours=2),
+            submitted_date=timezone.now() - timedelta(hours=2),
+            modified_date=timezone.now() - timedelta(hours=2),
+        )
+
+        wooey_settings.WOOEY_JOB_QUEUE_TIMEOUT = timedelta(hours=24)
+        wooey_settings.WOOEY_JOB_RESUBMIT_TIMEOUT = timedelta(hours=1)
+        wooey_settings.WOOEY_JOB_RESUBMIT_LIMIT = 3
+
+        real_filter = WooeyJob.objects.filter
+        race_applied = False
+
+        def apply_overlapping_retry(*args, **kwargs):
+            nonlocal race_applied
+            if not race_applied and kwargs.get("pk") == retry_job.pk:
+                race_applied = True
+                real_filter(pk=retry_job.pk).update(
+                    status=WooeyJob.RETRY,
+                    celery_id="newer-task-id",
+                    retry_count=2,
+                    submitted_date=timezone.now(),
+                    modified_date=timezone.now(),
+                )
+            return real_filter(*args, **kwargs)
+
+        inspector = mock.Mock(
+            active=mock.Mock(return_value={}),
+            reserved=mock.Mock(return_value={}),
+            scheduled=mock.Mock(return_value={}),
+        )
+        with (
+            mock.patch(
+                "wooey.tasks.celery_app.control.inspect",
+                return_value=inspector,
+            ),
+            mock.patch.object(
+                WooeyJob.objects,
+                "filter",
+                side_effect=apply_overlapping_retry,
+            ),
+            mock.patch("wooey.tasks.celery_app.control.revoke") as revoke_mock,
+            mock.patch("wooey.tasks.submit_script.apply_async") as apply_async_mock,
+            self.captureOnCommitCallbacks(execute=True),
+        ):
+            cleanup_stuck_jobs()
+
+        self.assertTrue(race_applied)
+        revoke_mock.assert_not_called()
+        apply_async_mock.assert_not_called()
+        retry_job.refresh_from_db()
+        self.assertEqual(retry_job.status, WooeyJob.RETRY)
+        self.assertEqual(retry_job.celery_id, "newer-task-id")
+        self.assertEqual(retry_job.retry_count, 2)
+
+    def test_does_not_requeue_jobs_already_queued_on_broker(self):
+        from django.utils import timezone
+
+        queued_job = factories.generate_job(self.translate_script)
+        queued_job.status = WooeyJob.QUEUED
+        queued_job.celery_id = "queued-task-id"
+        queued_job.save()
+        WooeyJob.objects.filter(pk=queued_job.pk).update(
+            created_date=timezone.now() - timedelta(hours=2),
+            submitted_date=timezone.now() - timedelta(hours=2),
+            modified_date=timezone.now() - timedelta(hours=2),
+        )
+
+        wooey_settings.WOOEY_JOB_QUEUE_TIMEOUT = timedelta(hours=24)
+        wooey_settings.WOOEY_JOB_RESUBMIT_TIMEOUT = timedelta(hours=1)
+        wooey_settings.WOOEY_JOB_RESUBMIT_LIMIT = 3
+
+        with mock.patch("wooey.tasks.celery_app.control.inspect") as inspect_mock:
+            inspect_mock.return_value = mock.Mock(
+                active=mock.Mock(return_value={}),
+                reserved=mock.Mock(return_value={}),
+                scheduled=mock.Mock(return_value={}),
+            )
+            with mock.patch("wooey.tasks.celery_app.control.revoke") as revoke_mock:
+                with mock.patch("wooey.tasks.submit_script.apply_async") as delay_mock:
+                    cleanup_stuck_jobs()
+                    self.assertFalse(revoke_mock.called)
+                    self.assertFalse(delay_mock.called)
+
+        self.assertEqual(WooeyJob.objects.get(pk=queued_job.pk).status, WooeyJob.QUEUED)
+
+    def test_fails_queued_jobs_that_exceed_queue_timeout(self):
+        from django.utils import timezone
+
+        queued_job = factories.generate_job(self.translate_script)
+        queued_job.status = WooeyJob.QUEUED
+        queued_job.celery_id = "queued-task-id"
+        queued_job.save()
+        WooeyJob.objects.filter(pk=queued_job.pk).update(
+            created_date=timezone.now() - timedelta(hours=25),
+            submitted_date=timezone.now() - timedelta(hours=25),
+            modified_date=timezone.now() - timedelta(hours=2),
+        )
+
+        wooey_settings.WOOEY_JOB_QUEUE_TIMEOUT = timedelta(hours=24)
+        wooey_settings.WOOEY_JOB_RESUBMIT_TIMEOUT = timedelta(hours=1)
+        wooey_settings.WOOEY_JOB_RESUBMIT_LIMIT = 3
+
+        with mock.patch("wooey.tasks.celery_app.control.inspect") as inspect_mock:
+            inspect_mock.return_value = mock.Mock(
+                active=mock.Mock(return_value={}),
+                reserved=mock.Mock(return_value={}),
+                scheduled=mock.Mock(return_value={}),
+            )
+            with mock.patch("wooey.tasks.celery_app.control.revoke") as revoke_mock:
+                with mock.patch("wooey.tasks.submit_script.apply_async") as delay_mock:
+                    cleanup_stuck_jobs()
+                    revoke_mock.assert_called_once_with("queued-task-id")
+                    self.assertFalse(delay_mock.called)
+
+        self.assertEqual(WooeyJob.objects.get(pk=queued_job.pk).status, WooeyJob.FAILED)
+
+    def test_fresh_rerun_of_old_job_does_not_exceed_queue_timeout(self):
+        from django.utils import timezone
+
+        old_celery_setting = wooey_settings.WOOEY_CELERY
+        self.addCleanup(
+            setattr,
+            wooey_settings,
+            "WOOEY_CELERY",
+            old_celery_setting,
+        )
+        wooey_settings.WOOEY_CELERY = True
+        wooey_settings.WOOEY_JOB_QUEUE_TIMEOUT = timedelta(hours=24)
+
+        job = factories.generate_job(self.translate_script)
+        job.status = WooeyJob.COMPLETED
+        job.save()
+        WooeyJob.objects.filter(pk=job.pk).update(
+            created_date=timezone.now() - timedelta(hours=25),
+            submitted_date=timezone.now() - timedelta(hours=25),
+        )
+        job.refresh_from_db()
+
+        with mock.patch("wooey.tasks.submit_script.apply_async"):
+            with self.captureOnCommitCallbacks(execute=True):
+                job.submit_to_celery(rerun=True)
+
+        job.refresh_from_db()
+        fresh_rerun_task_id = job.celery_id
+
+        inspector = mock.Mock(
+            active=mock.Mock(return_value={}),
+            reserved=mock.Mock(
+                return_value={"worker-id": [{"id": fresh_rerun_task_id}]}
+            ),
+            scheduled=mock.Mock(return_value={}),
+        )
+        with (
+            mock.patch(
+                "wooey.tasks.celery_app.control.inspect",
+                return_value=inspector,
+            ),
+            mock.patch("wooey.tasks.celery_app.control.revoke") as revoke_mock,
+        ):
+            cleanup_stuck_jobs()
+
+        revoke_mock.assert_not_called()
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.QUEUED)
+
+    def test_fails_waiting_jobs_that_hit_retry_limit(self):
+        from django.utils import timezone
+
+        retry_job = factories.generate_job(self.translate_script)
+        retry_job.status = WooeyJob.RETRY
+        retry_job.celery_id = "stale-task-id"
+        retry_job.retry_count = 3
+        retry_job.save()
+        WooeyJob.objects.filter(pk=retry_job.pk).update(
+            created_date=timezone.now() - timedelta(hours=2),
+            submitted_date=timezone.now() - timedelta(hours=2),
+            modified_date=timezone.now() - timedelta(hours=2),
+        )
+
+        wooey_settings.WOOEY_JOB_QUEUE_TIMEOUT = timedelta(hours=24)
+        wooey_settings.WOOEY_JOB_RESUBMIT_TIMEOUT = timedelta(hours=1)
+        wooey_settings.WOOEY_JOB_RESUBMIT_LIMIT = 3
+
+        with mock.patch("wooey.tasks.celery_app.control.inspect") as inspect_mock:
+            inspect_mock.return_value = mock.Mock(
+                active=mock.Mock(return_value={}),
+                reserved=mock.Mock(return_value={}),
+                scheduled=mock.Mock(return_value={}),
+            )
+            with mock.patch("wooey.tasks.celery_app.control.revoke") as revoke_mock:
+                with mock.patch("wooey.tasks.submit_script.apply_async") as delay_mock:
+                    cleanup_stuck_jobs()
+                    revoke_mock.assert_called_once_with("stale-task-id")
+                    self.assertFalse(delay_mock.called)
+
+        retry_job.refresh_from_db()
+        self.assertEqual(retry_job.status, WooeyJob.FAILED)

@@ -1,24 +1,28 @@
 from __future__ import absolute_import
+
+import importlib
 import os
 import subprocess
 import sys
 import tarfile
 import tempfile
 import traceback
+import uuid
 import zipfile
 from threading import Thread
-
-from django.utils.text import get_valid_filename
-from django.core.files import File
-from django.conf import settings
-from django.utils.translation import gettext_lazy as _
 
 from celery import app
 from celery.schedules import crontab
 from celery.signals import worker_process_init
+from django.conf import settings
+from django.core.files import File
+from django.db import transaction
+from django.db.models import F
+from django.utils.text import get_valid_filename
+from django.utils.translation import gettext_lazy as _
 
-from .backend import utils
 from . import settings as wooey_settings
+from .backend import utils
 
 try:
     from Queue import Empty, Queue
@@ -28,6 +32,79 @@ except ImportError:
 ON_POSIX = "posix" in sys.builtin_module_names
 
 celery_app = app.app_or_default()
+
+
+def revoke_job_task(task_id):
+    if task_id:
+        celery_app.control.revoke(task_id)
+
+
+def queue_script_job(
+    job_id,
+    *,
+    expected_status,
+    expected_celery_id,
+    submission_status,
+    rerun=False,
+    increment_retry_count=False,
+    reset_retry_count=False,
+    revoke_existing=False,
+    celery_task=None,
+    submitted_date=None,
+):
+    from django.utils import timezone
+
+    from .models import WooeyJob
+
+    if celery_task is None:
+        celery_task = importlib.import_module(
+            wooey_settings.WOOEY_CELERY_TASKS
+        ).submit_script
+
+    submitted_date = submitted_date or timezone.now()
+    celery_id = str(uuid.uuid4())
+
+    with transaction.atomic():
+        update_kwargs = {
+            "celery_id": celery_id,
+            "modified_date": submitted_date,
+            "status": submission_status,
+            "submitted_date": submitted_date,
+        }
+        if rerun:
+            update_kwargs["command"] = ""
+        if increment_retry_count:
+            update_kwargs["retry_count"] = F("retry_count") + 1
+        elif reset_retry_count:
+            update_kwargs["retry_count"] = 0
+
+        if not WooeyJob.objects.filter(
+            pk=job_id,
+            status=expected_status,
+            celery_id=expected_celery_id,
+        ).update(**update_kwargs):
+            return None
+
+        def submit_task():
+            if revoke_existing:
+                revoke_job_task(expected_celery_id)
+
+            celery_task.apply_async(
+                kwargs={
+                    "wooey_job": job_id,
+                    "rerun": rerun,
+                },
+                task_id=celery_id,
+            )
+            WooeyJob.objects.filter(
+                pk=job_id,
+                celery_id=celery_id,
+                status=submission_status,
+            ).update(status=WooeyJob.QUEUED)
+
+        transaction.on_commit(submit_task)
+
+    return celery_id
 
 
 def enqueue_output(out, q):
@@ -203,13 +280,28 @@ def setup_venv(virtual_environment, job=None, stdout="", stderr=""):
     return (venv_executable, stdout, stderr, return_code)
 
 
-@celery_app.task()
-def submit_script(**kwargs):
+@celery_app.task(bind=True)
+def submit_script(task, **kwargs):
     job_id = kwargs.pop("wooey_job")
     resubmit = kwargs.pop("wooey_resubmit", False)
     from .models import WooeyJob
 
     job = WooeyJob.objects.get(pk=job_id)
+    task_id = task.request.id
+    if task_id is None and not wooey_settings.WOOEY_CELERY:
+        task_id = job.celery_id
+    task_id = str(task_id) if task_id is not None else None
+    if not task_id or job.celery_id != task_id:
+        return ("", "")
+
+    if not WooeyJob.objects.filter(
+        pk=job_id,
+        celery_id=task_id,
+        status__in=WooeyJob.WAITING_STATES,
+    ).update(status=WooeyJob.RUNNING):
+        return ("", "")
+
+    job.refresh_from_db()
     job.update_realtime(delete=True)
     stdout, stderr = "", ""
 
@@ -231,28 +323,31 @@ def submit_script(**kwargs):
             # clone ourselves, setting pk=None seems hackish but it works
             job.pk = None
 
-        # This is where the script works from -- it is what is after the media_root since that may change between
-        # setups/where our user uploads are stored.
-        cwd = job.get_output_path()
-
+        cwd = job.output_path
         abscwd = os.path.abspath(os.path.join(settings.MEDIA_ROOT, cwd))
         job.command = " ".join(command)
         job.save_path = cwd
+
+        if not WooeyJob.objects.filter(
+            pk=job_id,
+            celery_id=task_id,
+            status=WooeyJob.RUNNING,
+        ).update(command=job.command, save_path=job.save_path):
+            return (stdout, stderr)
 
         utils.mkdirs(abscwd)
         # make sure we have the script, otherwise download it. This can happen if we have an ephemeral file system or are
         # executing jobs on a worker node.
         get_latest_script(job.script_version)
 
-        job.status = WooeyJob.RUNNING
-        job.save()
-
         stdout, stderr, return_code = run_and_stream_command(
             command, abscwd, job, stdout, stderr
         )
 
-        # fetch the job again in case the database connection was lost during the job or something else changed.
         job = WooeyJob.objects.get(pk=job_id)
+        if job.celery_id != task_id or job.status != WooeyJob.RUNNING:
+            return (stdout, stderr)
+
         # if there are files generated, make zip/tar files for download
         if len(os.listdir(abscwd)):
             tar_out = utils.get_available_file(
@@ -306,14 +401,17 @@ def submit_script(**kwargs):
                                 remote.delete(s3path)
                             remote.save(s3path, File(open(filepath, "rb")))
         utils.create_job_fileinfo(job)
-        job.status = WooeyJob.COMPLETED if return_code == 0 else WooeyJob.FAILED
-        job.update_realtime(delete=True)
+        final_status = WooeyJob.COMPLETED if return_code == 0 else WooeyJob.FAILED
     except Exception:
         stderr += "{}\n{}".format(stderr, traceback.format_exc())
-        job.status = WooeyJob.ERROR
-    job.stdout = stdout
-    job.stderr = stderr
-    job.save()
+        final_status = WooeyJob.ERROR
+
+    if WooeyJob.objects.filter(
+        pk=job_id,
+        celery_id=task_id,
+        status=WooeyJob.RUNNING,
+    ).update(status=final_status, stdout=stdout, stderr=stderr):
+        job.update_realtime(delete=True)
 
     return (stdout, stderr)
 
@@ -321,6 +419,7 @@ def submit_script(**kwargs):
 @celery_app.task()
 def cleanup_wooey_jobs(**kwargs):
     from django.utils import timezone
+
     from .models import WooeyJob
 
     cleanup_settings = wooey_settings.WOOEY_JOB_EXPIRATION
@@ -337,36 +436,129 @@ def cleanup_wooey_jobs(**kwargs):
         ).delete()
 
 
+def _extract_task_ids(worker_info):
+    task_ids = set()
+    if not worker_info:
+        return task_ids
+
+    for tasks in worker_info.values():
+        for task in tasks or []:
+            request = task.get("request")
+            if isinstance(request, dict) and request.get("id"):
+                task_ids.add(request["id"])
+                continue
+
+            if task.get("id"):
+                task_ids.add(task["id"])
+
+    return task_ids
+
+
 @celery_app.task()
-def cleanup_dead_jobs():
+def cleanup_stuck_jobs():
     """
-    This cleans up jobs that have been marked as ran, but are not queue'd in celery. It is meant
-    to cleanup jobs that have been lost due to a server crash or some other reason a job is
-    in limbo.
+    This cleans up jobs that are stuck in limbo between Wooey and the task broker.
     """
+    from django.utils import timezone
+
     from .models import WooeyJob
 
-    # Get active tasks from Celery
     inspect = celery_app.control.inspect()
-    worker_info = inspect.active()
+    active_info = inspect.active()
+    reserved_info = inspect.reserved()
+    scheduled_info = inspect.scheduled()
 
-    # If we cannot connect to the workers, we do not know if the tasks are running or not, so
-    # we cannot mark them as dead
-    if not worker_info:
+    # A partial snapshot cannot prove that a task is absent from the workers.
+    if any(info is None for info in (active_info, reserved_info, scheduled_info)):
         return
 
-    active_tasks = {
-        task["id"] for worker, tasks in worker_info.items() for task in tasks
-    }
+    now = timezone.now()
+    oldest_cleanup_eligible = now - wooey_settings.WOOEY_JOB_CLEANUP_GRACE
+    active_task_ids = _extract_task_ids(active_info)
+    queued_task_ids = (
+        active_task_ids
+        | _extract_task_ids(reserved_info)
+        | _extract_task_ids(scheduled_info)
+    )
 
-    # find jobs that are marked as running but not present in celery's active tasks
-    active_jobs = WooeyJob.objects.filter(status=WooeyJob.RUNNING)
-    to_disable = set()
+    queue_timeout = wooey_settings.WOOEY_JOB_QUEUE_TIMEOUT
+    resubmit_timeout = wooey_settings.WOOEY_JOB_RESUBMIT_TIMEOUT
+    resubmit_limit = wooey_settings.WOOEY_JOB_RESUBMIT_LIMIT
+
+    active_jobs = WooeyJob.objects.filter(
+        status__in=WooeyJob.EXECUTING_STATES,
+        submitted_date__lte=oldest_cleanup_eligible,
+    )
+    jobs_to_disable = []
     for job in active_jobs:
-        if job.celery_id not in active_tasks:
-            to_disable.add(job.pk)
+        if job.celery_id not in active_task_ids:
+            jobs_to_disable.append(job)
 
-    WooeyJob.objects.filter(pk__in=to_disable).update(status=WooeyJob.FAILED)
+    queued_jobs = WooeyJob.objects.filter(
+        status__in=WooeyJob.WAITING_STATES,
+        submitted_date__lte=oldest_cleanup_eligible,
+    )
+    jobs_to_resubmit = []
+    jobs_to_mark_queued = []
+    for job in queued_jobs:
+        if job.celery_id in active_task_ids:
+            continue
+
+        if queue_timeout is not None and job.submitted_date <= now - queue_timeout:
+            jobs_to_disable.append(job)
+            continue
+
+        if job.celery_id in queued_task_ids:
+            if job.status in (WooeyJob.SUBMITTED, WooeyJob.RETRY):
+                jobs_to_mark_queued.append(job)
+            continue
+
+        if job.status == WooeyJob.QUEUED:
+            continue
+
+        if resubmit_timeout is None or not resubmit_limit:
+            continue
+
+        if job.modified_date > now - resubmit_timeout:
+            continue
+
+        if job.retry_count >= resubmit_limit:
+            jobs_to_disable.append(job)
+            continue
+
+        jobs_to_resubmit.append(job)
+
+    def job_snapshot(job):
+        return {
+            "pk": job.pk,
+            "status": job.status,
+            "celery_id": job.celery_id,
+        }
+
+    for job in jobs_to_mark_queued:
+        WooeyJob.objects.filter(**job_snapshot(job)).update(status=WooeyJob.QUEUED)
+
+    for job in jobs_to_disable:
+        if WooeyJob.objects.filter(**job_snapshot(job)).update(status=WooeyJob.FAILED):
+            revoke_job_task(job.celery_id)
+
+    for job in jobs_to_resubmit:
+        submitted_date = timezone.now()
+        queue_script_job(
+            job.pk,
+            expected_status=job.status,
+            expected_celery_id=job.celery_id,
+            submission_status=WooeyJob.RETRY,
+            rerun=False,
+            increment_retry_count=True,
+            revoke_existing=True,
+            submitted_date=submitted_date,
+        )
+
+
+@celery_app.task()
+def cleanup_dead_jobs():
+    return cleanup_stuck_jobs()
 
 
 celery_app.conf.beat_schedule.update(
@@ -375,9 +567,9 @@ celery_app.conf.beat_schedule.update(
             "task": "wooey.tasks.cleanup_wooey_jobs",
             "schedule": crontab(hour=0, minute=0),  # cleanup at midnight each day
         },
-        "cleanup-dead-jobs": {
-            "task": "wooey.tasks.cleanup_dead_jobs",
-            "schedule": crontab(minute="*/10"),  # run every 6 minutes
+        "cleanup-stuck-jobs": {
+            "task": "wooey.tasks.cleanup_stuck_jobs",
+            "schedule": crontab(minute="*/10"),  # run every 10 minutes
         },
     }
 )

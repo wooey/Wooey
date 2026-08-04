@@ -5,7 +5,7 @@ from django.db.models.signals import pre_save, post_save
 from django.db.utils import InterfaceError, DatabaseError
 from django import db
 
-from celery.signals import task_postrun, task_prerun
+from celery.signals import task_postrun
 
 from .models import ScriptVersion
 
@@ -28,9 +28,8 @@ def disable_for_loaddata(signal_handler):
 
 
 @task_postrun.connect
-@task_prerun.connect
 def task_completed(sender=None, **kwargs):
-    task_kwargs = kwargs.get("kwargs")
+    task_kwargs = kwargs.get("kwargs") or {}
     job_id = task_kwargs.get("wooey_job")
     # Just return if it is not a wooey_job!
     if not job_id:
@@ -41,14 +40,23 @@ def task_completed(sender=None, **kwargs):
 
     try:
         job = WooeyJob.objects.get(pk=job_id)
-    except (InterfaceError, DatabaseError) as e:
+    except InterfaceError, DatabaseError:
         db.connection.close()
         job = WooeyJob.objects.get(pk=job_id)
+
+    task_id = kwargs.get("task_id")
+    if not task_id or job.celery_id != task_id:
+        return
+
     state = kwargs.get("state")
-    if state and job.status not in WooeyJob.TERMINAL_STATES:
-        job.status = WooeyJob.COMPLETED if state == states.SUCCESS else state
-    job.celery_id = kwargs.get("task_id")
-    job.save()
+    # Task handlers record successful completion themselves. A rejected duplicate
+    # also emits SUCCESS, so that signal cannot authoritatively complete a job.
+    if state and state != states.SUCCESS and job.status not in WooeyJob.TERMINAL_STATES:
+        WooeyJob.objects.filter(
+            pk=job_id,
+            status=job.status,
+            celery_id=task_id,
+        ).update(status=state)
 
 
 def skip_script(instance):

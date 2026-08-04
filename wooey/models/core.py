@@ -14,6 +14,7 @@ from django.core.cache import caches as django_cache
 from django.core.exceptions import SuspiciousFileOperation
 from django.db import models, transaction
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.text import get_valid_filename
 from django.utils.translation import gettext_lazy as _
 
@@ -231,21 +232,32 @@ class WooeyJob(models.Model):
     DELETED = "deleted"
     FAILED = states.FAILURE
     ERROR = "error"
+    QUEUED = "queued"
+    REVOKED = states.REVOKED
+    RETRY = states.RETRY
     RUNNING = "running"
     SUBMITTED = "submitted"
 
-    TERMINAL_STATES = {COMPLETED, FAILED, ERROR}
+    TERMINAL_STATES = frozenset({COMPLETED, DELETED, FAILED, ERROR, REVOKED})
+    WAITING_STATES = frozenset({SUBMITTED, RETRY, QUEUED})
+    EXECUTING_STATES = frozenset({RUNNING})
+    ACTIVE_STATES = WAITING_STATES | EXECUTING_STATES
 
     STATUS_CHOICES = (
         (COMPLETED, _("Completed")),
         (DELETED, _("Deleted")),
         (FAILED, _("Failed")),
         (ERROR, _("Error")),
+        (QUEUED, _("Queued")),
+        (REVOKED, _("Halted")),
+        (RETRY, _("Retrying")),
         (RUNNING, _("Running")),
         (SUBMITTED, _("Submitted")),
     )
 
     status = models.CharField(max_length=255, default=SUBMITTED, choices=STATUS_CHOICES)
+    retry_count = models.PositiveSmallIntegerField(default=0)
+    submitted_date = models.DateTimeField(default=timezone.now)
 
     save_path = models.CharField(max_length=255, blank=True, null=True)
     command = models.TextField()
@@ -290,19 +302,57 @@ class WooeyJob(models.Model):
                     param.job = self
                     param.recreate()
                     param.save()
-        self.status = self.SUBMITTED
-        rerun = kwargs.pop("rerun", False)
-        if rerun:
-            self.command = ""
-        self.save()
-        task_kwargs = {"wooey_job": self.pk, "rerun": rerun}
 
-        if rerun:
-            utils.purge_output(job=self)
-        if wooey_settings.WOOEY_CELERY:
-            transaction.on_commit(lambda: tasks.submit_script.delay(**task_kwargs))
-        else:
-            transaction.on_commit(lambda: tasks.submit_script(**task_kwargs))
+        expected_status = self.status
+        expected_celery_id = self.celery_id
+        rerun = kwargs.pop("rerun", False)
+        job_pk = self.pk
+        submitted_date = timezone.now()
+
+        with transaction.atomic():
+            if wooey_settings.WOOEY_CELERY:
+                from ..tasks import queue_script_job
+
+                task_id = queue_script_job(
+                    job_pk,
+                    expected_status=expected_status,
+                    expected_celery_id=expected_celery_id,
+                    submission_status=self.SUBMITTED,
+                    rerun=rerun,
+                    reset_retry_count=True,
+                    celery_task=tasks.submit_script,
+                    submitted_date=submitted_date,
+                )
+            else:
+                task_id = str(uuid.uuid4())
+                updates = {
+                    "celery_id": task_id,
+                    "modified_date": submitted_date,
+                    "retry_count": 0,
+                    "status": self.SUBMITTED,
+                    "submitted_date": submitted_date,
+                }
+                if rerun:
+                    updates["command"] = ""
+                updated = WooeyJob.objects.filter(
+                    pk=job_pk,
+                    status=expected_status,
+                    celery_id=expected_celery_id,
+                ).update(**updates)
+                if not updated:
+                    task_id = None
+                else:
+                    transaction.on_commit(
+                        lambda: tasks.submit_script(
+                            wooey_job=job_pk,
+                            rerun=rerun,
+                        )
+                    )
+
+            if task_id is not None and rerun:
+                utils.purge_output(job=self)
+
+        self.refresh_from_db()
         return self
 
     def get_resubmit_url(self):
@@ -346,15 +396,36 @@ class WooeyJob(models.Model):
         return path[path.find(self.get_output_path()) :].lstrip(os.path.sep)
 
     def get_realtime_key(self):
-        return "wooeyjob_{}_rt".format(self.pk)
+        key = "wooeyjob_{}_rt".format(self.pk)
+        if self.celery_id:
+            key = "{}_{}".format(key, self.celery_id)
+        return key
 
     def update_realtime(self, stdout="", stderr="", delete=False):
         wooey_cache = wooey_settings.WOOEY_REALTIME_CACHE
         if not delete and wooey_cache is None:
-            self.stdout = stdout
-            self.stderr = stderr
-            self.save()
+            modified_date = timezone.now()
+            if WooeyJob.objects.filter(
+                pk=self.pk,
+                celery_id=self.celery_id,
+                status=self.RUNNING,
+            ).update(
+                stdout=stdout,
+                stderr=stderr,
+                modified_date=modified_date,
+            ):
+                self.stdout = stdout
+                self.stderr = stderr
+                self.modified_date = modified_date
         elif wooey_cache is not None:
+            current_job = WooeyJob.objects.filter(
+                pk=self.pk,
+                celery_id=self.celery_id,
+            )
+            if not delete:
+                current_job = current_job.filter(status=self.RUNNING)
+            if not current_job.exists():
+                return
             cache = django_cache[wooey_cache]
             if delete:
                 cache.delete(self.get_realtime_key())

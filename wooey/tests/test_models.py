@@ -161,13 +161,53 @@ class TestJob(
             data={"job_name": "queued", sequence_slug: "aaa", out_slug: "abc"},
         )
 
-        with mock.patch("wooey.tasks.submit_script.delay") as delay_mock:
-            delay_mock.return_value = mock.Mock(id="queued-task-id")
+        with mock.patch("wooey.tasks.submit_script.apply_async") as apply_async_mock:
             job.submit_to_celery()
 
         job.refresh_from_db()
         self.assertEqual(job.status, models.WooeyJob.QUEUED)
-        self.assertEqual(job.celery_id, "queued-task-id")
+        self.assertIsNotNone(job.celery_id)
+        apply_async_mock.assert_called_once_with(
+            kwargs={
+                "wooey_job": job.pk,
+                "rerun": False,
+                "submission_id": str(job.submission_id),
+            },
+            task_id=job.celery_id,
+        )
+
+    def test_celery_submission_supports_custom_task_module_without_queue_helper(self):
+        from .. import settings as wooey_settings
+        from ..backend import utils
+
+        original_celery = wooey_settings.WOOEY_CELERY
+        self.addCleanup(setattr, wooey_settings, "WOOEY_CELERY", original_celery)
+        wooey_settings.WOOEY_CELERY = True
+
+        sequence_slug = test_utils.get_subparser_form_slug(
+            self.translate_script, "sequence"
+        )
+        out_slug = test_utils.get_subparser_form_slug(self.translate_script, "out")
+        job = utils.create_wooey_job(
+            script_version_pk=self.translate_script.pk,
+            data={"job_name": "custom tasks", sequence_slug: "aaa", out_slug: "abc"},
+        )
+        custom_tasks = mock.Mock(spec=["submit_script"])
+
+        with mock.patch("wooey.models.core.tasks", custom_tasks):
+            job.submit_to_celery()
+
+        job.refresh_from_db()
+        custom_tasks.submit_script.apply_async.assert_called_once_with(
+            kwargs={
+                "wooey_job": job.pk,
+                "rerun": False,
+                "submission_id": str(job.submission_id),
+            },
+            task_id=job.celery_id,
+        )
+        self.assertEqual(job.status, models.WooeyJob.QUEUED)
+        self.assertIsNotNone(job.celery_id)
 
     def test_file_sharing(self):
         # this tests whether a file uploaded by one job will be referenced by a second job instead of being duplicated

@@ -29,7 +29,7 @@ STATE_MAPPER = {
     WooeyJob.QUEUED: SPANBASE.format(_("Queued"), "glyphicon-time"),
     states.REVOKED: SPANBASE.format(_("Halted"), "danger glyphicon-stop"),
     states.FAILURE: SPANBASE.format(_("Failure"), "danger glyphicon-exclamation-sign"),
-    WooeyJob.RETRY: SPANBASE.format(_("Retrying"), "glyphicon-hourglass"),
+    WooeyJob.RETRY: SPANBASE.format(_("Retrying"), "glyphicon-repeat"),
     WooeyJob.SUBMITTED: SPANBASE.format(_("Waiting"), "glyphicon-hourglass"),
 }
 

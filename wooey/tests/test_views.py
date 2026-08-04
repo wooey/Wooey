@@ -6,6 +6,7 @@ from django.test import TestCase, RequestFactory
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.staticfiles import finders
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.urls import reverse
@@ -67,6 +68,8 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         response = wooey_celery.all_queues_json(request)
         d = json.loads(response.content.decode("utf-8"))
         self.assertEqual(1, d["totals"]["global"])
+        self.assertIn("glyphicon-repeat", d["items"]["global"][0]["status"])
+        self.assertNotIn("glyphicon-hourglass", d["items"]["global"][0]["status"])
 
         job.user = self.user
         job.status = models.WooeyJob.RUNNING
@@ -150,6 +153,61 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         with self.assertRaises(Http404):
             response = view(request, job_id=-1)
             response.render()
+
+    def test_retry_jobs_render_as_active_in_job_list(self):
+        job = factories.generate_job(self.translate_script)
+        job.status = models.WooeyJob.RETRY
+        job.save()
+
+        response = self.client.get(reverse("wooey:global_queue"))
+        content = response.content.decode("utf-8")
+
+        self.assertTrue("Retrying" in content, "RETRY job should display as Retrying")
+        self.assertTrue(
+            "glyphicon-repeat" in content,
+            "RETRY job should display the repeat-arrow icon",
+        )
+        self.assertTrue(
+            "glyphicon-question-sign" not in content,
+            "RETRY job should not use the unknown-state icon",
+        )
+
+    def test_retry_job_detail_shows_status_and_stop_action(self):
+        job = factories.generate_job(self.translate_script)
+        job.status = models.WooeyJob.RETRY
+        job.save()
+
+        response = self.client.get(
+            reverse("wooey:celery_results", kwargs={"job_id": job.pk})
+        )
+        content = response.content.decode("utf-8")
+
+        self.assertGreaterEqual(content.count("status-retry-toggle"), 2)
+        self.assertRegex(
+            content,
+            r'class="[^"]*status-retry-toggle[^"]*" '
+            r'name="celery-command" value="stop"',
+        )
+        self.assertRegex(
+            content,
+            r'<span class="status-retry-toggle[^>]*>\s*'
+            r'<span class="glyphicon glyphicon-repeat"[^>]*></span>\s*Retrying',
+        )
+
+    def test_retry_job_toggle_is_visible_in_css(self):
+        css_path = finders.find("wooey/css/base.css")
+        self.assertIsNotNone(css_path)
+        with open(css_path) as css_file:
+            css = css_file.read()
+
+        self.assertTrue(
+            ".status-retry-toggle" in css,
+            "RETRY toggles should be hidden when another status is active",
+        )
+        self.assertTrue(
+            ".status-retry .status-retry-toggle" in css,
+            "RETRY toggles should be visible while a job is retrying",
+        )
 
 
 class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):

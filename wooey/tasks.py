@@ -1,11 +1,13 @@
 from __future__ import absolute_import
 
+import importlib
 import os
 import subprocess
 import sys
 import tarfile
 import tempfile
 import traceback
+import uuid
 import zipfile
 from datetime import timedelta
 from threading import Thread
@@ -15,6 +17,7 @@ from celery.schedules import crontab
 from celery.signals import worker_process_init
 from django.conf import settings
 from django.core.files import File
+from django.db import transaction
 from django.db.models import F
 from django.utils.text import get_valid_filename
 from django.utils.translation import gettext_lazy as _
@@ -38,24 +41,71 @@ def revoke_job_task(task_id):
 
 
 def queue_script_job(
-    job_id, rerun=False, increment_retry_count=False, revoke_existing=False
+    job_id,
+    rerun=False,
+    increment_retry_count=False,
+    revoke_existing=False,
+    celery_task=None,
+    submission_id=None,
+    submitted_date=None,
 ):
+    from django.utils import timezone
+
     from .models import WooeyJob
 
-    job = WooeyJob.objects.get(pk=job_id)
-    if revoke_existing:
-        revoke_job_task(job.celery_id)
-        WooeyJob.objects.filter(pk=job_id).update(celery_id=None)
+    if celery_task is None:
+        celery_task = importlib.import_module(
+            wooey_settings.WOOEY_CELERY_TASKS
+        ).submit_script
 
-    async_result = submit_script.delay(wooey_job=job_id, rerun=rerun)
-    update_kwargs = {
-        "celery_id": async_result.id,
-        "status": WooeyJob.QUEUED,
-    }
-    if increment_retry_count:
-        update_kwargs["retry_count"] = F("retry_count") + 1
-    WooeyJob.objects.filter(pk=job_id).update(**update_kwargs)
-    return async_result
+    with transaction.atomic():
+        job = WooeyJob.objects.get(pk=job_id)
+        submitted_date = submitted_date or timezone.now()
+        expected_submission_id = (
+            submission_id if submission_id is not None else job.submission_id
+        )
+        submission_id = submission_id or uuid.uuid4()
+        celery_id = str(uuid.uuid4())
+        submission_filter = {
+            "pk": job_id,
+            "submission_id": expected_submission_id,
+            "status__in": (WooeyJob.SUBMITTED, WooeyJob.RETRY),
+        }
+
+        update_kwargs = {
+            "celery_id": celery_id,
+            "modified_date": submitted_date,
+            "submission_id": submission_id,
+            "submitted_date": submitted_date,
+        }
+        if increment_retry_count:
+            update_kwargs["retry_count"] = F("retry_count") + 1
+
+        if not WooeyJob.objects.filter(**submission_filter).update(**update_kwargs):
+            return None
+
+        def submit_task():
+            if revoke_existing:
+                revoke_job_task(job.celery_id)
+
+            celery_task.apply_async(
+                kwargs={
+                    "wooey_job": job_id,
+                    "rerun": rerun,
+                    "submission_id": str(submission_id),
+                },
+                task_id=celery_id,
+            )
+            WooeyJob.objects.filter(
+                pk=job_id,
+                submission_id=submission_id,
+                celery_id=celery_id,
+                status__in=(WooeyJob.SUBMITTED, WooeyJob.RETRY),
+            ).update(status=WooeyJob.QUEUED)
+
+        transaction.on_commit(submit_task)
+
+    return celery_id
 
 
 def enqueue_output(out, q):
@@ -235,9 +285,21 @@ def setup_venv(virtual_environment, job=None, stdout="", stderr=""):
 def submit_script(**kwargs):
     job_id = kwargs.pop("wooey_job")
     resubmit = kwargs.pop("wooey_resubmit", False)
+    submission_id = kwargs.pop("submission_id", None)
     from .models import WooeyJob
 
     job = WooeyJob.objects.get(pk=job_id)
+    if str(job.submission_id or "") != str(submission_id or ""):
+        return ("", "")
+
+    if not WooeyJob.objects.filter(
+        pk=job_id,
+        submission_id=job.submission_id,
+        status__in=(WooeyJob.SUBMITTED, WooeyJob.RETRY, WooeyJob.QUEUED),
+    ).update(status=WooeyJob.RUNNING):
+        return ("", "")
+
+    job.refresh_from_db()
     job.update_realtime(delete=True)
     stdout, stderr = "", ""
 
@@ -261,19 +323,23 @@ def submit_script(**kwargs):
 
         # This is where the script works from -- it is what is after the media_root since that may change between
         # setups/where our user uploads are stored.
-        cwd = job.get_output_path()
+        cwd = job.output_path
 
         abscwd = os.path.abspath(os.path.join(settings.MEDIA_ROOT, cwd))
         job.command = " ".join(command)
         job.save_path = cwd
 
+        if not WooeyJob.objects.filter(
+            pk=job_id,
+            submission_id=job.submission_id,
+            status=WooeyJob.RUNNING,
+        ).update(command=job.command, save_path=job.save_path):
+            return (stdout, stderr)
+
         utils.mkdirs(abscwd)
         # make sure we have the script, otherwise download it. This can happen if we have an ephemeral file system or are
         # executing jobs on a worker node.
         get_latest_script(job.script_version)
-
-        job.status = WooeyJob.RUNNING
-        job.save()
 
         stdout, stderr, return_code = run_and_stream_command(
             command, abscwd, job, stdout, stderr
@@ -281,6 +347,8 @@ def submit_script(**kwargs):
 
         # fetch the job again in case the database connection was lost during the job or something else changed.
         job = WooeyJob.objects.get(pk=job_id)
+        if str(job.submission_id or "") != str(submission_id or ""):
+            return (stdout, stderr)
         # if there are files generated, make zip/tar files for download
         if len(os.listdir(abscwd)):
             tar_out = utils.get_available_file(
@@ -334,14 +402,16 @@ def submit_script(**kwargs):
                                 remote.delete(s3path)
                             remote.save(s3path, File(open(filepath, "rb")))
         utils.create_job_fileinfo(job)
-        job.status = WooeyJob.COMPLETED if return_code == 0 else WooeyJob.FAILED
-        job.update_realtime(delete=True)
+        final_status = WooeyJob.COMPLETED if return_code == 0 else WooeyJob.FAILED
     except Exception:
         stderr += "{}\n{}".format(stderr, traceback.format_exc())
-        job.status = WooeyJob.ERROR
-    job.stdout = stdout
-    job.stderr = stderr
-    job.save()
+        final_status = WooeyJob.ERROR
+
+    if WooeyJob.objects.filter(
+        pk=job_id,
+        submission_id=job.submission_id,
+    ).update(status=final_status, stdout=stdout, stderr=stderr):
+        job.update_realtime(delete=True)
 
     return (stdout, stderr)
 
@@ -398,8 +468,8 @@ def cleanup_stuck_jobs():
     reserved_info = inspect.reserved()
     scheduled_info = inspect.scheduled()
 
-    # If we cannot connect to the workers, we do not know if the tasks are running or queued.
-    if all(info is None for info in (active_info, reserved_info, scheduled_info)):
+    # A partial snapshot cannot prove that a task is absent from the workers.
+    if any(info is None for info in (active_info, reserved_info, scheduled_info)):
         return
 
     now = timezone.now()
@@ -430,32 +500,30 @@ def cleanup_stuck_jobs():
 
     active_jobs = WooeyJob.objects.filter(
         status=WooeyJob.RUNNING,
-        created_date__lte=oldest_cleanup_eligible,
+        submitted_date__lte=oldest_cleanup_eligible,
     )
-    to_disable = set()
+    jobs_to_disable = []
     for job in active_jobs:
         if job.celery_id not in active_task_ids:
-            to_disable.add(job.pk)
+            jobs_to_disable.append(job)
 
     queued_jobs = WooeyJob.objects.filter(
         status__in=(WooeyJob.SUBMITTED, WooeyJob.RETRY, WooeyJob.QUEUED),
-        created_date__lte=oldest_cleanup_eligible,
+        submitted_date__lte=oldest_cleanup_eligible,
     )
     jobs_to_resubmit = []
-    jobs_to_mark_queued = set()
-    task_ids_to_revoke = set()
+    jobs_to_mark_queued = []
     for job in queued_jobs:
         if job.celery_id in active_task_ids:
             continue
 
-        if job.created_date <= now - queue_timeout:
-            task_ids_to_revoke.add(job.celery_id)
-            to_disable.add(job.pk)
+        if job.submitted_date <= now - queue_timeout:
+            jobs_to_disable.append(job)
             continue
 
         if job.celery_id in queued_task_ids:
             if job.status in (WooeyJob.SUBMITTED, WooeyJob.RETRY):
-                jobs_to_mark_queued.add(job.pk)
+                jobs_to_mark_queued.append(job)
             continue
 
         if job.status == WooeyJob.QUEUED:
@@ -465,25 +533,43 @@ def cleanup_stuck_jobs():
             continue
 
         if job.retry_count >= resubmit_limit:
-            task_ids_to_revoke.add(job.celery_id)
-            to_disable.add(job.pk)
+            jobs_to_disable.append(job)
             continue
 
-        jobs_to_resubmit.append(job.pk)
+        jobs_to_resubmit.append(job)
 
-    for task_id in task_ids_to_revoke:
-        revoke_job_task(task_id)
+    def job_snapshot(job):
+        return {
+            "pk": job.pk,
+            "status": job.status,
+            "submission_id": job.submission_id,
+            "celery_id": job.celery_id,
+        }
 
-    WooeyJob.objects.filter(pk__in=jobs_to_mark_queued).update(status=WooeyJob.QUEUED)
-    WooeyJob.objects.filter(pk__in=to_disable).update(status=WooeyJob.FAILED)
+    for job in jobs_to_mark_queued:
+        WooeyJob.objects.filter(**job_snapshot(job)).update(status=WooeyJob.QUEUED)
 
-    for job_id in jobs_to_resubmit:
-        WooeyJob.objects.filter(pk=job_id).update(status=WooeyJob.RETRY)
+    for job in jobs_to_disable:
+        if WooeyJob.objects.filter(**job_snapshot(job)).update(status=WooeyJob.FAILED):
+            revoke_job_task(job.celery_id)
+
+    for job in jobs_to_resubmit:
+        submission_id = uuid.uuid4()
+        submitted_date = timezone.now()
+        if not WooeyJob.objects.filter(**job_snapshot(job)).update(
+            status=WooeyJob.RETRY,
+            submission_id=submission_id,
+            submitted_date=submitted_date,
+            modified_date=submitted_date,
+        ):
+            continue
         queue_script_job(
-            job_id,
+            job.pk,
             rerun=False,
             increment_retry_count=True,
             revoke_existing=True,
+            submission_id=submission_id,
+            submitted_date=submitted_date,
         )
 
 

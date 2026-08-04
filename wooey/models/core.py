@@ -14,6 +14,7 @@ from django.core.cache import caches as django_cache
 from django.core.exceptions import SuspiciousFileOperation
 from django.db import models, transaction
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.text import get_valid_filename
 from django.utils.translation import gettext_lazy as _
 
@@ -251,6 +252,8 @@ class WooeyJob(models.Model):
 
     status = models.CharField(max_length=255, default=SUBMITTED, choices=STATUS_CHOICES)
     retry_count = models.PositiveSmallIntegerField(default=0)
+    submission_id = models.UUIDField(null=True, editable=False)
+    submitted_date = models.DateTimeField(default=timezone.now)
 
     save_path = models.CharField(max_length=255, blank=True, null=True)
     command = models.TextField()
@@ -298,21 +301,34 @@ class WooeyJob(models.Model):
         self.celery_id = None
         self.retry_count = 0
         self.status = self.SUBMITTED
+        self.submission_id = uuid.uuid4()
+        self.submitted_date = timezone.now()
         rerun = kwargs.pop("rerun", False)
         if rerun:
             self.command = ""
         self.save()
         job_pk = self.pk
-        task_kwargs = {"wooey_job": job_pk, "rerun": rerun}
+        submission_id = self.submission_id
+        submitted_date = self.submitted_date
+        task_kwargs = {
+            "wooey_job": job_pk,
+            "rerun": rerun,
+            "submission_id": str(submission_id),
+        }
 
         if rerun:
             utils.purge_output(job=self)
 
-        def submit_task():
-            tasks.queue_script_job(job_pk, rerun=rerun)
-
         if wooey_settings.WOOEY_CELERY:
-            transaction.on_commit(submit_task)
+            from ..tasks import queue_script_job
+
+            queue_script_job(
+                job_pk,
+                rerun=rerun,
+                celery_task=tasks.submit_script,
+                submission_id=submission_id,
+                submitted_date=submitted_date,
+            )
         else:
             transaction.on_commit(lambda: tasks.submit_script(**task_kwargs))
         return self

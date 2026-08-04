@@ -437,6 +437,7 @@ li.active > a.tab-error {
 }
 
 .status-submitted-toggle,
+.status-retry-toggle,
 .status-pending-toggle,
 .status-queued-toggle,
 .status-running-toggle,
@@ -448,6 +449,7 @@ li.active > a.tab-error {
 }
 
 .status-submitted .status-submitted-toggle,
+.status-retry .status-retry-toggle,
 .status-pending .status-pending-toggle,
 .status-queued .status-queued-toggle,
 .status-running .status-running-toggle,

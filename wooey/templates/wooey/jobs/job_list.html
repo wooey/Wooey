@@ -46,6 +46,8 @@
                                             <span class="label label-danger"><span class="glyphicon glyphicon-exclamation-sign"></span> {% trans "Failure" %}</span>
                                         {% elif job.status == 'submitted' %}
                                             <span class="label label-default"><span class="glyphicon glyphicon-hourglass"></span> {% trans "Waiting" %}</span>
+                                        {% elif job.status == 'RETRY' %}
+                                            <span class="label label-default"><span class="glyphicon glyphicon-repeat"></span> {% trans "Retrying" %}</span>
                                         {% else %}
                                             <span class="label label-danger"><span class="glyphicon glyphicon-question-sign"></span> {{ job.status|title }}</span>
                                         {% endif %}

@@ -379,10 +379,32 @@ class WooeyJob(models.Model):
     def update_realtime(self, stdout="", stderr="", delete=False):
         wooey_cache = wooey_settings.WOOEY_REALTIME_CACHE
         if not delete and wooey_cache is None:
-            self.stdout = stdout
-            self.stderr = stderr
-            self.save()
+            modified_date = timezone.now()
+            if (
+                type(self)
+                .objects.filter(
+                    pk=self.pk,
+                    submission_id=self.submission_id,
+                )
+                .update(
+                    stdout=stdout,
+                    stderr=stderr,
+                    modified_date=modified_date,
+                )
+            ):
+                self.stdout = stdout
+                self.stderr = stderr
+                self.modified_date = modified_date
         elif wooey_cache is not None:
+            if (
+                not type(self)
+                .objects.filter(
+                    pk=self.pk,
+                    submission_id=self.submission_id,
+                )
+                .exists()
+            ):
+                return
             cache = django_cache[wooey_cache]
             if delete:
                 cache.delete(self.get_realtime_key())

@@ -30,7 +30,7 @@ def disable_for_loaddata(signal_handler):
 @task_postrun.connect
 @task_prerun.connect
 def task_completed(sender=None, **kwargs):
-    task_kwargs = kwargs.get("kwargs")
+    task_kwargs = kwargs.get("kwargs") or {}
     job_id = task_kwargs.get("wooey_job")
     # Just return if it is not a wooey_job!
     if not job_id:
@@ -44,11 +44,21 @@ def task_completed(sender=None, **kwargs):
     except (InterfaceError, DatabaseError) as e:
         db.connection.close()
         job = WooeyJob.objects.get(pk=job_id)
+
+    submission_id = task_kwargs.get("submission_id")
+    if str(job.submission_id or "") != str(submission_id or ""):
+        return
+
     state = kwargs.get("state")
+    updates = {"celery_id": kwargs.get("task_id")}
     if state and job.status not in WooeyJob.TERMINAL_STATES:
-        job.status = WooeyJob.COMPLETED if state == states.SUCCESS else state
-    job.celery_id = kwargs.get("task_id")
-    job.save()
+        updates["status"] = WooeyJob.COMPLETED if state == states.SUCCESS else state
+    WooeyJob.objects.filter(
+        pk=job_id,
+        status=job.status,
+        submission_id=job.submission_id,
+        celery_id=job.celery_id,
+    ).update(**updates)
 
 
 def skip_script(instance):

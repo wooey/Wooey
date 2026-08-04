@@ -1,14 +1,15 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import (
+    HttpResponseBadRequest,
     HttpResponseForbidden,
     HttpResponseNotFound,
-    HttpResponseBadRequest,
     JsonResponse,
 )
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from ..models import Favorite
+from ..models import Favorite, UserFile
 
 
 @login_required
@@ -39,7 +40,10 @@ def toggle_favorite(request):
         ctype = ContentType.objects.get(app_label=app, model=model)
         obj = ctype.get_object_for_this_type(id=pk)
 
-    except Favorite.DoesNotExist:
+    except ObjectDoesNotExist:
+        return HttpResponseNotFound()
+
+    if isinstance(obj, UserFile) and not obj.job.can_user_view(request.user):
         return HttpResponseNotFound()
 
     try:

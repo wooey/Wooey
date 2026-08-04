@@ -1153,10 +1153,12 @@ def get_file_previews(job):
     return get_grouped_file_previews(files)
 
 
-def get_file_previews_by_ids(ids):
+def get_file_previews_by_ids(ids, user):
     from ..models import UserFile
 
-    files = UserFile.objects.filter(pk__in=ids)
+    files = UserFile.objects.filter(pk__in=ids).filter(
+        Q(job__user__isnull=True) | Q(job__user=user)
+    )
     return get_grouped_file_previews(files)
 
 

@@ -309,7 +309,7 @@ class WooeyScrapbookView(TemplateView):
             content_type=ctype, user=self.request.user
         ).values_list("object_id", flat=True)
 
-        out_files = utils.get_file_previews_by_ids(favorite_file_ids)
+        out_files = utils.get_file_previews_by_ids(favorite_file_ids, self.request.user)
 
         all = out_files.pop("all", [])
         archives = out_files.pop("archives", [])

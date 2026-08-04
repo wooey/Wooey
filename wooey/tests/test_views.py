@@ -4,7 +4,7 @@ import json
 
 from django.test import TestCase, RequestFactory
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AnonymousUser
+from django.contrib.auth.models import AnonymousUser, Group
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
@@ -262,6 +262,10 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     def test_form_groups(self):
         # Make sure forms groups work to validate
         script_version = self.without_args
+        script_group = Group.objects.create(name="script viewers")
+        parent_group = Group.objects.create(name="parent script group viewers")
+        script_version.script.user_groups.add(script_group)
+        script_version.script.script_group.user_groups.add(parent_group)
         forms = utils.get_form_groups(script_version=self.without_args)
         data = {}
         data.update(config.SCRIPT_DATA["without_args"].get("data"))
@@ -273,6 +277,7 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         url = reverse("wooey:wooey_script", kwargs={"slug": script_version.script.slug})
         request = self.factory.post(url, data=data)
         user = factories.UserFactory()
+        user.groups.add(script_group)
         request.user = user
         response = self.json_view_func(request)
         d = load_JSON_dict(response.content)
@@ -313,6 +318,28 @@ class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
             script_version=script_version.script_version,
             script_iteration=script_version.script_iteration,
         )
+        self.assertEqual(response.status_code, 200)
+
+    def test_group_restricted_script_is_only_viewable_by_group_members(self):
+        script = self.translate_script.script
+        group = Group.objects.create(name="script viewers")
+        script.user_groups.add(group)
+        url = reverse("wooey:wooey_script", kwargs={"slug": script.slug})
+
+        request = self.factory.get(url)
+        request.user = self.user
+        with self.assertRaises(Http404):
+            self.script_view_func(request, slug=script.slug)
+
+        self.user.groups.add(group)
+        request = self.factory.get(url)
+        request.user = self.user
+        response = self.script_view_func(request, slug=script.slug)
+        self.assertEqual(response.status_code, 200)
+
+        script_group_members = Group.objects.create(name="script group viewers")
+        script.script_group.user_groups.add(script_group_members)
+        response = self.script_view_func(request, slug=script.slug)
         self.assertEqual(response.status_code, 200)
 
     def test_url_parameters_positional(self):
@@ -508,6 +535,7 @@ class WoeeyScriptSearchViews(
     def test_search_json_with_name(self):
         url = reverse("wooey:wooey_search_script_json")
         request = self.factory.get(url, data={"q": "1 name"})
+        request.user = AnonymousUser()
         response = self.json_view_func(request)
         d = load_JSON_dict(response.content)
         self.assertEqual(len(d["results"]), 1)
@@ -518,6 +546,7 @@ class WoeeyScriptSearchViews(
     def test_search_json_with_description(self):
         url = reverse("wooey:wooey_search_script_json")
         request = self.factory.get(url, data={"q": "2 description"})
+        request.user = AnonymousUser()
         response = self.json_view_func(request)
         d = load_JSON_dict(response.content)
         self.assertEqual(len(d["results"]), 1)
@@ -528,6 +557,7 @@ class WoeeyScriptSearchViews(
     def test_search_json_html_with_name(self):
         url = reverse("wooey:wooey_search_script_jsonhtml")
         request = self.factory.get(url, data={"q": "1 name"})
+        request.user = AnonymousUser()
         response = self.json_view_func(request)
         d = load_JSON_dict(response.content)
         self.assertEqual(len(d["results"]), 1)
@@ -538,11 +568,26 @@ class WoeeyScriptSearchViews(
     def test_search_json_html_with_description(self):
         url = reverse("wooey:wooey_search_script_jsonhtml")
         request = self.factory.get(url, data={"q": "2 description"})
+        request.user = AnonymousUser()
         response = self.json_view_func(request)
         d = load_JSON_dict(response.content)
         self.assertEqual(len(d["results"]), 1)
         self.assertEqual(
             set(result["id"] for result in d["results"]), {self.script2.id}
+        )
+
+    def test_group_restricted_scripts_are_excluded_from_search(self):
+        group = Group.objects.create(name="script viewers")
+        self.script1.user_groups.add(group)
+        url = reverse("wooey:wooey_search_script_json")
+        request = self.factory.get(url, data={"q": "test script"})
+        request.user = factories.UserFactory(username="non-member")
+
+        response = self.json_view_func(request)
+
+        self.assertEqual(
+            {result["id"] for result in load_JSON_dict(response.content)["results"]},
+            {self.script2.id},
         )
 
 
@@ -718,3 +763,19 @@ class TestHomeView(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase)
             response.context_data["scripts"][1:],
             [i for i in sorted_scripts if i.id != self.translate_script.script.id],
         )
+
+    def test_group_restricted_scripts_are_only_listed_for_group_members(self):
+        request_factory = RequestFactory()
+        user = factories.UserFactory()
+        script = self.translate_script.script
+        group = Group.objects.create(name="script viewers")
+        script.user_groups.add(group)
+        request = request_factory.get(reverse("wooey:wooey_home"))
+        request.user = user
+
+        response = wooey_views.WooeyHomeView.as_view()(request)
+        self.assertNotIn(script, response.context_data["scripts"])
+
+        user.groups.add(group)
+        response = wooey_views.WooeyHomeView.as_view()(request)
+        self.assertIn(script, response.context_data["scripts"])

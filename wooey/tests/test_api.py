@@ -2,6 +2,7 @@ import json
 import os
 from io import BytesIO
 
+from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TransactionTestCase
 from django.urls import reverse
@@ -718,6 +719,24 @@ class TestScriptSubmission(
         self.assertEqual(
             job.scriptparameters_set.get(parameter__slug="sequence").value, "aaa"
         )
+
+    def test_script_or_parent_group_membership_can_submit(self):
+        script_version = self.translate_script
+        script_group = Group.objects.create(name="script viewers")
+        parent_group = Group.objects.create(name="parent script group viewers")
+        script_version.script.user_groups.add(script_group)
+        script_version.script.script_group.user_groups.add(parent_group)
+        self.api_key.profile.user.groups.add(script_group)
+
+        response = self.client.post(
+            reverse(
+                "wooey:api_submit_script", kwargs={"slug": script_version.script.slug}
+            ),
+            data={"job_name": "test", "command": "--sequence aaa"},
+            content_type="application/json",
+        )
+
+        self.assertTrue(response.json()["valid"])
 
     def test_submit_script_with_mixed_form_data(self):
         script_version = self.translate_script

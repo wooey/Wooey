@@ -803,6 +803,19 @@ def valid_user(obj, user):
     return ret
 
 
+def can_user_view_script(script, user):
+    """Return whether a script's group restrictions permit ``user`` to see it."""
+    groups = set(script.user_groups.all())
+    if script.script_group_id:
+        groups.update(script.script_group.user_groups.all())
+
+    if not groups:
+        return True
+    if not user.is_authenticated:
+        return False
+    return bool(set(user.groups.all()) & groups)
+
+
 def mkdirs(path):
     try:
         os.makedirs(path)

@@ -352,7 +352,10 @@ def submit_script(**kwargs):
 
         # fetch the job again in case the database connection was lost during the job or something else changed.
         job = WooeyJob.objects.get(pk=job_id)
-        if str(job.submission_id or "") != str(submission_id or ""):
+        if (
+            str(job.submission_id or "") != str(submission_id or "")
+            or job.status != WooeyJob.RUNNING
+        ):
             return (stdout, stderr)
         # if there are files generated, make zip/tar files for download
         if len(os.listdir(abscwd)):
@@ -415,6 +418,7 @@ def submit_script(**kwargs):
     if WooeyJob.objects.filter(
         pk=job_id,
         submission_id=job.submission_id,
+        status=WooeyJob.RUNNING,
     ).update(status=final_status, stdout=stdout, stderr=stderr):
         job.update_realtime(delete=True)
 

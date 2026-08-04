@@ -3,6 +3,7 @@ import os
 import uuid
 from datetime import timedelta
 
+from celery import states
 from django.db import transaction
 from django.test import TestCase
 
@@ -11,6 +12,7 @@ from wooey.backend.utils import add_wooey_script
 from wooey.models import (
     WooeyJob,
 )
+from wooey.signals import task_completed
 from wooey.tasks import (
     cleanup_stuck_jobs,
     get_latest_script,
@@ -102,6 +104,66 @@ class TestGetLatestScript(mixins.FileMixin, mixins.ScriptTearDown, TestCase):
 
 
 class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
+    def test_stale_task_signal_does_not_complete_newer_submission(self):
+        job = factories.generate_job(self.translate_script)
+        old_submission_id = uuid.uuid4()
+        new_submission_id = uuid.uuid4()
+        WooeyJob.objects.filter(pk=job.pk).update(
+            status=WooeyJob.QUEUED,
+            submission_id=new_submission_id,
+            celery_id="new-task-id",
+        )
+
+        task_completed(
+            sender=submit_script,
+            kwargs={
+                "wooey_job": job.pk,
+                "submission_id": str(old_submission_id),
+            },
+            task_id="old-task-id",
+            state=states.SUCCESS,
+        )
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.QUEUED)
+        self.assertEqual(job.submission_id, new_submission_id)
+        self.assertEqual(job.celery_id, "new-task-id")
+
+    def test_stale_realtime_output_does_not_restore_old_submission_state(self):
+        original_realtime_cache = wooey_settings.WOOEY_REALTIME_CACHE
+        self.addCleanup(
+            setattr,
+            wooey_settings,
+            "WOOEY_REALTIME_CACHE",
+            original_realtime_cache,
+        )
+        wooey_settings.WOOEY_REALTIME_CACHE = None
+
+        job = factories.generate_job(self.translate_script)
+        old_submission_id = uuid.uuid4()
+        job.status = WooeyJob.RUNNING
+        job.submission_id = old_submission_id
+        job.celery_id = "old-task-id"
+        job.save()
+        stale_worker_job = WooeyJob.objects.get(pk=job.pk)
+
+        new_submission_id = uuid.uuid4()
+        WooeyJob.objects.filter(pk=job.pk).update(
+            status=WooeyJob.QUEUED,
+            submission_id=new_submission_id,
+            celery_id="new-task-id",
+        )
+
+        stale_worker_job.update_realtime(
+            stdout="output from stale task",
+            stderr="error from stale task",
+        )
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.QUEUED)
+        self.assertEqual(job.submission_id, new_submission_id)
+        self.assertEqual(job.celery_id, "new-task-id")
+
     def test_stale_submission_does_not_execute_script(self):
         job = factories.generate_job(self.translate_script)
 

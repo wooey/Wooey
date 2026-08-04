@@ -60,12 +60,14 @@ def task_completed(sender=None, **kwargs):
         state == states.SUCCESS
         and getattr(sender, "name", None) == "wooey.tasks.submit_script"
     )
+    user_terminal_state = job.status in (WooeyJob.DELETED, states.REVOKED)
     # The built-in task records its own final status after it successfully claims the
     # submission. A rejected duplicate also emits SUCCESS, so its signal must not be
     # allowed to complete the attempt that is actually running.
     if (
         state
         and not default_task_succeeded
+        and not user_terminal_state
         and job.status not in WooeyJob.TERMINAL_STATES
     ):
         updates["status"] = WooeyJob.COMPLETED if state == states.SUCCESS else state

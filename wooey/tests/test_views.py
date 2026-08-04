@@ -681,6 +681,108 @@ class TestProfileView(TestCase):
             wooey_views.ScriptEditorView.as_view()(request, slug="test-script")
 
 
+class TestFavoriteViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.factory = RequestFactory()
+        self.user = factories.UserFactory(username="favorite-user")
+        self.other_user = factories.UserFactory(username="favorite-other-user")
+
+    def create_user_file(self, user, filename):
+        job = factories.generate_job(self.translate_script)
+        job.user = user
+        job.save()
+        system_file = models.WooeyFile.objects.create(
+            filepath=f"outputs/{filename}",
+            filetype="image",
+            size_bytes=1,
+        )
+        return models.UserFile.objects.create(
+            filename=filename,
+            job=job,
+            system_file=system_file,
+        )
+
+    def toggle_favorite(self, user, obj):
+        content_type = ContentType.objects.get_for_model(obj)
+        request = self.factory.post(
+            reverse("wooey:toggle_favorite"),
+            data={
+                "app": content_type.app_label,
+                "model": content_type.model,
+                "pk": obj.pk,
+            },
+        )
+        request.user = user
+        request.is_ajax = lambda: True
+        return wooey_views.toggle_favorite(request)
+
+    def test_cannot_favorite_another_users_file(self):
+        user_file = self.create_user_file(self.other_user, "private-output.txt")
+
+        response = self.toggle_favorite(self.user, user_file)
+
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(
+            models.Favorite.objects.filter(
+                user=self.user,
+                content_type=ContentType.objects.get_for_model(models.UserFile),
+                object_id=user_file.pk,
+            ).exists()
+        )
+
+    def test_can_favorite_a_viewable_file(self):
+        user_file = self.create_user_file(self.user, "owned-output.txt")
+
+        response = self.toggle_favorite(self.user, user_file)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            models.Favorite.objects.filter(
+                user=self.user,
+                content_type=ContentType.objects.get_for_model(models.UserFile),
+                object_id=user_file.pk,
+            ).exists()
+        )
+
+    def test_can_favorite_a_public_file(self):
+        user_file = self.create_user_file(None, "public-output.txt")
+
+        response = self.toggle_favorite(self.user, user_file)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            models.Favorite.objects.filter(
+                user=self.user,
+                content_type=ContentType.objects.get_for_model(models.UserFile),
+                object_id=user_file.pk,
+            ).exists()
+        )
+
+    def test_scrapbook_omits_favorited_files_user_cannot_view(self):
+        owned_file = self.create_user_file(self.user, "owned-output.txt")
+        private_file = self.create_user_file(
+            self.other_user, "private-other-user-output.txt"
+        )
+        public_file = self.create_user_file(None, "public-output.txt")
+        content_type = ContentType.objects.get_for_model(models.UserFile)
+        for user_file in (owned_file, private_file, public_file):
+            models.Favorite.objects.create(
+                user=self.user,
+                content_type=content_type,
+                object_id=user_file.pk,
+            )
+
+        request = self.factory.get(reverse("wooey:scrapbook"))
+        request.user = self.user
+        response = wooey_views.WooeyScrapbookView.as_view()(request)
+        response.render()
+
+        self.assertContains(response, "owned-output.txt")
+        self.assertContains(response, "public-output.txt")
+        self.assertNotContains(response, "private-other-user-output.txt")
+
+
 class TestHomeView(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
     def test_sorts_scripts_by_name_and_favorite(self):
         request_factory = RequestFactory()

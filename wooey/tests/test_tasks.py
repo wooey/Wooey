@@ -9,6 +9,7 @@ from django.db import transaction
 from django.test import TestCase
 
 from wooey import settings as wooey_settings
+from wooey import tasks as wooey_tasks
 from wooey.backend.utils import add_wooey_script
 from wooey.models import (
     WooeyJob,
@@ -26,6 +27,12 @@ from . import config, mixins, factories
 
 
 class TaskTests(mixins.ScriptFactoryMixin, TestCase):
+    def test_legacy_cleanup_task_delegates_to_stuck_job_cleanup(self):
+        with mock.patch("wooey.tasks.cleanup_stuck_jobs") as cleanup_mock:
+            wooey_tasks.cleanup_dead_jobs()
+
+        cleanup_mock.assert_called_once_with()
+
     def test_job_cleanup(self):
         from ..models import WooeyJob
         from ..tasks import cleanup_wooey_jobs

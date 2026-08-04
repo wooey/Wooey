@@ -33,6 +33,7 @@ except ImportError:
 ON_POSIX = "posix" in sys.builtin_module_names
 
 celery_app = app.app_or_default()
+SUBMISSION_ID_HEADER = "wooey_submission_id"
 
 
 def revoke_job_task(task_id):
@@ -92,8 +93,8 @@ def queue_script_job(
                 kwargs={
                     "wooey_job": job_id,
                     "rerun": rerun,
-                    "submission_id": str(submission_id),
                 },
+                headers={SUBMISSION_ID_HEADER: str(submission_id)},
                 task_id=celery_id,
             )
             WooeyJob.objects.filter(
@@ -286,6 +287,10 @@ def submit_script(**kwargs):
     job_id = kwargs.pop("wooey_job")
     resubmit = kwargs.pop("wooey_resubmit", False)
     submission_id = kwargs.pop("submission_id", None)
+    if submission_id is None:
+        request = getattr(submit_script, "request", None)
+        headers = getattr(request, "headers", None) or {}
+        submission_id = headers.get(SUBMISSION_ID_HEADER)
     from .models import WooeyJob
 
     job = WooeyJob.objects.get(pk=job_id)

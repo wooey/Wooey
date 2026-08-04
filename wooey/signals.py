@@ -8,6 +8,7 @@ from django import db
 from celery.signals import task_postrun, task_prerun
 
 from .models import ScriptVersion
+from .tasks import SUBMISSION_ID_HEADER
 
 
 def disable_for_loaddata(signal_handler):
@@ -46,6 +47,10 @@ def task_completed(sender=None, **kwargs):
         job = WooeyJob.objects.get(pk=job_id)
 
     submission_id = task_kwargs.get("submission_id")
+    if submission_id is None:
+        request = getattr(sender, "request", None)
+        headers = getattr(request, "headers", None) or {}
+        submission_id = headers.get(SUBMISSION_ID_HEADER)
     if str(job.submission_id or "") != str(submission_id or ""):
         return
 

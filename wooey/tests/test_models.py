@@ -171,8 +171,8 @@ class TestJob(
             kwargs={
                 "wooey_job": job.pk,
                 "rerun": False,
-                "submission_id": str(job.submission_id),
             },
+            headers={"wooey_submission_id": str(job.submission_id)},
             task_id=job.celery_id,
         )
 
@@ -202,8 +202,8 @@ class TestJob(
             kwargs={
                 "wooey_job": job.pk,
                 "rerun": False,
-                "submission_id": str(job.submission_id),
             },
+            headers={"wooey_submission_id": str(job.submission_id)},
             task_id=job.celery_id,
         )
         self.assertEqual(job.status, models.WooeyJob.QUEUED)

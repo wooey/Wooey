@@ -4,6 +4,7 @@ import uuid
 from datetime import timedelta
 
 from celery import states
+from django.core.cache import caches
 from django.db import transaction
 from django.test import TestCase
 
@@ -277,6 +278,51 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
         self.assertEqual(job.status, WooeyJob.QUEUED)
         self.assertEqual(job.submission_id, new_submission_id)
         self.assertEqual(job.celery_id, "new-task-id")
+
+    def test_stale_cached_output_does_not_leak_into_newer_submission(self):
+        original_realtime_cache = wooey_settings.WOOEY_REALTIME_CACHE
+        self.addCleanup(
+            setattr,
+            wooey_settings,
+            "WOOEY_REALTIME_CACHE",
+            original_realtime_cache,
+        )
+        wooey_settings.WOOEY_REALTIME_CACHE = "default"
+        cache = caches["default"]
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+        job = factories.generate_job(self.translate_script)
+        old_submission_id = uuid.uuid4()
+        WooeyJob.objects.filter(pk=job.pk).update(
+            status=WooeyJob.RUNNING,
+            submission_id=old_submission_id,
+            celery_id="old-task-id",
+            stdout="old output",
+        )
+        stale_worker_job = WooeyJob.objects.get(pk=job.pk)
+        new_submission_id = uuid.uuid4()
+        original_cache_set = cache.set
+
+        def supersede_before_cache_write(*args, **kwargs):
+            WooeyJob.objects.filter(pk=job.pk).update(
+                status=WooeyJob.QUEUED,
+                submission_id=new_submission_id,
+                celery_id="new-task-id",
+                stdout="new output",
+            )
+            return original_cache_set(*args, **kwargs)
+
+        with mock.patch.object(
+            cache,
+            "set",
+            side_effect=supersede_before_cache_write,
+        ):
+            stale_worker_job.update_realtime(stdout="stale output", stderr="")
+
+        job.refresh_from_db()
+        self.assertEqual(job.submission_id, new_submission_id)
+        self.assertEqual(job.get_stdout(), "new output")
 
     def test_stale_submission_does_not_execute_script(self):
         job = factories.generate_job(self.translate_script)

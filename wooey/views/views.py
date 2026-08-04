@@ -51,6 +51,12 @@ class WooeyScriptBase(DetailView):
     def render_fn(s):
         return s
 
+    def get_object(self, queryset=None):
+        script = super().get_object(queryset=queryset)
+        if not utils.can_user_view_script(script, self.request.user):
+            raise Http404
+        return script
+
     def get_context_data(self, **kwargs):
         context = super(WooeyScriptBase, self).get_context_data(**kwargs)
         version = self.kwargs.get("script_version")
@@ -150,18 +156,14 @@ class WooeyScriptBase(DetailView):
             script_version = ScriptVersion.objects.get(pk=version_pk)
             valid = utils.valid_user(script_version.script, request.user).get("valid")
             if valid:
-                group_valid = utils.valid_user(
-                    script_version.script.script_group, request.user
-                )["valid"]
-                if valid and group_valid:
-                    job = utils.create_wooey_job(
-                        script_parser_pk=parser_pk,
-                        script_version_pk=version_pk,
-                        user=user,
-                        data=form.cleaned_data,
-                    )
-                    job.submit_to_celery()
-                    return {"valid": True, "job_id": job.id}
+                job = utils.create_wooey_job(
+                    script_parser_pk=parser_pk,
+                    script_version_pk=version_pk,
+                    user=user,
+                    data=form.cleaned_data,
+                )
+                job.submit_to_celery()
+                return {"valid": True, "job_id": job.id}
 
             return {
                 "valid": False,
@@ -208,7 +210,11 @@ class WooeyHomeView(TemplateView):
     def get_context_data(self, **kwargs):
         # job_id = self.request.GET.get('job_id')
         ctx = super(WooeyHomeView, self).get_context_data(**kwargs)
-        ctx["scripts"] = utils.get_current_scripts()
+        ctx["scripts"] = [
+            script
+            for script in utils.get_current_scripts()
+            if utils.can_user_view_script(script, self.request.user)
+        ]
 
         # Check for logged in user
         if self.request.user.is_authenticated:
@@ -331,7 +337,11 @@ class WooeySearchBase(View):
             query_string = request.GET["q"].strip()
 
             query = utils.get_query(query_string, self.search_fields)
-            self.search_results = self.model.objects.filter(query)
+            self.search_results = [
+                script
+                for script in self.model.objects.filter(query)
+                if utils.can_user_view_script(script, request.user)
+            ]
 
             return self.search(request, *args, **kwargs)
 

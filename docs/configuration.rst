@@ -53,7 +53,8 @@ be a short, relative path to the storage root. (Default: ``wooey_scripts``)
 
 :code:`WOOEY_SHOW_LOCKED_SCRIPTS`: Boolean, whether to show locked
 scripts as disabled or hide them entirely. (Default: ``True`` -- show as
-disabled)
+disabled). Scripts restricted to user groups are always hidden from users
+outside those groups.
 
 :code:`WOOEY_SITE_NAME`: String, the name of the site to display. (Default: ``Wooey!``)
 

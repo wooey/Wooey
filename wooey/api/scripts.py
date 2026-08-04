@@ -389,74 +389,7 @@ def submit_script(request, slug=None):
             {"valid": False, "errors": {"script": _("Unable to find script.")}}
         )
 
-    valid = utils.valid_user(script_version.script, request.user).get("valid")
-    if valid:
-        group_valid = utils.valid_user(
-            script_version.script.script_group, request.user
-        )["valid"]
-
-        parser = create_argparser(script_version)
-        try:
-            parsed_command = parser.parse_args(shlex.split(command))
-        except SystemExit:
-            return JsonResponse(
-                {"valid": False, "errors": {"command": parser._wooey_error}}, status=400
-            )
-        if valid and group_valid:
-            job_data = vars(parsed_command)
-            job_data["job_name"] = data["job_name"]
-            if data["job_description"]:
-                job_data["job_description"] = data["job_description"]
-            subparser_id = script_version.scriptparser_set.get(
-                name=job_data.pop("wooey_subparser", "")
-            ).id
-            form = utils.get_master_form(
-                script_version=script_version, parser=subparser_id
-            )
-            wooey_form_data = job_data.copy()
-            wooey_form_data["wooey_type"] = script_version.pk
-
-            # We need to remap uploaded files to the correct slug
-            form_slugs = list(wooey_form_data)
-            for form_slug in form_slugs:
-                form_value = wooey_form_data[form_slug]
-                if isinstance(form_value, list):
-                    to_append = []
-                    for index, value in enumerate(form_value):
-                        if value in files:
-                            to_append.append(index)
-                    if to_append:
-                        existing_files = files.get(form_slug, [])
-                        files.setlist(
-                            form_slug,
-                            utils.flatten(
-                                existing_files
-                                + [files.pop(form_value[i]) for i in to_append]
-                            ),
-                        )
-                        for index in reversed(to_append):
-                            form_value.pop(index)
-                else:
-                    if form_value in files:
-                        files.setlist(form_slug, files.pop(form_value))
-                        wooey_form_data[form_slug] = [""]
-
-            utils.validate_form(
-                form=form, data=wooey_form_data, files=files, user=request.user
-            )
-
-            if not form.errors:
-                job = utils.create_wooey_job(
-                    script_parser_pk=subparser_id,
-                    script_version_pk=script_version.id,
-                    user=request.user,
-                    data=form.cleaned_data,
-                )
-                job.submit_to_celery()
-                return JsonResponse({"valid": True, "job_id": job.id})
-            else:
-                return JsonResponse({"valid": False, "errors": form.errors}, status=400)
-    else:
+    if not utils.valid_user(script_version.script, request.user).get("valid"):
         return JsonResponse(
             {
                 "valid": False,
@@ -468,6 +401,61 @@ def submit_script(request, slug=None):
             },
             status=403,
         )
+
+    parser = create_argparser(script_version)
+    try:
+        parsed_command = parser.parse_args(shlex.split(command))
+    except SystemExit:
+        return JsonResponse(
+            {"valid": False, "errors": {"command": parser._wooey_error}}, status=400
+        )
+
+    job_data = vars(parsed_command)
+    job_data["job_name"] = data["job_name"]
+    if data["job_description"]:
+        job_data["job_description"] = data["job_description"]
+    subparser_id = script_version.scriptparser_set.get(
+        name=job_data.pop("wooey_subparser", "")
+    ).id
+    form = utils.get_master_form(script_version=script_version, parser=subparser_id)
+    wooey_form_data = job_data.copy()
+    wooey_form_data["wooey_type"] = script_version.pk
+
+    # We need to remap uploaded files to the correct slug
+    form_slugs = list(wooey_form_data)
+    for form_slug in form_slugs:
+        form_value = wooey_form_data[form_slug]
+        if isinstance(form_value, list):
+            to_append = []
+            for index, value in enumerate(form_value):
+                if value in files:
+                    to_append.append(index)
+            if to_append:
+                existing_files = files.get(form_slug, [])
+                files.setlist(
+                    form_slug,
+                    utils.flatten(
+                        existing_files + [files.pop(form_value[i]) for i in to_append]
+                    ),
+                )
+                for index in reversed(to_append):
+                    form_value.pop(index)
+        elif form_value in files:
+            files.setlist(form_slug, files.pop(form_value))
+            wooey_form_data[form_slug] = [""]
+
+    utils.validate_form(form=form, data=wooey_form_data, files=files, user=request.user)
+
+    if not form.errors:
+        job = utils.create_wooey_job(
+            script_parser_pk=subparser_id,
+            script_version_pk=script_version.id,
+            user=request.user,
+            data=form.cleaned_data,
+        )
+        job.submit_to_celery()
+        return JsonResponse({"valid": True, "job_id": job.id})
+    return JsonResponse({"valid": False, "errors": form.errors}, status=400)
 
 
 @csrf_exempt

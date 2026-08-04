@@ -102,8 +102,9 @@ Script Permissions
 ------------------
 
 Scripts and script groups can be relegated to certain groups of users.
-The 'user groups' option, if set, will restrict script usage to users
-within selected groups.
+The 'user groups' option, if set, will restrict script visibility and usage
+to users within selected groups. Membership in any group assigned directly to
+the script or to its parent script group is sufficient.
 
 Scripts and groups may also be shut off to all users by unchecking the
 ``script/group active`` option.

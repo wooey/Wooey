@@ -374,7 +374,10 @@ class WooeyJob(models.Model):
         return path[path.find(self.get_output_path()) :].lstrip(os.path.sep)
 
     def get_realtime_key(self):
-        return "wooeyjob_{}_rt".format(self.pk)
+        key = "wooeyjob_{}_rt".format(self.pk)
+        if self.submission_id:
+            key = "{}_{}".format(key, self.submission_id)
+        return key
 
     def update_realtime(self, stdout="", stderr="", delete=False):
         wooey_cache = wooey_settings.WOOEY_REALTIME_CACHE

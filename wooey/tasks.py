@@ -582,6 +582,11 @@ def cleanup_stuck_jobs():
         )
 
 
+@celery_app.task()
+def cleanup_dead_jobs():
+    return cleanup_stuck_jobs()
+
+
 celery_app.conf.beat_schedule.update(
     {
         "cleanup-old-jobs": {

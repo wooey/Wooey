@@ -209,6 +209,45 @@ class TestJob(
         self.assertEqual(job.status, models.WooeyJob.QUEUED)
         self.assertIsNotNone(job.celery_id)
 
+    def test_celery_submission_preserves_custom_task_call_signature(self):
+        from .. import settings as wooey_settings
+        from ..backend import utils
+
+        original_celery = wooey_settings.WOOEY_CELERY
+        self.addCleanup(setattr, wooey_settings, "WOOEY_CELERY", original_celery)
+        wooey_settings.WOOEY_CELERY = True
+
+        sequence_slug = test_utils.get_subparser_form_slug(
+            self.translate_script, "sequence"
+        )
+        out_slug = test_utils.get_subparser_form_slug(self.translate_script, "out")
+        job = utils.create_wooey_job(
+            script_version_pk=self.translate_script.pk,
+            data={
+                "job_name": "strict custom task",
+                sequence_slug: "aaa",
+                out_slug: "abc",
+            },
+        )
+        dispatched = {}
+
+        def strict_submit_script(wooey_job, rerun=False):
+            dispatched.update(wooey_job=wooey_job, rerun=rerun)
+
+        def execute_custom_task(*, kwargs, task_id, **options):
+            strict_submit_script(**kwargs)
+
+        custom_tasks = mock.Mock(spec=["submit_script"])
+        custom_tasks.submit_script.apply_async.side_effect = execute_custom_task
+
+        with mock.patch("wooey.models.core.tasks", custom_tasks):
+            job.submit_to_celery()
+
+        self.assertEqual(
+            dispatched,
+            {"wooey_job": job.pk, "rerun": False},
+        )
+
     def test_file_sharing(self):
         # this tests whether a file uploaded by one job will be referenced by a second job instead of being duplicated
         # on the file system

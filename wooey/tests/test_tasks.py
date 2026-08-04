@@ -185,6 +185,39 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
         self.assertEqual(job.status, states.FAILURE)
         self.assertEqual(job.celery_id, result.id)
 
+    def test_stopped_running_job_is_not_finalized_by_worker(self):
+        job = factories.generate_job(self.translate_script)
+        submission_id = uuid.uuid4()
+        WooeyJob.objects.filter(pk=job.pk).update(
+            status=WooeyJob.QUEUED,
+            submission_id=submission_id,
+            celery_id="current-task-id",
+        )
+
+        def stop_job_during_run(*args, **kwargs):
+            WooeyJob.objects.filter(pk=job.pk).update(status=states.REVOKED)
+            return ("output", "", 0)
+
+        with (
+            mock.patch("wooey.tasks.utils.get_job_commands", return_value=["command"]),
+            mock.patch("wooey.tasks.utils.mkdirs"),
+            mock.patch("wooey.tasks.get_latest_script"),
+            mock.patch(
+                "wooey.tasks.run_and_stream_command",
+                side_effect=stop_job_during_run,
+            ),
+            mock.patch("wooey.tasks.os.listdir", return_value=[]),
+            mock.patch("wooey.tasks.utils.create_job_fileinfo") as fileinfo_mock,
+        ):
+            submit_script(
+                wooey_job=job.pk,
+                submission_id=str(submission_id),
+            )
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, states.REVOKED)
+        fileinfo_mock.assert_not_called()
+
     def test_stale_realtime_output_does_not_restore_old_submission_state(self):
         original_realtime_cache = wooey_settings.WOOEY_REALTIME_CACHE
         self.addCleanup(

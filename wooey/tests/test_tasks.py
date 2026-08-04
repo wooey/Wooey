@@ -130,6 +130,31 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
         self.assertEqual(job.submission_id, new_submission_id)
         self.assertEqual(job.celery_id, "new-task-id")
 
+    def test_task_signal_does_not_overwrite_user_terminal_state(self):
+        submission_id = uuid.uuid4()
+
+        for user_status in (states.REVOKED, WooeyJob.DELETED):
+            with self.subTest(user_status=user_status):
+                job = factories.generate_job(self.translate_script)
+                WooeyJob.objects.filter(pk=job.pk).update(
+                    status=user_status,
+                    submission_id=submission_id,
+                    celery_id="current-task-id",
+                )
+
+                task_completed(
+                    sender=submit_script,
+                    kwargs={
+                        "wooey_job": job.pk,
+                        "submission_id": str(submission_id),
+                    },
+                    task_id="current-task-id",
+                    state=states.FAILURE,
+                )
+
+                job.refresh_from_db()
+                self.assertEqual(job.status, user_status)
+
     def test_rejected_duplicate_signal_does_not_complete_running_job(self):
         job = factories.generate_job(self.translate_script)
         submission_id = uuid.uuid4()

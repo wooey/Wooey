@@ -233,11 +233,15 @@ class WooeyJob(models.Model):
     FAILED = states.FAILURE
     ERROR = "error"
     QUEUED = "queued"
+    REVOKED = states.REVOKED
     RETRY = states.RETRY
     RUNNING = "running"
     SUBMITTED = "submitted"
 
-    TERMINAL_STATES = {COMPLETED, FAILED, ERROR}
+    TERMINAL_STATES = frozenset({COMPLETED, DELETED, FAILED, ERROR, REVOKED})
+    WAITING_STATES = frozenset({SUBMITTED, RETRY, QUEUED})
+    EXECUTING_STATES = frozenset({RUNNING})
+    ACTIVE_STATES = WAITING_STATES | EXECUTING_STATES
 
     STATUS_CHOICES = (
         (COMPLETED, _("Completed")),
@@ -245,6 +249,7 @@ class WooeyJob(models.Model):
         (FAILED, _("Failed")),
         (ERROR, _("Error")),
         (QUEUED, _("Queued")),
+        (REVOKED, _("Halted")),
         (RETRY, _("Retrying")),
         (RUNNING, _("Running")),
         (SUBMITTED, _("Submitted")),
@@ -252,7 +257,6 @@ class WooeyJob(models.Model):
 
     status = models.CharField(max_length=255, default=SUBMITTED, choices=STATUS_CHOICES)
     retry_count = models.PositiveSmallIntegerField(default=0)
-    submission_id = models.UUIDField(null=True, editable=False)
     submitted_date = models.DateTimeField(default=timezone.now)
 
     save_path = models.CharField(max_length=255, blank=True, null=True)
@@ -298,39 +302,57 @@ class WooeyJob(models.Model):
                     param.job = self
                     param.recreate()
                     param.save()
-        self.celery_id = None
-        self.retry_count = 0
-        self.status = self.SUBMITTED
-        self.submission_id = uuid.uuid4()
-        self.submitted_date = timezone.now()
+
+        expected_status = self.status
+        expected_celery_id = self.celery_id
         rerun = kwargs.pop("rerun", False)
-        if rerun:
-            self.command = ""
-        self.save()
         job_pk = self.pk
-        submission_id = self.submission_id
-        submitted_date = self.submitted_date
-        task_kwargs = {
-            "wooey_job": job_pk,
-            "rerun": rerun,
-            "submission_id": str(submission_id),
-        }
+        submitted_date = timezone.now()
 
-        if rerun:
-            utils.purge_output(job=self)
+        with transaction.atomic():
+            if wooey_settings.WOOEY_CELERY:
+                from ..tasks import queue_script_job
 
-        if wooey_settings.WOOEY_CELERY:
-            from ..tasks import queue_script_job
+                task_id = queue_script_job(
+                    job_pk,
+                    expected_status=expected_status,
+                    expected_celery_id=expected_celery_id,
+                    submission_status=self.SUBMITTED,
+                    rerun=rerun,
+                    reset_retry_count=True,
+                    celery_task=tasks.submit_script,
+                    submitted_date=submitted_date,
+                )
+            else:
+                task_id = str(uuid.uuid4())
+                updates = {
+                    "celery_id": task_id,
+                    "modified_date": submitted_date,
+                    "retry_count": 0,
+                    "status": self.SUBMITTED,
+                    "submitted_date": submitted_date,
+                }
+                if rerun:
+                    updates["command"] = ""
+                updated = WooeyJob.objects.filter(
+                    pk=job_pk,
+                    status=expected_status,
+                    celery_id=expected_celery_id,
+                ).update(**updates)
+                if not updated:
+                    task_id = None
+                else:
+                    transaction.on_commit(
+                        lambda: tasks.submit_script(
+                            wooey_job=job_pk,
+                            rerun=rerun,
+                        )
+                    )
 
-            queue_script_job(
-                job_pk,
-                rerun=rerun,
-                celery_task=tasks.submit_script,
-                submission_id=submission_id,
-                submitted_date=submitted_date,
-            )
-        else:
-            transaction.on_commit(lambda: tasks.submit_script(**task_kwargs))
+            if task_id is not None and rerun:
+                utils.purge_output(job=self)
+
+        self.refresh_from_db()
         return self
 
     def get_resubmit_url(self):
@@ -375,38 +397,34 @@ class WooeyJob(models.Model):
 
     def get_realtime_key(self):
         key = "wooeyjob_{}_rt".format(self.pk)
-        if self.submission_id:
-            key = "{}_{}".format(key, self.submission_id)
+        if self.celery_id:
+            key = "{}_{}".format(key, self.celery_id)
         return key
 
     def update_realtime(self, stdout="", stderr="", delete=False):
         wooey_cache = wooey_settings.WOOEY_REALTIME_CACHE
         if not delete and wooey_cache is None:
             modified_date = timezone.now()
-            if (
-                type(self)
-                .objects.filter(
-                    pk=self.pk,
-                    submission_id=self.submission_id,
-                )
-                .update(
-                    stdout=stdout,
-                    stderr=stderr,
-                    modified_date=modified_date,
-                )
+            if WooeyJob.objects.filter(
+                pk=self.pk,
+                celery_id=self.celery_id,
+                status=self.RUNNING,
+            ).update(
+                stdout=stdout,
+                stderr=stderr,
+                modified_date=modified_date,
             ):
                 self.stdout = stdout
                 self.stderr = stderr
                 self.modified_date = modified_date
         elif wooey_cache is not None:
-            if (
-                not type(self)
-                .objects.filter(
-                    pk=self.pk,
-                    submission_id=self.submission_id,
-                )
-                .exists()
-            ):
+            current_job = WooeyJob.objects.filter(
+                pk=self.pk,
+                celery_id=self.celery_id,
+            )
+            if not delete:
+                current_job = current_job.filter(status=self.RUNNING)
+            if not current_job.exists():
                 return
             cache = django_cache[wooey_cache]
             if delete:

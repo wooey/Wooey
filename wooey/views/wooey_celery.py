@@ -60,12 +60,7 @@ def generate_job_list(job_query):
 
 
 def get_global_queue(request):
-    jobs = WooeyJob.objects.filter(
-        Q(status=WooeyJob.RUNNING)
-        | Q(status=WooeyJob.QUEUED)
-        | Q(status=WooeyJob.SUBMITTED)
-        | Q(status=WooeyJob.RETRY)
-    )
+    jobs = WooeyJob.objects.filter(status__in=WooeyJob.ACTIVE_STATES)
     return jobs.order_by("-created_date")
 
 
@@ -78,7 +73,7 @@ def get_active_user_jobs(request):
     user = request.user
     jobs = WooeyJob.objects.filter(
         (Q(user=None) | Q(user=user) if request.user.is_authenticated else Q(user=None))
-        & (Q(status=WooeyJob.RUNNING))
+        & Q(status__in=WooeyJob.EXECUTING_STATES)
     )
     return jobs.order_by("-created_date")
 
@@ -94,11 +89,7 @@ def get_user_results(request):
         (Q(user=None) | Q(user=user) if request.user.is_authenticated else Q(user=None))
     )
     jobs = jobs.exclude(
-        Q(status=WooeyJob.RUNNING)
-        | Q(status=WooeyJob.QUEUED)
-        | Q(status=WooeyJob.SUBMITTED)
-        | Q(status=WooeyJob.RETRY)
-        | Q(status=WooeyJob.DELETED)
+        Q(status__in=WooeyJob.ACTIVE_STATES) | Q(status=WooeyJob.DELETED)
     )
     return jobs.order_by("-created_date")
 

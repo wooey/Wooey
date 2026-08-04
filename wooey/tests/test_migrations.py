@@ -6,7 +6,7 @@ from django.test import TransactionTestCase
 from django.utils import timezone
 
 
-class TestWooeyJobSubmissionFieldsMigration(TransactionTestCase):
+class TestWooeyJobSubmittedDateMigration(TransactionTestCase):
     migrate_from = (("wooey", "0055_add_wooeyjob_retry_fields"),)
     migrate_to = (("wooey", "0058_finalize_wooeyjob_submitted_date"),)
 
@@ -56,4 +56,3 @@ class TestWooeyJobSubmissionFieldsMigration(TransactionTestCase):
         job = WooeyJob.objects.get(pk=self.job_pk)
 
         self.assertEqual(job.submitted_date, self.created_date)
-        self.assertIsNone(job.submission_id)

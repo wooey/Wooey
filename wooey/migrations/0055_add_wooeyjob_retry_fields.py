@@ -22,6 +22,7 @@ class Migration(migrations.Migration):
                     ("FAILURE", "Failed"),
                     ("error", "Error"),
                     ("queued", "Queued"),
+                    ("REVOKED", "Halted"),
                     ("RETRY", "Retrying"),
                     ("running", "Running"),
                     ("submitted", "Submitted"),

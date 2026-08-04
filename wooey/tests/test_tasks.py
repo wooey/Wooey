@@ -1,6 +1,5 @@
 import mock
 import os
-import uuid
 from datetime import timedelta
 
 from celery import states
@@ -16,7 +15,6 @@ from wooey.models import (
 )
 from wooey.signals import task_completed
 from wooey.tasks import (
-    SUBMISSION_ID_HEADER,
     cleanup_stuck_jobs,
     get_latest_script,
     queue_script_job,
@@ -24,6 +22,16 @@ from wooey.tasks import (
 )
 
 from . import config, mixins, factories
+
+
+def queue_job(job, **kwargs):
+    return queue_script_job(
+        job.pk,
+        expected_status=job.status,
+        expected_celery_id=job.celery_id,
+        submission_status=kwargs.pop("submission_status", WooeyJob.SUBMITTED),
+        **kwargs,
+    )
 
 
 class TaskTests(mixins.ScriptFactoryMixin, TestCase):
@@ -115,47 +123,51 @@ class TestGetLatestScript(mixins.FileMixin, mixins.ScriptTearDown, TestCase):
 class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
     def test_stale_task_signal_does_not_complete_newer_submission(self):
         job = factories.generate_job(self.translate_script)
-        old_submission_id = uuid.uuid4()
-        new_submission_id = uuid.uuid4()
         WooeyJob.objects.filter(pk=job.pk).update(
             status=WooeyJob.QUEUED,
-            submission_id=new_submission_id,
             celery_id="new-task-id",
         )
 
         task_completed(
             sender=submit_script,
-            kwargs={
-                "wooey_job": job.pk,
-                "submission_id": str(old_submission_id),
-            },
+            kwargs={"wooey_job": job.pk},
             task_id="old-task-id",
             state=states.SUCCESS,
         )
 
         job.refresh_from_db()
         self.assertEqual(job.status, WooeyJob.QUEUED)
-        self.assertEqual(job.submission_id, new_submission_id)
         self.assertEqual(job.celery_id, "new-task-id")
 
-    def test_task_signal_does_not_overwrite_user_terminal_state(self):
-        submission_id = uuid.uuid4()
+    def test_task_signal_uses_persisted_task_id_without_request_context(self):
+        job = factories.generate_job(self.translate_script)
+        WooeyJob.objects.filter(pk=job.pk).update(
+            status=WooeyJob.RUNNING,
+            celery_id="current-task-id",
+        )
 
+        task_completed(
+            sender=object(),
+            kwargs={"wooey_job": job.pk},
+            task_id="current-task-id",
+            state=states.FAILURE,
+        )
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, states.FAILURE)
+
+    def test_task_signal_does_not_overwrite_user_terminal_state(self):
         for user_status in (states.REVOKED, WooeyJob.DELETED):
             with self.subTest(user_status=user_status):
                 job = factories.generate_job(self.translate_script)
                 WooeyJob.objects.filter(pk=job.pk).update(
                     status=user_status,
-                    submission_id=submission_id,
                     celery_id="current-task-id",
                 )
 
                 task_completed(
                     sender=submit_script,
-                    kwargs={
-                        "wooey_job": job.pk,
-                        "submission_id": str(submission_id),
-                    },
+                    kwargs={"wooey_job": job.pk},
                     task_id="current-task-id",
                     state=states.FAILURE,
                 )
@@ -165,41 +177,31 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
 
     def test_rejected_duplicate_signal_does_not_complete_running_job(self):
         job = factories.generate_job(self.translate_script)
-        submission_id = uuid.uuid4()
         WooeyJob.objects.filter(pk=job.pk).update(
             status=WooeyJob.RUNNING,
-            submission_id=submission_id,
             celery_id="current-task-id",
         )
-        task_kwargs = {
-            "wooey_job": job.pk,
-            "submission_id": str(submission_id),
-        }
+        task_kwargs = {"wooey_job": job.pk}
 
         with mock.patch(
             "wooey.tasks.utils.get_job_commands",
             side_effect=RuntimeError("duplicate task reached script setup"),
         ) as get_job_commands_mock:
-            retval = submit_script(**task_kwargs)
+            result = submit_script.apply(
+                kwargs=task_kwargs,
+                task_id="current-task-id",
+            )
 
         get_job_commands_mock.assert_not_called()
-        task_completed(
-            sender=submit_script,
-            kwargs=task_kwargs,
-            task_id="current-task-id",
-            state=states.SUCCESS,
-            retval=retval,
-        )
+        self.assertEqual(result.state, states.SUCCESS)
 
         job.refresh_from_db()
         self.assertEqual(job.status, WooeyJob.RUNNING)
 
-    def test_submission_header_reaches_worker_and_signal(self):
+    def test_task_id_reaches_worker_and_fences_signal(self):
         job = factories.generate_job(self.translate_script)
-        submission_id = uuid.uuid4()
         WooeyJob.objects.filter(pk=job.pk).update(
             status=WooeyJob.QUEUED,
-            submission_id=submission_id,
             celery_id="queued-task-id",
         )
 
@@ -210,7 +212,7 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
         ):
             result = submit_script.apply(
                 kwargs={"wooey_job": job.pk, "rerun": False},
-                headers={SUBMISSION_ID_HEADER: str(submission_id)},
+                task_id="queued-task-id",
             )
 
         self.assertEqual(result.state, states.FAILURE)
@@ -220,10 +222,8 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
 
     def test_stopped_running_job_is_not_finalized_by_worker(self):
         job = factories.generate_job(self.translate_script)
-        submission_id = uuid.uuid4()
         WooeyJob.objects.filter(pk=job.pk).update(
             status=WooeyJob.QUEUED,
-            submission_id=submission_id,
             celery_id="current-task-id",
         )
 
@@ -242,16 +242,16 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
             mock.patch("wooey.tasks.os.listdir", return_value=[]),
             mock.patch("wooey.tasks.utils.create_job_fileinfo") as fileinfo_mock,
         ):
-            submit_script(
-                wooey_job=job.pk,
-                submission_id=str(submission_id),
+            submit_script.apply(
+                kwargs={"wooey_job": job.pk},
+                task_id="current-task-id",
             )
 
         job.refresh_from_db()
         self.assertEqual(job.status, states.REVOKED)
         fileinfo_mock.assert_not_called()
 
-    def test_stale_realtime_output_does_not_restore_old_submission_state(self):
+    def test_stale_realtime_output_does_not_restore_old_task_state(self):
         original_realtime_cache = wooey_settings.WOOEY_REALTIME_CACHE
         self.addCleanup(
             setattr,
@@ -262,17 +262,13 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
         wooey_settings.WOOEY_REALTIME_CACHE = None
 
         job = factories.generate_job(self.translate_script)
-        old_submission_id = uuid.uuid4()
         job.status = WooeyJob.RUNNING
-        job.submission_id = old_submission_id
         job.celery_id = "old-task-id"
         job.save()
         stale_worker_job = WooeyJob.objects.get(pk=job.pk)
 
-        new_submission_id = uuid.uuid4()
         WooeyJob.objects.filter(pk=job.pk).update(
             status=WooeyJob.QUEUED,
-            submission_id=new_submission_id,
             celery_id="new-task-id",
         )
 
@@ -283,8 +279,32 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
 
         job.refresh_from_db()
         self.assertEqual(job.status, WooeyJob.QUEUED)
-        self.assertEqual(job.submission_id, new_submission_id)
         self.assertEqual(job.celery_id, "new-task-id")
+
+    def test_stopped_task_cannot_update_realtime_output(self):
+        original_realtime_cache = wooey_settings.WOOEY_REALTIME_CACHE
+        self.addCleanup(
+            setattr,
+            wooey_settings,
+            "WOOEY_REALTIME_CACHE",
+            original_realtime_cache,
+        )
+        wooey_settings.WOOEY_REALTIME_CACHE = None
+
+        job = factories.generate_job(self.translate_script)
+        WooeyJob.objects.filter(pk=job.pk).update(
+            status=WooeyJob.RUNNING,
+            celery_id="current-task-id",
+            stdout="output before stop",
+        )
+        stopped_worker_job = WooeyJob.objects.get(pk=job.pk)
+        WooeyJob.objects.filter(pk=job.pk).update(status=WooeyJob.REVOKED)
+
+        stopped_worker_job.update_realtime(stdout="output after stop")
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.REVOKED)
+        self.assertEqual(job.stdout, "output before stop")
 
     def test_stale_cached_output_does_not_leak_into_newer_submission(self):
         original_realtime_cache = wooey_settings.WOOEY_REALTIME_CACHE
@@ -300,21 +320,17 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
         self.addCleanup(cache.clear)
 
         job = factories.generate_job(self.translate_script)
-        old_submission_id = uuid.uuid4()
         WooeyJob.objects.filter(pk=job.pk).update(
             status=WooeyJob.RUNNING,
-            submission_id=old_submission_id,
             celery_id="old-task-id",
             stdout="old output",
         )
         stale_worker_job = WooeyJob.objects.get(pk=job.pk)
-        new_submission_id = uuid.uuid4()
         original_cache_set = cache.set
 
         def supersede_before_cache_write(*args, **kwargs):
             WooeyJob.objects.filter(pk=job.pk).update(
                 status=WooeyJob.QUEUED,
-                submission_id=new_submission_id,
                 celery_id="new-task-id",
                 stdout="new output",
             )
@@ -328,28 +344,21 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
             stale_worker_job.update_realtime(stdout="stale output", stderr="")
 
         job.refresh_from_db()
-        self.assertEqual(job.submission_id, new_submission_id)
         self.assertEqual(job.get_stdout(), "new output")
 
-    def test_stale_submission_does_not_execute_script(self):
+    def test_stale_task_does_not_execute_script(self):
         job = factories.generate_job(self.translate_script)
 
         with mock.patch("wooey.tasks.submit_script.apply_async") as apply_async_mock:
             with self.captureOnCommitCallbacks(execute=True):
-                queue_script_job(job.pk)
+                queue_job(job)
 
         job.refresh_from_db()
-        old_submission_id = job.submission_id
         worker_kwargs = dict(apply_async_mock.call_args.kwargs["kwargs"])
-        dispatched_submission_id = apply_async_mock.call_args.kwargs["headers"][
-            SUBMISSION_ID_HEADER
-        ]
-        worker_kwargs["submission_id"] = dispatched_submission_id
+        dispatched_task_id = apply_async_mock.call_args.kwargs["task_id"]
 
-        new_submission_id = uuid.uuid4()
         WooeyJob.objects.filter(pk=job.pk).update(
             status=WooeyJob.QUEUED,
-            submission_id=new_submission_id,
             celery_id="new-task-id",
         )
 
@@ -360,13 +369,14 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
                 side_effect=RuntimeError("stale task reached script setup"),
             ),
         ):
-            submit_script(**worker_kwargs)
+            submit_script.apply(
+                kwargs=worker_kwargs,
+                task_id=dispatched_task_id,
+            )
 
         update_realtime_mock.assert_not_called()
-        self.assertEqual(str(dispatched_submission_id), str(old_submission_id))
         job.refresh_from_db()
         self.assertEqual(job.status, WooeyJob.QUEUED)
-        self.assertEqual(job.submission_id, new_submission_id)
         self.assertEqual(job.celery_id, "new-task-id")
 
     def test_rollback_discards_pending_publish(self):
@@ -376,7 +386,7 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
             with self.captureOnCommitCallbacks(execute=True) as callbacks:
                 with self.assertRaisesRegex(RuntimeError, "roll back"):
                     with transaction.atomic():
-                        queue_script_job(job.pk)
+                        queue_job(job)
                         raise RuntimeError("roll back")
 
             self.assertEqual(callbacks, [])
@@ -384,14 +394,13 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
 
         job.refresh_from_db()
         self.assertIsNone(job.celery_id)
-        self.assertIsNone(job.submission_id)
 
     def test_records_task_id_before_publishing_after_commit(self):
         job = factories.generate_job(self.translate_script)
 
         with mock.patch("wooey.tasks.submit_script.apply_async") as apply_async_mock:
             with self.captureOnCommitCallbacks(execute=False) as callbacks:
-                celery_id = queue_script_job(job.pk)
+                celery_id = queue_job(job)
                 job.refresh_from_db()
                 self.assertEqual(job.celery_id, celery_id)
                 self.assertEqual(job.status, WooeyJob.SUBMITTED)
@@ -405,7 +414,6 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
                     "wooey_job": job.pk,
                     "rerun": False,
                 },
-                headers={SUBMISSION_ID_HEADER: str(job.submission_id)},
                 task_id=celery_id,
             )
         job.refresh_from_db()
@@ -420,17 +428,16 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
         ):
             with self.assertRaisesRegex(RuntimeError, "broker unavailable"):
                 with self.captureOnCommitCallbacks(execute=True):
-                    queue_script_job(job.pk)
+                    queue_job(job)
 
         job.refresh_from_db()
         self.assertEqual(job.status, WooeyJob.SUBMITTED)
         self.assertIsNotNone(job.celery_id)
-        self.assertIsNotNone(job.submission_id)
 
     def test_preserves_state_set_by_task_during_dispatch(self):
         job = factories.generate_job(self.translate_script)
 
-        def complete_job_immediately(*, kwargs, task_id, headers):
+        def complete_job_immediately(*, kwargs, task_id):
             WooeyJob.objects.filter(pk=kwargs["wooey_job"]).update(
                 status=WooeyJob.COMPLETED
             )
@@ -440,7 +447,7 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
             side_effect=complete_job_immediately,
         ):
             with self.captureOnCommitCallbacks(execute=True):
-                queue_script_job(job.pk)
+                queue_job(job)
 
         job.refresh_from_db()
         self.assertEqual(job.status, WooeyJob.COMPLETED)
@@ -449,12 +456,14 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
 class TestCleanupStuckJobs(mixins.ScriptFactoryMixin, TestCase):
     def setUp(self):
         super(TestCleanupStuckJobs, self).setUp()
+        self.cleanup_grace = wooey_settings.WOOEY_JOB_CLEANUP_GRACE
         self.queue_timeout = wooey_settings.WOOEY_JOB_QUEUE_TIMEOUT
         self.resubmit_timeout = wooey_settings.WOOEY_JOB_RESUBMIT_TIMEOUT
         self.resubmit_limit = wooey_settings.WOOEY_JOB_RESUBMIT_LIMIT
         self.addCleanup(self.restore_job_settings)
 
     def restore_job_settings(self):
+        wooey_settings.WOOEY_JOB_CLEANUP_GRACE = self.cleanup_grace
         wooey_settings.WOOEY_JOB_QUEUE_TIMEOUT = self.queue_timeout
         wooey_settings.WOOEY_JOB_RESUBMIT_TIMEOUT = self.resubmit_timeout
         wooey_settings.WOOEY_JOB_RESUBMIT_LIMIT = self.resubmit_limit
@@ -627,6 +636,97 @@ class TestCleanupStuckJobs(mixins.ScriptFactoryMixin, TestCase):
         self.assertEqual(fresh_running_job.status, WooeyJob.RUNNING)
         self.assertEqual(fresh_waiting_job.status, WooeyJob.RETRY)
 
+    def test_honors_configured_cleanup_grace(self):
+        from django.utils import timezone
+
+        job = factories.generate_job(self.translate_script)
+        job.status = WooeyJob.RUNNING
+        job.celery_id = "running-task-id"
+        job.save()
+        WooeyJob.objects.filter(pk=job.pk).update(
+            submitted_date=timezone.now() - timedelta(minutes=15),
+        )
+        wooey_settings.WOOEY_JOB_CLEANUP_GRACE = timedelta(minutes=30)
+
+        inspector = mock.Mock(
+            active=mock.Mock(return_value={}),
+            reserved=mock.Mock(return_value={}),
+            scheduled=mock.Mock(return_value={}),
+        )
+        with mock.patch(
+            "wooey.tasks.celery_app.control.inspect",
+            return_value=inspector,
+        ):
+            cleanup_stuck_jobs()
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.RUNNING)
+
+    def test_none_timeouts_disable_queue_failure_and_resubmission(self):
+        from django.utils import timezone
+
+        job = factories.generate_job(self.translate_script)
+        job.celery_id = "waiting-task-id"
+        job.save()
+        WooeyJob.objects.filter(pk=job.pk).update(
+            submitted_date=timezone.now() - timedelta(days=2),
+            modified_date=timezone.now() - timedelta(days=2),
+        )
+        wooey_settings.WOOEY_JOB_QUEUE_TIMEOUT = None
+        wooey_settings.WOOEY_JOB_RESUBMIT_TIMEOUT = None
+
+        inspector = mock.Mock(
+            active=mock.Mock(return_value={}),
+            reserved=mock.Mock(return_value={}),
+            scheduled=mock.Mock(return_value={}),
+        )
+        with (
+            mock.patch(
+                "wooey.tasks.celery_app.control.inspect",
+                return_value=inspector,
+            ),
+            mock.patch("wooey.tasks.celery_app.control.revoke") as revoke_mock,
+            mock.patch("wooey.tasks.submit_script.apply_async") as publish_mock,
+        ):
+            cleanup_stuck_jobs()
+
+        revoke_mock.assert_not_called()
+        publish_mock.assert_not_called()
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.SUBMITTED)
+
+    def test_zero_retry_limit_disables_resubmission(self):
+        from django.utils import timezone
+
+        job = factories.generate_job(self.translate_script)
+        job.celery_id = "waiting-task-id"
+        job.save()
+        WooeyJob.objects.filter(pk=job.pk).update(
+            submitted_date=timezone.now() - timedelta(hours=2),
+            modified_date=timezone.now() - timedelta(hours=2),
+        )
+        wooey_settings.WOOEY_JOB_QUEUE_TIMEOUT = None
+        wooey_settings.WOOEY_JOB_RESUBMIT_TIMEOUT = timedelta(hours=1)
+        wooey_settings.WOOEY_JOB_RESUBMIT_LIMIT = 0
+
+        inspector = mock.Mock(
+            active=mock.Mock(return_value={}),
+            reserved=mock.Mock(return_value={}),
+            scheduled=mock.Mock(return_value={}),
+        )
+        with (
+            mock.patch(
+                "wooey.tasks.celery_app.control.inspect",
+                return_value=inspector,
+            ),
+            mock.patch("wooey.tasks.submit_script.apply_async") as publish_mock,
+        ):
+            cleanup_stuck_jobs()
+
+        publish_mock.assert_not_called()
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.SUBMITTED)
+
     def test_does_not_resubmit_waiting_job_with_recent_activity(self):
         from django.utils import timezone
 
@@ -699,7 +799,6 @@ class TestCleanupStuckJobs(mixins.ScriptFactoryMixin, TestCase):
                             "wooey_job": retry_job.pk,
                             "rerun": False,
                         },
-                        headers={SUBMISSION_ID_HEADER: mock.ANY},
                         task_id=mock.ANY,
                     )
 
@@ -710,17 +809,12 @@ class TestCleanupStuckJobs(mixins.ScriptFactoryMixin, TestCase):
             retry_job.celery_id,
             delay_mock.call_args.kwargs["task_id"],
         )
-        self.assertEqual(
-            str(retry_job.submission_id),
-            delay_mock.call_args.kwargs["headers"][SUBMISSION_ID_HEADER],
-        )
 
     def test_does_not_overwrite_newer_retry_attempt_selected_by_cleanup(self):
         from django.utils import timezone
 
         retry_job = factories.generate_job(self.translate_script)
         retry_job.status = WooeyJob.RETRY
-        retry_job.submission_id = uuid.uuid4()
         retry_job.celery_id = "stale-task-id"
         retry_job.retry_count = 1
         retry_job.save()
@@ -734,7 +828,6 @@ class TestCleanupStuckJobs(mixins.ScriptFactoryMixin, TestCase):
         wooey_settings.WOOEY_JOB_RESUBMIT_TIMEOUT = timedelta(hours=1)
         wooey_settings.WOOEY_JOB_RESUBMIT_LIMIT = 3
 
-        newer_submission_id = uuid.uuid4()
         real_filter = WooeyJob.objects.filter
         race_applied = False
 
@@ -744,7 +837,6 @@ class TestCleanupStuckJobs(mixins.ScriptFactoryMixin, TestCase):
                 race_applied = True
                 real_filter(pk=retry_job.pk).update(
                     status=WooeyJob.RETRY,
-                    submission_id=newer_submission_id,
                     celery_id="newer-task-id",
                     retry_count=2,
                     submitted_date=timezone.now(),
@@ -778,7 +870,6 @@ class TestCleanupStuckJobs(mixins.ScriptFactoryMixin, TestCase):
         apply_async_mock.assert_not_called()
         retry_job.refresh_from_db()
         self.assertEqual(retry_job.status, WooeyJob.RETRY)
-        self.assertEqual(retry_job.submission_id, newer_submission_id)
         self.assertEqual(retry_job.celery_id, "newer-task-id")
         self.assertEqual(retry_job.retry_count, 2)
 
@@ -866,7 +957,7 @@ class TestCleanupStuckJobs(mixins.ScriptFactoryMixin, TestCase):
         )
         job.refresh_from_db()
 
-        with mock.patch("wooey.tasks.submit_script.apply_async") as delay_mock:
+        with mock.patch("wooey.tasks.submit_script.apply_async"):
             with self.captureOnCommitCallbacks(execute=True):
                 job.submit_to_celery(rerun=True)
 

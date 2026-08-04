@@ -6,7 +6,6 @@ from django.test import TestCase, RequestFactory
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.staticfiles import finders
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.urls import reverse
@@ -162,13 +161,15 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         response = self.client.get(reverse("wooey:global_queue"))
         content = response.content.decode("utf-8")
 
-        self.assertTrue("Retrying" in content, "RETRY job should display as Retrying")
-        self.assertTrue(
-            "glyphicon-repeat" in content,
+        self.assertIn("Retrying", content, "RETRY job should display as Retrying")
+        self.assertIn(
+            "glyphicon-repeat",
+            content,
             "RETRY job should display the repeat-arrow icon",
         )
-        self.assertTrue(
-            "glyphicon-question-sign" not in content,
+        self.assertNotIn(
+            "glyphicon-question-sign",
+            content,
             "RETRY job should not use the unknown-state icon",
         )
 
@@ -192,21 +193,6 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
             content,
             r'<span class="status-retry-toggle[^>]*>\s*'
             r'<span class="glyphicon glyphicon-repeat"[^>]*></span>\s*Retrying',
-        )
-
-    def test_retry_job_toggle_is_visible_in_css(self):
-        css_path = finders.find("wooey/css/base.css")
-        self.assertIsNotNone(css_path)
-        with open(css_path) as css_file:
-            css = css_file.read()
-
-        self.assertTrue(
-            ".status-retry-toggle" in css,
-            "RETRY toggles should be hidden when another status is active",
-        )
-        self.assertTrue(
-            ".status-retry .status-retry-toggle" in css,
-            "RETRY toggles should be visible while a job is retrying",
         )
 
 

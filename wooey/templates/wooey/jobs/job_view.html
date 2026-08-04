@@ -138,7 +138,7 @@
 
                 <span class="status-submitted-toggle label label-default"><span class="glyphicon glyphicon-hourglass"></span> {%  trans "Waiting" %}</span>
                 <span class="status-retry-toggle label label-default"><span class="glyphicon glyphicon-repeat"></span> {% trans "Retrying" %}</span>
-                <span class="status-pending-toggle status-queued-toggle label label-default"><span class="glyphicon time"></span> {% trans "Queued" %}</span>
+                <span class="status-pending-toggle status-queued-toggle label label-default"><span class="glyphicon glyphicon-time"></span> {% trans "Queued" %}</span>
                 <span class="status-running-toggle label label-success"><span class="glyphicon glyphicon-refresh spinning"></span> {% trans "Executing" %}</span>
                 <span class="status-completed-toggle label label-success"><span class="glyphicon glyphicon-ok"></span> {% trans "Success" %}</span>
                 <span class="status-revoked-toggle label label-danger"><span class="glyphicon glyphicon-stop"></span> {% trans "Halted" %}</span>
@@ -282,7 +282,7 @@
                         $('#job-files > tbody').html(data['file_outputs_html']);
                         $("a[data-favorite]").click(toggleFavorite);
 
-                        if(data['status'] === 'completed' || data['status'] === 'failure' || data['status'] === 'error'){
+                        if(data['status'] === 'completed' || data['status'] === 'failure' || data['status'] === 'error' || data['status'] === 'revoked' || data['status'] === 'deleted'){
                             window.clearInterval(refreshtimerID);
                         }
 

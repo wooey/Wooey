@@ -172,7 +172,6 @@ class TestJob(
                 "wooey_job": job.pk,
                 "rerun": False,
             },
-            headers={"wooey_submission_id": str(job.submission_id)},
             task_id=job.celery_id,
         )
 
@@ -203,7 +202,6 @@ class TestJob(
                 "wooey_job": job.pk,
                 "rerun": False,
             },
-            headers={"wooey_submission_id": str(job.submission_id)},
             task_id=job.celery_id,
         )
         self.assertEqual(job.status, models.WooeyJob.QUEUED)

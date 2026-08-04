@@ -5,10 +5,9 @@ from django.db.models.signals import pre_save, post_save
 from django.db.utils import InterfaceError, DatabaseError
 from django import db
 
-from celery.signals import task_postrun, task_prerun
+from celery.signals import task_postrun
 
 from .models import ScriptVersion
-from .tasks import SUBMISSION_ID_HEADER
 
 
 def disable_for_loaddata(signal_handler):
@@ -29,7 +28,6 @@ def disable_for_loaddata(signal_handler):
 
 
 @task_postrun.connect
-@task_prerun.connect
 def task_completed(sender=None, **kwargs):
     task_kwargs = kwargs.get("kwargs") or {}
     job_id = task_kwargs.get("wooey_job")
@@ -42,41 +40,23 @@ def task_completed(sender=None, **kwargs):
 
     try:
         job = WooeyJob.objects.get(pk=job_id)
-    except (InterfaceError, DatabaseError) as e:
+    except InterfaceError, DatabaseError:
         db.connection.close()
         job = WooeyJob.objects.get(pk=job_id)
 
-    submission_id = task_kwargs.get("submission_id")
-    if submission_id is None:
-        request = getattr(sender, "request", None)
-        headers = getattr(request, "headers", None) or {}
-        submission_id = headers.get(SUBMISSION_ID_HEADER)
-    if str(job.submission_id or "") != str(submission_id or ""):
+    task_id = kwargs.get("task_id")
+    if not task_id or job.celery_id != task_id:
         return
 
     state = kwargs.get("state")
-    updates = {"celery_id": kwargs.get("task_id")}
-    default_task_succeeded = (
-        state == states.SUCCESS
-        and getattr(sender, "name", None) == "wooey.tasks.submit_script"
-    )
-    user_terminal_state = job.status in (WooeyJob.DELETED, states.REVOKED)
-    # The built-in task records its own final status after it successfully claims the
-    # submission. A rejected duplicate also emits SUCCESS, so its signal must not be
-    # allowed to complete the attempt that is actually running.
-    if (
-        state
-        and not default_task_succeeded
-        and not user_terminal_state
-        and job.status not in WooeyJob.TERMINAL_STATES
-    ):
-        updates["status"] = WooeyJob.COMPLETED if state == states.SUCCESS else state
-    WooeyJob.objects.filter(
-        pk=job_id,
-        status=job.status,
-        submission_id=job.submission_id,
-        celery_id=job.celery_id,
-    ).update(**updates)
+    # Task handlers record successful completion themselves. A rejected duplicate
+    # also emits SUCCESS, so that signal cannot authoritatively complete a job.
+    if state and state != states.SUCCESS and job.status not in WooeyJob.TERMINAL_STATES:
+        WooeyJob.objects.filter(
+            pk=job_id,
+            status=job.status,
+            celery_id=task_id,
+        ).update(status=state)
 
 
 def skip_script(instance):

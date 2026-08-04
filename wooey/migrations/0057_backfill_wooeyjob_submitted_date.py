@@ -11,7 +11,7 @@ def backfill_submitted_date(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("wooey", "0056_add_wooeyjob_submission_fields"),
+        ("wooey", "0056_add_wooeyjob_submitted_date"),
     ]
 
     operations = [

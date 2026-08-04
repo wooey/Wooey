@@ -129,6 +129,37 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
         self.assertEqual(job.submission_id, new_submission_id)
         self.assertEqual(job.celery_id, "new-task-id")
 
+    def test_rejected_duplicate_signal_does_not_complete_running_job(self):
+        job = factories.generate_job(self.translate_script)
+        submission_id = uuid.uuid4()
+        WooeyJob.objects.filter(pk=job.pk).update(
+            status=WooeyJob.RUNNING,
+            submission_id=submission_id,
+            celery_id="current-task-id",
+        )
+        task_kwargs = {
+            "wooey_job": job.pk,
+            "submission_id": str(submission_id),
+        }
+
+        with mock.patch(
+            "wooey.tasks.utils.get_job_commands",
+            side_effect=RuntimeError("duplicate task reached script setup"),
+        ) as get_job_commands_mock:
+            retval = submit_script(**task_kwargs)
+
+        get_job_commands_mock.assert_not_called()
+        task_completed(
+            sender=submit_script,
+            kwargs=task_kwargs,
+            task_id="current-task-id",
+            state=states.SUCCESS,
+            retval=retval,
+        )
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.RUNNING)
+
     def test_stale_realtime_output_does_not_restore_old_submission_state(self):
         original_realtime_cache = wooey_settings.WOOEY_REALTIME_CACHE
         self.addCleanup(

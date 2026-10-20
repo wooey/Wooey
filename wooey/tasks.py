@@ -73,6 +73,8 @@ def queue_script_job(
         }
         if rerun:
             update_kwargs["command"] = ""
+            update_kwargs["stdout"] = ""
+            update_kwargs["stderr"] = ""
         if increment_retry_count:
             update_kwargs["retry_count"] = F("retry_count") + 1
         elif reset_retry_count:

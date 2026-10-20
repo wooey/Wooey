@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from celery import app, states
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse
 from django.template.defaultfilters import escape
@@ -163,11 +164,38 @@ def celery_task_command(request):
                     {"valid": True, "redirect": reverse("wooey:wooey_home")}
                 )
             elif command == "stop":
-                celery_app.control.revoke(
-                    job.celery_id, signal="SIGKILL", terminate=True
-                )
-                job.status = states.REVOKED
-                job.save()
+                task_id = job.celery_id
+                if task_id and job.status in WooeyJob.ACTIVE_STATES:
+                    with transaction.atomic():
+                        current_job = (
+                            WooeyJob.objects.select_for_update()
+                            .filter(
+                                pk=job.pk,
+                                celery_id=task_id,
+                                status__in=WooeyJob.ACTIVE_STATES,
+                            )
+                            .first()
+                        )
+                        if current_job is not None:
+                            realtime = current_job.get_realtime()
+                            current_job.stdout = realtime.get(
+                                "stdout", current_job.stdout
+                            )
+                            current_job.stderr = realtime.get(
+                                "stderr", current_job.stderr
+                            )
+                            current_job.status = states.REVOKED
+                            current_job.save(
+                                update_fields=[
+                                    "status",
+                                    "stdout",
+                                    "stderr",
+                                    "modified_date",
+                                ]
+                            )
+                            celery_app.control.revoke(
+                                task_id, signal="SIGKILL", terminate=True
+                            )
                 response.update(
                     {
                         "valid": True,

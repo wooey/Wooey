@@ -6,6 +6,7 @@ from celery import states
 from django.core.cache import caches
 from django.db import transaction
 from django.test import TestCase
+from django.urls import reverse
 
 from wooey import settings as wooey_settings
 from wooey import tasks as wooey_tasks
@@ -264,41 +265,37 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
         cache.clear()
         self.addCleanup(cache.clear)
 
+        user = factories.UserFactory()
         job = factories.generate_job(self.translate_script)
-        WooeyJob.objects.filter(pk=job.pk).update(
-            status=WooeyJob.QUEUED,
-            celery_id="current-task-id",
-        )
+        job.user = user
+        job.status = WooeyJob.RUNNING
+        job.celery_id = "current-task-id"
+        job.save()
 
-        def emit_output_then_stop(*args, **kwargs):
-            worker_job = WooeyJob.objects.get(pk=job.pk)
-            worker_job.update_realtime(stdout="before stop", stderr="before error")
-            return "before stop", "before error", 0
+        worker_job = WooeyJob.objects.get(pk=job.pk)
+        worker_job.update_realtime(stdout="before stop", stderr="before error")
 
-        def stop_during_finalization(*args, **kwargs):
-            WooeyJob.objects.filter(pk=job.pk).update(status=WooeyJob.REVOKED)
-
-        with (
-            mock.patch("wooey.tasks.utils.get_job_commands", return_value=["command"]),
-            mock.patch("wooey.tasks.utils.mkdirs"),
-            mock.patch("wooey.tasks.get_latest_script"),
-            mock.patch(
-                "wooey.tasks.run_and_stream_command",
-                side_effect=emit_output_then_stop,
-            ),
-            mock.patch("wooey.tasks.os.listdir", return_value=[]),
-            mock.patch(
-                "wooey.tasks.utils.create_job_fileinfo",
-                side_effect=stop_during_finalization,
-            ),
-        ):
-            submit_script.apply(
-                kwargs={"wooey_job": job.pk},
-                task_id="current-task-id",
+        self.client.force_login(user)
+        with mock.patch(
+            "wooey.views.wooey_celery.celery_app.control.revoke"
+        ) as revoke_mock:
+            response = self.client.post(
+                reverse("wooey:celery_task_command"),
+                {"celery-command": "stop", "job-id": job.pk},
             )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["valid"])
+        revoke_mock.assert_called_once_with(
+            "current-task-id", signal="SIGKILL", terminate=True
+        )
 
         job.refresh_from_db()
         self.assertEqual(job.status, WooeyJob.REVOKED)
+        self.assertEqual(job.stdout, "before stop")
+        self.assertEqual(job.stderr, "before error")
+
+        cache.clear()
         self.assertEqual(job.get_stdout(), "before stop")
         self.assertEqual(job.get_stderr(), "before error")
 

@@ -445,20 +445,14 @@ class WooeyJob(models.Model):
         return {"stdout": self.stdout, "stderr": self.stderr}
 
     def get_stdout(self):
-        if (
-            self.status not in WooeyJob.TERMINAL_STATES
-            or self.status == WooeyJob.REVOKED
-        ):
+        if self.status not in WooeyJob.TERMINAL_STATES:
             rt = self.get_realtime().get("stdout")
             if rt:
                 return rt
         return self.stdout
 
     def get_stderr(self):
-        if (
-            self.status not in WooeyJob.TERMINAL_STATES
-            or self.status == WooeyJob.REVOKED
-        ):
+        if self.status not in WooeyJob.TERMINAL_STATES:
             rt = self.get_realtime().get("stderr")
             if rt:
                 return rt

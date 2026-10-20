@@ -222,7 +222,7 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
                 self.assertEqual(job.stdout, "latest database stdout")
                 self.assertEqual(job.stderr, "")
 
-    def test_stale_stop_does_not_revoke_or_clobber_rerun(self):
+    def test_stale_stop_revokes_old_attempt_without_clobbering_rerun(self):
         original_realtime_cache = settings.WOOEY_REALTIME_CACHE
         self.addCleanup(
             setattr, settings, "WOOEY_REALTIME_CACHE", original_realtime_cache
@@ -254,7 +254,9 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
             )
 
         self.assertTrue(load_JSON_dict(response.content)["valid"])
-        revoke_mock.assert_not_called()
+        revoke_mock.assert_called_once_with(
+            "old-task-id", signal="SIGKILL", terminate=True
+        )
         job.refresh_from_db()
         self.assertEqual(job.status, models.WooeyJob.QUEUED)
         self.assertEqual(job.celery_id, "new-task-id")
@@ -263,7 +265,7 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         self.assertEqual(job.get_stdout(), "new persisted output")
         self.assertEqual(job.get_stderr(), "new persisted error")
 
-    def test_completed_job_is_not_revoked_or_overwritten_by_stale_stop(self):
+    def test_completed_job_stop_revokes_old_attempt_without_overwriting_job(self):
         job = factories.generate_job(self.translate_script)
         job.user = self.user
         job.status = models.WooeyJob.RUNNING
@@ -281,11 +283,84 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
             )
 
         self.assertTrue(load_JSON_dict(response.content)["valid"])
-        revoke_mock.assert_not_called()
+        revoke_mock.assert_called_once_with(
+            "completed-task-id", signal="SIGKILL", terminate=True
+        )
         job.refresh_from_db()
         self.assertEqual(job.status, models.WooeyJob.COMPLETED)
         self.assertEqual(job.stdout, "final output")
         self.assertEqual(job.stderr, "final error")
+
+    def test_stop_revokes_terminal_attempt_without_changing_job(self):
+        original_realtime_cache = settings.WOOEY_REALTIME_CACHE
+        self.addCleanup(
+            setattr, settings, "WOOEY_REALTIME_CACHE", original_realtime_cache
+        )
+        settings.WOOEY_REALTIME_CACHE = "default"
+        cache = caches["default"]
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+        terminal_states = (
+            models.WooeyJob.COMPLETED,
+            models.WooeyJob.FAILED,
+            models.WooeyJob.REVOKED,
+            models.WooeyJob.DELETED,
+            models.WooeyJob.ERROR,
+        )
+        for status in terminal_states:
+            with self.subTest(status=status):
+                job = factories.generate_job(self.translate_script)
+                job.user = self.user
+                job.status = status
+                task_id = "terminal-{}".format(status)
+                job.celery_id = task_id
+                job.stdout = "persisted stdout"
+                job.stderr = "persisted stderr"
+                job.save()
+                original_modified_date = job.modified_date
+                cache.set(
+                    job.get_realtime_key(),
+                    json.dumps(
+                        {"stdout": "cached stdout", "stderr": "cached stderr"}
+                    ),
+                )
+
+                with self.mock_stop_revoke() as revoke_mock:
+                    response = self._stop_command(job)
+
+                self.assertTrue(load_JSON_dict(response.content)["valid"])
+                revoke_mock.assert_called_once_with(
+                    task_id, signal="SIGKILL", terminate=True
+                )
+                job.refresh_from_db()
+                self.assertEqual(job.status, status)
+                self.assertEqual(job.celery_id, task_id)
+                self.assertEqual(job.stdout, "persisted stdout")
+                self.assertEqual(job.stderr, "persisted stderr")
+                self.assertEqual(job.modified_date, original_modified_date)
+
+    def test_stop_without_task_id_does_not_revoke_or_mutate_job(self):
+        job = factories.generate_job(self.translate_script)
+        job.user = self.user
+        job.status = models.WooeyJob.RUNNING
+        job.celery_id = ""
+        job.stdout = "persisted stdout"
+        job.stderr = "persisted stderr"
+        job.save()
+        original_modified_date = job.modified_date
+
+        with self.mock_stop_revoke() as revoke_mock:
+            response = self._stop_command(job)
+
+        self.assertTrue(load_JSON_dict(response.content)["valid"])
+        revoke_mock.assert_not_called()
+        job.refresh_from_db()
+        self.assertEqual(job.status, models.WooeyJob.RUNNING)
+        self.assertEqual(job.celery_id, "")
+        self.assertEqual(job.stdout, "persisted stdout")
+        self.assertEqual(job.stderr, "persisted stderr")
+        self.assertEqual(job.modified_date, original_modified_date)
 
     def test_revoke_error_rolls_back_stop_and_preserves_cached_logs(self):
         original_realtime_cache = settings.WOOEY_REALTIME_CACHE

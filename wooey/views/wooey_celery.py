@@ -165,7 +165,7 @@ def celery_task_command(request):
                 )
             elif command == "stop":
                 task_id = job.celery_id
-                if task_id and job.status in WooeyJob.ACTIVE_STATES:
+                if task_id:
                     with transaction.atomic():
                         current_job = (
                             WooeyJob.objects.select_for_update()
@@ -193,9 +193,9 @@ def celery_task_command(request):
                                     "modified_date",
                                 ]
                             )
-                            celery_app.control.revoke(
-                                task_id, signal="SIGKILL", terminate=True
-                            )
+                        celery_app.control.revoke(
+                            task_id, signal="SIGKILL", terminate=True
+                        )
                 response.update(
                     {
                         "valid": True,

@@ -246,6 +246,79 @@ class TestJob(
             {"wooey_job": job.pk, "rerun": False},
         )
 
+    def test_cached_rerun_does_not_fall_back_to_previous_attempt_stderr(self):
+        from django.core.cache import caches
+
+        from .. import settings as wooey_settings
+        from ..backend import utils
+
+        original_celery = wooey_settings.WOOEY_CELERY
+        original_realtime_cache = wooey_settings.WOOEY_REALTIME_CACHE
+        self.addCleanup(setattr, wooey_settings, "WOOEY_CELERY", original_celery)
+        self.addCleanup(
+            setattr,
+            wooey_settings,
+            "WOOEY_REALTIME_CACHE",
+            original_realtime_cache,
+        )
+        wooey_settings.WOOEY_CELERY = True
+        wooey_settings.WOOEY_REALTIME_CACHE = "default"
+        cache = caches["default"]
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+        sequence_slug = test_utils.get_subparser_form_slug(
+            self.translate_script, "sequence"
+        )
+        out_slug = test_utils.get_subparser_form_slug(self.translate_script, "out")
+        job = utils.create_wooey_job(
+            script_version_pk=self.translate_script.pk,
+            data={
+                "job_name": "partial cached rerun",
+                sequence_slug: "aaa",
+                out_slug: "abc",
+            },
+        )
+        job.status = models.WooeyJob.COMPLETED
+        job.celery_id = "previous-task-id"
+        job.stdout = "previous stdout"
+        job.stderr = "previous stderr"
+        job.save()
+
+        with mock.patch("wooey.tasks.submit_script.apply_async"):
+            job.submit_to_celery(rerun=True)
+
+        job.refresh_from_db()
+        models.WooeyJob.objects.filter(pk=job.pk).update(status=models.WooeyJob.RUNNING)
+        job.refresh_from_db()
+        job.update_realtime(stdout="current stdout", stderr="")
+
+        self.assertEqual(job.get_stdout(), "current stdout")
+        self.assertEqual(job.get_stderr(), "")
+
+        job.update_realtime(stdout="", stderr="current stderr")
+        self.assertEqual(job.get_stdout(), "")
+        self.assertEqual(job.get_stderr(), "current stderr")
+
+        cache.set(job.get_realtime_key(), '{"stderr": "cached stderr"}')
+        self.assertEqual(job.get_stdout(), job.stdout)
+        self.assertEqual(job.get_stderr(), "cached stderr")
+
+        cache.delete(job.get_realtime_key())
+        self.assertEqual(job.get_stdout(), job.stdout)
+        self.assertEqual(job.get_stderr(), job.stderr)
+
+        models.WooeyJob.objects.filter(pk=job.pk).update(
+            status=models.WooeyJob.COMPLETED
+        )
+        job.refresh_from_db()
+        cache.set(
+            job.get_realtime_key(),
+            '{"stdout": "stale cached stdout", "stderr": "stale cached stderr"}',
+        )
+        self.assertEqual(job.get_stdout(), "previous stdout")
+        self.assertEqual(job.get_stderr(), "previous stderr")
+
     def test_file_sharing(self):
         # this tests whether a file uploaded by one job will be referenced by a second job instead of being duplicated
         # on the file system

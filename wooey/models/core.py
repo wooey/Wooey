@@ -334,6 +334,8 @@ class WooeyJob(models.Model):
                 }
                 if rerun:
                     updates["command"] = ""
+                    updates["stdout"] = ""
+                    updates["stderr"] = ""
                 updated = WooeyJob.objects.filter(
                     pk=job_pk,
                     status=expected_status,

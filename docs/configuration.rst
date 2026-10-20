@@ -33,6 +33,22 @@ each restart (e.g. files are stored on S3). (Default: ``False``)
 :code:`WOOEY_FILE_DIR`: String, where the files uploaded by the user will
 be saved (Default: ``wooey_files``)
 
+:code:`WOOEY_JOB_CLEANUP_GRACE`: A ``datetime.timedelta`` defining how long a
+newly submitted job is left alone before stuck-job cleanup may act on it.
+(Default: 10 minutes)
+
+:code:`WOOEY_JOB_QUEUE_TIMEOUT`: A ``datetime.timedelta`` defining the maximum
+time a submitted job may remain queued before it is failed. Set this to
+``None`` to disable the hard queue timeout. (Default: 24 hours)
+
+:code:`WOOEY_JOB_RESUBMIT_TIMEOUT`: A ``datetime.timedelta`` defining how long
+a submitted job may show no activity before Wooey republishes it. Set this to
+``None`` to disable automatic republication. (Default: 1 hour)
+
+:code:`WOOEY_JOB_RESUBMIT_LIMIT`: The maximum number of automatic
+republications. Set this to ``0`` to disable automatic republication.
+(Default: ``3``)
+
 :code:`WOOEY_JOB_EXPIRATION`: Dictionary, A dictionary with two keys:
 :code:`user` and :code:`anonymous`. The values for each is a timedelta
 specifying how much time should be elapsed before a job is automatically

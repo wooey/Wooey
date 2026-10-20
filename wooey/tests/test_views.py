@@ -1,11 +1,13 @@
 # TODO: Test for viewing a user's job as an anonymous user (fail case)
 
 import json
+import mock
 
 from django.test import TestCase, RequestFactory
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser, Group
 from django.contrib.contenttypes.models import ContentType
+from django.core.cache import caches
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.urls import reverse
@@ -55,6 +57,20 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         response = wooey_celery.all_queues_json(request)
         d = json.loads(response.content.decode("utf-8"))
         self.assertEqual(1, d["totals"]["global"])
+
+        job.status = models.WooeyJob.QUEUED
+        job.save()
+        response = wooey_celery.all_queues_json(request)
+        d = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(1, d["totals"]["global"])
+
+        job.status = models.WooeyJob.RETRY
+        job.save()
+        response = wooey_celery.all_queues_json(request)
+        d = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(1, d["totals"]["global"])
+        self.assertIn("glyphicon-repeat", d["items"]["global"][0]["status"])
+        self.assertNotIn("glyphicon-hourglass", d["items"]["global"][0]["status"])
 
         job.user = self.user
         job.status = models.WooeyJob.RUNNING
@@ -106,6 +122,282 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
             d = response.content.decode("utf-8")
             self.assertTrue(json.loads(d).get("valid"))
 
+    def _stop_command(self, job):
+        request = self.factory.post(
+            reverse("wooey:celery_task_command"),
+            {"celery-command": "stop", "job-id": job.pk},
+        )
+        request.user = self.user
+        return wooey_celery.celery_task_command(request)
+
+    def _stop_after_concurrent_update(self, job, **update_fields):
+        original_get = models.WooeyJob.objects.get
+        injected = []
+
+        def return_stale_snapshot_then_update(*args, **kwargs):
+            stale_job = original_get(*args, **kwargs)
+            if stale_job.pk == job.pk and not injected:
+                models.WooeyJob.objects.filter(pk=job.pk).update(**update_fields)
+                injected.append(True)
+            return stale_job
+
+        with mock.patch.object(
+            models.WooeyJob.objects,
+            "get",
+            side_effect=return_stale_snapshot_then_update,
+        ):
+            response = self._stop_command(job)
+
+        self.assertTrue(injected, "concurrent state change was not injected")
+        return response
+
+    def test_stop_persists_empty_realtime_channels(self):
+        original_realtime_cache = settings.WOOEY_REALTIME_CACHE
+        self.addCleanup(
+            setattr, settings, "WOOEY_REALTIME_CACHE", original_realtime_cache
+        )
+        settings.WOOEY_REALTIME_CACHE = "default"
+        cache = caches["default"]
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+        job = factories.generate_job(self.translate_script)
+        job.user = self.user
+        job.status = models.WooeyJob.RUNNING
+        job.celery_id = "empty-output-task"
+        job.stdout = "old stdout"
+        job.stderr = "old stderr"
+        job.save()
+        cache.set(
+            job.get_realtime_key(),
+            json.dumps({"stdout": "", "stderr": ""}),
+        )
+
+        with self.mock_stop_revoke() as revoke_mock:
+            response = self._stop_command(job)
+
+        self.assertTrue(load_JSON_dict(response.content)["valid"])
+        revoke_mock.assert_called_once_with(
+            "empty-output-task", signal="SIGKILL", terminate=True
+        )
+        job.refresh_from_db()
+        self.assertEqual(job.status, models.WooeyJob.REVOKED)
+        self.assertEqual(job.stdout, "")
+        self.assertEqual(job.stderr, "")
+
+    def test_stop_uses_database_logs_when_cache_is_disabled_or_missing(self):
+        original_realtime_cache = settings.WOOEY_REALTIME_CACHE
+        self.addCleanup(
+            setattr, settings, "WOOEY_REALTIME_CACHE", original_realtime_cache
+        )
+        cache = caches["default"]
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+        for cache_setting in (None, "default"):
+            with self.subTest(cache_setting=cache_setting):
+                settings.WOOEY_REALTIME_CACHE = cache_setting
+                cache.clear()
+                job = factories.generate_job(self.translate_script)
+                job.user = self.user
+                job.status = models.WooeyJob.RUNNING
+                job.celery_id = "database-output-task"
+                job.stdout = "stale stdout"
+                job.stderr = "stale stderr"
+                job.save()
+
+                with self.mock_stop_revoke() as revoke_mock:
+                    response = self._stop_after_concurrent_update(
+                        job,
+                        stdout="latest database stdout",
+                        stderr="",
+                    )
+
+                self.assertTrue(load_JSON_dict(response.content)["valid"])
+                revoke_mock.assert_called_once_with(
+                    "database-output-task", signal="SIGKILL", terminate=True
+                )
+                job.refresh_from_db()
+                self.assertEqual(job.status, models.WooeyJob.REVOKED)
+                self.assertEqual(job.stdout, "latest database stdout")
+                self.assertEqual(job.stderr, "")
+
+    def test_stale_stop_revokes_old_attempt_without_clobbering_rerun(self):
+        original_realtime_cache = settings.WOOEY_REALTIME_CACHE
+        self.addCleanup(
+            setattr, settings, "WOOEY_REALTIME_CACHE", original_realtime_cache
+        )
+        settings.WOOEY_REALTIME_CACHE = "default"
+        cache = caches["default"]
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+        job = factories.generate_job(self.translate_script)
+        job.user = self.user
+        job.status = models.WooeyJob.RUNNING
+        job.celery_id = "old-task-id"
+        job.stdout = "old persisted output"
+        job.stderr = "old persisted error"
+        job.save()
+        cache.set(
+            job.get_realtime_key(),
+            json.dumps({"stdout": "old cached output", "stderr": "old cached error"}),
+        )
+
+        with self.mock_stop_revoke() as revoke_mock:
+            response = self._stop_after_concurrent_update(
+                job,
+                status=models.WooeyJob.QUEUED,
+                celery_id="new-task-id",
+                stdout="new persisted output",
+                stderr="new persisted error",
+            )
+
+        self.assertTrue(load_JSON_dict(response.content)["valid"])
+        revoke_mock.assert_called_once_with(
+            "old-task-id", signal="SIGKILL", terminate=True
+        )
+        job.refresh_from_db()
+        self.assertEqual(job.status, models.WooeyJob.QUEUED)
+        self.assertEqual(job.celery_id, "new-task-id")
+        self.assertEqual(job.stdout, "new persisted output")
+        self.assertEqual(job.stderr, "new persisted error")
+        self.assertEqual(job.get_stdout(), "new persisted output")
+        self.assertEqual(job.get_stderr(), "new persisted error")
+
+    def test_completed_job_stop_revokes_old_attempt_without_overwriting_job(self):
+        job = factories.generate_job(self.translate_script)
+        job.user = self.user
+        job.status = models.WooeyJob.RUNNING
+        job.celery_id = "completed-task-id"
+        job.stdout = "old output"
+        job.stderr = "old error"
+        job.save()
+
+        with self.mock_stop_revoke() as revoke_mock:
+            response = self._stop_after_concurrent_update(
+                job,
+                status=models.WooeyJob.COMPLETED,
+                stdout="final output",
+                stderr="final error",
+            )
+
+        self.assertTrue(load_JSON_dict(response.content)["valid"])
+        revoke_mock.assert_called_once_with(
+            "completed-task-id", signal="SIGKILL", terminate=True
+        )
+        job.refresh_from_db()
+        self.assertEqual(job.status, models.WooeyJob.COMPLETED)
+        self.assertEqual(job.stdout, "final output")
+        self.assertEqual(job.stderr, "final error")
+
+    def test_stop_revokes_terminal_attempt_without_changing_job(self):
+        original_realtime_cache = settings.WOOEY_REALTIME_CACHE
+        self.addCleanup(
+            setattr, settings, "WOOEY_REALTIME_CACHE", original_realtime_cache
+        )
+        settings.WOOEY_REALTIME_CACHE = "default"
+        cache = caches["default"]
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+        terminal_states = (
+            models.WooeyJob.COMPLETED,
+            models.WooeyJob.FAILED,
+            models.WooeyJob.REVOKED,
+            models.WooeyJob.DELETED,
+            models.WooeyJob.ERROR,
+        )
+        for status in terminal_states:
+            with self.subTest(status=status):
+                job = factories.generate_job(self.translate_script)
+                job.user = self.user
+                job.status = status
+                task_id = "terminal-{}".format(status)
+                job.celery_id = task_id
+                job.stdout = "persisted stdout"
+                job.stderr = "persisted stderr"
+                job.save()
+                original_modified_date = job.modified_date
+                cache.set(
+                    job.get_realtime_key(),
+                    json.dumps({"stdout": "cached stdout", "stderr": "cached stderr"}),
+                )
+
+                with self.mock_stop_revoke() as revoke_mock:
+                    response = self._stop_command(job)
+
+                self.assertTrue(load_JSON_dict(response.content)["valid"])
+                revoke_mock.assert_called_once_with(
+                    task_id, signal="SIGKILL", terminate=True
+                )
+                job.refresh_from_db()
+                self.assertEqual(job.status, status)
+                self.assertEqual(job.celery_id, task_id)
+                self.assertEqual(job.stdout, "persisted stdout")
+                self.assertEqual(job.stderr, "persisted stderr")
+                self.assertEqual(job.modified_date, original_modified_date)
+
+    def test_stop_without_task_id_does_not_revoke_or_mutate_job(self):
+        job = factories.generate_job(self.translate_script)
+        job.user = self.user
+        job.status = models.WooeyJob.RUNNING
+        job.celery_id = ""
+        job.stdout = "persisted stdout"
+        job.stderr = "persisted stderr"
+        job.save()
+        original_modified_date = job.modified_date
+
+        with self.mock_stop_revoke() as revoke_mock:
+            response = self._stop_command(job)
+
+        self.assertTrue(load_JSON_dict(response.content)["valid"])
+        revoke_mock.assert_not_called()
+        job.refresh_from_db()
+        self.assertEqual(job.status, models.WooeyJob.RUNNING)
+        self.assertEqual(job.celery_id, "")
+        self.assertEqual(job.stdout, "persisted stdout")
+        self.assertEqual(job.stderr, "persisted stderr")
+        self.assertEqual(job.modified_date, original_modified_date)
+
+    def test_revoke_error_rolls_back_stop_and_preserves_cached_logs(self):
+        original_realtime_cache = settings.WOOEY_REALTIME_CACHE
+        self.addCleanup(
+            setattr, settings, "WOOEY_REALTIME_CACHE", original_realtime_cache
+        )
+        settings.WOOEY_REALTIME_CACHE = "default"
+        cache = caches["default"]
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+        job = factories.generate_job(self.translate_script)
+        job.user = self.user
+        job.status = models.WooeyJob.RUNNING
+        job.celery_id = "revoke-error-task"
+        job.stdout = "persisted stdout"
+        job.stderr = "persisted stderr"
+        job.save()
+        cached_output = json.dumps(
+            {"stdout": "cached stdout", "stderr": "cached stderr"}
+        )
+        cache.set(job.get_realtime_key(), cached_output)
+
+        with mock.patch(
+            "wooey.views.wooey_celery.celery_app.control.revoke",
+            side_effect=RuntimeError("broker unavailable"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "broker unavailable"):
+                self._stop_command(job)
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, models.WooeyJob.RUNNING)
+        self.assertEqual(job.stdout, "persisted stdout")
+        self.assertEqual(job.stderr, "persisted stderr")
+        self.assertEqual(cache.get(job.get_realtime_key()), cached_output)
+
+    def mock_stop_revoke(self):
+        return mock.patch("wooey.views.wooey_celery.celery_app.control.revoke")
+
     def test_celery_task_view(self):
         job = factories.generate_job(self.translate_script)
         job.user = self.user
@@ -138,6 +430,48 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
         with self.assertRaises(Http404):
             response = view(request, job_id=-1)
             response.render()
+
+    def test_retry_jobs_render_as_active_in_job_list(self):
+        job = factories.generate_job(self.translate_script)
+        job.status = models.WooeyJob.RETRY
+        job.save()
+
+        response = self.client.get(reverse("wooey:global_queue"))
+        content = response.content.decode("utf-8")
+
+        self.assertIn("Retrying", content, "RETRY job should display as Retrying")
+        self.assertIn(
+            "glyphicon-repeat",
+            content,
+            "RETRY job should display the repeat-arrow icon",
+        )
+        self.assertNotIn(
+            "glyphicon-question-sign",
+            content,
+            "RETRY job should not use the unknown-state icon",
+        )
+
+    def test_retry_job_detail_shows_status_and_stop_action(self):
+        job = factories.generate_job(self.translate_script)
+        job.status = models.WooeyJob.RETRY
+        job.save()
+
+        response = self.client.get(
+            reverse("wooey:celery_results", kwargs={"job_id": job.pk})
+        )
+        content = response.content.decode("utf-8")
+
+        self.assertGreaterEqual(content.count("status-retry-toggle"), 2)
+        self.assertRegex(
+            content,
+            r'class="[^"]*status-retry-toggle[^"]*" '
+            r'name="celery-command" value="stop"',
+        )
+        self.assertRegex(
+            content,
+            r'<span class="status-retry-toggle[^>]*>\s*'
+            r'<span class="glyphicon glyphicon-repeat"[^>]*></span>\s*Retrying',
+        )
 
 
 class WooeyViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):

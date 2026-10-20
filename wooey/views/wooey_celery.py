@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 
-
 from celery import app, states
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse
 from django.template.defaultfilters import escape
@@ -12,9 +12,9 @@ from django.utils.encoding import force_str
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView, ListView
 
-from ..models import WooeyJob, UserFile, Favorite
 from .. import settings as wooey_settings
-from ..backend.utils import valid_user, get_file_previews
+from ..backend.utils import get_file_previews, valid_user
+from ..models import Favorite, UserFile, WooeyJob
 
 celery_app = app.app_or_default()
 
@@ -27,8 +27,10 @@ STATE_MAPPER = {
         _("Executing"), "success glyphicon-refresh spinning"
     ),
     states.PENDING: SPANBASE.format(_("Queued"), "glyphicon-time"),
+    WooeyJob.QUEUED: SPANBASE.format(_("Queued"), "glyphicon-time"),
     states.REVOKED: SPANBASE.format(_("Halted"), "danger glyphicon-stop"),
     states.FAILURE: SPANBASE.format(_("Failure"), "danger glyphicon-exclamation-sign"),
+    WooeyJob.RETRY: SPANBASE.format(_("Retrying"), "glyphicon-repeat"),
     WooeyJob.SUBMITTED: SPANBASE.format(_("Waiting"), "glyphicon-hourglass"),
 }
 
@@ -59,9 +61,7 @@ def generate_job_list(job_query):
 
 
 def get_global_queue(request):
-    jobs = WooeyJob.objects.filter(
-        Q(status=WooeyJob.RUNNING) | Q(status=WooeyJob.SUBMITTED)
-    )
+    jobs = WooeyJob.objects.filter(status__in=WooeyJob.ACTIVE_STATES)
     return jobs.order_by("-created_date")
 
 
@@ -74,7 +74,7 @@ def get_active_user_jobs(request):
     user = request.user
     jobs = WooeyJob.objects.filter(
         (Q(user=None) | Q(user=user) if request.user.is_authenticated else Q(user=None))
-        & (Q(status=WooeyJob.RUNNING))
+        & Q(status__in=WooeyJob.EXECUTING_STATES)
     )
     return jobs.order_by("-created_date")
 
@@ -90,9 +90,7 @@ def get_user_results(request):
         (Q(user=None) | Q(user=user) if request.user.is_authenticated else Q(user=None))
     )
     jobs = jobs.exclude(
-        Q(status=WooeyJob.RUNNING)
-        | Q(status=WooeyJob.SUBMITTED)
-        | Q(status=WooeyJob.DELETED)
+        Q(status__in=WooeyJob.ACTIVE_STATES) | Q(status=WooeyJob.DELETED)
     )
     return jobs.order_by("-created_date")
 
@@ -166,11 +164,38 @@ def celery_task_command(request):
                     {"valid": True, "redirect": reverse("wooey:wooey_home")}
                 )
             elif command == "stop":
-                celery_app.control.revoke(
-                    job.celery_id, signal="SIGKILL", terminate=True
-                )
-                job.status = states.REVOKED
-                job.save()
+                task_id = job.celery_id
+                if task_id:
+                    with transaction.atomic():
+                        current_job = (
+                            WooeyJob.objects.select_for_update()
+                            .filter(
+                                pk=job.pk,
+                                celery_id=task_id,
+                                status__in=WooeyJob.ACTIVE_STATES,
+                            )
+                            .first()
+                        )
+                        if current_job is not None:
+                            realtime = current_job.get_realtime()
+                            current_job.stdout = realtime.get(
+                                "stdout", current_job.stdout
+                            )
+                            current_job.stderr = realtime.get(
+                                "stderr", current_job.stderr
+                            )
+                            current_job.status = states.REVOKED
+                            current_job.save(
+                                update_fields=[
+                                    "status",
+                                    "stdout",
+                                    "stderr",
+                                    "modified_date",
+                                ]
+                            )
+                        celery_app.control.revoke(
+                            task_id, signal="SIGKILL", terminate=True
+                        )
                 response.update(
                     {
                         "valid": True,

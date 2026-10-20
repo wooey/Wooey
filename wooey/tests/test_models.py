@@ -1,5 +1,6 @@
 import os
 from urllib.parse import quote
+from unittest import mock
 
 from django.contrib.auth.models import AnonymousUser
 from django.test import Client, TestCase, TransactionTestCase
@@ -142,6 +143,335 @@ class TestJob(
             for fileinfo in files:
                 response = Client().get(self.get_local_url(fileinfo))
                 self.assertEqual(response.status_code, 200)
+
+    def test_celery_submission_transitions_to_queued(self):
+        from .. import settings as wooey_settings
+        from ..backend import utils
+
+        original_celery = wooey_settings.WOOEY_CELERY
+        self.addCleanup(setattr, wooey_settings, "WOOEY_CELERY", original_celery)
+        wooey_settings.WOOEY_CELERY = True
+
+        sequence_slug = test_utils.get_subparser_form_slug(
+            self.translate_script, "sequence"
+        )
+        out_slug = test_utils.get_subparser_form_slug(self.translate_script, "out")
+        job = utils.create_wooey_job(
+            script_version_pk=self.translate_script.pk,
+            data={"job_name": "queued", sequence_slug: "aaa", out_slug: "abc"},
+        )
+
+        with mock.patch("wooey.tasks.submit_script.apply_async") as apply_async_mock:
+            job.submit_to_celery()
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, models.WooeyJob.QUEUED)
+        self.assertIsNotNone(job.celery_id)
+        apply_async_mock.assert_called_once_with(
+            kwargs={
+                "wooey_job": job.pk,
+                "rerun": False,
+            },
+            task_id=job.celery_id,
+        )
+
+    def test_celery_submission_supports_custom_task_module_without_queue_helper(self):
+        from .. import settings as wooey_settings
+        from ..backend import utils
+
+        original_celery = wooey_settings.WOOEY_CELERY
+        self.addCleanup(setattr, wooey_settings, "WOOEY_CELERY", original_celery)
+        wooey_settings.WOOEY_CELERY = True
+
+        sequence_slug = test_utils.get_subparser_form_slug(
+            self.translate_script, "sequence"
+        )
+        out_slug = test_utils.get_subparser_form_slug(self.translate_script, "out")
+        job = utils.create_wooey_job(
+            script_version_pk=self.translate_script.pk,
+            data={"job_name": "custom tasks", sequence_slug: "aaa", out_slug: "abc"},
+        )
+        custom_tasks = mock.Mock(spec=["submit_script"])
+
+        with mock.patch("wooey.models.core.tasks", custom_tasks):
+            job.submit_to_celery()
+
+        job.refresh_from_db()
+        custom_tasks.submit_script.apply_async.assert_called_once_with(
+            kwargs={
+                "wooey_job": job.pk,
+                "rerun": False,
+            },
+            task_id=job.celery_id,
+        )
+        self.assertEqual(job.status, models.WooeyJob.QUEUED)
+        self.assertIsNotNone(job.celery_id)
+
+    def test_celery_submission_preserves_custom_task_call_signature(self):
+        from .. import settings as wooey_settings
+        from ..backend import utils
+
+        original_celery = wooey_settings.WOOEY_CELERY
+        self.addCleanup(setattr, wooey_settings, "WOOEY_CELERY", original_celery)
+        wooey_settings.WOOEY_CELERY = True
+
+        sequence_slug = test_utils.get_subparser_form_slug(
+            self.translate_script, "sequence"
+        )
+        out_slug = test_utils.get_subparser_form_slug(self.translate_script, "out")
+        job = utils.create_wooey_job(
+            script_version_pk=self.translate_script.pk,
+            data={
+                "job_name": "strict custom task",
+                sequence_slug: "aaa",
+                out_slug: "abc",
+            },
+        )
+        dispatched = {}
+
+        def strict_submit_script(wooey_job, rerun=False):
+            dispatched.update(wooey_job=wooey_job, rerun=rerun)
+
+        def execute_custom_task(*, kwargs, task_id, **options):
+            strict_submit_script(**kwargs)
+
+        custom_tasks = mock.Mock(spec=["submit_script"])
+        custom_tasks.submit_script.apply_async.side_effect = execute_custom_task
+
+        with mock.patch("wooey.models.core.tasks", custom_tasks):
+            job.submit_to_celery()
+
+        self.assertEqual(
+            dispatched,
+            {"wooey_job": job.pk, "rerun": False},
+        )
+
+    def test_rerun_clears_previous_persisted_output_while_queued(self):
+        from .. import settings as wooey_settings
+        from ..backend import utils
+
+        original_celery = wooey_settings.WOOEY_CELERY
+        original_realtime_cache = wooey_settings.WOOEY_REALTIME_CACHE
+        self.addCleanup(setattr, wooey_settings, "WOOEY_CELERY", original_celery)
+        self.addCleanup(
+            setattr,
+            wooey_settings,
+            "WOOEY_REALTIME_CACHE",
+            original_realtime_cache,
+        )
+        wooey_settings.WOOEY_CELERY = True
+
+        for realtime_cache in (None, "default"):
+            with self.subTest(realtime_cache=realtime_cache):
+                wooey_settings.WOOEY_REALTIME_CACHE = realtime_cache
+                sequence_slug = test_utils.get_subparser_form_slug(
+                    self.translate_script, "sequence"
+                )
+                out_slug = test_utils.get_subparser_form_slug(
+                    self.translate_script, "out"
+                )
+                job = utils.create_wooey_job(
+                    script_version_pk=self.translate_script.pk,
+                    data={
+                        "job_name": "rerun output",
+                        sequence_slug: "aaa",
+                        out_slug: "abc",
+                    },
+                )
+                job.status = models.WooeyJob.COMPLETED
+                job.celery_id = "previous-task-id"
+                job.stdout = "previous stdout"
+                job.stderr = "previous stderr"
+                job.save()
+
+                with mock.patch("wooey.tasks.submit_script.apply_async"):
+                    job.submit_to_celery(rerun=True)
+
+                job.refresh_from_db()
+                self.assertEqual(job.status, models.WooeyJob.QUEUED)
+                self.assertEqual(job.get_stdout(), "")
+                self.assertEqual(job.get_stderr(), "")
+
+    def test_synchronous_rerun_clears_previous_persisted_output(self):
+        from .. import settings as wooey_settings
+        from ..backend import utils
+
+        original_celery = wooey_settings.WOOEY_CELERY
+        self.addCleanup(setattr, wooey_settings, "WOOEY_CELERY", original_celery)
+        wooey_settings.WOOEY_CELERY = False
+
+        sequence_slug = test_utils.get_subparser_form_slug(
+            self.translate_script, "sequence"
+        )
+        out_slug = test_utils.get_subparser_form_slug(self.translate_script, "out")
+        job = utils.create_wooey_job(
+            script_version_pk=self.translate_script.pk,
+            data={
+                "job_name": "synchronous rerun output",
+                sequence_slug: "aaa",
+                out_slug: "abc",
+            },
+        )
+        job.status = models.WooeyJob.COMPLETED
+        job.celery_id = "previous-task-id"
+        job.stdout = "previous stdout"
+        job.stderr = "previous stderr"
+        job.save()
+
+        with mock.patch("wooey.models.core.tasks.submit_script") as submit_script_mock:
+            job.submit_to_celery(rerun=True)
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, models.WooeyJob.SUBMITTED)
+        self.assertEqual(job.get_stdout(), "")
+        self.assertEqual(job.get_stderr(), "")
+        submit_script_mock.assert_called_once_with(wooey_job=job.pk, rerun=True)
+
+    def test_rejected_rerun_preserves_output_without_dispatch_or_purge(self):
+        from django.core.cache import caches
+
+        from .. import settings as wooey_settings
+        from ..backend import utils
+
+        original_celery = wooey_settings.WOOEY_CELERY
+        original_realtime_cache = wooey_settings.WOOEY_REALTIME_CACHE
+        self.addCleanup(setattr, wooey_settings, "WOOEY_CELERY", original_celery)
+        self.addCleanup(
+            setattr,
+            wooey_settings,
+            "WOOEY_REALTIME_CACHE",
+            original_realtime_cache,
+        )
+        wooey_settings.WOOEY_CELERY = True
+        cache = caches["default"]
+        self.addCleanup(cache.clear)
+
+        for realtime_cache in (None, "default"):
+            with self.subTest(realtime_cache=realtime_cache):
+                wooey_settings.WOOEY_REALTIME_CACHE = realtime_cache
+                cache.clear()
+                sequence_slug = test_utils.get_subparser_form_slug(
+                    self.translate_script, "sequence"
+                )
+                out_slug = test_utils.get_subparser_form_slug(
+                    self.translate_script, "out"
+                )
+                job = utils.create_wooey_job(
+                    script_version_pk=self.translate_script.pk,
+                    data={
+                        "job_name": "rejected rerun output",
+                        sequence_slug: "aaa",
+                        out_slug: "abc",
+                    },
+                )
+                job.status = models.WooeyJob.COMPLETED
+                job.celery_id = "stale-task-id"
+                job.stdout = "current persisted stdout"
+                job.stderr = "current persisted stderr"
+                job.save()
+
+                models.WooeyJob.objects.filter(pk=job.pk).update(
+                    status=models.WooeyJob.RUNNING,
+                    celery_id="current-task-id",
+                )
+                if realtime_cache is not None:
+                    cache.set(
+                        "wooeyjob_{}_rt_current-task-id".format(job.pk),
+                        '{"stdout": "current cached stdout", '
+                        '"stderr": "current cached stderr"}',
+                    )
+
+                with (
+                    mock.patch("wooey.tasks.submit_script.apply_async") as apply_mock,
+                    mock.patch("wooey.models.core.utils.purge_output") as purge_mock,
+                ):
+                    job.submit_to_celery(rerun=True)
+
+                job.refresh_from_db()
+                apply_mock.assert_not_called()
+                purge_mock.assert_not_called()
+                self.assertEqual(job.status, models.WooeyJob.RUNNING)
+                self.assertEqual(job.celery_id, "current-task-id")
+                self.assertEqual(job.stdout, "current persisted stdout")
+                self.assertEqual(job.stderr, "current persisted stderr")
+                if realtime_cache is not None:
+                    self.assertEqual(job.get_stdout(), "current cached stdout")
+                    self.assertEqual(job.get_stderr(), "current cached stderr")
+
+    def test_cached_rerun_does_not_fall_back_to_previous_attempt_stderr(self):
+        from django.core.cache import caches
+
+        from .. import settings as wooey_settings
+        from ..backend import utils
+
+        original_celery = wooey_settings.WOOEY_CELERY
+        original_realtime_cache = wooey_settings.WOOEY_REALTIME_CACHE
+        self.addCleanup(setattr, wooey_settings, "WOOEY_CELERY", original_celery)
+        self.addCleanup(
+            setattr,
+            wooey_settings,
+            "WOOEY_REALTIME_CACHE",
+            original_realtime_cache,
+        )
+        wooey_settings.WOOEY_CELERY = True
+        wooey_settings.WOOEY_REALTIME_CACHE = "default"
+        cache = caches["default"]
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+        sequence_slug = test_utils.get_subparser_form_slug(
+            self.translate_script, "sequence"
+        )
+        out_slug = test_utils.get_subparser_form_slug(self.translate_script, "out")
+        job = utils.create_wooey_job(
+            script_version_pk=self.translate_script.pk,
+            data={
+                "job_name": "partial cached rerun",
+                sequence_slug: "aaa",
+                out_slug: "abc",
+            },
+        )
+        job.status = models.WooeyJob.COMPLETED
+        job.celery_id = "previous-task-id"
+        job.stdout = "previous stdout"
+        job.stderr = "previous stderr"
+        job.save()
+
+        with mock.patch("wooey.tasks.submit_script.apply_async"):
+            job.submit_to_celery(rerun=True)
+
+        job.refresh_from_db()
+        models.WooeyJob.objects.filter(pk=job.pk).update(status=models.WooeyJob.RUNNING)
+        job.refresh_from_db()
+        job.update_realtime(stdout="current stdout", stderr="")
+
+        self.assertEqual(job.get_stdout(), "current stdout")
+        self.assertEqual(job.get_stderr(), "")
+
+        job.update_realtime(stdout="", stderr="current stderr")
+        self.assertEqual(job.get_stdout(), "")
+        self.assertEqual(job.get_stderr(), "current stderr")
+
+        cache.set(job.get_realtime_key(), '{"stderr": "cached stderr"}')
+        self.assertEqual(job.get_stdout(), job.stdout)
+        self.assertEqual(job.get_stderr(), "cached stderr")
+
+        cache.delete(job.get_realtime_key())
+        self.assertEqual(job.get_stdout(), job.stdout)
+        self.assertEqual(job.get_stderr(), job.stderr)
+
+        models.WooeyJob.objects.filter(pk=job.pk).update(
+            status=models.WooeyJob.COMPLETED,
+            stdout="final persisted stdout",
+            stderr="final persisted stderr",
+        )
+        job.refresh_from_db()
+        cache.set(
+            job.get_realtime_key(),
+            '{"stdout": "stale cached stdout", "stderr": "stale cached stderr"}',
+        )
+        self.assertEqual(job.get_stdout(), "final persisted stdout")
+        self.assertEqual(job.get_stderr(), "final persisted stderr")
 
     def test_file_sharing(self):
         # this tests whether a file uploaded by one job will be referenced by a second job instead of being duplicated

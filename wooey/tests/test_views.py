@@ -321,9 +321,7 @@ class CeleryViews(mixins.ScriptFactoryMixin, mixins.FileCleanupMixin, TestCase):
                 original_modified_date = job.modified_date
                 cache.set(
                     job.get_realtime_key(),
-                    json.dumps(
-                        {"stdout": "cached stdout", "stderr": "cached stderr"}
-                    ),
+                    json.dumps({"stdout": "cached stdout", "stderr": "cached stderr"}),
                 )
 
                 with self.mock_stop_revoke() as revoke_mock:

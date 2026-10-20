@@ -461,15 +461,17 @@ class TestJob(
         self.assertEqual(job.get_stderr(), job.stderr)
 
         models.WooeyJob.objects.filter(pk=job.pk).update(
-            status=models.WooeyJob.COMPLETED
+            status=models.WooeyJob.COMPLETED,
+            stdout="final persisted stdout",
+            stderr="final persisted stderr",
         )
         job.refresh_from_db()
         cache.set(
             job.get_realtime_key(),
             '{"stdout": "stale cached stdout", "stderr": "stale cached stderr"}',
         )
-        self.assertEqual(job.get_stdout(), "previous stdout")
-        self.assertEqual(job.get_stderr(), "previous stderr")
+        self.assertEqual(job.get_stdout(), "final persisted stdout")
+        self.assertEqual(job.get_stderr(), "final persisted stderr")
 
     def test_file_sharing(self):
         # this tests whether a file uploaded by one job will be referenced by a second job instead of being duplicated

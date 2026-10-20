@@ -6,6 +6,7 @@ from celery import states
 from django.core.cache import caches
 from django.db import transaction
 from django.test import TestCase
+from django.urls import reverse
 
 from wooey import settings as wooey_settings
 from wooey import tasks as wooey_tasks
@@ -250,6 +251,82 @@ class TestQueueScriptJob(mixins.ScriptFactoryMixin, TestCase):
         job.refresh_from_db()
         self.assertEqual(job.status, states.REVOKED)
         fileinfo_mock.assert_not_called()
+
+    def test_cached_output_remains_readable_after_job_is_stopped(self):
+        original_realtime_cache = wooey_settings.WOOEY_REALTIME_CACHE
+        self.addCleanup(
+            setattr,
+            wooey_settings,
+            "WOOEY_REALTIME_CACHE",
+            original_realtime_cache,
+        )
+        wooey_settings.WOOEY_REALTIME_CACHE = "default"
+        cache = caches["default"]
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+        user = factories.UserFactory()
+        job = factories.generate_job(self.translate_script)
+        job.user = user
+        job.status = WooeyJob.RUNNING
+        job.celery_id = "current-task-id"
+        job.save()
+
+        worker_job = WooeyJob.objects.get(pk=job.pk)
+        worker_job.update_realtime(stdout="before stop", stderr="before error")
+
+        self.client.force_login(user)
+        with mock.patch(
+            "wooey.views.wooey_celery.celery_app.control.revoke"
+        ) as revoke_mock:
+            response = self.client.post(
+                reverse("wooey:celery_task_command"),
+                {"celery-command": "stop", "job-id": job.pk},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["valid"])
+        revoke_mock.assert_called_once_with(
+            "current-task-id", signal="SIGKILL", terminate=True
+        )
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, WooeyJob.REVOKED)
+        self.assertEqual(job.stdout, "before stop")
+        self.assertEqual(job.stderr, "before error")
+
+        cache.clear()
+        self.assertEqual(job.get_stdout(), "before stop")
+        self.assertEqual(job.get_stderr(), "before error")
+
+    def test_completed_and_failed_jobs_use_persisted_output(self):
+        original_realtime_cache = wooey_settings.WOOEY_REALTIME_CACHE
+        self.addCleanup(
+            setattr,
+            wooey_settings,
+            "WOOEY_REALTIME_CACHE",
+            original_realtime_cache,
+        )
+        wooey_settings.WOOEY_REALTIME_CACHE = "default"
+        cache = caches["default"]
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+        for status in (WooeyJob.COMPLETED, WooeyJob.FAILED):
+            with self.subTest(status=status):
+                job = factories.generate_job(self.translate_script)
+                job.status = status
+                job.celery_id = "terminal-task-id"
+                job.stdout = "persisted output"
+                job.stderr = "persisted error"
+                job.save()
+                cache.set(
+                    job.get_realtime_key(),
+                    '{"stdout": "stale output", "stderr": "stale error"}',
+                )
+
+                self.assertEqual(job.get_stdout(), "persisted output")
+                self.assertEqual(job.get_stderr(), "persisted error")
 
     def test_stale_realtime_output_does_not_restore_old_task_state(self):
         original_realtime_cache = wooey_settings.WOOEY_REALTIME_CACHE

@@ -40,7 +40,7 @@ def task_completed(sender=None, **kwargs):
 
     try:
         job = WooeyJob.objects.get(pk=job_id)
-    except InterfaceError, DatabaseError:
+    except (InterfaceError, DatabaseError):
         db.connection.close()
         job = WooeyJob.objects.get(pk=job_id)
 
